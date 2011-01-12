@@ -1,40 +1,43 @@
 import db
 
-# TODO: implement
-#conn = sqlite3.connect('/tmp/example')
-#c = conn.cursor()
-
-#CREATE TABLE test1(input TEXT, output TEXT DEFAULT NULL);
-
-class DB_sqlite(db.DB):    
+import sqlite3
+class DB(db.DB):    
     def create_cell(self, input):
         """
         Insert the input text into the database.
         """
-        c=self.c.cursor()
-        c.execute("""insert into cells (input,output) values (:input,null)""", 
-                  {'input':input})
+        conn=sqlite3.connect(self.c)
+        c=conn.cursor()
+        c.execute("insert into cells (input,output) values (?,null);", (input,))
+        conn.commit()
+        conn.close()
         
     def get_unevaluated_cells(self):
         """
         Get cells which still have yet to be evaluated.
         """
-        c=self.c.cursor()
+        conn=sqlite3.connect(self.c)
+        c=conn.cursor()
         c.execute("""select ROWID, input from cells where output is null;""")
-        return [dict(_id=u, input=v) for u,v in c.fetchall()]
+        results=[dict(_id=u, input=v) for u,v in c.fetchall()]
+        conn.close()
+        return results
         
     def get_evaluated_cells(self):
         """
         Get inputs and outputs which have been evaluated
         """
-        c=self.c.cursor()
-        c.execute("""select ROWID, input, output from cells where output is not null;""")
-        return [dict(_id=u, input=v, output=w) for u,v,w in c.fetchall()]
+        conn=sqlite3.connect(self.c)
+        c=conn.cursor()
+        c.execute("""select ROWID, input, output from cells where output is not null ORDER BY ROWID DESC;""")
+        results=[dict(_id=u, input=v, output=w) for u,v,w in c.fetchall()]
+        conn.close()
+        return results
 
     def set_output(self, id, output):
         """
         """
-        c=self.c.cursor()
-        c.execute("""insert into cells (input) values (:input) where ROWID=:id""",
-                  {'input': input, 'id': id})
-
+        conn=sqlite3.connect(self.c)
+        conn.cursor().execute("update cells set output=? where ROWID=?;", (output, id))
+        conn.commit()
+        conn.close()
