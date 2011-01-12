@@ -8,8 +8,9 @@ DEPENDENCIES:
 
 To start it all up, do the following:
 
-1. Start the database server:
-         cd mongo; ./go
+1. Start the database server (which will store data in a new directory
+   mongo):
+         ./start_mongo
 
 2. Start the web server: 
          python hello.py

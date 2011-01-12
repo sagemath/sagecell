@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-D=`pwd`/db
+D=`pwd`/mongo
 
 if [ ! -f $D ]; then
     mkdir "$D"
