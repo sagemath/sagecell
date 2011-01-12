@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+D=`pwd`/db
+
+if [ ! -f $D ]; then
+    mkdir "$D"
+fi
+
+mongod --dbpath $D --bind_ip localhost 
+
+

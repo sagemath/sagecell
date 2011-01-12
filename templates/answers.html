@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block body %}
+<table cellpadding=5 cellspacing=5 border=1>
+{% for X in results %}
+    <tr><td><pre>{{X['input']}}</pre></td><td><pre>{{X['output']}}</pre></td></tr>
+{% endfor %}
+</table>
+
+{% include 'root.html' %}
+
+{% endblock body %}
+
