@@ -1,6 +1,8 @@
 import db
 
-class DB_sqlite(db.DB):
+# TODO: implement
+
+class DB(db.DB):
     def create_cell(self, input):
         raise NotImplementedError
     

@@ -3,8 +3,8 @@ using mongodb.
 
 DEPENDENCIES:
 
-   * Python packages: pymongo, flask 
-   * MongoDB   
+   * Flask -- install with "easy_install flask"   (see http://flask.pocoo.org/)
+   * MongoDB -- optional, if you want to use the mongodb database (see http://www.mongodb.org/)
 
 To start it all up, do the following:
 

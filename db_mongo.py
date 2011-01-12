@@ -1,15 +1,15 @@
 import db
 
-class DB_mongo(db.DB):
+class DB(db.DB):
     def create_cell(self, input):
-        raise NotImplementedError
+        self.c.code.insert({'input':input})
     
     def get_unevaluated_cells(self):
-        raise NotImplementedError
+        return self.c.code.find({'output':{'$exists': False}})
     
     def get_evaluated_cells(self):
-        raise NotImplementedError
+        return self.c.code.find({'output':{'$exists': True}})
     
     def set_output(self, id, output):
-        raise NotImplementedError
+        self.c.code.update({'_id':id}, {'$set':{'output':output}})
     

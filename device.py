@@ -1,12 +1,10 @@
-import time
-import pymongo
+import sys, time
 
-def run():
-    code = pymongo.Connection().demo.code
-
+def run(db):
+    print "Starting device loop..."
     while True:
-        # Query for all cells that don't have an output key.
-        for X in code.find({'output':{'$exists': False}}):
+        # Evaluate all cells that don't have an output key.
+        for X in db.get_unevaluated_cells():
             s = X['input']
             print "evaluating '%s'"%s
             try:
@@ -15,8 +13,11 @@ def run():
                 output = str(mesg)
             except:
                 output = "yikes"
-            code.update({'_id':X['_id']}, {'$set':{'output':output}})
+            # Store the resulting output
+            db.set_output(X['_id'], output)
         time.sleep(.1)
 
 if __name__ == "__main__":
-    run()
+    import misc
+    db = misc.select_db(sys.argv)
+    run(db)

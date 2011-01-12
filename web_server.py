@@ -7,17 +7,16 @@ def root():
 
 @app.route("/eval")
 def evaluate():
-    import pymongo
-    db = pymongo.Connection().demo
-    db.code.insert({'input':request.values['input']})
+    db.create_cell(request.values['input'])
     return redirect(url_for('answers'))
 
 @app.route("/answers")
 def answers():
-    import pymongo
-    db = pymongo.Connection().demo
-    results = db.code.find({'output':{'$exists': True}})
+    results = db.get_evaluated_cells()
     return render_template('answers.html', results=results)
 
 if __name__ == "__main__":
+    import sys
+    import misc
+    db = misc.select_db(sys.argv)
     app.run(debug=True)
