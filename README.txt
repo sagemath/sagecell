@@ -13,7 +13,7 @@ To start it all up, do the following:
          ./start_mongo
 
 2. Start the web server: 
-         python hello.py
+         python web_server.py
 
 3. Start the compute device:
          python device.py
