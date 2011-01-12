@@ -8,7 +8,8 @@ class DB(db.DB):
         return self.c.code.find({'output':{'$exists': False}})
     
     def get_evaluated_cells(self):
-        return self.c.code.find({'output':{'$exists': True}})
+        import pymongo
+        return self.c.code.find({'output':{'$exists': True}}).sort('_id', direction=pymongo.DESCENDING)
     
     def set_output(self, id, output):
         self.c.code.update({'_id':id}, {'$set':{'output':output}})
