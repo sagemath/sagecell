@@ -8,11 +8,11 @@ DEPENDENCIES:
 
 To start it all up, do the following:
 
-1. Start the server: 
-         python hello.py
-
-2. Start the database server:
+1. Start the database server:
          cd mongo; ./go
+
+2. Start the web server: 
+         python hello.py
 
 3. Start the compute device:
          python device.py
