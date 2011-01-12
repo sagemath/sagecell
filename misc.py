@@ -13,5 +13,8 @@ def select_db(argv):
         c.execute("CREATE TABLE IF NOT EXISTS cells(input TEXT, output TEXT DEFAULT NULL);")
         conn.close()
         return db_sqlite.DB('sqlite.db')
+    #elif argv[1] == 'dict':
+    #    import db_dict
+    #    return db_dict.DB({})
     else:
         sys.exit(1)
