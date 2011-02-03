@@ -15,9 +15,6 @@ def answers():
     results = db.get_evaluated_cells()
     return render_template('answers.html', results=results)
 
-url_for('static', filename='jquery-1.5.min.js')
-url_for('static', filename='compute_server.js')
-
 if __name__ == "__main__":
     import sys
     import misc
