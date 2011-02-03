@@ -25,7 +25,3 @@ To start it all up, do the following:
 CAVEAT: If you're on a multi-user machine, any other user on that same
 machine could eval arbitrary expressions as the sage device process
 (3) above.
-
-
-
-
