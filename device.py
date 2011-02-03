@@ -49,8 +49,7 @@ def run(db, poll_interval=0.1):
                 output=S.getvalue()
             # Store the resulting output
             db.set_output(X['_id'], output)
-        time.sleep(.1)
-
+        time.sleep(poll_interval)
 
 def unicode_str(obj, encoding='utf-8'):
     """Takes an object and returns a unicode human-readable representation."""
