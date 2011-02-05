@@ -13,7 +13,7 @@ function async_request(url, callback, postvars) {
     };
 
     if ($.isFunction(callback)) {
-        settings.error = function (XMLHttpRequest, textStatus, errorThrown) {
+        settings.error = function (jqXHR, textStatus, errorThrown) {
             callback("failure", errorThrown);
         };
         settings.success = function (data, textStatus, jqXHR) {
