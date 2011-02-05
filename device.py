@@ -81,7 +81,8 @@ def displayhook_hack(string):
     string = string.splitlines()
     i = len(string)-1
     if i >= 0:
-        while len(string[i]) > 0 and string[i][0] in ' \t':
+        # skip lines that are either empty or start with whitespace
+        while len(string[i])==0 or string[i][0] in ' \t':
             i -= 1
         final_lines = unicode_str('\n'.join(string[i:]))
         if not final_lines.startswith('def '):
