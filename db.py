@@ -3,6 +3,7 @@ class DB(object):
         self.c = c
         
     def create_cell(self, input):
+        """Insert the input into the database and return a string id"""
         raise NotImplementedError
     
     def get_unevaluated_cells(self):

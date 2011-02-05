@@ -2,7 +2,8 @@ import db
 
 class DB(db.DB):
     def create_cell(self, input):
-        self.c.code.insert({'input':input})
+        _id=self.c.code.insert({'input':input})
+        return str(_id)
     
     def get_unevaluated_cells(self):
         return self.c.code.find({'output':{'$exists': False}})

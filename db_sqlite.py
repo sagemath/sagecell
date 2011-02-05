@@ -20,6 +20,7 @@ class DB(db.DB):
         cur = self.c.cursor()
         cur.execute("insert into cells (input,output) values (?,null);", (input,))
         self.c.commit()
+        return str(cur.lastrowid)
         
     def get_unevaluated_cells(self):
         """
