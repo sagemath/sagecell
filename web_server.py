@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify
-from time import time
+from time import time, sleep
 
 app = Flask(__name__)
 
@@ -29,12 +29,13 @@ def output():
     """
     default_timeout=2 #seconds
     poll_interval=.1 #seconds
-    end_time=request.values.get('timeout', default_timeout)+time()
+    end_time=float(request.values.get('timeout', default_timeout))+time()
     computation_id=request.values['computation_id']
-    while time()<timeout:
-        results = db.get_evaluated_cell(computation_id)
-        if len(results)>0:
-            return jsonify(results)
+    print 
+    while time()<end_time:
+        results = db.get_evaluated_cells(id=computation_id)
+        if results is not None and len(results)>0:
+            return jsonify({'output':results['output']})
         sleep(poll_interval)
     return jsonify([])
 

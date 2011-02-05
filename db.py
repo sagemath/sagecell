@@ -9,7 +9,7 @@ class DB(object):
     def get_unevaluated_cells(self):
         raise NotImplementedError
     
-    def get_evaluated_cells(self):
+    def get_evaluated_cells(self, id=None):
         raise NotImplementedError
     
     def set_output(self, id, output):

@@ -5,6 +5,7 @@
 // Make the script root available to jquery
 $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 $EVALUATE_URL = {{url_for('evaluate')|tojson|safe}};
+$OUTPUT_URL = {{url_for('output')|tojson|safe}};
 </script>
 <script type=text/javascript src="{{url_for('static', filename='jquery-1.5.min.js')}}"></script>
 <script type=text/javascript src="{{url_for('static', filename='compute_server.js')}}"></script>

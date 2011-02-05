@@ -1,4 +1,5 @@
-<html><body>
+{% extends 'base.html' %}
+{% block body %}
  <form id="command_form" action="">
   <textarea rows="4" cols="80" name="commands" id="commands"></textarea><br>
   <input type="submit" value="submit">
@@ -8,4 +9,7 @@
 
 Computation ID: <div id="computation_id"></div>
 <br/>
-</body></html>
+<br/>
+<pre id="output"></pre>
+
+{% endblock body %}
