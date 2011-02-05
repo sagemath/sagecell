@@ -39,6 +39,7 @@ function send_computation_error(jqXHR, textStatus, errorThrown) {
 function send_computation_success(data, textStatus, jqXHR) {
     $("#computation_id").text(data.computation_id);
     // start long-polling to get the output
+    // TODO: look at maybe using something like https://github.com/RobertFischer/JQuery-PeriodicalUpdater/
     poll_for_output(data.computation_id);
 }
 
