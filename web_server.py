@@ -1,4 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify
+from time import time
+
 app = Flask(__name__)
 
 @app.route("/")
@@ -14,6 +16,28 @@ def evaluate():
 def answers():
     results = db.get_evaluated_cells()
     return render_template('answers.html', results=results)
+
+@app.route("/output")
+def output():
+    """
+    Implements long-polling to return answers.
+
+    If a computation id has output, then return to browser. Otherwise,
+    poll the database periodically to check to see if the computation id
+    is done.  Return after a certain number of seconds whether or not
+    it is done.
+    """
+    default_timeout=2 #seconds
+    poll_interval=.1 #seconds
+    end_time=request.values.get('timeout', default_timeout)+time()
+    computation_id=request.values['computation_id']
+    while time()<timeout:
+        results = db.get_evaluated_cell(computation_id)
+        if len(results)>0:
+            return jsonify(results)
+        sleep(poll_interval)
+    return jsonify([])
+
 
 if __name__ == "__main__":
     import sys
