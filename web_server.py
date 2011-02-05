@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, jsonify
 app = Flask(__name__)
 
 @app.route("/")
@@ -7,8 +7,8 @@ def root():
 
 @app.route("/eval")
 def evaluate():
-    db.create_cell(request.values['input'])
-    return redirect(url_for('answers'))
+    computation_id=db.create_cell(request.values['commands'])
+    return jsonify(computation_id=computation_id)
 
 @app.route("/answers")
 def answers():

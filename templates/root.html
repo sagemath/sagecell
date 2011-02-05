@@ -1,9 +1,11 @@
 <html><body>
- <form method="get" action="{{url_for('evaluate')}}">
-  <textarea rows="4" cols="80" name="input"></textarea><br>
+ <form id="command_form" action="">
+  <textarea rows="4" cols="80" name="commands" id="commands"></textarea><br>
   <input type="submit" value="submit">
  </form>
 
- <a href="/answers">Update</a><br><br>
+ <a href="/answers">Update</a><br/><br/>
 
+Computation ID: <div id="computation_id"></div>
+<br/>
 </body></html>

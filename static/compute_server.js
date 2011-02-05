@@ -30,3 +30,9 @@ function async_request(url, callback, postvars) {
 
     $.ajax(settings);
 }
+$(function() {
+    $('#command_form').submit(function () {
+	$.getJSON($EVALUATE_URL, {commands: $('#commands').val()}, send_computation_success);
+	return false;
+    });
+});
