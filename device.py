@@ -1,4 +1,4 @@
-import sys, time, traceback, StringIO, contextlib
+import sys, time, traceback, StringIO, contextlib, random
 
 # based on a stackoverflow answer
 @contextlib.contextmanager
@@ -35,10 +35,11 @@ def stdoutIO(stdout=None):
 def run(db, poll_interval=0.1):
     """Run the compute device, querying the database and doing
     relevant work."""
-    print "Starting device loop..."
+    device_id=random.randrange(sys.maxint)
+    print "Starting device loop for device %s..."%device_id
     while True:
         # Evaluate all cells that don't have an output key.
-        for X in db.get_unevaluated_cells():
+        for X in db.get_unevaluated_cells(device_id, limit=1):
             code = X['input']
             print "evaluating '%s'"%code
             try:
@@ -105,5 +106,6 @@ def execute_code(code):
 
 if __name__ == "__main__":
     import misc
+    
     db = misc.select_db(sys.argv)
     run(db)

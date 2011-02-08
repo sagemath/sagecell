@@ -3,11 +3,20 @@ import pymongo.objectid
 from pymongo.objectid import ObjectId
 class DB(db.DB):
     def create_cell(self, input):
-        _id=self.c.code.insert({'input':input})
+        _id=self.c.code.insert({'input':input, 'device':-1})
         return str(_id)
     
-    def get_unevaluated_cells(self):
-        return self.c.code.find({'output':{'$exists': False}})
+    def get_unevaluated_cells(self, device_id, limit=None):
+        """
+        Find the cells not in progress
+        Mark them as in-progress with the device id and return the cells
+        The `limit` keyword can give an upper limit on the number of cells returned
+        """
+        if limit is None:
+            limit=0
+        unassigned_cells=list(self.c.code.find({'device':-1}).limit(limit))
+        self.c.code.update({'_id': {'$in': [i['_id'] for i in unassigned_cells]}, '$atomic':True}, {'$set': {'device': device_id}}, multi=True)
+        return unassigned_cells
     
     def get_evaluated_cells(self, id=None):
         import pymongo
