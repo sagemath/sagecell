@@ -31,14 +31,22 @@ class DB(db.DB):
         results = [dict(_id=u, input=v) for u,v in cur.fetchall()]
         return results
         
-    def get_evaluated_cells(self):
+    def get_evaluated_cells(self, id=None):
         """
         Get inputs and outputs which have been evaluated
         """
         cur = self.c.cursor()
-        cur.execute("""select ROWID, input, output from cells where output is not null ORDER BY ROWID DESC;""")
-        results = [dict(_id=u, input=v, output=w) for u,v,w in cur.fetchall()]
-        return results
+        if id==None:
+            cur.execute("""select ROWID, input, output from cells where output is not null ORDER BY ROWID DESC;""")
+            results = [dict(_id=u, input=v, output=w) for u,v,w in cur.fetchall()]
+            return results
+        else:
+            cur.execute("""select ROWID, input, output from cells where output is not null and ROWID = ? ORDER BY ROWID DESC;""",id)
+            result=cur.fetchone()
+            if result:
+                return dict(zip(["_id", "input", "output"], result))
+            else:
+                return None
 
     def set_output(self, id, output):
         """
