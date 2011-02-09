@@ -41,7 +41,7 @@ class DB(db.DB):
         Get inputs and outputs which have been evaluated
         """
         cur = self.c.cursor()
-        if id==None:
+        if id is None:
             cur.execute("""select ROWID, input, output from cells
                            where output is not null ORDER BY ROWID DESC;""")
             results = [dict(_id=u, input=v, output=w) for u,v,w in cur.fetchall()]
