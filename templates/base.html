@@ -3,9 +3,11 @@
 <title>Simple Compute Server</title>
 <script type=text/javascript>
 // Make the script root available to jquery
-$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-$EVALUATE_URL = {{url_for('evaluate')|tojson|safe}};
-$OUTPUT_URL = {{url_for('output')|tojson|safe}};
+$URL={'script': {{ request.script_root|tojson|safe }},
+'evaluate': {{url_for('evaluate')|tojson|safe}},
+'output_poll': {{url_for('output_poll')|tojson|safe}},
+'output_long_poll': {{url_for('output_long_poll')|tojson|safe}}
+};
 </script>
 <script type=text/javascript src="{{url_for('static', filename='jquery-1.5.min.js')}}"></script>
 <script type=text/javascript src="{{url_for('static', filename='compute_server.js')}}"></script>

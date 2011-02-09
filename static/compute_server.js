@@ -36,7 +36,7 @@ $(function() {
     // Attach a javascript function to the form submit. This function
     // makes an AJAX call to evaluate the contents of the text box.
     $('#command_form').submit(function () {
-	$.getJSON($EVALUATE_URL, {commands: $('#commands').val()}, send_computation_success);
+	$.getJSON($URL.evaluate, {commands: $('#commands').val()}, send_computation_success);
 	return false;
     });
 });
@@ -49,12 +49,26 @@ function send_computation_success(data, textStatus, jqXHR) {
 }
 
 function get_output(id) {
-    $.getJSON($OUTPUT_URL, {computation_id: id, timeout: 2},
+    $.getJSON($URL.output_poll, {computation_id: id},
 	      function(data, textStatus, jqXHR) {
 		  get_output_success(data, textStatus, jqXHR, id);});
 }
 
 function get_output_success(data, textStatus, jqXHR, id) {
+    if(data.output==undefined) {
+	// poll again after a bit
+	setTimeout(function() {get_output(id);}, 2000);
+    }
+    $('#output').text(data.output)
+}
+
+function get_output_long_poll(id) {
+    $.getJSON($URL.output_long_poll, {computation_id: id, timeout: 2},
+	      function(data, textStatus, jqXHR) {
+		  get_output_success(data, textStatus, jqXHR, id);});
+}
+
+function get_output_long_poll_success(data, textStatus, jqXHR, id) {
     //alert(data);
     if(data.output==undefined) {
 	get_output(id);

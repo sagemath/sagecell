@@ -10,7 +10,7 @@ def select_db(argv):
         import sqlite3
         conn = sqlite3.connect('sqlite.db')
         c = conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS cells(input TEXT, output TEXT DEFAULT NULL);")
+        c.execute("CREATE TABLE IF NOT EXISTS cells(device_id BIGINT DEFAULT NULL, input TEXT, output TEXT DEFAULT NULL);")
         conn.close()
         return db_sqlite.DB('sqlite.db')
     #elif argv[1] == 'dict':
