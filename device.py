@@ -45,9 +45,7 @@ def run(db, poll_interval=0.1):
             try:
                 output = execute_code(code)
             except:
-                S = StringIO.StringIO()
-                traceback.print_exc(file=S)
-                output=S.getvalue()
+                output = traceback.format_exc()
             # Store the resulting output
             db.set_output(X['_id'], output)
         time.sleep(poll_interval)
