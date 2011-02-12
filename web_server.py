@@ -1,25 +1,59 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify
 from time import time, sleep
+from functools import wraps
 
 app = Flask(__name__)
+
+def print_exception(f):
+    """
+    This decorator prints any exceptions that occur to the webbrowser.  This printing works even for uwsgi and nginx.
+    """
+    import traceback
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        try:
+            return f(*args, **kwds)
+        except:
+            return "<pre>%s</pre>"%traceback.format_exc()
+    return wrapper
+
+def get_db(f):
+    """
+    This decorator gets the database and passes it into the function as the first argument.
+    """
+    import misc, sys
+    @wraps(f)
+    def wrapper(*args, **kwds):
+        try:
+            db
+        except NameError:
+            db=misc.select_db(sys.argv)
+        args = (db,) + args
+        return f(*args, **kwds)
+    return wrapper
 
 @app.route("/")
 def root():
     return render_template('root.html')
 
 @app.route("/eval")
-def evaluate():
+@get_db
+def evaluate(db):
     computation_id=db.create_cell(request.values['commands'])
     return jsonify(computation_id=computation_id)
 
 @app.route("/answers")
-def answers():
+@print_exception
+@get_db
+def answers(db):
     results = db.get_evaluated_cells()
     return render_template('answers.html', results=results)
 
 
 @app.route("/output_poll")
-def output_poll():
+@print_exception
+@get_db
+def output_poll(db):
     """
     Return the output of a computation id (passed in the request)
 
@@ -33,7 +67,9 @@ def output_poll():
     return jsonify([])
 
 @app.route("/output_long_poll")
-def output_long_poll():
+@print_exception
+@get_db
+def output_long_poll(db):
     """
     Implements long-polling to return answers.
 
@@ -54,7 +90,6 @@ def output_long_poll():
             return jsonify({'output':results['output']})
         sleep(poll_interval)
     return jsonify([])
-
 
 if __name__ == "__main__":
     import sys
