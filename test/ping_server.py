@@ -7,8 +7,7 @@ from time import sleep, time
 import sys
 import numpy
 
-if __name__ == "__main__":
-    iterations=int(sys.argv[1])
+def compute(iterations=10):
     response_times=[]
     while iterations>0:
         computation='%s+%s'%(random(), random())
@@ -26,4 +25,8 @@ if __name__ == "__main__":
             sleep(0.5)
         print computation, ':', output
         iterations-=1
+    return response_times
+
+if __name__ == "__main__":
+    response_times=compute(int(sys.argv[1]))
     print 'Average: ', numpy.average(response_times), ', Std Dev: ', numpy.std(response_times)
