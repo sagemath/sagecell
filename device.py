@@ -32,22 +32,42 @@ def stdoutIO(stdout=None):
         sys.stdout = old_stdout
 
 
-def run(db, poll_interval=0.1):
+from multiprocessing import Pool, TimeoutError
+
+def run(db, workers=1, poll_interval=0.1):
     """Run the compute device, querying the database and doing
     relevant work."""
     device_id=random.randrange(sys.maxint)
     print "Starting device loop for device %s..."%device_id
+    pool=Pool(processes=workers)
+    results={}
+
     while True:
-        # Evaluate all cells that don't have an output key.
-        for X in db.get_unevaluated_cells(device_id, limit=1):
+        # Queue up all unevaluated cells we requested
+        for X in db.get_unevaluated_cells(device_id, limit=10):
             code = X['input']
             print "evaluating '%s'"%code
+            results[X['_id']]=pool.apply_async(execute_code, (code,))
+        # Get whatever results are done
+        finished=[]
+        for _id, result in results.iteritems():
             try:
-                output = execute_code(code)
+                # see if the result is ready right now
+                output=result.get(timeout=0)
+            except TimeoutError:
+                # not done yet, go to the next result
+                continue
             except:
-                output = traceback.format_exc()
+                # some exception was raised in execution
+                output=traceback.format_exc()
             # Store the resulting output
-            db.set_output(X['_id'], output)
+            db.set_output(_id, output)
+            finished.append(_id)
+
+        # delete the output that I'm finished with
+        for _id in finished:
+            del results[_id]
+
         time.sleep(poll_interval)
 
 def unicode_str(obj, encoding='utf-8'):
@@ -104,6 +124,5 @@ def execute_code(code):
 
 if __name__ == "__main__":
     import misc
-    
-    db = misc.select_db(sys.argv)
-    run(db)
+    db = misc.select_db([""])#sys.argv[2])
+    run(db, workers=int(sys.argv[1]))
