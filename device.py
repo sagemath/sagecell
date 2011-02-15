@@ -44,7 +44,7 @@ def run(db, workers=1, poll_interval=0.1):
 
     while True:
         # Queue up all unevaluated cells we requested
-        for X in db.get_unevaluated_cells(device_id, limit=10):
+        for X in db.get_unevaluated_cells(device_id):
             code = X['input']
             print "evaluating '%s'"%code
             results[X['_id']]=pool.apply_async(execute_code, (code,))
