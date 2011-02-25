@@ -123,6 +123,8 @@ def execute_code(code):
     return s.getvalue()
 
 if __name__ == "__main__":
+    # argv[1] is number of workers
+    # argv[2] is "mongo" (default) or "sqlite"
     import misc
-    db = misc.select_db([""])#sys.argv[2])
+    db = misc.select_db([""] if len(sys.argv)<3 else ["", sys.argv[2]])
     run(db, workers=int(sys.argv[1]))
