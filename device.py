@@ -107,7 +107,6 @@ def make_output_json_string(s):
         header=json.loads(header_string)
         
         header['order']=order
-        order+=1
         if 'type' not in header:
             header['type']='text'
             
@@ -115,6 +114,7 @@ def make_output_json_string(s):
         stream['content']=body_string
 
         output['stream_%s'%order]=stream
+        order+=1
         
     return json.dumps(output)
 
