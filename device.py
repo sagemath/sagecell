@@ -85,12 +85,10 @@ def make_output_json_string(s):
     This function takes a string representing the output of a computation.
     It constructs a dictionary which represents the output parsed into streams
     """
-    print "S before:",s
     s=s.split(STREAM_SEPARATOR)
     # at the top of each stream is some information about the stream
     order=0
     output=dict()
-    print "S:",s
 
     if len(s[0])!=0 and HEADER_SEPARATOR not in s[0]:
         # If there is no header in the first stream,
@@ -105,9 +103,7 @@ def make_output_json_string(s):
 
     for stream_string in s[1:]:
         stream=dict()
-        print "STRAING: ",stream_string
         header_string, body_string=stream_string.split(HEADER_SEPARATOR)
-        print "header:",header_string
         header=json.loads(header_string)
         
         header['order']=order
