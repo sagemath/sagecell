@@ -61,7 +61,7 @@ def run(db, workers=1, poll_interval=0.1):
                 # some exception was raised in execution
                 output=traceback.format_exc()
             # Store the resulting output
-            db.set_output(_id, make_output_json_string(output))
+            db.set_output(_id, make_output_json(output))
             finished.append(_id)
 
         # delete the output that I'm finished with
@@ -80,7 +80,7 @@ def new_stream(stream_type):
 
 import json
 
-def make_output_json_string(s):
+def make_output_json(s):
     """
     This function takes a string representing the output of a computation.
     It constructs a dictionary which represents the output parsed into streams
@@ -116,7 +116,7 @@ def make_output_json_string(s):
         output['stream_%s'%order]=stream
         order+=1
         
-    return json.dumps(output)
+    return output
 
 def unicode_str(obj, encoding='utf-8'):
     """Takes an object and returns a unicode human-readable representation."""
