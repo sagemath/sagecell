@@ -91,6 +91,18 @@ def make_output_json_string(s):
     order=0
     output=dict()
     print "S:",s
+
+    if len(s[0])!=0 and HEADER_SEPARATOR not in s[0]:
+        # If there is no header in the first stream,
+        # assume it is a text stream.  This stream includes all 
+        # output before the first new_stream() command.
+        stream=dict()
+        stream['type']='text'
+        stream['order']=order
+        stream['content']=s[0]
+        output['stream_%s'%order]=stream
+        order+=1
+
     for stream_string in s[1:]:
         stream=dict()
         print "STRAING: ",stream_string
