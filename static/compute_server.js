@@ -54,12 +54,27 @@ function get_output(id) {
 		  get_output_success(data, textStatus, jqXHR, id);});
 }
 
+function sortstream(s1,s2) {
+    return s1.order-s2.order;
+}
+
 function get_output_success(data, textStatus, jqXHR, id) {
     if(data.output==undefined) {
 	// poll again after a bit
 	setTimeout(function() {get_output(id);}, 2000);
     }
-    $('#output').text(data.output)
+    var streams=[];
+    for(d in data.output) {
+        streams.push(data.output[d]);
+    }
+    streams.sort(sortstream);
+    $('#output').empty();
+    for(i in streams)
+        if(streams[i].type=='text')
+            $('#output').append("<pre>"+streams[i].content+"</pre>");
+        else if(streams[i].type=='image')
+            for(j in streams[i].files)
+                $('#output').append("<img src='"+streams[i].files[j]+"'/><br/>");
 }
 
 function get_output_long_poll(id) {
