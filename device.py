@@ -61,7 +61,7 @@ def run(db, workers=1, poll_interval=0.1):
                 # some exception was raised in execution
                 output=traceback.format_exc()
             # Store the resulting output
-            db.set_output(_id, make_output_json_string(output))
+            db.set_output(_id, make_output_json(output))
             finished.append(_id)
 
         # delete the output that I'm finished with
@@ -74,32 +74,39 @@ STREAM_SEPARATOR='____NEW__STREAM____'
 HEADER_SEPARATOR='____END_STREAM_HEADER___'
 
 def new_stream(stream_type):
-    print STREAM_SEPARATOR
+    print STREAM_SEPARATOR,
     print r"""{"type":"%s"}"""%stream_type
-    print HEADER_SEPARATOR
+    print HEADER_SEPARATOR,
 
 import json
 
-def make_output_json_string(s):
+def make_output_json(s):
     """
     This function takes a string representing the output of a computation.
     It constructs a dictionary which represents the output parsed into streams
     """
-    print "S before:",s
     s=s.split(STREAM_SEPARATOR)
     # at the top of each stream is some information about the stream
     order=0
     output=dict()
-    print "S:",s
+
+    if len(s[0])!=0 and HEADER_SEPARATOR not in s[0]:
+        # If there is no header in the first stream,
+        # assume it is a text stream.  This stream includes all 
+        # output before the first new_stream() command.
+        stream=dict()
+        stream['type']='text'
+        stream['order']=order
+        stream['content']=s[0]
+        output['stream_%s'%order]=stream
+        order+=1
+
     for stream_string in s[1:]:
         stream=dict()
-        print "STRAING: ",stream_string
         header_string, body_string=stream_string.split(HEADER_SEPARATOR)
-        print "header:",header_string
         header=json.loads(header_string)
         
         header['order']=order
-        order+=1
         if 'type' not in header:
             header['type']='text'
             
@@ -107,8 +114,9 @@ def make_output_json_string(s):
         stream['content']=body_string
 
         output['stream_%s'%order]=stream
+        order+=1
         
-    return json.dumps(output)
+    return output
 
 def unicode_str(obj, encoding='utf-8'):
     """Takes an object and returns a unicode human-readable representation."""

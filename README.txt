@@ -9,15 +9,17 @@ DEPENDENCIES:
 
 To start it all up, do the following:
 
-1. Start the database server (which will store data in a new directory
-   mongo):
+1. Start the database server, if needed (mongo will store data in a new directory
+   mongo).  This is not needed if using sqlite
+
          ./start_mongo
 
-2. Start the web server: 
-         python web_server.py
+2. Start the web server (specify sqlite if using a sqlite database):
+         python web_server.py [sqlite]
 
-3. Start the compute device:
-         python device.py
+3. Start the compute device (first argument is the number of worker
+   processes).  Specify sqlite if using a sqlite database:
+         python device.py 1 [sqlite]
 
 4. Point your browser at:
          http://127.0.0.1:5000

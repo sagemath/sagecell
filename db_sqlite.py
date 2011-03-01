@@ -40,6 +40,7 @@ class DB(db.DB):
         """
         Get inputs and outputs which have been evaluated
         """
+        import json
         cur = self.c.cursor()
         if id is None:
             cur.execute("""select ROWID, input, output from cells
@@ -51,13 +52,17 @@ class DB(db.DB):
                            cells where output is not null and ROWID = ? ORDER BY ROWID DESC;""",(id,))
             result=cur.fetchone()
             if result:
-                return dict(zip(["_id", "input", "output"], result))
+                results=dict(zip(["_id", "input", "output"], result))
+                results['output']=json.loads(results['output'])
+                return results
             else:
                 return None
 
     def set_output(self, id, output):
         """
         """
+        import json
         cur = self.c.cursor()
-        cur.execute("update cells set output=? where ROWID=?;", (output, id))
+        cur.execute("update cells set output=? where ROWID=?;", (json.dumps(output), id))
         self.c.commit()
+
