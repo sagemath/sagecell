@@ -61,7 +61,7 @@ def run(db, workers=1, poll_interval=0.1):
                 # some exception was raised in execution
                 output=traceback.format_exc()
             # Store the resulting output
-            db.set_output(_id, output)
+            db.set_output(_id, make_output_json_string(output))
             finished.append(_id)
 
         # delete the output that I'm finished with
@@ -69,6 +69,46 @@ def run(db, workers=1, poll_interval=0.1):
             del results[_id]
 
         time.sleep(poll_interval)
+
+STREAM_SEPARATOR='____NEW__STREAM____'
+HEADER_SEPARATOR='____END_STREAM_HEADER___'
+
+def new_stream(stream_type):
+    print STREAM_SEPARATOR
+    print r"""{"type":"%s"}"""%stream_type
+    print HEADER_SEPARATOR
+
+import json
+
+def make_output_json_string(s):
+    """
+    This function takes a string representing the output of a computation.
+    It constructs a dictionary which represents the output parsed into streams
+    """
+    print "S before:",s
+    s=s.split(STREAM_SEPARATOR)
+    # at the top of each stream is some information about the stream
+    order=0
+    output=dict()
+    print "S:",s
+    for stream_string in s[1:]:
+        stream=dict()
+        print "STRAING: ",stream_string
+        header_string, body_string=stream_string.split(HEADER_SEPARATOR)
+        print "header:",header_string
+        header=json.loads(header_string)
+        
+        header['order']=order
+        order+=1
+        if 'type' not in header:
+            header['type']='text'
+            
+        stream.update(header)
+        stream['content']=body_string
+
+        output['stream_%s'%order]=stream
+        
+    return json.dumps(output)
 
 def unicode_str(obj, encoding='utf-8'):
     """Takes an object and returns a unicode human-readable representation."""
@@ -114,6 +154,7 @@ def displayhook_hack(string):
     return '\n'.join(string)
 
 namespace = {}
+namespace['new_stream']=new_stream
 
 def execute_code(code):
     """Evalue the given code, returning what is sent to stdout."""
