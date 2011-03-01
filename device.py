@@ -74,9 +74,9 @@ STREAM_SEPARATOR='____NEW__STREAM____'
 HEADER_SEPARATOR='____END_STREAM_HEADER___'
 
 def new_stream(stream_type):
-    print STREAM_SEPARATOR
+    print STREAM_SEPARATOR,
     print r"""{"type":"%s"}"""%stream_type
-    print HEADER_SEPARATOR
+    print HEADER_SEPARATOR,
 
 import json
 
