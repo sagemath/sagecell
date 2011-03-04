@@ -34,7 +34,7 @@ def stdoutIO(stdout=None):
 
 from multiprocessing import Pool, TimeoutError
 
-def run(db, workers=1, poll_interval=0.1):
+def run(db, fs, workers=1, poll_interval=0.1):
     """Run the compute device, querying the database and doing
     relevant work."""
     device_id=random.randrange(sys.maxint)
@@ -176,5 +176,5 @@ if __name__ == "__main__":
     # argv[1] is number of workers
     # argv[2] is "mongo" (default) or "sqlite"
     import misc
-    db = misc.select_db([""] if len(sys.argv)<3 else ["", sys.argv[2]])
-    run(db, workers=int(sys.argv[1]))
+    db, fs = misc.select_db([""] if len(sys.argv)<3 else ["", sys.argv[2]])
+    run(db, fs, workers=int(sys.argv[1]))

@@ -94,5 +94,5 @@ def output_long_poll(db):
 if __name__ == "__main__":
     import sys
     import misc
-    db = misc.select_db(sys.argv)
+    db, fs = misc.select_db(sys.argv)
     app.run(debug=True)
