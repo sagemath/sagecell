@@ -25,10 +25,11 @@ def get_db(f):
     @wraps(f)
     def wrapper(*args, **kwds):
         try:
-            db
+            # We see if db and fs are even defined yet by just referring to them.
+            (db, fs)
         except NameError:
-            db=misc.select_db(sys.argv)
-        args = (db,) + args
+            db,fs=misc.select_db(sys.argv)
+        args = (db,fs) + args
         return f(*args, **kwds)
     return wrapper
 
@@ -38,14 +39,14 @@ def root():
 
 @app.route("/eval")
 @get_db
-def evaluate(db):
+def evaluate(db,fs):
     computation_id=db.create_cell(request.values['commands'])
     return jsonify(computation_id=computation_id)
 
 @app.route("/answers")
 @print_exception
 @get_db
-def answers(db):
+def answers(db,fs):
     results = db.get_evaluated_cells()
     return render_template('answers.html', results=results)
 
@@ -53,7 +54,7 @@ def answers(db):
 @app.route("/output_poll")
 @print_exception
 @get_db
-def output_poll(db):
+def output_poll(db,fs):
     """
     Return the output of a computation id (passed in the request)
 
@@ -69,7 +70,7 @@ def output_poll(db):
 @app.route("/output_long_poll")
 @print_exception
 @get_db
-def output_long_poll(db):
+def output_long_poll(db,fs):
     """
     Implements long-polling to return answers.
 
