@@ -47,7 +47,8 @@ class DB(db.DB):
         if limit:
             query = query.limit(limit)
         results=[dict(_id=u, input=v) for u,v in query.execute()]
-        t.update().where(t.c._id.in_(row["_id"] for row in results)).values(device_id=device_id).execute()
+        if len(results)!=0:
+            t.update().where(t.c._id.in_(row["_id"] for row in results)).values(device_id=device_id).execute()
         return results
         
     def get_evaluated_cells(self, id=None):
