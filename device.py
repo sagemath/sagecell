@@ -166,7 +166,7 @@ namespace = {}
 namespace['new_stream']=new_stream
 
 def execute_code(code):
-    """Evalue the given code, returning what is sent to stdout."""
+    """Evaluate the given code, returning what is sent to stdout."""
     code = displayhook_hack(code)
     with stdoutIO() as s:
         exec code in namespace
