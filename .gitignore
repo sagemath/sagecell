@@ -1,3 +1,4 @@
 *.pyc
 mongo/*
 sqlite.db
+sqlalchemy_sqlite.db
