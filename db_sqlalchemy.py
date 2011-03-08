@@ -2,7 +2,7 @@ import db
 
 import sqlite3
 import sqlalchemy
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, select
 
 class DB(db.DB):
     def __init__(self, c):
@@ -43,7 +43,7 @@ class DB(db.DB):
         Get cells which still have yet to be evaluated.
         """
         t=self._cells_table
-        query = t.select([t.c._id,t.c.input]).where((t.c.output==None) & (t.c.device_id==None))
+        query = select([t.c._id,t.c.input], (t.c.output==None) & (t.c.device_id==None))
         if limit:
             query = query.limit(limit)
         results=[dict(_id=u, input=v) for u,v in query.execute()]
@@ -56,7 +56,7 @@ class DB(db.DB):
         """
         import json
         t=self._cells_table
-        query = t.select([t.c._id, t.c.input, t.c.output]).where(t.c.output!=None).order_by(t.c._id.desc())
+        query = select([t.c._id, t.c.input, t.c.output]).where(t.c.output!=None).order_by(t.c._id.desc())
         if id is None:
             results = [dict(_id=u, input=v, output=w) for u,v,w in query.execute()]
             return results
