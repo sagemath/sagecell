@@ -1,7 +1,5 @@
 import db
 
-import sqlite3
-import sqlalchemy
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, select
 
 class DB(db.DB):
