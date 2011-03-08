@@ -20,16 +20,6 @@ class DB(db.DB):
                                  Column('output', String))
         meta.create_all()
 
-    #here for threading reasons, may not be needed.
-    #@property
-    #def c(self):
-    #    if self._c is None:
-    #        self._c = create_engine('sqlite:///%s'%self._filename)
-    #        meta = MetaData()
-    #        meta.bind = engine
-    #        self._cells_table = Table('cells', meta, autoload=True)
-    #    return self._c
-        
     def create_cell(self, input):
         """
         Insert the input text into the database.
