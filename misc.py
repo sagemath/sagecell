@@ -14,6 +14,10 @@ def select_db(argv):
         c.execute("CREATE TABLE IF NOT EXISTS cells(device_id BIGINT DEFAULT NULL, input TEXT, output TEXT DEFAULT NULL);")
         conn.close()
         return db_sqlite.DB('sqlite.db'), None # None should be replaced by the sqlite filestore
+    elif argv[1] == 'sqlalchemy':
+        import db_sqlalchemy
+       
+        return db_sqlalchemy.DB('sqlalchemy_sqlite.db'), None # None should be replaced by the sqlite filestore
     #elif argv[1] == 'dict':
     #    import db_dict
     #    return db_dict.DB({})
