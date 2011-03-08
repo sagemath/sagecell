@@ -36,7 +36,7 @@ class DB(db.DB):
         """
         t=self._cells_table
         result = t.insert().values(input=input).execute()
-        return result.inserted_primary_key
+        return result.inserted_primary_key[0]
         
     def get_unevaluated_cells(self, device_id, limit=None):
         """
