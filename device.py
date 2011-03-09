@@ -47,7 +47,7 @@ def run(db, fs, workers=1, poll_interval=0.1):
         for X in db.get_unevaluated_cells(device_id):
             code = X['input']
             print "evaluating '%s'"%code
-            results[X['_id']]=pool.apply_async(execute_code, (code,))
+            results[X['_id']]=pool.apply_async(execute_code, (X['_id'], code,))
         # Get whatever results are done
         finished=[]
         for _id, result in results.iteritems():
@@ -164,12 +164,32 @@ def displayhook_hack(string):
 
 namespace = {}
 namespace['new_stream']=new_stream
+import tempfile
+import shutil
+import os
 
-def execute_code(code):
+def execute_code(cell_id, code):
     """Evaluate the given code, returning what is sent to stdout."""
+    # the fs variable is inherited from the parent process
     code = displayhook_hack(code)
-    with stdoutIO() as s:
-        exec code in namespace
+    curr_dir=os.getcwd()
+    tmp_dir=tempfile.mkdtemp()
+    print "Temp files in "+tmp_dir
+    try:
+        os.chdir(tmp_dir)
+        # We really should exec in a new process so that the execed code can't
+        # modify things in our current process.  See the multiprocessing module
+        with stdoutIO() as s:
+            exec code in namespace
+        os.chdir(tmp_dir)
+        for filename in os.listdir(tmp_dir):
+            fs_file=fs.new_file(cell_id, filename)
+            with open(filename) as f:
+                fs_file.write(f.read())
+            fs_file.close()
+    finally:
+        os.chdir(curr_dir)
+        shutil.rmtree(tmp_dir)
     return s.getvalue()
 
 if __name__ == "__main__":
