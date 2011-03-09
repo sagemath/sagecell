@@ -73,11 +73,19 @@ def run(db, fs, workers=1, poll_interval=0.1):
 STREAM_SEPARATOR='____NEW__STREAM____'
 HEADER_SEPARATOR='____END_STREAM_HEADER___'
 
-def new_stream(stream_type):
+def new_stream(stream_type,printout=True,**kwargs):
     import sys
-    sys.stdout.write(STREAM_SEPARATOR)
-    sys.stdout.write(r"""{"type":"%s"}"""%stream_type)
-    sys.stdout.write(HEADER_SEPARATOR)
+    if printout is True:
+        out=sys.stdout
+    else:
+        out=StringIO.StringIO()
+    out.write(STREAM_SEPARATOR)
+    metadata={'type':stream_type}
+    metadata.update(kwargs)
+    out.write(json.dumps(metadata))
+    out.write(HEADER_SEPARATOR)
+    if printout is False:
+        return out.getvalue()
 
 import json
 
