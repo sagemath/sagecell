@@ -189,16 +189,21 @@ def execute_code(cell_id, code):
         # modify things in our current process.  See the multiprocessing module
         with stdoutIO() as s:
             exec code in namespace
+        output=s.getvalue()
         os.chdir(tmp_dir)
+        file_list=[]
         for filename in os.listdir(tmp_dir):
+            file_list.append(filename)
             fs_file=fs.new_file(cell_id, filename)
             with open(filename) as f:
                 fs_file.write(f.read())
             fs_file.close()
+        if len(file_list)>0:
+            output+=new_stream('files',printout=False,files=file_list)
     finally:
         os.chdir(curr_dir)
         shutil.rmtree(tmp_dir)
-    return s.getvalue()
+    return output
 
 if __name__ == "__main__":
     # argv[1] is number of workers
