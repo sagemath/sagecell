@@ -74,7 +74,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
             $('#output').append("<pre>"+streams[i].content+"</pre>");
         else if(streams[i].type=='image')
             for(j in streams[i].files)
-                $('#output').append("<img src='"+streams[i].files[j]+"'/><br/>");
+                $('#output').append("<img src='/files/"+id+"/"+streams[i].files[j]+"'/><br/>");
 }
 
 function get_output_long_poll(id) {
