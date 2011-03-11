@@ -210,4 +210,8 @@ if __name__ == "__main__":
     # argv[2] is "mongo" (default) or "sqlite"
     import misc
     db, fs = misc.select_db([""] if len(sys.argv)<3 else ["", sys.argv[2]])
-    run(db, fs, workers=int(sys.argv[1]))
+    if len(sys.argv)<=1:
+        workers=1
+    else:
+        workers=int(sys.argv[1])
+    run(db, fs, workers=workers)
