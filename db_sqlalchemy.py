@@ -7,10 +7,7 @@ class DB(db.DB):
         """c is a string that gives the filename of the connection."""
         self._filename = c
         self._c = create_engine('sqlite:///%s'%self._filename)
-        meta = MetaData()
-        meta.bind = self._c
-        
-        
+        meta = MetaData(bind=self._c)
         self._cells_table = Table('cells', meta,
                                  Column('_id', Integer, primary_key=True),
                                  Column('device_id', Integer),
