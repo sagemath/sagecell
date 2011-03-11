@@ -75,6 +75,13 @@ function get_output_success(data, textStatus, jqXHR, id) {
         else if(streams[i].type=='image')
             for(j in streams[i].files)
                 $('#output').append("<img src='/files/"+id+"/"+streams[i].files[j]+"'/><br/>");
+        else if(streams[i].type=='files') {
+            var toAppend="<div>";
+            for(j in streams[i].files)
+                toAppend+="<a href='/files/"+id+"/"+streams[i].files[j]+"'>"+
+                    streams[i].files[j]+"</a><br/>";
+            $('#output').append(toAppend+"</div>");
+        }
 }
 
 function get_output_long_poll(id) {
