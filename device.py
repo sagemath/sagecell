@@ -60,6 +60,9 @@ def run(db, fs, workers=1, poll_interval=0.1):
         # Get whatever results are done
         for _id, fstream in results.iteritems():
             if fstream.ready():
+                # This parses all of the output again and overwrites
+                # the output in the database.
+                # TODO: Can we make it just update the database instead?
                 db.set_output(_id, make_output_json(fstream.get(), True))
                 finished.append(_id)
         # delete the output that I'm finished with
@@ -174,7 +177,9 @@ import os
 
 def execProcess(code, pipe):
     """Run the code, outputting into a pipe.
-Meant to be run as as separate process."""
+    Meant to be run as as separate process."""
+    # TODO: Have some sort of process limits on CPU time and memory
+    # usage.
     with stdoutIO(PipeOut(pipe)):
         try:
             exec code
@@ -191,6 +196,9 @@ def execute_code(cell_id, code):
     tmp_dir=tempfile.mkdtemp()
     log(None,cell_id, "Temp files in "+tmp_dir)
     try:
+        # TODO: We should figure out why multiprocessing has its tasks
+        # automatically start up with daemon=True.  Maybe a post to
+        # the python list or stackoverflow would help here.
         oldDaemon=current_process().daemon
         current_process().daemon=False
         # Daemonic processes cannot create children
