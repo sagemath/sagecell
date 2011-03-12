@@ -182,7 +182,7 @@ def execProcess(code, pipe):
     # usage.
     with stdoutIO(PipeOut(pipe)):
         try:
-            exec code
+            exec code in dict()
         except:
             new_stream("text")
             print traceback.format_exc()
