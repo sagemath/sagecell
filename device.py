@@ -1,5 +1,8 @@
 import sys, time, traceback, StringIO, contextlib, random
 
+def log(device_id, code_id=None, message=None):
+    print "%s   %s: %s"%(device_id,code_id, message)
+
 class PipeOut(StringIO.StringIO):
     def __init__(self, pipe):
         StringIO.StringIO.__init__(self)
@@ -44,14 +47,14 @@ def run(db, fs, workers=1, poll_interval=0.1):
     """Run the compute device, querying the database and doing
     relevant work."""
     device_id=random.randrange(sys.maxint)
-    print "Starting device loop for device %s..."%device_id
+    log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
     results={}
     while True:
         # Queue up all unevaluated cells we requested
         for X in db.get_unevaluated_cells(device_id):
             code = X['input']
-            print "evaluating '%s'"%code
+            log(device_id, X['_id'],message="evaluating '%s'"%code)
             results[X['_id']]=pool.apply_async(execute_code, (X['_id'], code))
         finished=[]
         # Get whatever results are done
@@ -186,7 +189,7 @@ def execute_code(cell_id, code):
     code = displayhook_hack(code)
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
-    print "Temp files in "+tmp_dir
+    log(None,cell_id, "Temp files in "+tmp_dir)
     try:
         oldDaemon=current_process().daemon
         current_process().daemon=False
