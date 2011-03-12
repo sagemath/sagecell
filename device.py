@@ -205,12 +205,23 @@ def execute_code(cell_id, code):
         os.chdir(tmp_dir)
         parent,child=Pipe()
         result=""
+        new_result=""
         p=Process(target=execProcess, args=(code, child))
         p.start()
         while p.is_alive():
-            while parent.poll():
-                result+=parent.recv()
-            db.set_output(cell_id, make_output_json(result, not p.is_alive()))
+            # Give a poll interval so we don't just sit and spin the
+            # CPU by continuosly updating the database.
+            while parent.poll(.2):
+                new_result+=parent.recv()
+            if len(new_result)!=0:
+                result+=new_result
+                # what if the process terminates between the last recv
+                # call and now?  We'll lose some data if we say to
+                # close the stream.  Maybe we shouldn't close it until
+                # the pool process returns.
+                db.set_output(cell_id, make_output_json(result, not
+                                                        p.is_alive()))
+                new_result=""
         file_list=[]
         for filename in os.listdir(tmp_dir):
             file_list.append(filename)
