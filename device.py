@@ -1,5 +1,12 @@
 import sys, time, traceback, StringIO, contextlib, random
 
+class PipeOut(StringIO.StringIO):
+    def __init__(self, pipe):
+        StringIO.StringIO.__init__(self)
+        self.pipe=pipe
+    def write(self, output):
+        self.pipe.send(output)
+
 # based on a stackoverflow answer
 @contextlib.contextmanager
 def stdoutIO(stdout=None):
@@ -31,8 +38,7 @@ def stdoutIO(stdout=None):
         # was before this context
         sys.stdout = old_stdout
 
-
-from multiprocessing import Pool, TimeoutError
+from multiprocessing import Pool, TimeoutError, Process, Pipe, current_process
 
 def run(db, fs, workers=1, poll_interval=0.1):
     """Run the compute device, querying the database and doing
@@ -41,29 +47,18 @@ def run(db, fs, workers=1, poll_interval=0.1):
     print "Starting device loop for device %s..."%device_id
     pool=Pool(processes=workers)
     results={}
-
     while True:
         # Queue up all unevaluated cells we requested
         for X in db.get_unevaluated_cells(device_id):
             code = X['input']
             print "evaluating '%s'"%code
-            results[X['_id']]=pool.apply_async(execute_code, (X['_id'], code,))
-        # Get whatever results are done
+            results[X['_id']]=pool.apply_async(execute_code, (X['_id'], code))
         finished=[]
-        for _id, result in results.iteritems():
-            try:
-                # see if the result is ready right now
-                output=result.get(timeout=0)
-            except TimeoutError:
-                # not done yet, go to the next result
-                continue
-            except:
-                # some exception was raised in execution
-                output=traceback.format_exc()
-            # Store the resulting output
-            db.set_output(_id, make_output_json(output))
-            finished.append(_id)
-
+        # Get whatever results are done
+        for _id, fstream in results.iteritems():
+            if fstream.ready():
+                db.set_output(_id, make_output_json(fstream.get(), True))
+                finished.append(_id)
         # delete the output that I'm finished with
         for _id in finished:
             del results[_id]
@@ -89,7 +84,7 @@ def new_stream(stream_type,printout=True,**kwargs):
 
 import json
 
-def make_output_json(s):
+def make_output_json(s, closed):
     """
     This function takes a string representing the output of a computation.
     It constructs a dictionary which represents the output parsed into streams
@@ -124,7 +119,7 @@ def make_output_json(s):
 
         output['stream_%s'%order]=stream
         order+=1
-        
+    output['closed']=closed
     return output
 
 def unicode_str(obj, encoding='utf-8'):
@@ -170,11 +165,20 @@ def displayhook_hack(string):
                 pass
     return '\n'.join(string)
 
-namespace = {}
-namespace['new_stream']=new_stream
 import tempfile
 import shutil
 import os
+
+def execProcess(code, pipe):
+    """Run the code, outputting into a pipe.
+Meant to be run as as separate process."""
+    with stdoutIO(PipeOut(pipe)):
+        try:
+            exec code
+        except:
+            new_stream("text")
+            print traceback.format_exc()
+        
 
 def execute_code(cell_id, code):
     """Evaluate the given code, returning what is sent to stdout."""
@@ -184,13 +188,18 @@ def execute_code(cell_id, code):
     tmp_dir=tempfile.mkdtemp()
     print "Temp files in "+tmp_dir
     try:
+        oldDaemon=current_process().daemon
+        current_process().daemon=False
+        # Daemonic processes cannot create children
         os.chdir(tmp_dir)
-        # We really should exec in a new process so that the execed code can't
-        # modify things in our current process.  See the multiprocessing module
-        with stdoutIO() as s:
-            exec code in namespace
-        output=s.getvalue()
-        os.chdir(tmp_dir)
+        parent,child=Pipe()
+        result=""
+        p=Process(target=execProcess, args=(code, child))
+        p.start()
+        while p.is_alive():
+            while parent.poll():
+                result+=parent.recv()
+            db.set_output(cell_id, make_output_json(result, not p.is_alive()))
         file_list=[]
         for filename in os.listdir(tmp_dir):
             file_list.append(filename)
@@ -199,11 +208,12 @@ def execute_code(cell_id, code):
                 fs_file.write(f.read())
             fs_file.close()
         if len(file_list)>0:
-            output+=new_stream('files',printout=False,files=file_list)
+            result+=new_stream('files',printout=False,files=file_list)
     finally:
+        current_process().daemon=oldDaemon
         os.chdir(curr_dir)
         shutil.rmtree(tmp_dir)
-    return output
+    return result
 
 if __name__ == "__main__":
     # argv[1] is number of workers

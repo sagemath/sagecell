@@ -59,13 +59,14 @@ function sortstream(s1,s2) {
 }
 
 function get_output_success(data, textStatus, jqXHR, id) {
-    if(data.output==undefined) {
+    if(data.output==undefined || !data.output.closed) {
 	// poll again after a bit
 	setTimeout(function() {get_output(id);}, 2000);
     }
     var streams=[];
     for(d in data.output) {
-        streams.push(data.output[d]);
+    	if(d!="closed")
+        	streams.push(data.output[d]);
     }
     streams.sort(sortstream);
     $('#output').empty();
@@ -82,6 +83,8 @@ function get_output_success(data, textStatus, jqXHR, id) {
                     streams[i].files[j]+"</a><br/>";
             $('#output').append(toAppend+"</div>");
         }
+  	if(data.output && !data.output.closed)
+  	    $('#output').append("&hellip;")
 }
 
 function get_output_long_poll(id) {
