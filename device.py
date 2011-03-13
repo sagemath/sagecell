@@ -1,11 +1,11 @@
 import sys, time, traceback, StringIO, contextlib, random
 
-class PipeOut(StringIO.StringIO):
-    def __init__(self, pipe):
+class QueueOut(StringIO.StringIO):
+    def __init__(self, _id):
         StringIO.StringIO.__init__(self)
-        self.pipe=pipe
+        self.cell_id=_id
     def write(self, output):
-        self.pipe.send(output)
+        outQueue.put((self.cell_id,output))
 
 # based on a stackoverflow answer
 @contextlib.contextmanager
@@ -38,7 +38,7 @@ def stdoutIO(stdout=None):
         # was before this context
         sys.stdout = old_stdout
 
-from multiprocessing import Pool, TimeoutError, Process, Pipe, current_process
+from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process
 
 def run(db, fs, workers=1, poll_interval=0.1):
     """Run the compute device, querying the database and doing
@@ -47,21 +47,29 @@ def run(db, fs, workers=1, poll_interval=0.1):
     print "Starting device loop for device %s..."%device_id
     pool=Pool(processes=workers)
     results={}
+    outputs={}
     while True:
         # Queue up all unevaluated cells we requested
         for X in db.get_unevaluated_cells(device_id):
             code = X['input']
             print "evaluating '%s'"%code
             results[X['_id']]=pool.apply_async(execute_code, (X['_id'], code))
-        finished=[]
+            outputs[X['_id']]=""
         # Get whatever results are done
-        for _id, fstream in results.iteritems():
-            if fstream.ready():
-                db.set_output(_id, make_output_json(fstream.get(), True))
-                finished.append(_id)
+        finished=set(_id for _id, r in results.iteritems() if r.ready())
+        changed=set()
+        while not outQueue.empty():
+            _id,out=outQueue.get()
+            outputs[_id]+=out
+            changed.add(_id)
+        for _id in changed:
+            db.set_output(_id, make_output_json(outputs[_id], _id in finished))
+        for _id in finished-changed:
+            db.set_output(_id, make_output_json(outputs[_id], True))
         # delete the output that I'm finished with
         for _id in finished:
             del results[_id]
+            del outputs[_id]
 
         time.sleep(poll_interval)
 
@@ -169,10 +177,10 @@ import tempfile
 import shutil
 import os
 
-def execProcess(code, pipe):
+def execProcess(cell_id, code):
     """Run the code, outputting into a pipe.
-Meant to be run as as separate process."""
-    with stdoutIO(PipeOut(pipe)):
+Meant to be run as a separate process."""
+    with stdoutIO(QueueOut(cell_id)):
         try:
             exec code
         except:
@@ -181,39 +189,35 @@ Meant to be run as as separate process."""
         
 
 def execute_code(cell_id, code):
-    """Evaluate the given code, returning what is sent to stdout."""
+    """Evaluate the given code in another process,
+    Put the results and list of generated files into the global queue."""
     # the fs variable is inherited from the parent process
     code = displayhook_hack(code)
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     print "Temp files in "+tmp_dir
-    try:
-        oldDaemon=current_process().daemon
-        current_process().daemon=False
-        # Daemonic processes cannot create children
-        os.chdir(tmp_dir)
-        parent,child=Pipe()
-        result=""
-        p=Process(target=execProcess, args=(code, child))
-        p.start()
-        while p.is_alive():
-            while parent.poll():
-                result+=parent.recv()
-            db.set_output(cell_id, make_output_json(result, not p.is_alive()))
-        file_list=[]
-        for filename in os.listdir(tmp_dir):
-            file_list.append(filename)
-            fs_file=fs.new_file(cell_id, filename)
-            with open(filename) as f:
-                fs_file.write(f.read())
-            fs_file.close()
-        if len(file_list)>0:
-            result+=new_stream('files',printout=False,files=file_list)
-    finally:
-        current_process().daemon=oldDaemon
-        os.chdir(curr_dir)
-        shutil.rmtree(tmp_dir)
-    return result
+    oldDaemon=current_process().daemon
+    current_process().daemon=False
+    # Daemonic processes cannot create children
+    os.chdir(tmp_dir)
+    result=""
+    p=Process(target=execProcess, args=(cell_id, code))
+    p.start()
+    p.join()
+    file_list=[]
+    fslock.acquire()
+    for filename in os.listdir(tmp_dir):
+        file_list.append(filename)
+        fs_file=fs.new_file(cell_id, filename)
+        with open(filename) as f:
+            fs_file.write(f.read())
+        fs_file.close()
+    fslock.release()
+    if len(file_list)>0:
+        outQueue.put((cell_id,new_stream('files',printout=False,files=file_list)))
+    current_process().daemon=oldDaemon
+    os.chdir(curr_dir)
+    shutil.rmtree(tmp_dir)
 
 if __name__ == "__main__":
     # argv[1] is number of workers
@@ -224,4 +228,6 @@ if __name__ == "__main__":
         workers=1
     else:
         workers=int(sys.argv[1])
+    outQueue=Queue()
+    fslock=Lock()
     run(db, fs, workers=workers)
