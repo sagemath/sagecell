@@ -4,6 +4,9 @@ from functools import wraps
 
 app = Flask(__name__)
 
+# is it safe to have global variables here?
+db=None
+fs=None
 def print_exception(f):
     """
     This decorator prints any exceptions that occur to the webbrowser.  This printing works even for uwsgi and nginx.
@@ -24,10 +27,9 @@ def get_db(f):
     import misc, sys
     @wraps(f)
     def wrapper(*args, **kwds):
-        try:
-            # We see if db and fs are even defined yet by just referring to them.
-            (db, fs)
-        except NameError:
+        global db
+        global fs
+        if db is None or fs is None:
             db,fs=misc.select_db(sys.argv)
         args = (db,fs) + args
         return f(*args, **kwds)
@@ -111,5 +113,6 @@ def cellFile(db,fs,cell_id,filename):
 if __name__ == "__main__":
     import sys
     import misc
+    # TODO: this isn't needed anymore because of the global variables?
     db, fs = misc.select_db(sys.argv)
     app.run(debug=True)
