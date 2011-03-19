@@ -83,3 +83,44 @@ $HOME/nginx-local/sbin/nginx
 Unfortunately, since it seems that command line parameters are not
 passed into the wsgi app with the above uwsgi invocation, so there
 isn't a way to specify a sqlite backend, yet.
+
+
+To Use Tsung on OSX
+===================
+
+Install tsung via macports: sudo port install tsung (make sure to get
+the 1.3.3 version; you might have to apply the patch https://trac.macports.org/ticket/28826)
+
+Install mochiweb: sudo port install mochiweb
+
+Modify the tsung_stats.pl script as follows: https://trac.macports.org/ticket/26255
+
+Change the tsung.xml script to reference the dtd in 
+
+--- tsung.xml	2011-03-16 00:28:01.000000000 -0500
++++ tsung-macports.xml	2011-03-18 07:04:04.000000000 -0500
+@@ -1,5 +1,5 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+-<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd" [] >
++<!DOCTYPE tsung SYSTEM "/opt/local/share/tsung/tsung-1.0.dtd" [] >
+ 
+ <!--
+    This is a configuration file for Tsung (http://tsung.erlang-projects.org),
+
+
+Then run tsung:
+
+tsung -f tsung-macports.xml -l tsung.log start
+
+You can check the status by going to another terminal and doing "tsung
+status"
+
+After finishing, go into the directory tsung created for your results
+(which it prints out when it finishes) and do:
+
+/opt/local/lib/tsung/bin/tsung_stats.pl
+
+
+or to generate some reports using matplotlib, do
+
+tsplot -v -d . my_run tsung.log
