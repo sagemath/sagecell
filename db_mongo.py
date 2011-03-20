@@ -1,7 +1,12 @@
 import db
 import pymongo.objectid
 from pymongo.objectid import ObjectId
+from pymongo import ASCENDING, DESCENDING
 class DB(db.DB):
+    def __init__(self, *args, **kwds):
+        db.DB.__init__(self, *args, **kwds)
+        self.c.code.ensure_index([('device', ASCENDING)])
+
     def create_cell(self, input):
         _id=self.c.code.insert({'input':input, 'device':-1})
         return str(_id)
@@ -22,7 +27,7 @@ class DB(db.DB):
         import pymongo
         if id is None:
             # return all evaluated cells
-            return self.c.code.find({'output':{'$exists': True}, }).sort('_id', direction=pymongo.DESCENDING)
+            return self.c.code.find({'output':{'$exists': True}, }).sort('_id', direction=DESCENDING)
         else:
             # return just the request cell if it is evaluated
             return self.c.code.find_one({'output':{'$exists': True}, '_id':ObjectId(id)})
