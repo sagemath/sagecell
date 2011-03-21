@@ -180,6 +180,7 @@ import os
 def execProcess(cell_id, code):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
+    # TODO: Have some sort of process limits on CPU time/memory
     with stdoutIO(QueueOut(cell_id)):
         try:
             exec code in {}
@@ -196,6 +197,9 @@ def execute_code(cell_id, code):
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     print "Temp files in "+tmp_dir
+    # We should at least document the side effects of 
+    # just setting the daemon flag and creating subprocesses
+    # What things does a user/developer need to be aware of?
     oldDaemon=current_process().daemon
     current_process().daemon=False
     # Daemonic processes cannot create children
