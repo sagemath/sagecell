@@ -182,7 +182,7 @@ def execProcess(cell_id, code):
 Meant to be run as a separate process."""
     with stdoutIO(QueueOut(cell_id)):
         try:
-            exec code
+            exec code in {}
         except:
             new_stream("text")
             print traceback.format_exc()
