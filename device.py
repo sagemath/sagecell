@@ -44,7 +44,7 @@ def run(db, fs, workers=1, poll_interval=0.1):
     """Run the compute device, querying the database and doing
     relevant work."""
     device_id=random.randrange(sys.maxint)
-    print "Starting device loop for device %s..."%device_id
+    log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
     results={}
     outputs={}
@@ -52,7 +52,7 @@ def run(db, fs, workers=1, poll_interval=0.1):
         # Queue up all unevaluated cells we requested
         for X in db.get_unevaluated_cells(device_id):
             code = X['input']
-            print "evaluating '%s'"%code
+            log(device_id, X['_id'],message="evaluating '%s'"%code)
             results[X['_id']]=pool.apply_async(execute_code, (X['_id'], code))
             outputs[X['_id']]=""
         # Get whatever results are done
