@@ -1,5 +1,9 @@
 import sys, time, traceback, StringIO, contextlib, random
 
+
+def log(device_id, code_id=None, message=None):
+    print "%s   %s: %s"%(device_id,code_id, message)
+
 class QueueOut(StringIO.StringIO):
     def __init__(self, _id):
         StringIO.StringIO.__init__(self)
