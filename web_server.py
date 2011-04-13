@@ -1,12 +1,19 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file
 from time import time, sleep
 from functools import wraps
+import sys
+import uuid
+import zmq
+from ip_receiver import IPReceiver
 
 app = Flask(__name__)
 
 # is it safe to have global variables here?
 db=None
 fs=None
+xreq=None
+messages=[]
+
 def print_exception(f):
     """
     This decorator prints any exceptions that occur to the webbrowser.  This printing works even for uwsgi and nginx.
@@ -37,7 +44,7 @@ def get_db(f):
 
 @app.route("/")
 def root():
-    return render_template('root.html')
+    return render_template('ipython_root.html' if 'ipython' in sys.argv else 'root.html')
 
 @app.route("/eval")
 @get_db
@@ -110,9 +117,17 @@ def cellFile(db,fs,cell_id,filename):
         mimetype = 'application/octet-stream'
     return Response(fs.get_file(cell_id, filename), content_type=mimetype)
 
+@app.route("/complete")
+@get_db
+def tabComplete(db,fs):
+    global xreq
+    if xreq==None:
+        xreq=IPReceiver(zmq.XREQ,db.get_ipython_port("xreq"))
+    header={"msg_id":str(uuid.uuid4())}
+    code=request.values["code"]
+    xreq.socket.send_json({"header":header, "msg_type":"complete_request", "content": { \
+                "text":"", "line":code, "block":code, "cursor_pos":request.values["pos"]}})
+    return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
+
 if __name__ == "__main__":
-    import sys
-    import misc
-    # TODO: this isn't needed anymore because of the global variables?
-    db, fs = misc.select_db(sys.argv)
     app.run(debug=True)

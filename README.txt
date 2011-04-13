@@ -24,6 +24,10 @@ To start it all up, do the following:
 4. Point your browser at:
          http://127.0.0.1:5000
 
+To use an IPython device instead, use:
+         python web_server.py ipython
+         python device.py ipython
+
 CAVEAT: If you're on a multi-user machine, any other user on that same
 machine could eval arbitrary expressions as the sage device process
 (3) above.

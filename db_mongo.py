@@ -35,3 +35,9 @@ class DB(db.DB):
     def set_output(self, id, output):
         self.c.code.update({'_id':id}, {'$set':{'output':output}})
     
+    def set_ipython_ports(self, kernel):
+        self.c.ipython.remove()
+        self.c.ipython.insert({"pid":kernel[0].pid, "xreq":kernel[1], "sub":kernel[2], "rep":kernel[3]})
+    
+    def get_ipython_port(self, channel):
+        return self.c.ipython.find().next()[channel]

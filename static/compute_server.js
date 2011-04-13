@@ -36,8 +36,8 @@ $(function() {
     // Attach a javascript function to the form submit. This function
     // makes an AJAX call to evaluate the contents of the text box.
     $('#command_form').submit(function () {
-	$.getJSON($URL.evaluate, {commands: $('#commands').val()}, send_computation_success);
-	return false;
+        $.getJSON($URL.evaluate, {commands: $('#commands').val()}, send_computation_success);
+        return false;
     });
 });
 
@@ -50,8 +50,8 @@ function send_computation_success(data, textStatus, jqXHR) {
 
 function get_output(id) {
     $.getJSON($URL.output_poll, {computation_id: id},
-	      function(data, textStatus, jqXHR) {
-		  get_output_success(data, textStatus, jqXHR, id);});
+              function(data, textStatus, jqXHR) {
+                  get_output_success(data, textStatus, jqXHR, id);});
 }
 
 function sortstream(s1,s2) {
@@ -60,13 +60,13 @@ function sortstream(s1,s2) {
 
 function get_output_success(data, textStatus, jqXHR, id) {
     if(data.output==undefined || !data.output.closed) {
-	// poll again after a bit
-	setTimeout(function() {get_output(id);}, 2000);
+        // poll again after a bit
+        setTimeout(function() {get_output(id);}, 2000);
     }
     var streams=[];
     for(d in data.output) {
-    	if(d!="closed")
-        	streams.push(data.output[d]);
+            if(d!="closed")
+                streams.push(data.output[d]);
     }
     streams.sort(sortstream);
     $('#output').empty();
@@ -83,20 +83,22 @@ function get_output_success(data, textStatus, jqXHR, id) {
                     streams[i].files[j]+"</a><br/>";
             $('#output').append(toAppend+"</div>");
         }
-  	if(data.output && !data.output.closed)
-  	    $('#output').append("&hellip;")
+        else if(streams[i].type=='error')
+            $('#output').append("<pre class='error'>"+streams[i].ename+"<br/>"+streams[i].evalue+"</pre>")
+          if(data.output && !data.output.closed)
+              $('#output').append("&hellip;")
 }
 
 function get_output_long_poll(id) {
     $.getJSON($URL.output_long_poll, {computation_id: id, timeout: 2},
-	      function(data, textStatus, jqXHR) {
-		  get_output_success(data, textStatus, jqXHR, id);});
+              function(data, textStatus, jqXHR) {
+                  get_output_success(data, textStatus, jqXHR, id);});
 }
 
 function get_output_long_poll_success(data, textStatus, jqXHR, id) {
     //alert(data);
     if(data.output==undefined) {
-	get_output(id);
+        get_output(id);
     }
     $('#output').text(data.output)
 }

@@ -1,6 +1,5 @@
 import sys, time, traceback, StringIO, contextlib, random
 
-
 def log(device_id, code_id=None, message=None):
     print "%s   %s: %s"%(device_id,code_id, message)
 
@@ -227,15 +226,59 @@ def execute_code(cell_id, code):
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
 
+def run_ip_device():
+    import uuid
+    import zmq
+    from ip_receiver import IPReceiver
+    from IPython.zmq.ipkernel import launch_kernel
+    device_id=random.randrange(sys.maxint)
+    kernel=launch_kernel()
+    db.set_ipython_ports(kernel)
+    sub=IPReceiver(zmq.SUB, kernel[2])
+    context=zmq.Context()
+    xreq=context.socket(zmq.XREQ)
+    xreq.connect("tcp://localhost:%i"%(kernel[1],))
+    while True:
+        for X in db.get_unevaluated_cells(device_id):
+            header={"msg_id":str(X["_id"])}
+            xreq.send_json({"header":header, "msg_type":"execute_request", "content": { \
+                        "code":X['input'], "silent":False,
+                        "user_variables":[], "user_expressions":{}}})
+            out=""
+            err=""
+            while True:
+                print "here"
+                changed=False
+                done=False
+                for msg in sub.getMessages(header):
+                    if msg["msg_type"]=="stream":
+                        out+=msg["content"]["data"]
+                        changed=True
+                    elif msg["msg_type"]=="pyout":
+                        out+=msg["content"]["data"]["text/plain"]+"\n"
+                    elif msg["msg_type"]=="status" and msg["content"]["execution_state"]=="idle":
+                        done=True
+                    elif msg["msg_type"]=="pyerr":
+                        err+=new_stream("error", printout=False, **msg["content"])
+                if changed or done:
+                    db.set_output(X["_id"], make_output_json(out+err, done))
+                    if done:
+                        break
+        time.sleep(0.1)
+
 if __name__ == "__main__":
-    # argv[1] is number of workers
-    # argv[2] is "mongo" (default) or "sqlite"
     import misc
-    db, fs = misc.select_db([""] if len(sys.argv)<3 else ["", sys.argv[2]])
-    if len(sys.argv)<=1:
-        workers=1
+    if "ipython" in sys.argv:
+        db, fs = misc.select_db([""])
+        run_ip_device()
     else:
-        workers=int(sys.argv[1])
-    outQueue=Queue()
-    fslock=Lock()
-    run(db, fs, workers=workers)
+        # argv[1] is number of workers
+        # argv[2] is "mongo" (default) or "sqlite"
+        db, fs = misc.select_db([""] if len(sys.argv)<3 else ["", sys.argv[2]])
+        if len(sys.argv)<=1:
+            workers=1
+        else:
+            workers=int(sys.argv[1])
+        outQueue=Queue()
+        fslock=Lock()
+        run(db, fs, workers=workers)

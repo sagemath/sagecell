@@ -15,3 +15,8 @@ class DB(object):
     def set_output(self, id, output):
         raise NotImplementedError
 
+    def set_ipython_ports(self, kernel):
+        raise NotImplementedError
+
+    def get_ipython_port(self, channel):
+        raise NotImplementedError

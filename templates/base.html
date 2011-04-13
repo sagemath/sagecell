@@ -11,6 +11,8 @@ $URL={'script': {{ request.script_root|tojson|safe }},
 </script>
 <script type=text/javascript src="{{url_for('static', filename='jquery-1.5.min.js')}}"></script>
 <script type=text/javascript src="{{url_for('static', filename='compute_server.js')}}"></script>
+<script type=text/javascript src="{{url_for('static', filename='completion.js')}}"></script>
+<link rel="stylesheet" href="{{url_for('static',filename='stylesheet.css')}}"/>
 </head>
 
 {% block body %}
