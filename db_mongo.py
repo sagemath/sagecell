@@ -22,7 +22,11 @@ class DB(db.DB):
         unassigned_cells=list(self.c.code.find({'device':-1}).limit(limit))
         self.c.code.update({'_id': {'$in': [i['_id'] for i in unassigned_cells]}, '$atomic':True}, {'$set': {'device': device_id}}, multi=True)
         return unassigned_cells
-    
+
+    def get_messages(self, id):
+        # TODO: implement only getting messages past a given sequence number
+        return self.c.messages.find({'parent_header':{'msg_id':id}})
+
     def get_evaluated_cells(self, id=None):
         import pymongo
         if id is None:
@@ -34,6 +38,10 @@ class DB(db.DB):
     
     def set_output(self, id, output):
         self.c.code.update({'_id':id}, {'$set':{'output':output}})
+    def add_messages(self, id, messages):
+        """Add messages to the database
+        """
+        self.c.messages.insert(messages)
     
     def set_ipython_ports(self, kernel):
         self.c.ipython.remove()

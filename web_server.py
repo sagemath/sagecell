@@ -71,9 +71,9 @@ def output_poll(db,fs):
     output is entered, then return nothing.
     """
     computation_id=request.values['computation_id']
-    results = db.get_evaluated_cells(id=computation_id)
+    results = db.get_messages(id=computation_id)
     if results is not None and len(results)>0:
-        return jsonify({'output':results['output']})
+        return jsonify(results)
     return jsonify([])
 
 @app.route("/output_long_poll")

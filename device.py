@@ -247,23 +247,23 @@ def run_ip_device():
             out=""
             err=""
             while True:
-                print "here"
-                changed=False
                 done=False
+                new_messages=[]
+                sequence=0
                 for msg in sub.getMessages(header):
-                    if msg["msg_type"]=="stream":
-                        out+=msg["content"]["data"]
-                        changed=True
-                    elif msg["msg_type"]=="pyout":
-                        out+=msg["content"]["data"]["text/plain"]+"\n"
-                    elif msg["msg_type"]=="status" and msg["content"]["execution_state"]=="idle":
+                    if msg["msg_type"] in ("stream", "display_data", "pyout", "extension"):
+                        msg['sequence']=sequence
+                        sequence+=1
+                        new_messages.append(msg)
+                    elif msg["msg_type"]=="execute_reply":
                         done=True
-                    elif msg["msg_type"]=="pyerr":
-                        err+=new_stream("error", printout=False, **msg["content"])
-                if changed or done:
-                    db.set_output(X["_id"], make_output_json(out+err, done))
-                    if done:
-                        break
+                    else:
+                        pass # explicitly ignore any other messages, like code input messages
+                if len(new_messages)>0:
+                    db.add_messages(X["_id"],new_messages)
+                    new_messages=[]
+                if done:
+                    break
         time.sleep(0.1)
 
 if __name__ == "__main__":
