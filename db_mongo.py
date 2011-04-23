@@ -23,9 +23,14 @@ class DB(db.DB):
         self.c.code.update({'_id': {'$in': [i['_id'] for i in unassigned_cells]}, '$atomic':True}, {'$set': {'device': device_id}}, multi=True)
         return unassigned_cells
 
-    def get_messages(self, id):
-        # TODO: implement only getting messages past a given sequence number
-        return self.c.messages.find({'parent_header':{'msg_id':id}})
+    def get_messages(self, id, sequence=0):
+        "Get the messages since the message with sequence number ``sequence``"
+        messages=list(self.c.messages.find({'parent_header':{'msg_id':id}, 'sequence':{'$gte':sequence}}))
+        print "Retrieved messages with ",{'parent_header':{'msg_id':id}, 'sequence':{'$gte':int(sequence)}}, messages
+        #TODO: just get the fields we want instead of deleting the ones we don't want
+        for m in messages:
+            del m['_id']
+        return messages
 
     def get_evaluated_cells(self, id=None):
         import pymongo
@@ -39,8 +44,7 @@ class DB(db.DB):
     def set_output(self, id, output):
         self.c.code.update({'_id':id}, {'$set':{'output':output}})
     def add_messages(self, id, messages):
-        """Add messages to the database
-        """
+        "Add messages to the database"
         self.c.messages.insert(messages)
     
     def set_ipython_ports(self, kernel):

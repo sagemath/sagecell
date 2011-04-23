@@ -244,24 +244,20 @@ def run_ip_device():
             xreq.send_json({"header":header, "msg_type":"execute_request", "content": { \
                         "code":X['input'], "silent":False,
                         "user_variables":[], "user_expressions":{}}})
-            out=""
-            err=""
+            sequence=0
             while True:
                 done=False
                 new_messages=[]
-                sequence=0
                 for msg in sub.getMessages(header):
-                    if msg["msg_type"] in ("stream", "display_data", "pyout", "extension"):
+                    if msg["msg_type"] in ("stream", "display_data", "pyout", "extension","execute_reply","status"):
                         msg['sequence']=sequence
                         sequence+=1
                         new_messages.append(msg)
-                    elif msg["msg_type"]=="execute_reply":
+                    if msg["msg_type"]=="execute_reply" or \
+                       (msg["msg_type"]=="status" and msg["content"]["execution_state"]=="idle"):
                         done=True
-                    else:
-                        pass # explicitly ignore any other messages, like code input messages
                 if len(new_messages)>0:
                     db.add_messages(X["_id"],new_messages)
-                    new_messages=[]
                 if done:
                     break
         time.sleep(0.1)

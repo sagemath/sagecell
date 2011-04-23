@@ -71,9 +71,11 @@ def output_poll(db,fs):
     output is entered, then return nothing.
     """
     computation_id=request.values['computation_id']
-    results = db.get_messages(id=computation_id)
+    sequence=int(request.values.get('sequence',0))
+    results = db.get_messages(id=computation_id,sequence=sequence)
+    print "Retrieved messages", results
     if results is not None and len(results)>0:
-        return jsonify(results)
+        return jsonify(content=results)
     return jsonify([])
 
 @app.route("/output_long_poll")
