@@ -71,7 +71,29 @@ function get_output_success(data, textStatus, jqXHR, id) {
                 done=true;
                 sequence=0;
             }
-            $('#output').append("<div>"+JSON.stringify(msg)+"</div>");
+            // Handle each stream type.  This should probably be separated out into different functions.
+            var content=msg.content;
+            if(msg.msg_type==='stream'){
+
+                switch(content.name) {
+                    case 'stdout':
+                    $('#output').append("<pre class='stdout'>"+content.data+"</pre>");
+                    break;
+
+                    case 'stderr':
+                    $('#output').append("<pre class='stderr'>"+content.data+"</pre>");
+                    break;
+
+               
+                }
+            } else if(msg.msg_type==='pyout') {
+                $('#output').append("<pre class='pyout'>"+content.data['text/plain']+"</pre>")
+            } else if(msg.msg_type==='display_data') {
+                if(content.data['image/svg+xml']!==undefined) {
+                $('#output').append('<object id="svgImage" type="image/svg+xml">'+content.data['image/svg+xml']+'</object>');
+                }
+            }
+            $('#messages').append("<div>"+JSON.stringify(msg)+"</div>");
             //TODO: handle all the types of messages intelligently
         }
     }
