@@ -26,9 +26,9 @@ class IPReceiver:
                 except zmq.core.error.ZMQError: # No more messages
                     break
             toDel=set()
-            for i in range(len(self.messages)):
-                if self.messages[i]['parent_header']==parent_header:
-                    results.append(self.messages[i])
+            for i,msg in enumerate(self.messages):
+                if msg['parent_header']==parent_header:
+                    results.append(msg)
                     toDel.add(i)
             self.messages[:]=[self.messages[i] for i in range(len(self.messages)) if i not in toDel]
             if not block or len(results):
