@@ -265,7 +265,7 @@ def run_ip_device():
 if __name__ == "__main__":
     import misc
     from argparse import ArgumentParser
-    parser=ArgumentParser("Run one or more devices to process commands from the client.")
+    parser=ArgumentParser(description="Run one or more devices to process commands from the client.")
     parser.add_argument("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
     parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
     parser.add_argument("-w", type=int, default=1, dest="workers", help="Number of workers to start.")

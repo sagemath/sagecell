@@ -133,7 +133,7 @@ def tabComplete(db,fs):
 if __name__ == "__main__":
     global sysargs
     from argparse import ArgumentParser
-    parser=ArgumentParser("The web server component of the notebook")
+    parser=ArgumentParser(description="The web server component of the notebook")
     parser.add_argument("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
     parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
     sysargs=parser.parse_args()
