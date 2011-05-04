@@ -1,7 +1,6 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file
 from time import time, sleep
 from functools import wraps
-import sys
 import uuid
 import zmq
 from ip_receiver import IPReceiver
@@ -31,20 +30,20 @@ def get_db(f):
     """
     This decorator gets the database and passes it into the function as the first argument.
     """
-    import misc, sys
+    import misc
     @wraps(f)
     def wrapper(*args, **kwds):
         global db
         global fs
         if db is None or fs is None:
-            db,fs=misc.select_db(sys.argv)
+            db,fs=misc.select_db(sysargs)
         args = (db,fs) + args
         return f(*args, **kwds)
     return wrapper
 
 @app.route("/")
 def root():
-    return render_template('ipython_root.html' if 'ipython' in sys.argv else 'root.html')
+    return render_template('ipython_root.html' if sysargs.ipython else 'root.html')
 
 @app.route("/eval")
 @get_db
@@ -132,4 +131,10 @@ def tabComplete(db,fs):
     return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
 
 if __name__ == "__main__":
+    global sysargs
+    from argparse import ArgumentParser
+    parser=ArgumentParser("The web server component of the notebook")
+    parser.add_argument("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
+    parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    sysargs=parser.parse_args()
     app.run(debug=True)
