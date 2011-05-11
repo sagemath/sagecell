@@ -226,30 +226,83 @@ def execute_code(cell_id, code):
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
 
-def run_ip_device(request_msg):
+
+from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process
+
+def run_ip_pool(db, fs, workers=1, poll_interval=0.1):
+    """Run the compute device, querying the database and doing
+    relevant work.
+
+    Open a ZMQ socket and pass the address in to the workers.  Hook the workers up to send everything to this socket. 
+    
+    Keep track of a sequence number for each worker.  Then just get all messages, attaching the right sequence number (based on the worker number or header id), and insert the messages into the database.
+
+    """
+    device_id=random.randrange(sys.maxint)
+    log(device_id, message="Starting device loop for device %s..."%device_id)
+    pool=Pool(processes=workers)
+    results={}
+    outputs={}
+    while True:
+        # Queue up all unevaluated cells we requested
+        for X in db.get_unevaluated_cells(device_id):
+            code = X['input']
+            log(device_id, X['_id'],message="evaluating '%s'"%code)
+            results[X['_id']]=pool.apply_async(run_ip_worker, [X])
+            outputs[X['_id']]=""
+        # Get whatever results are done
+        # finished=set(_id for _id, r in results.iteritems() if r.ready())
+        # changed=set()
+        # #TODO: when we move the db insertion here,
+        # # iterate through queued messages
+        # while not outQueue.empty():
+        #     _id,out=outQueue.get()
+        #     outputs[_id]+=out
+        #     changed.add(_id)
+        # for _id in changed:
+        #     db.set_output(_id, make_output_json(outputs[_id], _id in finished))
+        # for _id in finished-changed:
+        #     db.set_output(_id, make_output_json(outputs[_id], True))
+        # # delete the output that I'm finished with
+        # for _id in finished:
+        #     del results[_id]
+        #     del outputs[_id]
+
+        time.sleep(poll_interval)
+
+
+def run_ip_worker(request_msg):
     """
     Execute one block of input code and then exit
 
     INPUT: request_msg---a json message with the input code, in ipython messaging format
     """
+    #TODO: db and fs are inherited from the parent process; is that thread safe?
     import uuid
     import zmq
     from ip_receiver import IPReceiver
     from IPython.zmq.ipkernel import launch_kernel
-    device_id=random.randrange(sys.maxint)
+    msg_id=str(request_msg['_id'])
+    log(db, msg_id, message='Starting run_ip_worker')
+
+    #TODO: launch the kernel by forking an already-running clean process
     kernel=launch_kernel()
+
     db.set_ipython_ports(kernel)
     sub=IPReceiver(zmq.SUB, kernel[2])
     context=zmq.Context()
     xreq=context.socket(zmq.XREQ)
     xreq.connect("tcp://localhost:%i"%(kernel[1],))
-# while True:
-#     for X in db.get_unevaluated_cells(device_id):
-    header={"msg_id":str(request_msg["_id"])}
-    xreq.send_json({"header":header, "msg_type":"execute_request", "content": { \
-                "code":request_msg['input'], "silent":False,
-                "user_variables":[], "user_expressions":{}}})
+    log(db, msg_id, 'Finished setting up IPython kernel')
     sequence=0
+    header={"msg_id": msg_id}
+    xreq.send_json({"header": header, 
+                    "msg_type": "execute_request", 
+                    "content": {"code":request_msg['input'], 
+                                "silent":False,
+                                "user_variables":[], 
+                                "user_expressions":{}} })
+    log(db, msg_id, "Sent request, starting loop for output")
     while True:
         done=False
         new_messages=[]
@@ -265,6 +318,7 @@ def run_ip_device(request_msg):
             db.add_messages(request_msg["_id"],new_messages)
         if done:
             break
+    #TODO: put files in the filestore
     #TODO: make polling interval a variable
     time.sleep(0.1)
 
@@ -278,7 +332,7 @@ if __name__ == "__main__":
     sysargs=parser.parse_args()
     if sysargs.ipython:
         db, fs = misc.select_db(sysargs)
-        run_ip_device()
+        run_ip_pool(db, fs, workers=sysargs.workers)
     else:
         db, fs = misc.select_db(sysargs)
         outQueue=Queue()
