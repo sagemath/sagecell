@@ -132,7 +132,11 @@ def tabComplete(db,fs):
 
 if __name__ == "__main__":
     global sysargs
-    from argparse import ArgumentParser
+    try:
+        from argparse import ArgumentParser
+    except ImportError:
+        from IPython.external import argparse
+        ArgumentParser=argparse.ArgumentParser
     parser=ArgumentParser(description="The web server component of the notebook")
     parser.add_argument("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
     parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")

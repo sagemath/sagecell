@@ -324,7 +324,11 @@ def run_ip_worker(request_msg):
 
 if __name__ == "__main__":
     import misc
-    from argparse import ArgumentParser
+    try:
+        from argparse import ArgumentParser
+    except ImportError:
+        from IPython.external import argparse
+        ArgumentParser=argparse.ArgumentParser
     parser=ArgumentParser(description="Run one or more devices to process commands from the client.")
     parser.add_argument("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
     parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
