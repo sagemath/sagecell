@@ -76,62 +76,7 @@ def run(db, fs, workers=1, poll_interval=0.1):
 
         time.sleep(poll_interval)
 
-STREAM_SEPARATOR='____NEW__STREAM____'
-HEADER_SEPARATOR='____END_STREAM_HEADER___'
-
-def new_stream(stream_type,printout=True,**kwargs):
-    import sys
-    if printout is True:
-        out=sys.stdout
-    else:
-        out=StringIO.StringIO()
-    out.write(STREAM_SEPARATOR)
-    metadata={'type':stream_type}
-    metadata.update(kwargs)
-    out.write(json.dumps(metadata))
-    out.write(HEADER_SEPARATOR)
-    if printout is False:
-        return out.getvalue()
-
 import json
-
-def make_output_json(s, closed):
-    """
-    This function takes a string representing the output of a computation.
-    It constructs a dictionary which represents the output parsed into streams
-    """
-    s=s.split(STREAM_SEPARATOR)
-    # at the top of each stream is some information about the stream
-    order=0
-    output=dict()
-
-    if len(s[0])!=0 and HEADER_SEPARATOR not in s[0]:
-        # If there is no header in the first stream,
-        # assume it is a text stream.  This stream includes all 
-        # output before the first new_stream() command.
-        stream=dict()
-        stream['type']='text'
-        stream['order']=order
-        stream['content']=s[0]
-        output['stream_%s'%order]=stream
-        order+=1
-
-    for stream_string in s[1:]:
-        stream=dict()
-        header_string, body_string=stream_string.split(HEADER_SEPARATOR)
-        header=json.loads(header_string)
-        
-        header['order']=order
-        if 'type' not in header:
-            header['type']='text'
-            
-        stream.update(header)
-        stream['content']=body_string
-
-        output['stream_%s'%order]=stream
-        order+=1
-    output['closed']=closed
-    return output
 
 def unicode_str(obj, encoding='utf-8'):
     """Takes an object and returns a unicode human-readable representation."""
@@ -188,7 +133,6 @@ Meant to be run as a separate process."""
         try:
             exec code in {}
         except:
-            new_stream("text")
             print traceback.format_exc()
         
 
