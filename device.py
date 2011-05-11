@@ -226,7 +226,12 @@ def execute_code(cell_id, code):
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
 
-def run_ip_device():
+def run_ip_device(request_msg):
+    """
+    Execute one block of input code and then exit
+
+    INPUT: request_msg---a json message with the input code, in ipython messaging format
+    """
     import uuid
     import zmq
     from ip_receiver import IPReceiver
@@ -238,29 +243,30 @@ def run_ip_device():
     context=zmq.Context()
     xreq=context.socket(zmq.XREQ)
     xreq.connect("tcp://localhost:%i"%(kernel[1],))
+# while True:
+#     for X in db.get_unevaluated_cells(device_id):
+    header={"msg_id":str(request_msg["_id"])}
+    xreq.send_json({"header":header, "msg_type":"execute_request", "content": { \
+                "code":request_msg['input'], "silent":False,
+                "user_variables":[], "user_expressions":{}}})
+    sequence=0
     while True:
-        for X in db.get_unevaluated_cells(device_id):
-            header={"msg_id":str(X["_id"])}
-            xreq.send_json({"header":header, "msg_type":"execute_request", "content": { \
-                        "code":X['input'], "silent":False,
-                        "user_variables":[], "user_expressions":{}}})
-            sequence=0
-            while True:
-                done=False
-                new_messages=[]
-                for msg in sub.getMessages(header):
-                    if msg["msg_type"] in ("stream", "display_data", "pyout", "extension","execute_reply","status"):
-                        msg['sequence']=sequence
-                        sequence+=1
-                        new_messages.append(msg)
-                    if msg["msg_type"]=="execute_reply" or \
-                       (msg["msg_type"]=="status" and msg["content"]["execution_state"]=="idle"):
-                        done=True
-                if len(new_messages)>0:
-                    db.add_messages(X["_id"],new_messages)
-                if done:
-                    break
-        time.sleep(0.1)
+        done=False
+        new_messages=[]
+        for msg in sub.getMessages(header):
+            if msg["msg_type"] in ("stream", "display_data", "pyout", "extension","execute_reply","status"):
+                msg['sequence']=sequence
+                sequence+=1
+                new_messages.append(msg)
+            if msg["msg_type"]=="execute_reply" or \
+               (msg["msg_type"]=="status" and msg["content"]["execution_state"]=="idle"):
+                done=True
+        if len(new_messages)>0:
+            db.add_messages(request_msg["_id"],new_messages)
+        if done:
+            break
+    #TODO: make polling interval a variable
+    time.sleep(0.1)
 
 if __name__ == "__main__":
     import misc
