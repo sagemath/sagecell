@@ -277,4 +277,4 @@ if __name__ == "__main__":
         db, fs = misc.select_db(sysargs)
         outQueue=Queue()
         fslock=Lock()
-        run(db, fs, workers=args.workers)
+        run(db, fs, workers=sysargs.workers)
