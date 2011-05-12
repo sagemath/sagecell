@@ -72,27 +72,34 @@ function get_output_success(data, textStatus, jqXHR, id) {
                 sequence=0;
             }
             // Handle each stream type.  This should probably be separated out into different functions.
-            var content=msg.content;
             if(msg.msg_type==='stream'){
 
-                switch(content.name) {
-                    case 'stdout':
-                    $('#output').append("<pre class='stdout'>"+content.data+"</pre>");
+                switch(msg.content.name) {
+                case 'stdout':
+                    $('#output').append("<pre class='stdout'>"+msg.content.data+"</pre>");
                     break;
 
-                    case 'stderr':
-                    $('#output').append("<pre class='stderr'>"+content.data+"</pre>");
+                case 'stderr':
+                    $('#output').append("<pre class='stderr'>"+msg.content.data+"</pre>");
                     break;
 
                
                 }
             } else if(msg.msg_type==='pyout') {
-                $('#output').append("<pre class='pyout'>"+content.data['text/plain']+"</pre>")
+                $('#output').append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>")
             } else if(msg.msg_type==='display_data') {
-                if(content.data['image/svg+xml']!==undefined) {
-                $('#output').append('<object id="svgImage" type="image/svg+xml">'+content.data['image/svg+xml']+'</object>');
+                if(msg.content.data['image/svg+xml']!==undefined) {
+                $('#output').append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
                 }
-            }
+            } else if(msg.msg_type=='files') {
+		var html="<div>\n";
+		for(var j in msg.content.files)
+		    html+="<a href=\"/files/"+id+"/"+msg.content.files[j]+"\">"+
+		          msg.content.files[j]+"</a><br>\n";
+		$('#output').append(html);
+	    }
+	    
+
             $('#messages').append("<div>"+JSON.stringify(msg)+"</div>");
             //TODO: handle all the types of messages intelligently
         }
