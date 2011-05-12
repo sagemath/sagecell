@@ -45,6 +45,7 @@ class DB(db.DB):
         self.c.code.update({'_id':id}, {'$set':{'output':output}})
     def add_messages(self, id, messages):
         "Add messages to the database"
+        #TODO: doesn't use the id parameter; delete?
         self.c.messages.insert(messages)
     
     def set_ipython_ports(self, kernel):
