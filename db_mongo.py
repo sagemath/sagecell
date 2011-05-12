@@ -25,8 +25,8 @@ class DB(db.DB):
 
     def get_messages(self, id, sequence=0):
         "Get the messages since the message with sequence number ``sequence``"
-        messages=list(self.c.messages.find({'parent_header':{'msg_id':id}, 'sequence':{'$gte':sequence}}))
-        print "Retrieved messages with ",{'parent_header':{'msg_id':id}, 'sequence':{'$gte':int(sequence)}}, messages
+        messages=list(self.c.messages.find({'parent_header.msg_id':id,
+                                            'sequence':{'$gte':sequence}}))
         #TODO: just get the fields we want instead of deleting the ones we don't want
         for m in messages:
             del m['_id']
