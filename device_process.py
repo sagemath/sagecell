@@ -4,20 +4,54 @@ def log(device_id, code_id=None, message=None):
     print "%s   %s: %s"%(device_id,code_id, message)
 
 class QueueOut(StringIO.StringIO):
-    def __init__(self, _id):
+    def __init__(self, _id, channel, queue):
         StringIO.StringIO.__init__(self)
         self.cell_id=_id
+        self.channel=channel
+        self.queue=queue
+
     def write(self, output):
-        outQueue.put((self.cell_id,output))
+        msg = {}
+        msg['msg_type']='stream'
+        msg['parent_header']={'msg_id': self.cell_id}
+        msg['content']={'data': output, 'name':self.channel}
+        msg['header']={'msg_id':random.random()}
+        self.queue.put(msg)
+        sys.__stdout__.write("MESSAGE PUT IN QUEUE (channel %s): %s\n"%(self.channel, msg))
 
-# based on a stackoverflow answer
-@contextlib.contextmanager
-def stdoutIO(stdout=None):
-    """
-    Reassign stdout to be a StringIO object.
-
-    To use, do something like:
+class OutputIPython(object):
+    def __init__(self, _id, queue):
+        self.cell_id=_id
+        self.queue=queue
     
+    def __enter__(self):
+        # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
+        self.stdout_queue=QueueOut(self.cell_id, "stdout", self.queue)
+        self.stderr_queue=QueueOut(self.cell_id, "stderr", self.queue)
+        self.pyout_queue=QueueOut(self.cell_id, "pyout", self.queue)
+        self.pyerr_queue=QueueOut(self.cell_id, "pyerr", self.queue)
+        self.message_queue=QueueOut(self.cell_id, "message", self.queue)
+        self.old_stdout = sys.stdout
+        self.old_stderr = sys.stderr
+        #old_display = sys.displayhook
+        #old_err = sys.excepthook
+        
+        # replace sys.displayhook
+        
+        # replace sys.excepthook
+        
+        sys.stderr = self.stderr_queue
+        sys.stdout = self.stdout_queue
+        return self.message_queue
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout=self.old_stdout
+        sys.stderr=self.old_stderr
+        #if exc_type is not None:
+        #    import traceback
+        #    self.stderr_queue.write(traceback.format_exc())
+        # supress the exception
+        return False
 
 from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process
 
@@ -28,29 +62,43 @@ def run(db, fs, workers=1, poll_interval=0.1):
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
     results={}
-    outputs={}
+    sequence={}
     while True:
         # Queue up all unevaluated cells we requested
         for X in db.get_unevaluated_cells(device_id):
+            # change for ipython messages
+            _id = str(X['_id'])
             code = X['input']
-            log(device_id, X['_id'],message="evaluating '%s'"%code)
-            results[X['_id']]=pool.apply_async(execute_code, (X['_id'], code))
-            outputs[X['_id']]=""
+            log(device_id, _id,message="evaluating '%s'"%code)
+            results[_id]=pool.apply_async(execute_code, (_id, code))
+            sequence[_id]=0
         # Get whatever results are done
-        finished=set(_id for _id, r in results.iteritems() if r.ready())
-        changed=set()
+        finished=set(i for i, r in results.iteritems() if r.ready())
+        new_messages=[]
         while not outQueue.empty():
-            _id,out=outQueue.get()
-            outputs[_id]+=out
-            changed.add(_id)
-        for _id in changed:
-            db.set_output(_id, make_output_json(outputs[_id], _id in finished))
-        for _id in finished-changed:
-            db.set_output(_id, make_output_json(outputs[_id], True))
+            msg=outQueue.get()
+            cell_id = msg['parent_header']['msg_id']
+            msg['sequence']=sequence[cell_id]
+            sequence[cell_id]+=1
+            new_messages.append(msg)
         # delete the output that I'm finished with
         for _id in finished:
+            msg={'content': {"status":"ok",
+                             "execution_count":1,
+                             "payload":[],
+                             "user_expressions":{},
+                             "user_variables":{}},
+                 "header":{"username":"","msg_id":random.random(),"session":""},
+                 "parent_header":{"msg_id":_id,"username":"","session":""},
+                 "msg_type":"execute_reply",
+                 "sequence":sequence[_id]}
+            new_messages.append(msg)
+            # should send back an execution_state: idle message too
+            del sequence[_id]
             del results[_id]
-            del outputs[_id]
+        if len(new_messages)>0:
+            db.add_messages(None, new_messages)
+
 
         time.sleep(poll_interval)
 
@@ -162,12 +210,10 @@ def execProcess(cell_id, code):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
-    with stdoutIO(QueueOut(cell_id)):
-        try:
-            exec code in {}
-        except:
-            new_stream("text")
-            print traceback.format_exc()
+    with OutputIPython(cell_id, outQueue) as msg:
+        exec code in {}
+    print "Done executing code: ", code
+    
         
 
 def execute_code(cell_id, code):
@@ -199,6 +245,7 @@ def execute_code(cell_id, code):
         fs_file.close()
     fslock.release()
     if len(file_list)>0:
+        #Make an ipython message.
         outQueue.put((cell_id,new_stream('files',printout=False,files=file_list)))
     current_process().daemon=oldDaemon
     os.chdir(curr_dir)
