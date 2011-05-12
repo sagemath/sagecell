@@ -268,17 +268,16 @@ def run_ip_device():
 
 if __name__ == "__main__":
     import misc
-    if "ipython" in sys.argv:
-        db, fs = misc.select_db([""])
-        run_ip_device()
-    else:
-        # argv[1] is number of workers
-        # argv[2] is "mongo" (default) or "sqlite"
-        db, fs = misc.select_db([""] if len(sys.argv)<3 else ["", sys.argv[2]])
-        if len(sys.argv)<=1:
-            workers=1
-        else:
-            workers=int(sys.argv[1])
-        outQueue=Queue()
-        fslock=Lock()
-        run(db, fs, workers=workers)
+    try:
+        from argparse import ArgumentParser
+    except ImportError:
+        from IPython.external import argparse
+        ArgumentParser=argparse.ArgumentParser
+    parser=ArgumentParser(description="Run one or more devices to process commands from the client.")
+    parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_argument("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    sysargs=parser.parse_args()
+    db, fs = misc.select_db(sysargs)
+    outQueue=Queue()
+    fslock=Lock()
+    run(db, fs, workers=sysargs.workers)
