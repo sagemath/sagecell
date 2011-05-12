@@ -33,13 +33,14 @@ function async_request(url, callback, postvars) {
 
 
 $(function() {
+    // This variable is closed over in scope so it doesn't pollute the global scope
+    var sequence=0;
     // Attach a javascript function to the form submit. This function
     // makes an AJAX call to evaluate the contents of the text box.
     $('#command_form').submit(function () {
         $.getJSON($URL.evaluate, {commands: $('#commands').val()}, send_computation_success);
         return false;
     });
-});
 
 function send_computation_success(data, textStatus, jqXHR) {
     $("#computation_id").text(data.computation_id);
@@ -49,27 +50,60 @@ function send_computation_success(data, textStatus, jqXHR) {
 }
 
 function get_output(id) {
-    $.getJSON($URL.output_poll, {computation_id: id},
+    $.getJSON($URL.output_poll, {computation_id: id, sequence: sequence},
               function(data, textStatus, jqXHR) {
                   get_output_success(data, textStatus, jqXHR, id);});
 }
 
-function sortstream(s1,s2) {
-    return s1.order-s2.order;
-}
-
 function get_output_success(data, textStatus, jqXHR, id) {
-    if(data.output==undefined || !data.output.closed) {
-        // poll again after a bit
-        setTimeout(function() {get_output(id);}, 2000);
+    var done=false;
+
+    if(data!==undefined && data.content!==undefined) {
+        var content = data.content;
+        for (var i = 0; i < content.length; i++) {
+            msg=content[i];
+            if(msg.sequence!==sequence) {
+                //TODO: Make a big warning sign
+                console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
+            }
+            sequence+=1;
+            if(msg.msg_type==='execute_reply' ||(msg.msg_type==='status' && msg.content.execution_state==='idle')) {
+                done=true;
+                sequence=0;
+            }
+            // Handle each stream type.  This should probably be separated out into different functions.
+            var content=msg.content;
+            if(msg.msg_type==='stream'){
+
+                switch(content.name) {
+                    case 'stdout':
+                    $('#output').append("<pre class='stdout'>"+content.data+"</pre>");
+                    break;
+
+                    case 'stderr':
+                    $('#output').append("<pre class='stderr'>"+content.data+"</pre>");
+                    break;
+
+               
+                }
+            } else if(msg.msg_type==='pyout') {
+                $('#output').append("<pre class='pyout'>"+content.data['text/plain']+"</pre>")
+            } else if(msg.msg_type==='display_data') {
+                if(content.data['image/svg+xml']!==undefined) {
+                $('#output').append('<object id="svgImage" type="image/svg+xml">'+content.data['image/svg+xml']+'</object>');
+                }
+            }
+            $('#messages').append("<div>"+JSON.stringify(msg)+"</div>");
+            //TODO: handle all the types of messages intelligently
+        }
     }
-    var streams=[];
+/*
     for(d in data.output) {
             if(d!="closed")
                 streams.push(data.output[d]);
     }
     streams.sort(sortstream);
-    $('#output').empty();
+    //$('#output').empty();
     for(i in streams)
         if(streams[i].type=='text')
             $('#output').append("<pre>"+streams[i].content+"</pre>");
@@ -87,7 +121,14 @@ function get_output_success(data, textStatus, jqXHR, id) {
             $('#output').append("<pre class='error'>"+streams[i].ename+"<br/>"+streams[i].evalue+"</pre>")
           if(data.output && !data.output.closed)
               $('#output').append("&hellip;")
+*/
+    if(!done) {
+        // poll again after a bit
+        setTimeout(function() {get_output(id);}, 2000);
+    }
 }
+
+});
 
 function get_output_long_poll(id) {
     $.getJSON($URL.output_long_poll, {computation_id: id, timeout: 2},
