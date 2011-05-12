@@ -18,28 +18,6 @@ def stdoutIO(stdout=None):
 
     To use, do something like:
     
-    with stdoutIO() as s:
-        print "Hello world"
-
-    print("Output: %s"%s.getvalue())
-
-    Exceptions in the code should be re-raised and the stdout should
-    correctly revert to what it was even if an error is raised.
-    """
-    old_stdout = sys.stdout
-    if stdout is None:
-        stdout = StringIO.StringIO()
-    sys.stdout = stdout
-    try:
-        # code in the context is executed when we yield
-        yield stdout
-    except:
-        # any exceptions in the code should get propogated
-        raise
-    finally:
-        # Make sure that no matter what, the stdout reverts to what it
-        # was before this context
-        sys.stdout = old_stdout
 
 from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process
 
