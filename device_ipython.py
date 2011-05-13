@@ -88,7 +88,7 @@ def run_ip_worker(request_msg):
         done=False
         new_messages=[]
         for msg in sub.getMessages(header):
-            if msg["msg_type"] in ("stream", "display_data", "pyout", "extension","execute_reply","status"):
+            if msg["msg_type"] in ("stream", "display_data", "pyout", "extension","execute_reply","status","pyerr"):
                 msg['sequence']=sequence
                 sequence+=1
                 new_messages.append(msg)
