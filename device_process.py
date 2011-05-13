@@ -112,8 +112,8 @@ def run(db, fs, workers=1, poll_interval=0.1):
                              "payload":[],
                              "user_expressions":{},
                              "user_variables":{}},
-                 "header":{"username":"","msg_id":random.random(),"session":""},
-                 "parent_header":{"msg_id":_id,"username":"","session":""},
+                 "header":{"msg_id":random.random()},
+                 "parent_header":{"msg_id":_id},
                  "msg_type":"execute_reply",
                  "sequence":sequence[_id]}
             new_messages.append(msg)
