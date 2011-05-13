@@ -43,7 +43,7 @@ def get_db(f):
 
 @app.route("/")
 def root():
-    return render_template('ipython_root.html' if sysargs.ipython else 'root.html')
+    return render_template('ipython_root.html')
 
 @app.route("/eval")
 @get_db
