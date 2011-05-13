@@ -99,8 +99,9 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		$('#output').append(html);
 	    }
 	    
-
-            $('#messages').append("<div>"+JSON.stringify(msg)+"</div>");
+	    // Append the message to the div of messages
+	    $('#messages').append(document.createElement('div'))
+		.children().last().text(JSON.stringify(msg));
             //TODO: handle all the types of messages intelligently
         }
     }
