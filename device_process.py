@@ -4,20 +4,37 @@ def log(device_id, code_id=None, message=None):
     print "%s   %s: %s"%(device_id,code_id, message)
 
 class QueueOut(StringIO.StringIO):
-    def __init__(self, _id, channel, queue):
+    def __init__(self, _id, queue, channel):
         StringIO.StringIO.__init__(self)
         self.cell_id=_id
         self.channel=channel
         self.queue=queue
 
-    def write(self, output):
-        msg = {}
-        msg['msg_type']='stream'
-        msg['parent_header']={'msg_id': self.cell_id}
-        msg['content']={'data': output, 'name':self.channel}
-        msg['header']={'msg_id':random.random()}
+    def raw_message(self, msg_type, content):
+        """
+        Send a message where you can change the outer IPython msg_type and completely specify the content.
+        """
+        msg = {'msg_type': msg_type,
+               'parent_header': {'msg_id': self.cell_id},
+               'header': {'msg_id':random.random()},
+               'content': content}
         self.queue.put(msg)
-        sys.__stdout__.write("MESSAGE PUT IN QUEUE (channel %s): %s\n"%(self.channel, msg))
+        sys.__stdout__.write("USER MESSAGE PUT IN QUEUE (channel %s): %s\n"%(self.channel, msg))
+
+    def write(self, output):
+        self.raw_message(msg_type='stream',
+                         content={'data': output, 'name':self.channel})
+
+class QueueOutMessage(QueueOut):
+    def __init__(self, _id, queue):
+        QueueOut.__init__(self, _id, queue, 'extension')
+
+    def message(self, msg_type, content):
+        """
+        Send a user message with a specific type.  This will be wrapped in an IPython 'extension' message and sent to the client.
+        """
+        self.raw_message(msg_type='extension',
+                         content={'content': content, 'msg_type': msg_type})
 
 class OutputIPython(object):
     def __init__(self, _id, queue):
@@ -26,11 +43,11 @@ class OutputIPython(object):
     
     def __enter__(self):
         # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
-        self.stdout_queue=QueueOut(self.cell_id, "stdout", self.queue)
-        self.stderr_queue=QueueOut(self.cell_id, "stderr", self.queue)
-        self.pyout_queue=QueueOut(self.cell_id, "pyout", self.queue)
-        self.pyerr_queue=QueueOut(self.cell_id, "pyerr", self.queue)
-        self.message_queue=QueueOut(self.cell_id, "message", self.queue)
+        self.stdout_queue=QueueOut(self.cell_id, self.queue, "stdout")
+        self.stderr_queue=QueueOut(self.cell_id, self.queue, "stderr")
+        self.pyout_queue=QueueOut(self.cell_id, self.queue, "pyout")
+        self.pyerr_queue=QueueOut(self.cell_id, self.queue, "pyerr")
+        self.message_queue=QueueOutMessage(self.cell_id, self.queue)
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
         #old_display = sys.displayhook
@@ -210,8 +227,8 @@ def execProcess(cell_id, code):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
-    with OutputIPython(cell_id, outQueue) as msg:
-        exec code in {}
+    with OutputIPython(cell_id, outQueue) as MESSAGE:
+        exec code in {'MESSAGE': MESSAGE}
     print "Done executing code: ", code
     
         
