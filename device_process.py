@@ -47,14 +47,14 @@ class OutputIPython(object):
     def __init__(self, _id, queue):
         self.cell_id=_id
         self.queue=queue
-    
-    def __enter__(self):
-        # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
         self.stdout_queue=QueueOut(self.cell_id, self.queue, "stdout")
         self.stderr_queue=QueueOut(self.cell_id, self.queue, "stderr")
         self.pyout_queue=QueueOut(self.cell_id, self.queue, "pyout")
         self.pyerr_queue=QueueOut(self.cell_id, self.queue, "pyerr")
         self.message_queue=QueueOutMessage(self.cell_id, self.queue)
+    
+    def __enter__(self):
+        # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
         #old_display = sys.displayhook
@@ -174,11 +174,11 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, code):
+def execProcess(cell_id, code, output_handler):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
-    with OutputIPython(cell_id, outQueue) as MESSAGE:
+    with output_handler as MESSAGE:
         exec code in {'MESSAGE': MESSAGE}
     print "Done executing code: ", code
     
@@ -199,12 +199,14 @@ def execute_code(cell_id, code):
     current_process().daemon=False
     # Daemonic processes cannot create children
     os.chdir(tmp_dir)
-    result=""
-    p=Process(target=execProcess, args=(cell_id, code))
+    # we need the output handler here so we can add messages about files later
+    output_handler=OutputIPython(cell_id, outQueue)
+    p=Process(target=execProcess, args=(cell_id, code, output_handler))
     p.start()
     p.join()
+    current_process().daemon=oldDaemon
     file_list=[]
-    fslock.acquire()
+    fslock.acquire() #TODO: do we need this lock?
     for filename in os.listdir(tmp_dir):
         file_list.append(filename)
         fs_file=fs.new_file(cell_id, filename)
@@ -213,9 +215,7 @@ def execute_code(cell_id, code):
         fs_file.close()
     fslock.release()
     if len(file_list)>0:
-        #Make an ipython message.
-        outQueue.put((cell_id,new_stream('files',printout=False,files=file_list)))
-    current_process().daemon=oldDaemon
+        output_handler.message_queue.message('files', {'files': file_list})
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
 
@@ -231,5 +231,5 @@ if __name__ == "__main__":
     import misc
     db, fs = misc.select_db(sysargs)
     outQueue=Queue()
-    fslock=Lock()
+    fslock=Lock() #TODO: do we need this lock?
     run(db, fs, workers=sysargs.workers)

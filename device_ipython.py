@@ -108,8 +108,12 @@ def run_ip_worker(request_msg):
             fs_file.close()
     if len(file_list)>0:
         file_list.sort()
-        db.add_messages(request_msg["_id"],[{'parent_header':header, 'sequence':sequence, 'msg_type':'files',
-                                             'content':{"files":file_list}}])
+        #TODO: this message comes *after* the end of computation message from ipython
+        # either we need to slip it in before, or we need to have our own custom end-of-computation message.
+        db.add_messages(request_msg["_id"],[{'parent_header':header, 'sequence':sequence, 
+                                             'msg_type':'extension',
+                                             'content':{'msg_type':'files',
+                                                        'files':file_list}}])
         shutil.rmtree(tempDir)
     #TODO: make polling interval a variable
     time.sleep(0.1)
