@@ -220,26 +220,13 @@ def execute_code(cell_id, code):
     shutil.rmtree(tmp_dir)
 
 if __name__ == "__main__":
-    try:
-        try:
-            from argparse import ArgumentParser
-        except ImportError:
-            from IPython.external import argparse
-            ArgumentParser=argparse.ArgumentParser
-
-        parser=ArgumentParser(description="Run one or more devices to process commands from the client.")
-        parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
-        parser.add_argument("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
-        sysargs=parser.parse_args()
-    except ImportError:
-        # apparently argparse isn't available.  So we do things with the old optparse module
-        # as soon as Sage upgrades its version of ipython or python, we should be able to delete this code
-        # the only reason I put it in here is because we also want things to work with Sage's python.
-        from optparse import OptionParser
-        parser = OptionParser()
-        parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
-        parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
-        (sysargs, args) = parser.parse_args()
+    # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
+    # sometime in the summer of 2011, and then we can move this to use argparse.
+    from optparse import OptionParser
+    parser = OptionParser(description="Run one or more devices to process commands from the client.")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    (sysargs, args) = parser.parse_args()
 
     import misc
     db, fs = misc.select_db(sysargs)

@@ -132,26 +132,13 @@ def tabComplete(db,fs):
 
 if __name__ == "__main__":
     global sysargs
-    try:
-        try:
-            from argparse import ArgumentParser
-        except ImportError:
-            from IPython.external import argparse
-            ArgumentParser=argparse.ArgumentParser
-
-        parser=ArgumentParser(description="The web server component of the notebook")
-        parser.add_argument("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
-        parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
-        sysargs=parser.parse_args()
-    except ImportError:
-        # apparently argparse isn't available.  So we do things with the old optparse module
-        # as soon as Sage upgrades its version of ipython or python, we should be able to delete this code
-        # the only reason I put it in here is because we also want things to work with Sage's python.
-        from optparse import OptionParser
-        parser = OptionParser()
-        parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
-        parser.add_option("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
-        parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
-        (sysargs, args) = parser.parse_args()
+    # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
+    # sometime in the summer of 2011, and then we can move this to use argparse.
+    from optparse import OptionParser
+    parser = OptionParser(description="The web server component of the notebook")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_option("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
+    parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    (sysargs, args) = parser.parse_args()
 
     app.run(debug=True)
