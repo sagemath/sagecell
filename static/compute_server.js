@@ -88,7 +88,9 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    $('#output').append('<div>'+msg.content.data['text/html']+'</div>');
 		}
 		break;
-
+	    case 'pyerr':
+		$('#output').append("<pre>"+msg.content.ename+": "+msg.content.evalue+"</pre>");
+		break;
 	    case 'files':
 		var html="<div>\n";
 		for(var j in msg.content.files)
