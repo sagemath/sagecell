@@ -56,6 +56,9 @@ def run_ip_worker(request_msg):
     #TODO: db and fs are inherited from the parent process; is that thread safe?
     import uuid
     import zmq
+    import os
+    import shutil
+    import tempfile
     from ip_receiver import IPReceiver
     from IPython.zmq.ipkernel import launch_kernel
     msg_id=str(request_msg['_id'])
@@ -63,7 +66,8 @@ def run_ip_worker(request_msg):
 
     #TODO: launch the kernel by forking an already-running clean process
     kernel=launch_kernel()
-
+    tempDir=tempfile.mkdtemp()
+    log(db, msg_id, message="Temporary directory: %s"%tempDir)
     db.set_ipython_ports(kernel)
     sub=IPReceiver(zmq.SUB, kernel[2])
     context=zmq.Context()
@@ -71,10 +75,11 @@ def run_ip_worker(request_msg):
     xreq.connect("tcp://localhost:%i"%(kernel[1],))
     log(db, msg_id, 'Finished setting up IPython kernel')
     sequence=0
+    inputCode="import os\nos.chdir(%r)\n"%(tempDir,)+request_msg["input"]
     header={"msg_id": msg_id}
     xreq.send_json({"header": header, 
                     "msg_type": "execute_request", 
-                    "content": {"code":request_msg['input'], 
+                    "content": {"code":inputCode,
                                 "silent":False,
                                 "user_variables":[], 
                                 "user_expressions":{}} })
@@ -94,7 +99,18 @@ def run_ip_worker(request_msg):
             db.add_messages(request_msg["_id"],new_messages)
         if done:
             break
-    #TODO: put files in the filestore
+    file_list=[]
+    for filename in os.listdir(tempDir):
+        file_list.append(filename)
+        fs_file=fs.new_file(request_msg["_id"], filename)
+        with open(tempDir+"/"+filename) as f:
+            fs_file.write(f.read())
+            fs_file.close()
+    if len(file_list)>0:
+        file_list.sort()
+        db.add_messages(request_msg["_id"],[{'parent_header':header, 'sequence':sequence, 'msg_type':'files',
+                                             'content':{"files":file_list}}])
+        shutil.rmtree(tempDir)
     #TODO: make polling interval a variable
     time.sleep(0.1)
 
