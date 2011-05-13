@@ -93,7 +93,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
                 } else if(msg.content.data['text/html']!==undefined) {
 		    $('#output').append('<div>'+msg.content.data['text/html']+'</div>');
 		}
-            } else if(msg.msg_type=='files') {
+            } else if(msg.msg_type==='files') {
 		var html="<div>\n";
 		for(var j in msg.content.files)
 		    html+="<a href=\"/files/"+id+"/"+msg.content.files[j]+"\">"+
