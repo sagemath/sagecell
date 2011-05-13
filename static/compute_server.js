@@ -89,7 +89,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		}
 		break;
 	    case 'pyerr':
-		$('#output').append("<pre>"+msg.content.ename+": "+msg.content.evalue+"</pre>");
+		$('#output').append("<pre>"+colorize(msg.content.traceback.join("\n").replace(/</g,"&lt;"))+"</pre>");
 		break;
 	    case 'files':
 		var html="<div>\n";
@@ -126,4 +126,29 @@ function get_output_long_poll_success(data, textStatus, jqXHR, id) {
     $('#output').text(data.output)
 }
 
+colorCodes={"30":"black",
+	    "31":"red",
+	    "32":"green",
+	    "33":"goldenrod",
+	    "34":"blue",
+	    "35":"purple",
+	    "36":"darkcyan",
+	    "37":"gray"};
 
+function colorize(text) {
+    text=text.split("\u001b[");
+    result="";
+    for(i in text) {
+	if(text[i]=="")
+	    continue;
+	color=text[i].substr(0,text[i].indexOf("m")).split(";");
+	if(color.length==2) {
+	    result+="<span style=\"color:"+colorCodes[color[1]];
+	    if(color[0]==1)
+		result+="; font-weight:bold";
+	    result+="\">"+text[i].substr(text[i].indexOf("m")+1)+"</span>";
+	} else
+	    result+=text[i].substr(text[i].indexOf("m")+1);
+    }
+    return result;
+}
