@@ -89,8 +89,10 @@ function get_output_success(data, textStatus, jqXHR, id) {
                 $('#output').append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>")
             } else if(msg.msg_type==='display_data') {
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                $('#output').append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
-                }
+                    $('#output').append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
+                } else if(msg.content.data['text/html']!==undefined) {
+		    $('#output').append('<div>'+msg.content.data['text/html']+'</div>');
+		}
             } else if(msg.msg_type=='files') {
 		var html="<div>\n";
 		for(var j in msg.content.files)

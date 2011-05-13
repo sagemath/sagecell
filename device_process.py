@@ -36,6 +36,13 @@ class QueueOutMessage(QueueOut):
         self.raw_message(msg_type='extension',
                          content={'content': content, 'msg_type': msg_type})
 
+    def display(self, data):
+        """
+        Send a display_data message.  Content should be a dict of mime types and data
+        """
+        self.raw_message(msg_type='display_data',
+                         content={'data':data})
+
 class OutputIPython(object):
     def __init__(self, _id, queue):
         self.cell_id=_id
