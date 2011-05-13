@@ -88,18 +88,24 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    $('#output').append('<div>'+msg.content.data['text/html']+'</div>');
 		}
 		break;
+
 	    case 'pyerr':
 		$('#output').append("<pre>"+colorize(msg.content.traceback.join("\n").replace(/</g,"&lt;"))+"</pre>");
 		break;
-	    case 'files':
+
+	    case 'extension':
+		var user_msg=msg.content;
 		var html="<div>\n";
-		for(var j in msg.content.files)
-		    html+="<a href=\"/files/"+id+"/"+msg.content.files[j]+"\">"+msg.content.files[j]+"</a><br>\n";
+		for(var j in user_msg.content.files)
+		    //TODO: escape filenames and id
+		    html+="<a href=\"/files/"+id+"/"+user_msg.content.files[j]+"\">"
+		    +user_msg.content.files[j]+"</a><br>\n";
 		$('#output').append(html);
 		break;
 	    }
 	    
 	    // Append the message to the div of messages
+	    // use .text() so that strings are automatically escaped
 	    $('#messages').append(document.createElement('div'))
 		.children().last().text(JSON.stringify(msg));
         }
