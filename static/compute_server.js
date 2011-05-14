@@ -67,10 +67,6 @@ function get_output_success(data, textStatus, jqXHR, id) {
                 console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
             }
             sequence+=1;
-            if(msg.msg_type==='execute_reply' ||(msg.msg_type==='status' && msg.content.execution_state==='idle')) {
-                done=true;
-                sequence=0;
-            }
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream': 
@@ -95,12 +91,20 @@ function get_output_success(data, textStatus, jqXHR, id) {
 
 	    case 'extension':
 		var user_msg=msg.content;
-		var html="<div>\n";
-		for(var j in user_msg.content.files)
-		    //TODO: escape filenames and id
-		    html+="<a href=\"/files/"+id+"/"+user_msg.content.files[j]+"\">"
-		    +user_msg.content.files[j]+"</a><br>\n";
-		$('#output').append(html);
+		switch(user_msg.msg_type) {
+		case "files":
+		    var html="<div>\n";
+		    for(var j=0; j<user_msg.files.length; j++)
+			//TODO: escape filenames and id
+			html+="<a href=\"/files/"+id+"/"+user_msg.files[j]+"\">"
+			    +user_msg.files[j]+"</a><br>\n";
+		    $('#output').append(html);
+		    break;
+		case "comp_end":
+		    sequence=0;
+		    done=true;
+		    break;
+		}
 		break;
 	    }
 	    
