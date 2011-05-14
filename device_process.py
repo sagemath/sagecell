@@ -80,8 +80,16 @@ class OutputIPython(object):
 from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process
 
 def run(db, fs, workers=1, poll_interval=0.1):
-    """Run the compute device, querying the database and doing
-    relevant work."""
+    """
+    This function is the main function. Its responsibility is to
+    query the database for more work to do and put messages back into the
+    database. We do this so that we can batch the communication with the
+    database, which may be running on a different server or sharded among
+    several servers.
+
+    This function also creates the worker pool for doing the actual
+    computations.
+    """
     device_id=random.randrange(sys.maxint)
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
@@ -185,19 +193,26 @@ Meant to be run as a separate process."""
         
 
 def execute_code(cell_id, code):
-    """Evaluate the given code in another process,
-    Put the results and list of generated files into the global queue."""
+    """
+    This function is executed by a worker process. It executes the
+    given code in a separate process. This function may start a
+    process on another computer, even, and communicate with that
+    process over ssh.
+
+    The result of this function is a list of messages in the global
+    device queue.  These messages represent the output and results of
+    executing the code.
+    """
     # the fs variable is inherited from the parent process
     code = displayhook_hack(code)
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     print "Temp files in "+tmp_dir
-    # We should at least document the side effects of 
-    # just setting the daemon flag and creating subprocesses
-    # What things does a user/developer need to be aware of?
+    #TODO: We should have a process that cleans up any children
+    # that may hang around, similar to the sage-cleaner process.
     oldDaemon=current_process().daemon
-    current_process().daemon=False
     # Daemonic processes cannot create children
+    current_process().daemon=False
     os.chdir(tmp_dir)
     # we need the output handler here so we can add messages about files later
     output_handler=OutputIPython(cell_id, outQueue)
