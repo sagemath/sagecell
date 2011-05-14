@@ -125,6 +125,12 @@ def run(db, fs, workers=1, poll_interval=0.1):
                  "msg_type":"execute_reply",
                  "sequence":sequence[_id]}
             new_messages.append(msg)
+            msg={'content': {"msg_type":"comp_end"},
+                 "header":{"msg_id":random.random()},
+                 "parent_header":{"msg_id":_id},
+                 "msg_type":"extension",
+                 "sequence":sequence[_id]+1}
+            new_messages.append(msg)
             # should send back an execution_state: idle message too
             del sequence[_id]
             del results[_id]
