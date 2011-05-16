@@ -1,3 +1,4 @@
 #completion {height: 36pt; white-space: nowrap; overflow:auto}
 .error {color: red}
 .stderr {color: red}
+.CodeMirror {border: 1px solid black; height: 200px}

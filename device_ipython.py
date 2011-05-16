@@ -115,9 +115,10 @@ def run_ip_worker(request_msg):
                                              'content':{'msg_type':'files',
                                                         'files':file_list}}])
         shutil.rmtree(tempDir)
-        db.add_messages(request_msg["_id"],[{'parent_header':header, 'sequence':sequence+1,
-                                             'msg_type':'extension',
-                                             'content':{'msg_type':'comp_end'}}])
+        sequence+=1
+    db.add_messages(request_msg["_id"],[{'parent_header':header, 'sequence':sequence,
+                                         'msg_type':'extension',
+                                         'content':{'msg_type':'comp_end'}}])
     #TODO: make polling interval a variable
     time.sleep(0.1)
 
