@@ -50,22 +50,26 @@ class OutputIPython(object):
         self.stdout_queue=QueueOut(self.cell_id, self.queue, "stdout")
         self.stderr_queue=QueueOut(self.cell_id, self.queue, "stderr")
         self.pyout_queue=QueueOut(self.cell_id, self.queue, "pyout")
-        self.pyerr_queue=QueueOut(self.cell_id, self.queue, "pyerr")
         self.message_queue=QueueOutMessage(self.cell_id, self.queue)
     
     def __enter__(self):
         # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
-        #old_display = sys.displayhook
-        #old_err = sys.excepthook
-        
-        # replace sys.displayhook
-        
-        # replace sys.excepthook
         
         sys.stderr = self.stderr_queue
         sys.stdout = self.stdout_queue
+        
+        def displayQueue(obj):
+            if obj is not None:
+                import __builtin__
+                __builtin__._ = obj
+                sys.stdout = self.pyout_queue
+                print repr(obj)
+                sys.stdout = self.stdout_queue
+
+        sys.displayhook = displayQueue
+
         return self.message_queue
     
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -193,7 +197,23 @@ def execProcess(cell_id, code, output_handler):
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
     with output_handler as MESSAGE:
-        exec code in {'MESSAGE': MESSAGE}
+        try:
+            exec code in {'MESSAGE': MESSAGE}
+        except:
+            # Using IPython 0.11 - change code to: import IPython.core.ultratb
+            # Using IPython 0.10:
+            import IPython.ultraTB
+            (etype, evalue, etb) = sys.exc_info()
+            # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
+            # Using IPython 0.10:
+            err = IPython.ultraTB.VerboseTB(include_vars = "false")
+            pyerr_queue = QueueOut(cell_id, outQueue, "pyerr")
+            try: # Check whether the exception has any further details and prints appropriate message
+                evalue[0]
+                pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": evalue[0], "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
+            except:
+                pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": "", "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
+
     print "Done executing code: ", code
     
         
