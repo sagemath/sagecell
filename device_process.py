@@ -56,7 +56,8 @@ class OutputIPython(object):
         # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
-        
+        self.old_display = sys.displayhook
+
         sys.stderr = self.stderr_queue
         sys.stdout = self.stdout_queue
         
@@ -75,6 +76,7 @@ class OutputIPython(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout=self.old_stdout
         sys.stderr=self.old_stderr
+        sys.displayhook = self.old_display
         #if exc_type is not None:
         #    import traceback
         #    self.stderr_queue.write(traceback.format_exc())
@@ -208,11 +210,11 @@ Meant to be run as a separate process."""
             # Using IPython 0.10:
             err = IPython.ultraTB.VerboseTB(include_vars = "false")
             pyerr_queue = QueueOut(cell_id, outQueue, "pyerr")
-            try: # Check whether the exception has any further details and prints appropriate message
-                evalue[0]
-                pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": evalue[0], "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
+            try: # Check whether the exception has any further details
+                error_value = evalue[0]
             except:
-                pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": "", "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
+                error_value = ""
+            pyerr_queue.raw(message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
 
     print "Done executing code: ", code
     
