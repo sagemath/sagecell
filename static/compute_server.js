@@ -38,7 +38,8 @@ $(function() {
     // Attach a javascript function to the form submit. This function
     // makes an AJAX call to evaluate the contents of the text box.
     $('#command_form').submit(function () {
-        $.getJSON($URL.evaluate, {commands: $('#commands').val()}, send_computation_success);
+        $.getJSON($URL.evaluate, {commands: editor.getValue()},
+		  send_computation_success);
         return false;
     });
 
@@ -162,3 +163,14 @@ function colorize(text) {
     }
     return result;
 }
+
+$(document).ready(function(){
+    editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
+	mode:"python",
+	indentUnit:4,
+	tabMode:"shift",
+	lineNumbers:true,
+	onKeyEvent:handleKeyEvent});
+    editor.setValue("")
+    editor.focus();
+});
