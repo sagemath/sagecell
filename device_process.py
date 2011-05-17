@@ -204,18 +204,18 @@ Meant to be run as a separate process."""
         except:
             # Using IPython 0.11 - change code to: import IPython.core.ultratb
             # Using IPython 0.10:
-            import IPython.ultraTB
+            import ultraTB # Modified version of ultraTB that shipped with IPython 0.10 to acheive traceback output compatibility with 0.11
             (etype, evalue, etb) = sys.exc_info()
             # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
             # Using IPython 0.10:
-            err = IPython.ultraTB.VerboseTB(include_vars = "false")
+            err = ultraTB.VerboseTB(include_vars = 0)
             pyerr_queue = QueueOut(cell_id, outQueue, "pyerr")
             try: # Check whether the exception has any further details
                 error_value = evalue[0]
             except:
                 error_value = ""
-            pyerr_queue.raw(message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
-
+            # Using IPython 0.11 - change code to: pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
+            pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.text(etype, evalue, etb, context = 3)})
     print "Done executing code: ", code
     
         
