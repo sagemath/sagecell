@@ -1,38 +1,3 @@
-// From sagenb/sagenb/data/sage/js/async_lib.js
-
-function generic_callback(status, response_text) {
-    /* do nothing */
-}
-
-function async_request(url, callback, postvars) {
-    var settings = {
-        url : url,
-        async : true,
-        cache : false,
-        dataType: "json"
-    };
-
-    if ($.isFunction(callback)) {
-        settings.error = function (jqXHR, textStatus, errorThrown) {
-            callback("failure", errorThrown);
-        };
-        settings.success = function (data, textStatus, jqXHR) {
-            callback("success", data, jqXHR);
-        };
-    }
-
-    if (postvars) {
-        settings.type = "POST";
-        settings.data = postvars;
-    } else {
-        settings.type = "GET";
-    }
-
-    $.ajax(settings);
-}
-
-sequences={};
-
 function add_args() {
     var args=Array.prototype.slice.call(arguments);
     var f=args.shift();
@@ -41,6 +6,8 @@ function add_args() {
 	return f.apply(null,args2.concat(args));
     };
 }
+
+sequences={};
 
 function send_computation_success(data, textStatus, jqXHR, n) {
     $("#cid"+n).text(data.computation_id);
@@ -118,20 +85,6 @@ function get_output_success(data, textStatus, jqXHR, id, n) {
         // poll again after a bit
         setTimeout(function() {get_output(id,n);}, 2000);
     }
-}
-
-function get_output_long_poll(id) {
-    $.getJSON($URL.output_long_poll, {computation_id: id, timeout: 2},
-              function(data, textStatus, jqXHR) {
-                  get_output_success(data, textStatus, jqXHR, id);});
-}
-
-function get_output_long_poll_success(data, textStatus, jqXHR, id) {
-    //alert(data);
-    if(data.output==undefined) {
-        get_output(id);
-    }
-    $('#output').text(data.output)
 }
 
 colorCodes={"30":"black",
