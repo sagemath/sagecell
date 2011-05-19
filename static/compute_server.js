@@ -31,63 +31,62 @@ function async_request(url, callback, postvars) {
     $.ajax(settings);
 }
 
+sequences={};
 
-$(function() {
-    // This variable is closed over in scope so it doesn't pollute the global scope
-    var sequence=0;
-    // Attach a javascript function to the form submit. This function
-    // makes an AJAX call to evaluate the contents of the text box.
-    $('#command_form').submit(function () {
-        $.getJSON($URL.evaluate, {commands: editor.getValue()},
-		  send_computation_success);
-        return false;
-    });
+function add_args() {
+    var args=Array.prototype.slice.call(arguments);
+    var f=args.shift();
+    return function() {
+	var args2=Array.prototype.slice.call(arguments);
+	return f.apply(null,args2.concat(args));
+    };
+}
 
-function send_computation_success(data, textStatus, jqXHR) {
-    $("#computation_id").text(data.computation_id);
+function send_computation_success(data, textStatus, jqXHR, n) {
+    $("#cid"+n).text(data.computation_id);
     // start long-polling to get the output
     // TODO: look at maybe using something like https://github.com/RobertFischer/JQuery-PeriodicalUpdater/
-    get_output(data.computation_id);
+    sequences[data.computation_id]=0;
+    get_output(data.computation_id, n);
 }
 
-function get_output(id) {
-    $.getJSON($URL.output_poll, {computation_id: id, sequence: sequence},
-              function(data, textStatus, jqXHR) {
-                  get_output_success(data, textStatus, jqXHR, id);});
+function get_output(id, n) {
+    $.getJSON($URL.output_poll, {computation_id: id, sequence: sequences[0]},
+	      add_args(get_output_success,id,n));
 }
 
-function get_output_success(data, textStatus, jqXHR, id) {
+function get_output_success(data, textStatus, jqXHR, id, n) {
     var done=false;
-
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
+	var output = $("#output"+n);
         for (var i = 0; i < content.length; i++) {
             msg=content[i];
-            if(msg.sequence!==sequence) {
+            if(msg.sequence!==sequences[id]) {
                 //TODO: Make a big warning sign
-                console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
+                console.log('sequence is out of order; I think it should be '+sequences[id]+', but server claims it is '+msg.sequence);
             }
-            sequence+=1;
+            sequences[id]+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream': 
-                $('#output').append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
+                output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
 
 	    case 'pyout':
-                $('#output').append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
+                output.append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
 		break;
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    $('#output').append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
+                    output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
                 } else if(msg.content.data['text/html']!==undefined) {
-		    $('#output').append('<div>'+msg.content.data['text/html']+'</div>');
+		    output.append('<div>'+msg.content.data['text/html']+'</div>');
 		}
 		break;
 
 	    case 'pyerr':
-		$('#output').append("<pre>"+colorize(msg.content.traceback.join("\n").replace(/</g,"&lt;"))+"</pre>");
+		output.append("<pre>"+colorize(msg.content.traceback.join("\n").replace(/</g,"&lt;"))+"</pre>");
 		break;
 
 	    case 'extension':
@@ -99,7 +98,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
 			//TODO: escape filenames and id
 			html+="<a href=\"/files/"+id+"/"+user_msg.files[j]+"\">"
 			    +user_msg.files[j]+"</a><br>\n";
-		    $('#output').append(html);
+		    output.append(html);
 		    break;
 		case "comp_end":
 		    sequence=0;
@@ -117,11 +116,9 @@ function get_output_success(data, textStatus, jqXHR, id) {
     }
     if(!done) {
         // poll again after a bit
-        setTimeout(function() {get_output(id);}, 2000);
+        setTimeout(function() {get_output(id,n);}, 2000);
     }
 }
-
-});
 
 function get_output_long_poll(id) {
     $.getJSON($URL.output_long_poll, {computation_id: id, timeout: 2},
@@ -149,7 +146,7 @@ colorCodes={"30":"black",
 function colorize(text) {
     text=text.split("\u001b[");
     result="";
-    for(i in text) {
+    for(var i=0; i<=text.length; i++) {
 	if(text[i]=="")
 	    continue;
 	color=text[i].substr(0,text[i].indexOf("m")).split(";");
@@ -164,13 +161,36 @@ function colorize(text) {
     return result;
 }
 
-$(document).ready(function(){
-    editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
+editors=[]
+
+function makeSingleCellBlock(span) {
+    var n=editors.length;
+    span.append("<textarea id=\"text"+n+"\"></textarea>"+
+		"<p id=\"completions"+n+"\"></p>"+
+		"Computation ID: <span id=\"cid"+n+"\"></span><br>"+
+		"<input type=\"button\" value=\"Evaluate\" id=\"eval"+n+"\"><br>"+
+		"<span id=\"output"+n+"\"></span><hr>");
+    editors.push(CodeMirror.fromTextArea($("#text"+n)[0], {
 	mode:"python",
 	indentUnit:4,
 	tabMode:"shift",
 	lineNumbers:true,
-	onKeyEvent:handleKeyEvent});
-    editor.setValue("")
-    editor.focus();
+	onKeyEvent:add_args(handleKeyEvent,n)}))
+    editors[n].setValue("");
+    editors[n].focus();
+    $("#eval"+n).click(function(){
+	$.getJSON($URL.evaluate, {commands: editors[n].getValue()},
+		  add_args(send_computation_success,n));
+    });
+}
+
+function add_cell() {
+    var n=editors.length;
+    $("#cell"+(n-1)).after("<span id=\"cell"+n+"\"></span>");
+    makeSingleCellBlock($("#cell"+n));
+}
+
+$(document).ready(function(){
+    makeSingleCellBlock($("#cell0"));
+    $("#add_cell").click(add_cell);
 });
