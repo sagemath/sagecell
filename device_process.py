@@ -208,7 +208,7 @@ Meant to be run as a separate process."""
             (etype, evalue, etb) = sys.exc_info()
             # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
             # Using IPython 0.10:
-            err = ultraTB.VerboseTB(include_vars = 0)
+            err = ultraTB.VerboseTB(include_vars = 0, tb_offset=1)
             pyerr_queue = QueueOut(cell_id, outQueue, "pyerr")
             try: # Check whether the exception has any further details
                 error_value = evalue[0]
