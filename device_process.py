@@ -1,4 +1,5 @@
 import sys, time, traceback, StringIO, contextlib, random
+import interact
 
 def log(device_id, code_id=None, message=None):
     print "%s   %s: %s"%(device_id,code_id, message)
@@ -198,9 +199,10 @@ def execProcess(cell_id, code, output_handler):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
+    code="import sys\nsys._sage_messages=MESSAGE\n"+code
     with output_handler as MESSAGE:
         try:
-            exec code in {'MESSAGE': MESSAGE}
+            exec code in {'MESSAGE': MESSAGE,'interact': interact}
         except:
             # Using IPython 0.11 - change code to: import IPython.core.ultratb
             # Using IPython 0.10:

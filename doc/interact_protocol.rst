@@ -38,8 +38,12 @@ It:
 
      msg_type='interact_end'
 
-The BROWSER gets this message, and:
+The BROWSER gets a series of messages like the following:::
 
+    {"default":null,"control_type":"input_box","label":null}}},"msg_type":"interact_start"},"header":{"msg_id":0.17421273858338893}}
+    {"parent_header":{"msg_id":"4ddd48c92da351296000001f"},"msg_type":"extension","sequence":3,"content":{"content":{},"msg_type":"interact_end"},"header":{"msg_id":0.877582738300609}}
+
+The BROWSER:
   - creates a div for the interact control
   - initializes a javascript object which represents the interact control:
      - stores the function_code text
