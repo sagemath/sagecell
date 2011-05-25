@@ -16,6 +16,7 @@ Contents:
     web_server
     device
     filestore
+    interact_protocol
 
 .. automodule:: misc
     :members:
