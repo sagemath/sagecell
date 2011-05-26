@@ -37,9 +37,19 @@ $(function() {
     var sequence=0;
     // Attach a javascript function to the form submit. This function
     // makes an AJAX call to evaluate the contents of the text box.
+    var msg = {"parent_header": {},
+	       "header": {"msg_id": uuid4(),
+			  "username": "",
+			  "session": uuid4()},
+	       "msg_type": "execute_request",
+	       "content": {"code": editor.getValue(),
+			   "silent": False,
+			   "user_variables": [],
+			   "user_expressions": {}}
+	      }
     $('#command_form').submit(function () {
-        $.getJSON($URL.evaluate, {commands: editor.getValue()},
-		  send_computation_success);
+        $.getJSON($URL.evaluate, {message: msg}, send_computation_success);
+	console.log(editor.getValue());
         return false;
     });
 
@@ -61,7 +71,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
-        for (var i = 0; i < content.length; i++) {
+	for (var i = 0; i < content.length; i++) {
             msg=content[i];
             if(msg.sequence!==sequence) {
                 //TODO: Make a big warning sign
@@ -105,6 +115,25 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    sequence=0;
 		    done=true;
 		    break;
+		case "interact_start":
+		    var div_id = "interact" + Math.floor(Math.random()*100000);
+		    console.log(id); // Computation ID
+		    $('#output').append("<div id='"+div_id+"'></div>");
+		    var interact = new InteractCell("#" + div_id);
+		    interact.set_layout(user_msg.content.layout);
+		    interact.set_controls(user_msg.content.controls);
+		    interact.set_function(user_msg.content.function_code);
+		    interact.renderCanvas(id);
+		    $(function(){
+			$("#urn_uuid_" + id).change(function(){
+			    // Right now, only notifies (via console) of interact changes
+			    console.log($("#urn_uuid_" + id).val());
+			});
+		    });
+		    break;
+		case "interact_end":
+		    $('#output').append("<div>END OF DIV</div>");
+		    break;
 		}
 		break;
 	    }
@@ -122,6 +151,49 @@ function get_output_success(data, textStatus, jqXHR, id) {
 }
 
 });
+
+function InteractCell(selector) {
+    this.element = $(selector);
+    this.element.data("interact", this);
+
+    this.function_code = "";
+    this.controls = {};
+    this.layout = {};
+}
+
+InteractCell.prototype.renderCanvas = function(id) {
+    for (var i in this.controls) {
+	switch(this.controls[i].control_type) {
+	case "input_box":
+	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' name = '" + i + "' id = 'urn_uuid_" + id  + "'></input>");
+	    break;
+	}
+    }
+}
+
+InteractCell.prototype.set_layout = function (new_layout) {
+    this.layout = new_layout;
+}
+
+InteractCell.prototype.set_controls = function (new_controls) {
+    this.controls = new_controls;
+}
+
+InteractCell.prototype.set_function = function (new_function) {
+    this.function_code = new_function
+}
+
+
+// Create UUID4-compliant ID
+// Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+function uuid4() {
+    uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+    return uuid.replace(/[xy]/g, function(c) {
+	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+	return v.toString(16);
+    });
+}
+
 
 function get_output_long_poll(id) {
     $.getJSON($URL.output_long_poll, {computation_id: id, timeout: 2},
