@@ -151,7 +151,7 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
                  "header":{"msg_id":unicode(uuid.uuid4())},
                  "parent_header":{"session":session},
                  "msg_type":"extension",
-                 "sequence":sequence[session]+1}
+                 "sequence":sequence[session]}
             new_messages.append(msg)
             # should send back an execution_state: idle message too
             del sequence[session]
