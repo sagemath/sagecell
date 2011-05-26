@@ -9,10 +9,10 @@ $URL={'script': {{ request.script_root|tojson|safe }},
 'output_long_poll': {{url_for('output_long_poll')|tojson|safe}}
 };
 </script>
-<script type=text/javascript src="{{url_for('static', filename='codemirror2/codemirror.js')}}"></script>
-<link rel="stylesheet" href="{{url_for('static',filename='codemirror2/codemirror.css')}}"/>
-<script type=text/javascript src="{{url_for('static', filename='codemirror2/python.js')}}"></script>
-<link rel="stylesheet" href="{{url_for('static',filename='codemirror2/python.css')}}"/>
+<script type=text/javascript src="{{url_for('static', filename='codemirror2/lib/codemirror.js')}}"></script>
+<link rel="stylesheet" href="{{url_for('static',filename='codemirror2/lib/codemirror.css')}}"/>
+<script type=text/javascript src="{{url_for('static', filename='codemirror2/mode/python/python.js')}}"></script>
+<link rel="stylesheet" href="{{url_for('static',filename='codemirror2/mode/python/python.css')}}"/>
 <script type=text/javascript src="{{url_for('static', filename='jquery-1.5.min.js')}}"></script>
 <script type=text/javascript src="{{url_for('static', filename='compute_server.js')}}"></script>
 <script type=text/javascript src="{{url_for('static', filename='completion.js')}}"></script>
