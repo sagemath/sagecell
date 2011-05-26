@@ -37,7 +37,8 @@ $(function() {
     var sequence=0;
     // Attach a javascript function to the form submit. This function
     // makes an AJAX call to evaluate the contents of the text box.
-    var msg = {"parent_header": {},
+    $('#command_form').submit(function () {
+	var msg = {"parent_header": {},
 	       "header": {"msg_id": uuid4(),
 			  "username": "",
 			  "session": uuid4()},
@@ -47,9 +48,7 @@ $(function() {
 			   "user_variables": [],
 			   "user_expressions": {}}
 	      }
-    $('#command_form').submit(function () {
         $.getJSON($URL.evaluate, {message: msg}, send_computation_success);
-	console.log(editor.getValue());
         return false;
     });
 
