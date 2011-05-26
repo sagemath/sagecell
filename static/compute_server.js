@@ -44,7 +44,7 @@ $(function() {
 			  "session": uuid4()},
 	       "msg_type": "execute_request",
 	       "content": {"code": editor.getValue(),
-			   "silent": False,
+			   "silent": false,
 			   "user_variables": [],
 			   "user_expressions": {}}
 	      }
