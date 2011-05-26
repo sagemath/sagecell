@@ -137,13 +137,24 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
         # Get whatever sessions are done
         finished=set(i for i, r in sessions.iteritems() if r[1].ready())
         new_messages=[]
+        last_message={}
         while not outQueue.empty():
             msg=outQueue.get()
             session = msg['parent_header']['session']
-            msg['sequence']=sequence[session]
-            sequence[session]+=1
-            new_messages.append(msg)
-            print "MESSAGE: ",  msg
+            last_msg=last_message.get(session)
+            # Consolidate session messages of stderr or stdout
+            # channels
+            if (last_msg is not None
+                and msg['msg_type'] == 'stream' and last_msg['msg_type']=='stream'
+                and msg['content']['name'] in ('stdout', 'stderr')
+                and msg['content']['name']==last_msg['content']['name']):
+
+                last_msg['content']['data']+=msg['content']['data']
+            else:
+                msg['sequence']=sequence[session]
+                sequence[session]+=1
+                new_messages.append(msg)
+                last_message[session]=msg
         # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
