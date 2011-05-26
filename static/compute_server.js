@@ -110,7 +110,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
 			    +user_msg.files[j]+"</a><br>\n";
 		    $('#output').append(html);
 		    break;
-		case "comp_end":
+		case "session_end":
 		    sequence=0;
 		    done=true;
 		    break;
@@ -125,13 +125,13 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    interact.renderCanvas(id);
 		    $(function(){
 			$("#urn_uuid_" + id).change(function(){
-			    // Right now, only notifies (via console) of interact changes
-			    console.log($("#urn_uuid_" + id).val());
+			    var changes = interact.getChanges(id);
+			    console.log(changes);
 			});
 		    });
 		    break;
 		case "interact_end":
-		    $('#output').append("<div>END OF DIV</div>");
+		    // TO DO: get code execution from interact outside of interact div.
 		    break;
 		}
 		break;
@@ -160,11 +160,25 @@ function InteractCell(selector) {
     this.layout = {};
 }
 
+InteractCell.prototype.getChanges = function(id) {
+    id = "#urn_uuid_" + id;
+    this.params = {};
+    for (var i in this.controls){
+	switch(this.controls[i].control_type) {
+	case "input_box":
+	    this.params[i] = $(id).val();
+	    break;
+	}
+    }
+    return this.params;
+}
+
 InteractCell.prototype.renderCanvas = function(id) {
+    id = "urn_uuid_" + id;
     for (var i in this.controls) {
 	switch(this.controls[i].control_type) {
 	case "input_box":
-	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' name = '" + i + "' id = 'urn_uuid_" + id  + "'></input>");
+	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' name = '" + i + "' id = " + id  + "></input>");
 	    break;
 	}
     }
