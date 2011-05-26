@@ -1,13 +1,18 @@
+_INTERACTS={}
+
 def interact(f):
     import inspect
     from uuid import uuid4
     from sys import _sage_messages as MESSAGE
+    global _INTERACTS
     (args, varargs, varkw, defaults) = inspect.getargspec(f)
     if defaults is None:
         defaults=[]
     defaults=[InputBox() for _ in range(len(args)-len(defaults))]+list(defaults)
+    function_id=uuid4().get_hex()
+    _INTERACTS[function_id]=f
     MESSAGE.message('interact_start',
-                    {'function_code':'def dummy(n):\n\tprint n',
+                    {'function_code':'interact._INTERACTS[%s]'%function_id,
                      'controls':dict(zip(args,[c.message() for c in defaults])),
                      'layout':args})
     f(**dict(zip(args,[c.default() for c in defaults])))
