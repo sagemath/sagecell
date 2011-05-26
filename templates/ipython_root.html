@@ -1,18 +1,9 @@
 {% extends 'base.html' %}
 {% block body %}
- <form id="command_form" action="">
- <textarea name="commands" id="commands"></textarea><br>
- <div id="completion"></div>
- <input type="submit" value="Evaluate" id="evalButton"/>
- </form>
-
-
-Computation ID: <div id="computation_id"></div>
-<br/>
-<div id="output"><br/><br/></div>
-
-
-<hr/>
-        <h3>Messages</h3>
-        <div id="messages"><br/><br/></div>
+<form id="command_form" action="">
+  <span id="cell0"></span>
+  <input type="button" value="Add cell" id="add_cell">
+</form>
+<h3>Messages</h3>
+<div id="messages"><br/><br/></div>
 {% endblock body %}
