@@ -12,7 +12,7 @@ def interact(f):
     function_id=uuid4().get_hex()
     _INTERACTS[function_id]=f
     MESSAGE.message('interact_start',
-                    {'function_code':'interact._INTERACTS[%s]'%function_id,
+                    {'function_code':'interact._INTERACTS["%s"]'%function_id,
                      'controls':dict(zip(args,[c.message() for c in defaults])),
                      'layout':args})
     f(**dict(zip(args,[c.default() for c in defaults])))

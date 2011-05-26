@@ -116,7 +116,8 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
     sessions={}
-    sequence={}
+    from collections import defaultdict
+    sequence=defaultdict(int)
     manager = Manager()
     while True:
         for X in db.get_input_messages(device_id):
@@ -133,7 +134,6 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
                                                         worker_timeout)))
             # send execution request down the queue.
             sessions[session][0].put(X)
-            sequence[session]=0
         # Get whatever sessions are done
         finished=set(i for i, r in sessions.iteritems() if r[1].ready())
         new_messages=[]
@@ -143,6 +143,7 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
             msg['sequence']=sequence[session]
             sequence[session]+=1
             new_messages.append(msg)
+            print "MESSAGE: ",  msg
         # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
@@ -329,7 +330,7 @@ if __name__ == "__main__":
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
     parser.add_option("-w", type=int, default=1, dest="workers",
                       help="Number of workers to start")
-    parser.add_option("-t", "--timeout", type=int, default=5,
+    parser.add_option("-t", "--timeout", type=int, default=60,
                       dest="worker_timeout",
                       help="Worker idle timeout")
     (sysargs, args) = parser.parse_args()

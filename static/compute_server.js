@@ -39,11 +39,11 @@ $(function() {
     // makes an AJAX call to evaluate the contents of the text box.
     $('#command_form').submit(function () {
 	var msg = {"parent_header": {},
-	       "header": {"msg_id": uuid4(),
+		   "header": {"msg_id": uuid4(),
 			  "username": "",
 			  "session": uuid4()},
-	       "msg_type": "execute_request",
-	       "content": {"code": editor.getValue(),
+		   "msg_type": "execute_request",
+		   "content": {"code": editor.getValue(),
 			   "silent": false,
 			   "user_variables": [],
 			   "user_expressions": {}}
@@ -126,7 +126,22 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    $(function(){
 			$("#urn_uuid_" + id).change(function(){
 			    var changes = interact.getChanges(id);
-			    console.log(changes);
+			    var code = interact.function_code + "(";
+			    for (var i in changes) {
+				code = code + i + "='" +  changes[i] + "',";
+			    }
+			    code = code + ")";
+			    var msg = {"parent_header": {},
+				       "header": {"msg_id": uuid4(),
+						  "username": "",
+						  "session": id},
+				       "msg_type": "execute_request",
+				       "content": {"code": code,
+						   "silent": false,
+						   "user_variables": [],
+						   "user_expressions": {}}
+				      }
+			    $.post($URL.evaluate, {message: JSON.stringify(msg)}, send_computation_success, "json");
 			});
 		    });
 		    break;
