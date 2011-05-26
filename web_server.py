@@ -48,8 +48,11 @@ def root():
 @app.route("/eval")
 @get_db
 def evaluate(db,fs):
-    computation_id=db.create_cell(request.values['commands'])
-    return jsonify(computation_id=computation_id)
+    message=request.values['message']
+    session_id=message['header']['session']
+    db.new_input_message(request.values['message'])
+    # TODO: computation_id -> session_id
+    return jsonify(computation_id=session_id)
 
 @app.route("/answers")
 @print_exception

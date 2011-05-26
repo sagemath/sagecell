@@ -86,7 +86,9 @@ class OutputIPython(object):
 
 from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process
 
-def run(db, fs, workers=1, poll_interval=0.1):
+import uuid
+
+def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
     """
     This function is the main function. Its responsibility is to
     query the database for more work to do and put messages back into the
@@ -97,50 +99,59 @@ def run(db, fs, workers=1, poll_interval=0.1):
     This function also creates the worker pool for doing the actual
     computations.
     """
-    device_id=random.randrange(sys.maxint)
+    device_id=uuid.uuid4()
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
-    results={}
+    sessions={}
     sequence={}
     while True:
-        # Queue up all unevaluated cells we requested
-        for X in db.get_unevaluated_cells(device_id):
-            # change for ipython messages
-            _id = str(X['_id'])
-            code = X['input']
-            log(device_id, _id,message="evaluating '%s'"%code)
-            results[_id]=pool.apply_async(execute_code, (_id, code))
-            sequence[_id]=0
-        # Get whatever results are done
-        finished=set(i for i, r in results.iteritems() if r.ready())
+        for X in db.get_input_messages(device_id):
+            # this gets both new session requests as well as execution
+            # requests for current sessions.
+            session_id=X['header']['session']
+            if session_id not in sessions:
+                # session has not been set up yet
+                q = Queue()
+                log(device_id, session_id,message="evaluating '%s'"%X['content']['content']['code'])
+                sessions[session_id]=(q,
+                                      pool.apply_async(worker,
+                                                       (session_id, q,
+                                                        worker_timeout)))
+            # send execution request down the queue.
+            sessions[session_id][0].put(X)
+            sequence[session_id]=0
+        # Get whatever sessions are done
+        finished=set(i for i, r in sessions.iteritems() if r[1].ready())
         new_messages=[]
         while not outQueue.empty():
             msg=outQueue.get()
-            cell_id = msg['parent_header']['msg_id']
-            msg['sequence']=sequence[cell_id]
-            sequence[cell_id]+=1
+            session_id = msg['parent_header']['session_id']
+            msg['sequence']=sequence[session_id]
+            sequence[session_id]+=1
             new_messages.append(msg)
         # delete the output that I'm finished with
         for _id in finished:
+            # this message should be sent at the end of an execution
+            # request, not at the end of a session
             msg={'content': {"status":"ok",
                              "execution_count":1,
                              "payload":[],
                              "user_expressions":{},
                              "user_variables":{}},
                  "header":{"msg_id":random.random()},
-                 "parent_header":{"msg_id":_id},
+                 "parent_header":{"session_id":_id},
                  "msg_type":"execute_reply",
                  "sequence":sequence[_id]}
             new_messages.append(msg)
-            msg={'content': {"msg_type":"comp_end"},
-                 "header":{"msg_id":random.random()},
-                 "parent_header":{"msg_id":_id},
+            msg={'content': {"msg_type":"session_end"},
+                 "header":{"msg_id":uuid.uuid4()},
+                 "parent_header":{"session_id":_id},
                  "msg_type":"extension",
                  "sequence":sequence[_id]+1}
             new_messages.append(msg)
             # should send back an execution_state: idle message too
             del sequence[_id]
-            del results[_id]
+            del sessions[_id]
         if len(new_messages)>0:
             db.add_messages(None, new_messages)
 
@@ -195,34 +206,43 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, code, output_handler):
+def execProcess(cell_id, q, output_handler, timeout):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
-    code="import sys\nsys._sage_messages=MESSAGE\n"+code
-    with output_handler as MESSAGE:
-        try:
-            exec code in {'MESSAGE': MESSAGE,'interact': interact}
-        except:
-            # Using IPython 0.11 - change code to: import IPython.core.ultratb
-            # Using IPython 0.10:
-            import ultraTB # Modified version of ultraTB that shipped with IPython 0.10 to acheive traceback output compatibility with 0.11
-            (etype, evalue, etb) = sys.exc_info()
-            # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
-            # Using IPython 0.10:
-            err = ultraTB.VerboseTB(include_vars = 0, tb_offset=1)
-            pyerr_queue = QueueOut(cell_id, outQueue, "pyerr")
-            try: # Check whether the exception has any further details
-                error_value = evalue[0]
-            except:
-                error_value = ""
-            # Using IPython 0.11 - change code to: pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
-            pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.text(etype, evalue, etb, context = 3)})
+    import Queue
+    try:
+        while True:
+            msg=q.get(timeout=timeout) # make timeout configurable
+            # assume msg is an execute request message
+            code="import sys\nsys._sage_messages=MESSAGE\n"+msg['content']['code']
+            with output_handler as MESSAGE:
+                try:
+                    exec code in {'MESSAGE': MESSAGE,'interact': interact}
+                except:
+                    # Using IPython 0.11 - change code to: import IPython.core.ultratb
+                    # Using IPython 0.10:
+                    import ultraTB # Modified version of ultraTB that shipped with IPython 0.10 to acheive traceback output compatibility with 0.11
+                    (etype, evalue, etb) = sys.exc_info()
+                    # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
+                    # Using IPython 0.10:
+                    err = ultraTB.VerboseTB(include_vars = 0, tb_offset=1)
+                    pyerr_queue = QueueOut(cell_id, outQueue, "pyerr")
+                    try: # Check whether the exception has any further details
+                        error_value = evalue[0]
+                    except:
+                        error_value = ""
+                    # Using IPython 0.11 - change code to: pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
+                    pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.text(etype, evalue, etb, context = 3)})
+    except Queue.Empty:
+        # this exception is just a way to jump out of the while True
+        # loop and end the session after we've been idle for a while.
+        pass
     print "Done executing code: ", code
     
         
 
-def execute_code(cell_id, code):
+def worker(session_id, q, timeout):
     """
     This function is executed by a worker process. It executes the
     given code in a separate process. This function may start a
@@ -233,6 +253,7 @@ def execute_code(cell_id, code):
     device queue.  These messages represent the output and results of
     executing the code.
     """
+    
     # the fs variable is inherited from the parent process
     code = displayhook_hack(code)
     curr_dir=os.getcwd()
@@ -245,8 +266,11 @@ def execute_code(cell_id, code):
     current_process().daemon=False
     os.chdir(tmp_dir)
     # we need the output handler here so we can add messages about files later
-    output_handler=OutputIPython(cell_id, outQueue)
-    p=Process(target=execProcess, args=(cell_id, code, output_handler))
+    output_handler=OutputIPython(session_id, outQueue)
+
+    # listen on queue and send send execution requests to execProcess
+    p=Process(target=execProcess, args=(session_id, q, output_handler,
+                                        timeout))
     p.start()
     p.join()
     current_process().daemon=oldDaemon
@@ -254,7 +278,7 @@ def execute_code(cell_id, code):
     fslock.acquire() #TODO: do we need this lock?
     for filename in os.listdir(tmp_dir):
         file_list.append(filename)
-        fs_file=fs.new_file(cell_id, filename)
+        fs_file=fs.new_file(session_id, filename)
         with open(filename) as f:
             fs_file.write(f.read())
         fs_file.close()
@@ -270,11 +294,15 @@ if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser(description="Run one or more devices to process commands from the client.")
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
-    parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    parser.add_option("-w", type=int, default=1, dest="workers",
+                      help="Number of workers to start")
+    parser.add_option("-t", "--timeout", type=int, default=5,
+                      dest="worker_timeout",
+                      help="Worker idle timeout")
     (sysargs, args) = parser.parse_args()
 
     import misc
     db, fs = misc.select_db(sysargs)
     outQueue=Queue()
     fslock=Lock() #TODO: do we need this lock?
-    run(db, fs, workers=sysargs.workers)
+    run(db, fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout)
