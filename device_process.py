@@ -15,8 +15,9 @@ class QueueOut(StringIO.StringIO):
         """
         Send a message where you can change the outer IPython msg_type and completely specify the content.
         """
+        #TODO: parent_header may change now that we have multiple execute_request messages!
         msg = {'msg_type': msg_type,
-               'parent_header': {'msg_id': self.cell_id},
+               'parent_header': {'msg_id': self.cell_id, 'session': self.cell_id},
                'header': {'msg_id':random.random()},
                'content': content}
         self.queue.put(msg)
@@ -84,7 +85,7 @@ class OutputIPython(object):
         # supress the exception
         return False
 
-from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process
+from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process, Manager
 
 import uuid
 
@@ -104,6 +105,7 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
     pool=Pool(processes=workers)
     sessions={}
     sequence={}
+    manager = Manager()
     while True:
         for X in db.get_input_messages(device_id):
             # this gets both new session requests as well as execution
@@ -111,7 +113,7 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
             session_id=X['header']['session']
             if session_id not in sessions:
                 # session has not been set up yet
-                q = Queue()
+                q = manager.Queue()
                 log(device_id, session_id,message="evaluating '%s'"%X['content']['code'])
                 sessions[session_id]=(q,
                                       pool.apply_async(worker,
@@ -125,7 +127,7 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
         new_messages=[]
         while not outQueue.empty():
             msg=outQueue.get()
-            session_id = msg['parent_header']['session_id']
+            session_id = msg['parent_header']['session']
             msg['sequence']=sequence[session_id]
             sequence[session_id]+=1
             new_messages.append(msg)
@@ -185,7 +187,6 @@ def displayhook_hack(string):
     # each line's output or the last line's output.  Alternatively, we
     # could fork a python process and feed the code in as standard
     # input and just capture the stdout.
-
     string = string.splitlines()
     i = len(string)-1
     if i >= 0:
@@ -216,6 +217,8 @@ Meant to be run as a separate process."""
             msg=q.get(timeout=timeout) # make timeout configurable
             # assume msg is an execute request message
             code="import sys\nsys._sage_messages=MESSAGE\n"+msg['content']['code']
+            code = displayhook_hack(code)
+
             with output_handler as MESSAGE:
                 try:
                     exec code in {'MESSAGE': MESSAGE,'interact': interact}
@@ -253,9 +256,7 @@ def worker(session_id, q, timeout):
     device queue.  These messages represent the output and results of
     executing the code.
     """
-    
     # the fs variable is inherited from the parent process
-    code = displayhook_hack(code)
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     print "Temp files in "+tmp_dir
@@ -267,10 +268,9 @@ def worker(session_id, q, timeout):
     os.chdir(tmp_dir)
     # we need the output handler here so we can add messages about files later
     output_handler=OutputIPython(session_id, outQueue)
-
     # listen on queue and send send execution requests to execProcess
-    p=Process(target=execProcess, args=(session_id, q, output_handler,
-                                        timeout))
+    args=(session_id, q, output_handler, timeout)
+    p=Process(target=execProcess, args=args)
     p.start()
     p.join()
     current_process().daemon=oldDaemon
