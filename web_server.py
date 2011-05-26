@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file
+from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json
 from time import time, sleep
 from functools import wraps
 import uuid
@@ -45,12 +45,14 @@ def get_db(f):
 def root():
     return render_template('ipython_root.html')
 
-@app.route("/eval")
+@app.route("/eval", methods=['GET','POST'])
 @get_db
 def evaluate(db,fs):
-    message=request.values['message']
+    print 'received request', request.values['message']
+    message=json.loads(request.values['message'])
+    print message
     session_id=message['header']['session']
-    db.new_input_message(request.values['message'])
+    db.new_input_message(message)
     # TODO: computation_id -> session_id
     return jsonify(computation_id=session_id)
 

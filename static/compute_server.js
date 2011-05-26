@@ -48,7 +48,7 @@ $(function() {
 			   "user_variables": [],
 			   "user_expressions": {}}
 	      }
-        $.getJSON($URL.evaluate, {message: msg}, send_computation_success);
+        $.post($URL.evaluate, {message: JSON.stringify(msg)}, send_computation_success, "json");
         return false;
     });
 

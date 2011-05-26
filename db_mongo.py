@@ -26,6 +26,7 @@ class DB(db.DB):
         # look up device, if a device exists for the session
         # default to a device of -1 (or None would be better)
         msg['device']=-1
+        print msg, type(msg)
         self.c.input_messages.insert(msg)
     
     def get_input_messages(self, device_id, limit=None):

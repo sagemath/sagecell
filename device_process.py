@@ -112,7 +112,7 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
             if session_id not in sessions:
                 # session has not been set up yet
                 q = Queue()
-                log(device_id, session_id,message="evaluating '%s'"%X['content']['content']['code'])
+                log(device_id, session_id,message="evaluating '%s'"%X['content']['code'])
                 sessions[session_id]=(q,
                                       pool.apply_async(worker,
                                                        (session_id, q,
