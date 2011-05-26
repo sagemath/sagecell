@@ -1,35 +1,41 @@
-import sys, time, traceback, StringIO, contextlib, random
+import sys, time, traceback, StringIO, contextlib, random, uuid
 import interact
 
 def log(device_id, code_id=None, message=None):
     print "%s   %s: %s"%(device_id,code_id, message)
 
 class QueueOut(StringIO.StringIO):
-    def __init__(self, _id, queue, channel):
+    def __init__(self, session, queue, parent_header=None):
         StringIO.StringIO.__init__(self)
-        self.cell_id=_id
-        self.channel=channel
+        self.session=session
         self.queue=queue
+        self.parent_header=parent_header
 
     def raw_message(self, msg_type, content):
         """
         Send a message where you can change the outer IPython msg_type and completely specify the content.
         """
-        #TODO: parent_header may change now that we have multiple execute_request messages!
         msg = {'msg_type': msg_type,
-               'parent_header': {'msg_id': self.cell_id, 'session': self.cell_id},
-               'header': {'msg_id':random.random()},
+               'parent_header': self.parent_header,
+               # We don't transmit the session id in the header since
+               # it should already be in the parent_header
+               'header': {'msg_id':unicode(uuid.uuid4())},
                'content': content}
         self.queue.put(msg)
-        sys.__stdout__.write("USER MESSAGE PUT IN QUEUE (channel %s): %s\n"%(self.channel, msg))
+        sys.__stdout__.write("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
+
+class ChannelQueue(QueueOut):
+    def __init__(self, session, queue, channel, parent_header=None):
+        QueueOut.__init__(self, session=session, queue=queue, parent_header=parent_header)
+        self.channel=channel
 
     def write(self, output):
         self.raw_message(msg_type='stream',
                          content={'data': output, 'name':self.channel})
 
 class QueueOutMessage(QueueOut):
-    def __init__(self, _id, queue):
-        QueueOut.__init__(self, _id, queue, 'extension')
+    def __init__(self, session, queue):
+        QueueOut.__init__(self, session=session, queue=queue)
 
     def message(self, msg_type, content):
         """
@@ -46,13 +52,19 @@ class QueueOutMessage(QueueOut):
                          content={'data':data})
 
 class OutputIPython(object):
-    def __init__(self, _id, queue):
-        self.cell_id=_id
+    def __init__(self, session, queue):
+        self.session=session
         self.queue=queue
-        self.stdout_queue=QueueOut(self.cell_id, self.queue, "stdout")
-        self.stderr_queue=QueueOut(self.cell_id, self.queue, "stderr")
-        self.pyout_queue=QueueOut(self.cell_id, self.queue, "pyout")
-        self.message_queue=QueueOutMessage(self.cell_id, self.queue)
+        self.stdout_queue=ChannelQueue(self.session, self.queue, "stdout")
+        self.stderr_queue=ChannelQueue(self.session, self.queue, "stderr")
+        self.message_queue=QueueOutMessage(self.session, self.queue)
+
+    def set_parent_header(self, parent_header):
+        """
+        Set the parent header on all output queues
+        """
+        for q in [self.stdout_queue, self.stderr_queue, self.message_queue]:
+            q.parent_header=parent_header
     
     def __enter__(self):
         # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
@@ -63,13 +75,13 @@ class OutputIPython(object):
         sys.stderr = self.stderr_queue
         sys.stdout = self.stdout_queue
         
+        # TODO: this needs to be meshed nicely with the Sage display hook
         def displayQueue(obj):
             if obj is not None:
                 import __builtin__
                 __builtin__._ = obj
-                sys.stdout = self.pyout_queue
-                print repr(obj)
-                sys.stdout = self.stdout_queue
+                self.message_queue.raw_message("pyout", 
+                                               {"data": {"text/plain": repr(obj)}})
 
         sys.displayhook = displayQueue
 
@@ -110,50 +122,40 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
         for X in db.get_input_messages(device_id):
             # this gets both new session requests as well as execution
             # requests for current sessions.
-            session_id=X['header']['session']
-            if session_id not in sessions:
+            session=X['header']['session']
+            if session not in sessions:
                 # session has not been set up yet
                 q = manager.Queue()
-                log(device_id, session_id,message="evaluating '%s'"%X['content']['code'])
-                sessions[session_id]=(q,
+                log(device_id, session,message="evaluating '%s'"%X['content']['code'])
+                sessions[session]=(q,
                                       pool.apply_async(worker,
-                                                       (session_id, q,
+                                                       (session, q,
                                                         worker_timeout)))
             # send execution request down the queue.
-            sessions[session_id][0].put(X)
-            sequence[session_id]=0
+            sessions[session][0].put(X)
+            sequence[session]=0
         # Get whatever sessions are done
         finished=set(i for i, r in sessions.iteritems() if r[1].ready())
         new_messages=[]
         while not outQueue.empty():
             msg=outQueue.get()
-            session_id = msg['parent_header']['session']
-            msg['sequence']=sequence[session_id]
-            sequence[session_id]+=1
+            session = msg['parent_header']['session']
+            msg['sequence']=sequence[session]
+            sequence[session]+=1
             new_messages.append(msg)
         # delete the output that I'm finished with
-        for _id in finished:
+        for session in finished:
             # this message should be sent at the end of an execution
             # request, not at the end of a session
-            msg={'content': {"status":"ok",
-                             "execution_count":1,
-                             "payload":[],
-                             "user_expressions":{},
-                             "user_variables":{}},
-                 "header":{"msg_id":random.random()},
-                 "parent_header":{"session_id":_id},
-                 "msg_type":"execute_reply",
-                 "sequence":sequence[_id]}
-            new_messages.append(msg)
             msg={'content': {"msg_type":"session_end"},
-                 "header":{"msg_id":uuid.uuid4()},
-                 "parent_header":{"session_id":_id},
+                 "header":{"msg_id":unicode(uuid.uuid4())},
+                 "parent_header":{"session":session},
                  "msg_type":"extension",
-                 "sequence":sequence[_id]+1}
+                 "sequence":sequence[session]+1}
             new_messages.append(msg)
             # should send back an execution_state: idle message too
-            del sequence[_id]
-            del sessions[_id]
+            del sequence[session]
+            del sessions[session]
         if len(new_messages)>0:
             db.add_messages(None, new_messages)
 
@@ -212,16 +214,24 @@ def execProcess(cell_id, q, output_handler, timeout):
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
     import Queue
+    execution_count=1
     try:
         while True:
             msg=q.get(timeout=timeout) # make timeout configurable
             # assume msg is an execute request message
             code="import sys\nsys._sage_messages=MESSAGE\n"+msg['content']['code']
             code = displayhook_hack(code)
-
+            output_handler.set_parent_header(msg['header'])
             with output_handler as MESSAGE:
                 try:
                     exec code in {'MESSAGE': MESSAGE,'interact': interact}
+                    output_handler.message_queue.raw_message("execute_reply", 
+                                                             {"status":"ok",
+                                                              "execution_count":execution_count,
+                                                              "payload":[],
+                                                              "user_expressions":{},
+                                                              "user_variables":{}})
+
                 except:
                     # Using IPython 0.11 - change code to: import IPython.core.ultratb
                     # Using IPython 0.10:
@@ -230,13 +240,36 @@ Meant to be run as a separate process."""
                     # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
                     # Using IPython 0.10:
                     err = ultraTB.VerboseTB(include_vars = 0, tb_offset=1)
-                    pyerr_queue = QueueOut(cell_id, outQueue, "pyerr")
                     try: # Check whether the exception has any further details
                         error_value = evalue[0]
                     except:
                         error_value = ""
-                    # Using IPython 0.11 - change code to: pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.structured_traceback(etype, evalue, etb, context = 3)})
-                    pyerr_queue.raw_message("pyerr", {"ename": etype.__name__, "evalue": error_value, "traceback": err.text(etype, evalue, etb, context = 3)})
+                    # Using IPython 0.11 - change code to:
+                    # err_msg={"ename":
+                    # etype.__name__, "evalue": error_value,
+                    # "traceback": err.structured_traceback(etype,
+                    # evalue, etb, context = 3)})
+                    err_msg={"ename": etype.__name__, "evalue": error_value,
+                             "traceback": err.text(etype, evalue, etb, context=3)}
+                    output_handler.message_queue.raw_message("pyerr",err_msg)
+                    # TODO: This seems *really* redundant to send an
+                    # execute_reply message that repeats the error information!
+                    execute_msg={"status":"error",
+                                 "execution_count":execution_count,
+                                 #TODO: docs have this as exc_name and
+                                 #exc_value, but it seems like IPython
+                                 #returns ename and evalue!
+                                 "ename": err_msg['ename'],
+                                 "evalue": err_msg['evalue'],
+                                 "traceback": err_msg['traceback']}
+                    output_handler.message_queue.raw_message("execute_reply", 
+                                                           execute_msg)
+
+                # TOOD: Should this message be done inside the try
+                # block, since it claims the status is 'ok'?
+                # This doesn't have to use the pyout_queue...any queue in output_handler will work
+                execution_count+=1
+
     except Queue.Empty:
         # this exception is just a way to jump out of the while True
         # loop and end the session after we've been idle for a while.
@@ -245,7 +278,7 @@ Meant to be run as a separate process."""
     
         
 
-def worker(session_id, q, timeout):
+def worker(session, q, timeout):
     """
     This function is executed by a worker process. It executes the
     given code in a separate process. This function may start a
@@ -267,9 +300,9 @@ def worker(session_id, q, timeout):
     current_process().daemon=False
     os.chdir(tmp_dir)
     # we need the output handler here so we can add messages about files later
-    output_handler=OutputIPython(session_id, outQueue)
+    output_handler=OutputIPython(session, outQueue)
     # listen on queue and send send execution requests to execProcess
-    args=(session_id, q, output_handler, timeout)
+    args=(session, q, output_handler, timeout)
     p=Process(target=execProcess, args=args)
     p.start()
     p.join()
@@ -278,7 +311,7 @@ def worker(session_id, q, timeout):
     fslock.acquire() #TODO: do we need this lock?
     for filename in os.listdir(tmp_dir):
         file_list.append(filename)
-        fs_file=fs.new_file(session_id, filename)
+        fs_file=fs.new_file(session, filename)
         with open(filename) as f:
             fs_file.write(f.read())
         fs_file.close()
