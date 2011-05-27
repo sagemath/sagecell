@@ -4,82 +4,65 @@ function generic_callback(status, response_text) {
     /* do nothing */
 }
 
-function async_request(url, callback, postvars) {
-    var settings = {
-        url : url,
-        async : true,
-        cache : false,
-        dataType: "json"
-    };
-
-    if ($.isFunction(callback)) {
-        settings.error = function (jqXHR, textStatus, errorThrown) {
-            callback("failure", errorThrown);
-        };
-        settings.success = function (data, textStatus, jqXHR) {
-            callback("success", data, jqXHR);
-        };
-    }
-
-    if (postvars) {
-        settings.type = "POST";
-        settings.data = postvars;
-    } else {
-        settings.type = "GET";
-    }
-
-    $.ajax(settings);
-}
-
 /* TODO:
    Make session object so that each time eval is pressed, a new session object is created which tracks its own sequence, request, id, session, etc.
 */
 
 $(function() {
-    // This variable is closed over in scope so it doesn't pollute the global scope
-    var sequence=0;
-    // Attach a javascript function to the form submit. This function
-    // makes an AJAX call to evaluate the contents of the text box.
-    $('#command_form').submit(function () {
-	var msg = {"parent_header": {},
+    $('#command_form').submit(function() {
+	var session = new Session(editor.getValue());
+	session.sendMsg();
+    });
+});
+
+function Session(input) {
+    this.input = input;
+    this.session_id = uuid4();
+    this.sequence = 0;
+}
+
+Session.prototype.sendMsg = function() {
+    var msg = {"parent_header": {},
 		   "header": {"msg_id": uuid4(),
 			  "username": "",
-			  "session": uuid4()},
+			  "session": this.session_id},
 		   "msg_type": "execute_request",
-		   "content": {"code": editor.getValue(),
+		   "content": {"code": this.input,
 			   "silent": false,
 			   "user_variables": [],
 			   "user_expressions": {}}
-	      }
-        $.post($URL.evaluate, {message: JSON.stringify(msg)}, send_computation_success, "json");
-        return false;
-    });
+	      };
+    alert(JSON.stringify($.post($URL.evaluate, {message: JSON.stringify(msg)}, this.send_computation_success, "json")));//.error(function(){alert("ERROR");});
+    alert($URL.evaluate);
+    alert(JSON.stringify(msg));
+    return false;
+}
 
-function send_computation_success(data, textStatus, jqXHR) {
+Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
+    alert("in scs");
     $("#computation_id").text(data.computation_id);
-    // start long-polling to get the output
-    // TODO: look at maybe using something like https://github.com/RobertFischer/JQuery-PeriodicalUpdater/
-    get_output(data.computation_id);
+    alert(text(data.computation_id));
+    this.get_output(data.computation_id);
 }
 
-function get_output(id) {
-    $.getJSON($URL.output_poll, {computation_id: id, sequence: sequence},
+Session.prototype.get_output = function(id) {
+    $.getJSON($URL.output_poll, {computation_id: id, sequence: this.sequence},
               function(data, textStatus, jqXHR) {
-                  get_output_success(data, textStatus, jqXHR, id);});
+                  this.get_output_success(data, textStatus, jqXHR, id);});
 }
 
-function get_output_success(data, textStatus, jqXHR, id) {
-    var done=false;
+Session.prototype.get_output_success = function(data, textStatus, jqXHR, id) {
+    var done = false;
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
 	for (var i = 0; i < content.length; i++) {
             msg=content[i];
-            if(msg.sequence!==sequence) {
+            if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
                 console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
             }
-            sequence+=1;
+            this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream': 
@@ -178,8 +161,6 @@ function get_output_success(data, textStatus, jqXHR, id) {
     }
 }
 
-});
-
 function InteractCell(selector) {
     this.element = $(selector);
     this.element.data("interact", this);
@@ -243,21 +224,6 @@ function uuid4() {
 	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
 	return v.toString(16);
     });
-}
-
-
-function get_output_long_poll(id) {
-    $.getJSON($URL.output_long_poll, {computation_id: id, timeout: 2},
-              function(data, textStatus, jqXHR) {
-                  get_output_success(data, textStatus, jqXHR, id);});
-}
-
-function get_output_long_poll_success(data, textStatus, jqXHR, id) {
-    //alert(data);
-    if(data.output==undefined) {
-        get_output(id);
-    }
-    $('#output').text(data.output)
 }
 
 colorCodes={"30":"black",
