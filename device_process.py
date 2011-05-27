@@ -245,13 +245,17 @@ Meant to be run as a separate process."""
             output_handler.set_parent_header(msg['header'])
             with output_handler as MESSAGE:
                 try:
-                    exec code in {'MESSAGE': MESSAGE,'interact': interact}
+                    exec code in {'MESSAGE': MESSAGE,
+                                  'interact': interact}
+                    # I've commented out fields we aren't using below to
+                    # save bandwidth
                     output_handler.message_queue.raw_message("execute_reply", 
                                                              {"status":"ok",
-                                                              "execution_count":execution_count,
-                                                              "payload":[],
-                                                              "user_expressions":{},
-                                                              "user_variables":{}})
+                                                              #"execution_count":execution_count,
+                                                              #"payload":[],
+                                                              #"user_expressions":{},
+                                                              #"user_variables":{}
+                                                              })
 
                 except:
                     # Using IPython 0.11 - change code to: import IPython.core.ultratb
