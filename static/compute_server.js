@@ -96,7 +96,18 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		break;
 
 	    case 'pyerr':
-		$('#output').append("<pre>"+colorize(msg.content.traceback.join("\n").replace(/</g,"&lt;"))+"</pre>");
+		$('#output').append("<pre>"+colorize(msg.content.traceback.join("\n")
+						     .replace(/&/g,"&amp;")
+						     .replace(/</g,"&lt;")+"</pre>"));
+		break;
+	    case 'execute_reply':
+		if(msg.content.status==="error") {
+		    // copied from the pyerr case
+		    $('#output').append("<pre>"+colorize(msg.content.traceback.join("\n")
+							 .replace(/&/g,"&amp;")
+							 .replace(/</g,"&lt;")+"</pre>"));
+		}
+		done=true;
 		break;
 
 	    case 'extension':
