@@ -31,6 +31,9 @@ function async_request(url, callback, postvars) {
     $.ajax(settings);
 }
 
+/* TODO:
+   Make session object so that each time eval is pressed, a new session object is created which tracks its own sequence, request, id, session, etc.
+*/
 
 $(function() {
     // This variable is closed over in scope so it doesn't pollute the global scope
@@ -127,7 +130,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    done=true;
 		    break;
 		case "interact_start":
-		    var div_id = "interact" + Math.floor(Math.random()*100000);
+		    var div_id = "interact-" + id;
 		    console.log(id); // Computation ID
 		    $('#output').append("<div id='"+div_id+"'></div>");
 		    var interact = new InteractCell("#" + div_id);
@@ -136,7 +139,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    interact.set_function(user_msg.content.function_code);
 		    interact.renderCanvas(id);
 		    $(function(){
-			$("#urn_uuid_" + id).change(function(){
+			$(".urn_uuid_" + id).change(function(){
 			    var changes = interact.getChanges(id);
 			    var code = interact.function_code + "(";
 			    for (var i in changes) {
@@ -158,7 +161,6 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    });
 		    break;
 		case "interact_end":
-		    // TO DO: get code execution from interact outside of interact div.
 		    break;
 		}
 		break;
@@ -192,8 +194,11 @@ InteractCell.prototype.getChanges = function(id) {
     this.params = {};
     for (var i in this.controls){
 	switch(this.controls[i].control_type) {
+	case "html":
+	   // for text box: this.params[i] = $(id + "-" + i).val();
+	    break;
 	case "input_box":
-	    this.params[i] = $(id).val();
+	    this.params[i] = $(id + "-" + i).val();
 	    break;
 	}
     }
@@ -204,8 +209,14 @@ InteractCell.prototype.renderCanvas = function(id) {
     id = "urn_uuid_" + id;
     for (var i in this.controls) {
 	switch(this.controls[i].control_type) {
+	case "html":
+	    var html_code = this.controls[i].html;
+	    html_code = html_code.replace("$"+i+"$", this.controls[i].default);
+	    html_code = html_code.replace("$id$", id);
+	    this.element.append(html_code);
+	    break;
 	case "input_box":
-	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' name = '" + i + "' id = " + id  + "></input>");
+	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "-" + i + "></input>");
 	    break;
 	}
     }
