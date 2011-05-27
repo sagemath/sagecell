@@ -69,13 +69,13 @@ message channel between the BROWSER and the SESSION
 TODO
 ====
 
-[ ] Change the execution requests to use IPython messages.  We still
+[X] Change the execution requests to use IPython messages.  We still
 probably want to store these in a special table, rather than just
 putting them in the messages table.  Tables in the MongoDB would then
 nicely correspond to 0MQ channels, and preserve the idea that the
 database is merely a large buffer for the 0MQ channels.
 
-[ ] When the first execution request for a computation is sent,
+[X] When the first execution request for a computation is sent,
 flask/DB assign a session id (this is what we call the computation id
 right now).
 
@@ -86,13 +86,13 @@ are overwritten and old output is also overwritten.  This saves time
 and disk space if there are a large number of execution requests
 coming in for the same function.
 
-[ ] When a device queries for work, it receives back both new session
+[A] When a device queries for work, it receives back both new session
 requests as well as new execution requests for existing sessions on
 the device.  There is another table in the database which matches
 process ids up to device ids, so we'll be able to tell what new
 execution requests are to be sent to the device.
 
-[ ] A worker process in the device doesn't just execute code.
+[X] A worker process in the device doesn't just execute code.
 Instead, it opens up a queue to the device and accepts execution
 requests.  The first execution request should be immediately placed
 into the queue.  The worker polls this queue.  If the (configurable)
@@ -100,9 +100,18 @@ timeout on the poll is triggered, the worker terminates.  This allows
 a server administrator to specify that worker processes should be
 terminated if they are idle for 10 seconds, say.
 
- - If we get an interact message back, don't stop the computation and return an end of computation marker.  Instead, keep the worker open for X number of seconds and continue polling for new computation requests.
+[ ] HTML control::
 
- - Support in the database multiple interact evaluation requests
+    msg_type: "interact_control"
+    content: {"control_type": "html",
+              "html": <string for the html of the control. The
+    onChange handler should trickle up beyond this html.>
+              "sanitize": <string for a javascript function which
+    takes in the div containing only the "html" string, and returns a
+    string representing the value of the control}
 
- - On the devices, support multiple evaluation requests for worker processes
+[ ] Select Box control
 
+[ ] JqueryUI slider control
+
+[ ] Get current Sage interact theme
