@@ -1,6 +1,14 @@
 import sys, time, traceback, StringIO, contextlib, random, uuid
 import interact
 
+user_code="""
+import sys
+sys._sage_messages=MESSAGE
+def _get_interact_function(id):
+    import interact
+    return interact._INTERACTS[id]
+"""
+
 def log(device_id, code_id=None, message=None):
     print "%s   %s: %s"%(device_id,code_id, message)
 
@@ -226,12 +234,13 @@ def execProcess(cell_id, q, output_handler, timeout):
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
     import Queue
+    global user_code
     execution_count=1
     try:
         while True:
             msg=q.get(timeout=timeout) # make timeout configurable
             # assume msg is an execute request message
-            code="import sys\nsys._sage_messages=MESSAGE\n"+msg['content']['code']
+            code=user_code+msg['content']['code']
             code = displayhook_hack(code)
             output_handler.set_parent_header(msg['header'])
             with output_handler as MESSAGE:
