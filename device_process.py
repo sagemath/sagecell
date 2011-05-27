@@ -270,21 +270,18 @@ Meant to be run as a separate process."""
                     # etype.__name__, "evalue": error_value,
                     # "traceback": err.structured_traceback(etype,
                     # evalue, etb, context = 3)})
+
+                    #TODO: docs have this as exc_name and exc_value,
+                    #but it seems like IPython returns ename and
+                    #evalue!
+
                     err_msg={"ename": etype.__name__, "evalue": error_value,
                              "traceback": err.text(etype, evalue, etb, context=3)}
-                    output_handler.message_queue.raw_message("pyerr",err_msg)
-                    # TODO: This seems *really* redundant to send an
-                    # execute_reply message that repeats the error information!
-                    execute_msg={"status":"error",
-                                 "execution_count":execution_count,
-                                 #TODO: docs have this as exc_name and
-                                 #exc_value, but it seems like IPython
-                                 #returns ename and evalue!
-                                 "ename": err_msg['ename'],
-                                 "evalue": err_msg['evalue'],
-                                 "traceback": err_msg['traceback']}
+                    #output_handler.message_queue.raw_message("pyerr",err_msg)
+                    err_msg.update(status="error",
+                                   execution_count=execution_count)
                     output_handler.message_queue.raw_message("execute_reply", 
-                                                           execute_msg)
+                                                             err_msg)
 
                 # TOOD: Should this message be done inside the try
                 # block, since it claims the status is 'ok'?
