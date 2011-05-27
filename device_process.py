@@ -238,6 +238,8 @@ Meant to be run as a separate process."""
     execution_count=1
     try:
         while True:
+            # TODO: Optimization: make the timeout only apply when an interact has
+            # been constructed.
             msg=q.get(timeout=timeout) # make timeout configurable
             # assume msg is an execute request message
             code=user_code+msg['content']['code']
