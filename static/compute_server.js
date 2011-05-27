@@ -122,6 +122,7 @@ function get_output_success(data, textStatus, jqXHR, id) {
 		    $('#output').append(html);
 		    break;
 		case "session_end":
+		    $('#output').append("<div class='done'>Session Done</div>");
 		    sequence=0;
 		    done=true;
 		    break;
