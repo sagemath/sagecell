@@ -128,7 +128,8 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
     sequence=defaultdict(int)
     manager = Manager()
     while True:
-        for X in db.get_input_messages(device_id):
+        # limit new sessions to the number of free workers we have
+        for X in db.get_input_messages(device_id, limit=workers-len(sessions)):
             # this gets both new session requests as well as execution
             # requests for current sessions.
             session=X['header']['session']
@@ -176,6 +177,7 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
             # should send back an execution_state: idle message too
             del sequence[session]
             del sessions[session]
+            db.close_session(device=device_id, session=session)
         if len(new_messages)>0:
             db.add_messages(None, new_messages)
 
