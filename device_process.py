@@ -109,7 +109,7 @@ from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_pr
 
 import uuid
 
-def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
+def run(db, fs, workers, worker_timeout, poll_interval=0.1):
     """
     This function is the main function. Its responsibility is to
     query the database for more work to do and put messages back into the
@@ -135,18 +135,24 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
             session=X['header']['session']
             if session not in sessions:
                 # session has not been set up yet
-                q = manager.Queue()
                 log(device_id, session,message="evaluating '%s'"%X['content']['code'])
-                sessions[session]=(q,
-                                      pool.apply_async(worker,
-                                                       (session, q,
-                                                        worker_timeout)))
+                msg_queue=manager.Queue()
+                command_queue=manager.Queue()
+                sessions[session]={'message': msg_queue,
+                                   'command': command_queue,
+                                   'worker': pool.apply_async(worker,
+                                                              (session,
+                                                               msg_queue,
+                                                               command_queue))}
             # send execution request down the queue.
-            sessions[session][0].put(X)
+            sessions[session]['message'].put(X)
         # Get whatever sessions are done
-        finished=set(i for i, r in sessions.iteritems() if r[1].ready())
+        finished=set(i for i, r in sessions.iteritems() if r['worker'].ready())
         new_messages=[]
         last_message={}
+        # TODO: should just get until there is a Queue.Empty error,
+        # TODO: but should also have a max timeout for the message loop
+        # TODO: or maybe just a max number of messages we can handle in one loop
         while not outQueue.empty():
             msg=outQueue.get()
             session = msg['parent_header']['session']
@@ -164,6 +170,12 @@ def run(db, fs, workers=None, worker_timeout=None, poll_interval=0.1):
                 sequence[session]+=1
                 new_messages.append(msg)
                 last_message[session]=msg
+
+            if (msg['msg_type']=='extension' 
+                and msg['content']['msg_type']=="interact_start"):
+                print "Sending message to change timeout"
+                sessions[session]['command'].put({'msg_type': 'timeout_change',
+                                                  'content': {'new_timeout': worker_timeout}})
         # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
@@ -231,80 +243,100 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, q, output_handler, timeout):
+def execProcess(cell_id, message_queue, command_queue, output_handler):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
     import Queue
     global user_code
+    # timeout has to be long enough so we don't miss the first message
+    # and so that we don't miss a command that may come after the first message.
+    # thus, this default timeout should be much longer than the polling interval
+    # for the output queue
+    timeout=1
     execution_count=1
-    try:
-        while True:
-            # TODO: Optimization: make the timeout only apply when an interact has
-            # been constructed.
-            msg=q.get(timeout=timeout) # make timeout configurable
-            # assume msg is an execute request message
-            code=user_code+msg['content']['code']
-            code = displayhook_hack(code)
-            output_handler.set_parent_header(msg['header'])
-            with output_handler as MESSAGE:
-                try:
-                    exec code in {'MESSAGE': MESSAGE,
-                                  'interact': interact}
-                    # I've commented out fields we aren't using below to
-                    # save bandwidth
-                    output_handler.message_queue.raw_message("execute_reply", 
-                                                             {"status":"ok",
-                                                              #"execution_count":execution_count,
-                                                              #"payload":[],
-                                                              #"user_expressions":{},
-                                                              #"user_variables":{}
-                                                              })
+    empty_times=0
+    while True:
+        print "CHECKING FOR COMMANDS"
+        # check for new commands every round
+        try:
+            command=command_queue.get(block=False)
+            if command['msg_type']=="timeout_change":
+                timeout=int(command['content']['new_timeout'])
+                print "Changed timeout to ", timeout
+        except Queue.Empty:
+            print "no commands"
+            pass
 
+        try:
+            msg=message_queue.get(timeout=timeout)
+        except Queue.Empty:
+            empty_times+=1
+            if empty_times>=2:
+                break
+            else:
+                continue
+
+        if msg['msg_type']!="execute_request":
+            raise ValueError("Received invalid message: %s"%(msg,))
+        print "Received message: ",msg
+        code=user_code+msg['content']['code']
+        code = displayhook_hack(code)
+        output_handler.set_parent_header(msg['header'])
+        with output_handler as MESSAGE:
+            try:
+                exec code in {'MESSAGE': MESSAGE,
+                              'interact': interact}
+                # I've commented out fields we aren't using below to
+                # save bandwidth
+                output_handler.message_queue.raw_message("execute_reply", 
+                                                         {"status":"ok",
+                                                          #"execution_count":execution_count,
+                                                          #"payload":[],
+                                                          #"user_expressions":{},
+                                                          #"user_variables":{}
+                                                          })
+
+            except:
+                # Using IPython 0.11 - change code to: import IPython.core.ultratb
+                # Using IPython 0.10:
+                import ultraTB # Modified version of ultraTB that shipped with IPython 0.10 to acheive traceback output compatibility with 0.11
+                (etype, evalue, etb) = sys.exc_info()
+                # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
+                # Using IPython 0.10:
+                err = ultraTB.VerboseTB(include_vars = 0, tb_offset=1)
+                try: # Check whether the exception has any further details
+                    error_value = evalue[0]
                 except:
-                    # Using IPython 0.11 - change code to: import IPython.core.ultratb
-                    # Using IPython 0.10:
-                    import ultraTB # Modified version of ultraTB that shipped with IPython 0.10 to acheive traceback output compatibility with 0.11
-                    (etype, evalue, etb) = sys.exc_info()
-                    # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
-                    # Using IPython 0.10:
-                    err = ultraTB.VerboseTB(include_vars = 0, tb_offset=1)
-                    try: # Check whether the exception has any further details
-                        error_value = evalue[0]
-                    except:
-                        error_value = ""
-                    # Using IPython 0.11 - change code to:
-                    # err_msg={"ename":
-                    # etype.__name__, "evalue": error_value,
-                    # "traceback": err.structured_traceback(etype,
-                    # evalue, etb, context = 3)})
+                    error_value = ""
+                # Using IPython 0.11 - change code to:
+                # err_msg={"ename":
+                # etype.__name__, "evalue": error_value,
+                # "traceback": err.structured_traceback(etype,
+                # evalue, etb, context = 3)})
 
-                    #TODO: docs have this as exc_name and exc_value,
-                    #but it seems like IPython returns ename and
-                    #evalue!
+                #TODO: docs have this as exc_name and exc_value,
+                #but it seems like IPython returns ename and
+                #evalue!
 
-                    err_msg={"ename": etype.__name__, "evalue": error_value,
-                             "traceback": err.text(etype, evalue, etb, context=3)}
-                    #output_handler.message_queue.raw_message("pyerr",err_msg)
-                    err_msg.update(status="error",
-                                   execution_count=execution_count)
-                    output_handler.message_queue.raw_message("execute_reply", 
-                                                             err_msg)
+                err_msg={"ename": etype.__name__, "evalue": error_value,
+                         "traceback": err.text(etype, evalue, etb, context=3)}
+                #output_handler.message_queue.raw_message("pyerr",err_msg)
+                err_msg.update(status="error",
+                               execution_count=execution_count)
+                output_handler.message_queue.raw_message("execute_reply", 
+                                                         err_msg)
 
-                # TOOD: Should this message be done inside the try
-                # block, since it claims the status is 'ok'?
-                # This doesn't have to use the pyout_queue...any queue in output_handler will work
-                execution_count+=1
+            # TOOD: Should this message be done inside the try
+            # block, since it claims the status is 'ok'?
+            # This doesn't have to use the pyout_queue...any queue in output_handler will work
+            execution_count+=1
 
-    except Queue.Empty:
-        # this exception is just a way to jump out of the while True
-        # loop and end the session after we've been idle for a while.
-        pass
     print "Done executing code: ", code
     
         
 
-def worker(session, q, timeout):
+def worker(session, message_queue, command_queue):
     """
     This function is executed by a worker process. It executes the
     given code in a separate process. This function may start a
@@ -325,10 +357,11 @@ def worker(session, q, timeout):
     # Daemonic processes cannot create children
     current_process().daemon=False
     os.chdir(tmp_dir)
-    # we need the output handler here so we can add messages about files later
+    # we need the output handler here so we can add messages about
+    # files later
     output_handler=OutputIPython(session, outQueue)
     # listen on queue and send send execution requests to execProcess
-    args=(session, q, output_handler, timeout)
+    args=(session, message_queue, command_queue, output_handler)
     p=Process(target=execProcess, args=args)
     p.start()
     p.join()
@@ -357,7 +390,7 @@ if __name__ == "__main__":
                       help="Number of workers to start")
     parser.add_option("-t", "--timeout", type=int, default=60,
                       dest="worker_timeout",
-                      help="Worker idle timeout")
+                      help="Worker idle timeout if an interact command is detected")
     (sysargs, args) = parser.parse_args()
 
     import misc
