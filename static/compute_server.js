@@ -183,18 +183,8 @@ function InteractCell(selector, data) {
 	    code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
         }
         code = code + ")";
-        var msg = {"parent_header": {},
-		   "header": {"msg_id": interact_id,
-			      "username": "",
-			      "session": session_id},
-		   "msg_type": "execute_request",
-		   "content": {"code": code,
-			       "silent": false,
-			       "user_variables": [],
-			       "user_expressions": {}}
-		  }
-        $.post($URL.evaluate, {message: JSON.stringify(msg)}, 
-	       $.proxy(interact.session, 'send_computation_success'), "json");
+	// TODO: make the output actually be written inside of the interact div
+	interact.session.sendMsg(code);
     });
     //TODO: unbind the change handler when the session is done
     
