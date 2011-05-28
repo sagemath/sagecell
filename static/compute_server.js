@@ -83,6 +83,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
+		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream': 
                 output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
