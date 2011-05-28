@@ -130,6 +130,9 @@ Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
 }
 
 Session.prototype.get_output = function() {
+    // TODO: instead of each individual request querying the server, we should have a global
+    // TODO: object querying the server. When a message is sent, we should just add the computation
+    // TODO: to the global object to query about.
     $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence},
 	      $.proxy(this, 'get_output_success'));
 }
