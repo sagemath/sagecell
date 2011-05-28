@@ -1,3 +1,34 @@
+
+// Set up the editor and evaluate button
+$(function() {
+    editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
+	mode:"python",
+	indentUnit:4,
+	tabMode:"shift",
+	lineNumbers:true,
+	onKeyEvent:handleKeyEvent});
+    editor.setValue("")
+    editor.focus();
+    
+    $('#command_form').submit(function() {
+	var session = new Session('#output');
+	$('#computation_id').append('<div>'+session.session_id+'</div>');
+	msg=session.sendMsg(editor.getValue());
+	return false;
+    });
+});
+
+
+// Create UUID4-compliant ID
+// Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+function uuid4() {
+    uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+    return uuid.replace(/[xy]/g, function(c) {
+	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+	return v.toString(16);
+    });
+}
+
 // makeClass - By John Resig (MIT Licensed)
 // see http://ejohn.org/blog/simple-class-instantiation/
 function makeClass(){
@@ -10,14 +41,44 @@ function makeClass(){
   };
 }
 
-$(function() {
-    $('#command_form').submit(function() {
-	var session = new Session('#output');
-	$('#computation_id').append('<div>'+session.session_id+'</div>');
-	msg=session.sendMsg(editor.getValue());
-	return false;
-    });
-});
+
+/**************************************************************
+* 
+* Colorize Tracebacks
+* 
+**************************************************************/
+colorCodes={"30":"black",
+	    "31":"red",
+	    "32":"green",
+	    "33":"goldenrod",
+	    "34":"blue",
+	    "35":"purple",
+	    "36":"darkcyan",
+	    "37":"gray"};
+
+function colorize(text) {
+    text=text.split("\u001b[");
+    result="";
+    for(i in text) {
+	if(text[i]=="")
+	    continue;
+	color=text[i].substr(0,text[i].indexOf("m")).split(";");
+	if(color.length==2) {
+	    result+="<span style=\"color:"+colorCodes[color[1]];
+	    if(color[0]==1)
+		result+="; font-weight:bold";
+	    result+="\">"+text[i].substr(text[i].indexOf("m")+1)+"</span>";
+	} else
+	    result+=text[i].substr(text[i].indexOf("m")+1);
+    }
+    return result;
+}
+
+/**************************************************************
+* 
+* Session Class
+* 
+**************************************************************/
 
 var Session = makeClass();
 Session.prototype.init = function (output) {
@@ -167,6 +228,13 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     }
 }
 
+/**************************************************************
+* 
+* InteractCell Class
+* 
+**************************************************************/
+
+
 var InteractCell = makeClass();
 InteractCell.prototype.init = function (selector, data) {
     this.element = $(selector);
@@ -233,50 +301,3 @@ InteractCell.prototype.renderCanvas = function() {
     }
 }
 
-// Create UUID4-compliant ID
-// Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-function uuid4() {
-    uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
-    return uuid.replace(/[xy]/g, function(c) {
-	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-	return v.toString(16);
-    });
-}
-
-colorCodes={"30":"black",
-	    "31":"red",
-	    "32":"green",
-	    "33":"goldenrod",
-	    "34":"blue",
-	    "35":"purple",
-	    "36":"darkcyan",
-	    "37":"gray"};
-
-function colorize(text) {
-    text=text.split("\u001b[");
-    result="";
-    for(i in text) {
-	if(text[i]=="")
-	    continue;
-	color=text[i].substr(0,text[i].indexOf("m")).split(";");
-	if(color.length==2) {
-	    result+="<span style=\"color:"+colorCodes[color[1]];
-	    if(color[0]==1)
-		result+="; font-weight:bold";
-	    result+="\">"+text[i].substr(text[i].indexOf("m")+1)+"</span>";
-	} else
-	    result+=text[i].substr(text[i].indexOf("m")+1);
-    }
-    return result;
-}
-
-$(document).ready(function(){
-    editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
-	mode:"python",
-	indentUnit:4,
-	tabMode:"shift",
-	lineNumbers:true,
-	onKeyEvent:handleKeyEvent});
-    editor.setValue("")
-    editor.focus();
-});
