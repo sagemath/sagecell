@@ -4,10 +4,6 @@ function generic_callback(status, response_text) {
     /* do nothing */
 }
 
-/* TODO:
-   Make session object so that each time eval is pressed, a new session object is created which tracks its own sequence, request, id, session, etc.
-*/
-
 $(function() {
     $('#command_form').submit(function() {
 	var session = new Session('#output');
