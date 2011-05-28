@@ -173,7 +173,6 @@ def run(db, fs, workers, worker_timeout, poll_interval=0.1):
 
             if (msg['msg_type']=='extension' 
                 and msg['content']['msg_type']=="interact_start"):
-                print "Sending message to change timeout"
                 sessions[session]['command'].put({'msg_type': 'timeout_change',
                                                   'content': {'new_timeout': worker_timeout}})
         # delete the output that I'm finished with
@@ -257,15 +256,12 @@ Meant to be run as a separate process."""
     execution_count=1
     empty_times=0
     while True:
-        print "CHECKING FOR COMMANDS"
         # check for new commands every round
         try:
             command=command_queue.get(block=False)
             if command['msg_type']=="timeout_change":
                 timeout=int(command['content']['new_timeout'])
-                print "Changed timeout to ", timeout
         except Queue.Empty:
-            print "no commands"
             pass
 
         try:
@@ -279,7 +275,6 @@ Meant to be run as a separate process."""
 
         if msg['msg_type']!="execute_request":
             raise ValueError("Received invalid message: %s"%(msg,))
-        print "Received message: ",msg
         code=user_code+msg['content']['code']
         code = displayhook_hack(code)
         output_handler.set_parent_header(msg['header'])
