@@ -152,7 +152,8 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 						   "user_variables": [],
 						   "user_expressions": {}}
 				      }
-			    $.post($URL.evaluate, {message: JSON.stringify(msg)}, send_computation_success, "json");
+			    $.post($URL.evaluate, {message: JSON.stringify(msg)}, 
+				   $.proxy(this, 'send_computation_success'), "json");
 			});
 		    });
 		    break;
@@ -170,7 +171,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     }
     if(!done) {
         // poll again after a bit
-        setTimeout(function() {$.proxy(this, 'get_output');}, this.poll_interval);
+        setTimeout($.proxy(this, 'get_output'), this.poll_interval);
     }
 }
 
