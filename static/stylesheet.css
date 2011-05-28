@@ -3,3 +3,5 @@
 .stderr {color: red}
 .CodeMirror {border: 1px solid black; height: 200px}
 .done {color: red}
+.session_output {border: 2px solid black;}
+.session_title {border-bottom: 1px solid blue;}

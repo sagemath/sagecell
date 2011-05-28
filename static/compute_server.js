@@ -92,7 +92,7 @@ Session.prototype.init = function (output) {
     this.session_id = uuid4();
     this.sequence = 0;
     this.poll_interval = 400;
-    $(output).append('<div id="session-'+this.session_id+'"></div>');
+    $(output).append('<div id="session-'+this.session_id+'" class="session_output"><div class="session_title">Session '+this.session_id+'</div></div>');
     this.session_output=$('#session-'+this.session_id);
 }
 
@@ -205,7 +205,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    output.append(html);
 		    break;
 		case "session_end":
-		    this.session_output.append("<div class='done'>Session Done</div>");
+		    this.session_output.append("<div class='done'>Session "+id+ " done</div>");
 		    done=true;
 		    break;
 		case "interact_start":
