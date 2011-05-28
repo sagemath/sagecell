@@ -20,6 +20,8 @@ function Session(input) {
     this.input = input;
     this.session_id = uuid4();
     this.sequence = 0;
+    this.poll_interval = 2000;
+    $('#computation_id').append('<div>'+this.session_id+'</div>');
 }
 
 Session.prototype.sendMsg = function() {
@@ -33,21 +35,36 @@ Session.prototype.sendMsg = function() {
 			   "user_variables": [],
 			   "user_expressions": {}}
 	      };
+    /* We need to make a proxy object; see
+       http://api.jquery.com/bind/#comment-74776862 or
+       http://bitstructures.com/2007/11/javascript-method-callbacks
+       for why. If we don't do the proxy, then "this" in the
+       send_computation_success function will *not* refer to the
+       session object. */
+    $.post($URL.evaluate, {message: JSON.stringify(msg)}, dataType="json")
+	.success($.proxy( this, 'send_computation_success' ), "json")
+			 .error(function(jqXHR, textStatus, errorThrown) {
+			     console.log(jqXHR); 
+			     console.log(textStatus); 
+			     console.log(errorThrown);
+			 });
     return false;
 }
 
 Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
-    $("#computation_id").text(data.computation_id);
-    this.get_output(data.computation_id);
+    if (data.computation_id!==this.session_id) {
+	alert("Session id returned and session id sent don't match up");
+    }
+    this.get_output();
 }
 
-Session.prototype.get_output = function(id) {
-    $.getJSON($URL.output_poll, {computation_id: id, sequence: this.sequence},
-              function(data, textStatus, jqXHR) {
-                  this.get_output_success(data, textStatus, jqXHR, id);});
+Session.prototype.get_output = function() {
+    $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence},
+	      $.proxy(this, 'get_output_success'));
 }
 
-Session.prototype.get_output_success = function(data, textStatus, jqXHR, id) {
+Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
+    var id=this.session_id;
     var done = false;
 
     if(data!==undefined && data.content!==undefined) {
@@ -153,7 +170,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR, id) {
     }
     if(!done) {
         // poll again after a bit
-        setTimeout(function() {get_output(id);}, 2000);
+        setTimeout(function() {$.proxy(this, 'get_output');}, this.poll_interval);
     }
 }
 
