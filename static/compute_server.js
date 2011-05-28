@@ -1,7 +1,3 @@
-// From sagenb/sagenb/data/sage/js/async_lib.js
-
-function generic_callback(status, response_text) {
-    /* do nothing */
 }
 
 // TODO: Use http://ejohn.org/blog/simple-class-instantiation/ to make the classes more resiliant against forgetting to use "new"
