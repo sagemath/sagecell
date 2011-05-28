@@ -139,7 +139,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			    var changes = interact.getChanges(id);
 			    var code = interact.function_code + "(";
 			    for (var i in changes) {
-				code = code + i + "='" +  changes[i] + "',";
+				code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
 			    }
 			    code = code + ")";
 			    var msg = {"parent_header": {},
