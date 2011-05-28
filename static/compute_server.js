@@ -192,6 +192,7 @@ function InteractCell(selector, data) {
         $.post($URL.evaluate, {message: JSON.stringify(msg)}, 
 	       $.proxy(interact.session, 'send_computation_success'), "json");
     });
+    //TODO: unbind the change handler when the session is done
     
 }
 
@@ -212,6 +213,7 @@ InteractCell.prototype.getChanges = function(id) {
 }
 
 InteractCell.prototype.renderCanvas = function() {
+    // TODO: use this.layout to lay out the controls
     id = "urn_uuid_" + this.interact_id;
     for (var i in this.controls) {
 	switch(this.controls[i].control_type) {
