@@ -172,10 +172,7 @@ function InteractCell(selector, data) {
     session_id=this.session.session_id;
     interact_id = this.interact_id
     interact=this
-    // Set up global trigger for changes for this specific interact
-    console.log('Making change handler for class .urn_uuid_'+interact_id);
     $(".urn_uuid_" + interact_id).live("change", function(){
-	console.log('handler triggered for '+interact_id);
         var changes = interact.getChanges(interact_id);
         var code = interact.function_code + "(";
         for (var i in changes) {
