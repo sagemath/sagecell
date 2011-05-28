@@ -126,43 +126,23 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    done=true;
 		    break;
 		case "interact_start":
-		    var div_id = "interact-" + id;
-		    console.log(id); // Computation ID
+		    interact_id = uuid4()
+		    var div_id = "interact-" + interact_id;
+		    console.log(interact_id);
 		    $('#output').append("<div id='"+div_id+"'></div>");
-		    var interact = new InteractCell("#" + div_id);
-		    interact.set_layout(user_msg.content.layout);
-		    interact.set_controls(user_msg.content.controls);
-		    interact.set_function(user_msg.content.function_code);
-		    interact.renderCanvas(id);
-		    $(function(){
-			$(".urn_uuid_" + id).change(function(){
-			    var changes = interact.getChanges(id);
-			    var code = interact.function_code + "(";
-			    for (var i in changes) {
-				code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
-			    }
-			    code = code + ")";
-			    var msg = {"parent_header": {},
-				       "header": {"msg_id": uuid4(),
-						  "username": "",
-						  "session": id},
-				       "msg_type": "execute_request",
-				       "content": {"code": code,
-						   "silent": false,
-						   "user_variables": [],
-						   "user_expressions": {}}
-				      }
-			    $.post($URL.evaluate, {message: JSON.stringify(msg)}, 
-				   $.proxy(this, 'send_computation_success'), "json");
-			});
-		    });
+		    var interact = new InteractCell("#" + div_id, {
+			'interact_id': interact_id,
+			'layout': user_msg.content.layout,
+			'controls': user_msg.content.controls,
+			'function_code': user_msg.content.function_code,
+			'session': this});
 		    break;
 		case "interact_end":
 		    break;
 		}
 		break;
 	    }
-	    
+
 	    // Append the message to the div of messages
 	    // use .text() so that strings are automatically escaped
 	    $('#messages').append(document.createElement('div'))
@@ -175,13 +155,47 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     }
 }
 
-function InteractCell(selector) {
+function InteractCell(selector, data) {
     this.element = $(selector);
     this.element.data("interact", this);
+    this.interact_id = data.interact_id
+    this.function_code = data.function_code;
+    this.controls = data.controls;
+    this.layout = data.layout;
+    this.session = data.session;
+    console.log('interact session:');
+    console.log(this.session);
 
-    this.function_code = "";
-    this.controls = {};
-    this.layout = {};
+    this.renderCanvas();
+
+    // bind some variables for the function below.
+    session_id=this.session.session_id;
+    interact_id = this.interact_id
+    interact=this
+    // Set up global trigger for changes for this specific interact
+    console.log('Making change handler for class .urn_uuid_'+interact_id);
+    $(".urn_uuid_" + interact_id).live("change", function(){
+	console.log('handler triggered for '+interact_id);
+        var changes = interact.getChanges(interact_id);
+        var code = interact.function_code + "(";
+        for (var i in changes) {
+	    code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
+        }
+        code = code + ")";
+        var msg = {"parent_header": {},
+		   "header": {"msg_id": interact_id,
+			      "username": "",
+			      "session": session_id},
+		   "msg_type": "execute_request",
+		   "content": {"code": code,
+			       "silent": false,
+			       "user_variables": [],
+			       "user_expressions": {}}
+		  }
+        $.post($URL.evaluate, {message: JSON.stringify(msg)}, 
+	       $.proxy(interact.session, 'send_computation_success'), "json");
+    });
+    
 }
 
 InteractCell.prototype.getChanges = function(id) {
@@ -200,8 +214,8 @@ InteractCell.prototype.getChanges = function(id) {
     return this.params;
 }
 
-InteractCell.prototype.renderCanvas = function(id) {
-    id = "urn_uuid_" + id;
+InteractCell.prototype.renderCanvas = function() {
+    id = "urn_uuid_" + this.interact_id;
     for (var i in this.controls) {
 	switch(this.controls[i].control_type) {
 	case "html":
@@ -216,19 +230,6 @@ InteractCell.prototype.renderCanvas = function(id) {
 	}
     }
 }
-
-InteractCell.prototype.set_layout = function (new_layout) {
-    this.layout = new_layout;
-}
-
-InteractCell.prototype.set_controls = function (new_controls) {
-    this.controls = new_controls;
-}
-
-InteractCell.prototype.set_function = function (new_function) {
-    this.function_code = new_function
-}
-
 
 // Create UUID4-compliant ID
 // Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
