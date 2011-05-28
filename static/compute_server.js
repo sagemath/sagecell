@@ -12,6 +12,7 @@ $(function() {
     $('#command_form').submit(function() {
 	var session = new Session(editor.getValue());
 	session.sendMsg();
+	return false;
     });
 });
 
