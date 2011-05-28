@@ -20,7 +20,7 @@ function Session(input) {
     this.input = input;
     this.session_id = uuid4();
     this.sequence = 0;
-    this.poll_interval = 2000;
+    this.poll_interval = 400;
     $('#computation_id').append('<div>'+this.session_id+'</div>');
 }
 
