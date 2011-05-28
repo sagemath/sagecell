@@ -33,16 +33,11 @@ Session.prototype.sendMsg = function() {
 			   "user_variables": [],
 			   "user_expressions": {}}
 	      };
-    alert(JSON.stringify($.post($URL.evaluate, {message: JSON.stringify(msg)}, this.send_computation_success, "json")));//.error(function(){alert("ERROR");});
-    alert($URL.evaluate);
-    alert(JSON.stringify(msg));
     return false;
 }
 
 Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
-    alert("in scs");
     $("#computation_id").text(data.computation_id);
-    alert(text(data.computation_id));
     this.get_output(data.computation_id);
 }
 
