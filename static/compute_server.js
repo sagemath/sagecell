@@ -1,3 +1,10 @@
+// Options to document the functions:
+// YUIDocs
+// Sphinx: http://docs.cubicweb.org/annexes/docstrings-conventions.html#
+// jsdoc->sphinx: http://code.google.com/p/jsdoc-toolkit-rst-template/
+// recommendation to use jsdoc http://groups.google.com/group/sphinx-dev/browse_thread/thread/defa96cdc0dfc584
+// sphinx javascript domain: http://sphinx.pocoo.org/domains.html#the-javascript-domain
+
 
 // Set up the editor and evaluate button
 $(function() {
