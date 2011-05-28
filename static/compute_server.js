@@ -250,11 +250,9 @@ InteractCell.prototype.init = function (selector, data) {
     this.renderCanvas();
 
     // bind some variables for the function below.
-    session_id=this.session.session_id;
-    interact_id = this.interact_id
     interact=this
-    $(".urn_uuid_" + interact_id).live("change", function(){
-        var changes = interact.getChanges(interact_id);
+    $(".urn_uuid_" + this.interact_id).live("change", function(){
+        var changes = interact.getChanges();
         var code = interact.function_code + "(";
         for (var i in changes) {
 	    code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
@@ -267,20 +265,20 @@ InteractCell.prototype.init = function (selector, data) {
     
 }
 
-InteractCell.prototype.getChanges = function(id) {
-    id = "#urn_uuid_" + id;
-    this.params = {};
+InteractCell.prototype.getChanges = function() {
+    id = "#urn_uuid_" + this.interact_id;
+    var params = {};
     for (var i in this.controls){
 	switch(this.controls[i].control_type) {
 	case "html":
 	   // for text box: this.params[i] = $(id + "-" + i).val();
 	    break;
 	case "input_box":
-	    this.params[i] = $(id + "-" + i).val();
+	    params[i] = $(id + "-" + i).val();
 	    break;
 	}
     }
-    return this.params;
+    return params;
 }
 
 InteractCell.prototype.renderCanvas = function() {
