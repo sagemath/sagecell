@@ -6,7 +6,7 @@ $(function() {
 	indentUnit:4,
 	tabMode:"shift",
 	lineNumbers:true,
-	onKeyEvent:handleKeyEvent});
+	matchBrackets:true});
     editor.setValue("")
     editor.focus();
     
