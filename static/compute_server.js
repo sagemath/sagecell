@@ -106,7 +106,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 							 .replace(/&/g,"&amp;")
 							 .replace(/</g,"&lt;")+"</pre>"));
 		}
-		done=true;
+		this.poll_interval=2000;
 		break;
 
 	    case 'extension':
