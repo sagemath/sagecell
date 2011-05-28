@@ -10,27 +10,29 @@ function generic_callback(status, response_text) {
 
 $(function() {
     $('#command_form').submit(function() {
-	var session = new Session(editor.getValue());
-	session.sendMsg();
+	var session = new Session('#output');
+	$('#computation_id').append('<div>'+session.session_id+'</div>');
+	msg=session.sendMsg(editor.getValue());
 	return false;
     });
 });
 
-function Session(input) {
-    this.input = input;
+function Session(output) {
     this.session_id = uuid4();
     this.sequence = 0;
     this.poll_interval = 400;
-    $('#computation_id').append('<div>'+this.session_id+'</div>');
+    $(output).append('<div id="session-'+this.session_id+'"></div>');
+    this.session_output=$('#session-'+this.session_id);
 }
 
-Session.prototype.sendMsg = function() {
+Session.prototype.sendMsg = function(code) {
+    var msg_id=uuid4()
     var msg = {"parent_header": {},
-		   "header": {"msg_id": uuid4(),
+		   "header": {"msg_id": msg_id,
 			  "username": "",
 			  "session": this.session_id},
 		   "msg_type": "execute_request",
-		   "content": {"code": this.input,
+		   "content": {"code": code,
 			   "silent": false,
 			   "user_variables": [],
 			   "user_expressions": {}}
@@ -43,12 +45,17 @@ Session.prototype.sendMsg = function() {
        session object. */
     $.post($URL.evaluate, {message: JSON.stringify(msg)}, dataType="json")
 	.success($.proxy( this, 'send_computation_success' ), "json")
-			 .error(function(jqXHR, textStatus, errorThrown) {
-			     console.log(jqXHR); 
-			     console.log(textStatus); 
-			     console.log(errorThrown);
-			 });
-    return false;
+	.error(function(jqXHR, textStatus, errorThrown) {
+	    console.log(jqXHR); 
+	    console.log(textStatus); 
+	    console.log(errorThrown);
+	});
+    this.session_output.append('<div id="'+msg_id+'"></div>');
+    return msg_id
+}
+
+Session.prototype.output = function(msg_id) {
+    return $('#'+msg_id);
 }
 
 Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
@@ -70,7 +77,9 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
 	for (var i = 0; i < content.length; i++) {
-            msg=content[i];
+            var msg=content[i];
+	    var parent_id=msg.parent_header.msg_id;
+	    var output=this.output(parent_id)
             if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
                 console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
@@ -79,30 +88,30 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream': 
-                $('#output').append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
+                output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
 
 	    case 'pyout':
-                $('#output').append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
+                output.append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
 		break;
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    $('#output').append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
+                    output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
                 } else if(msg.content.data['text/html']!==undefined) {
-		    $('#output').append('<div>'+msg.content.data['text/html']+'</div>');
+		    output.append('<div>'+msg.content.data['text/html']+'</div>');
 		}
 		break;
 
 	    case 'pyerr':
-		$('#output').append("<pre>"+colorize(msg.content.traceback.join("\n")
+		output.append("<pre>"+colorize(msg.content.traceback.join("\n")
 						     .replace(/&/g,"&amp;")
 						     .replace(/</g,"&lt;")+"</pre>"));
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    $('#output').append("<pre>"+colorize(msg.content.traceback.join("\n")
+		    output.append("<pre>"+colorize(msg.content.traceback.join("\n")
 							 .replace(/&/g,"&amp;")
 							 .replace(/</g,"&lt;")+"</pre>"));
 		}
@@ -118,18 +127,17 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			//TODO: escape filenames and id
 			html+="<a href=\"/files/"+id+"/"+user_msg.files[j]+"\">"
 			    +user_msg.files[j]+"</a><br>\n";
-		    $('#output').append(html);
+		    output.append(html);
 		    break;
 		case "session_end":
-		    $('#output').append("<div class='done'>Session Done</div>");
-		    sequence=0;
+		    this.session_output.append("<div class='done'>Session Done</div>");
 		    done=true;
 		    break;
 		case "interact_start":
 		    interact_id = uuid4()
 		    var div_id = "interact-" + interact_id;
 		    console.log(interact_id);
-		    $('#output').append("<div id='"+div_id+"'></div>");
+		    output.append("<div id='"+div_id+"'></div>");
 		    var interact = new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
