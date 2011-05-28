@@ -1,6 +1,14 @@
+// makeClass - By John Resig (MIT Licensed)
+// see http://ejohn.org/blog/simple-class-instantiation/
+function makeClass(){
+  return function(args){
+    if ( this instanceof arguments.callee ) {
+      if ( typeof this.init == "function" )
+        this.init.apply( this, args.callee ? args : arguments );
+    } else
+      return new arguments.callee( arguments );
+  };
 }
-
-// TODO: Use http://ejohn.org/blog/simple-class-instantiation/ to make the classes more resiliant against forgetting to use "new"
 
 $(function() {
     $('#command_form').submit(function() {
@@ -11,7 +19,8 @@ $(function() {
     });
 });
 
-function Session(output) {
+var Session = makeClass();
+Session.prototype.init = function (output) {
     this.session_id = uuid4();
     this.sequence = 0;
     this.poll_interval = 400;
@@ -158,7 +167,8 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     }
 }
 
-function InteractCell(selector, data) {
+var InteractCell = makeClass();
+InteractCell.prototype.init = function (selector, data) {
     this.element = $(selector);
     this.element.data("interact", this);
     this.interact_id = data.interact_id
