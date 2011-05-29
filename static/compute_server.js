@@ -162,33 +162,33 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
-	    case 'stream': 
-                output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
+	    case 'stream':
+		this.session_output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
 
 	    case 'pyout':
-                output.append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
+                this.session_output.append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
 		break;
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
                     output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
                 } else if(msg.content.data['text/html']!==undefined) {
-		    output.append('<div>'+msg.content.data['text/html']+'</div>');
+		    this.session_output.append('<div>'+msg.content.data['text/html']+'</div>');
 		}
 		break;
 
 	    case 'pyerr':
-		output.append("<pre>"+colorize(msg.content.traceback.join("\n")
+		this.session_output.append("<pre>"+colorize(msg.content.traceback.join("\n")
 						     .replace(/&/g,"&amp;")
 						     .replace(/</g,"&lt;")+"</pre>"));
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    output.append("<pre>"+colorize(msg.content.traceback.join("\n")
-							 .replace(/&/g,"&amp;")
-							 .replace(/</g,"&lt;")+"</pre>"));
+		    this.session_output.append("<pre>"+colorize(msg.content.traceback.join("\n")
+							.replace(/&/g,"&amp;")
+							.replace(/</g,"&lt;")+"</pre>"));
 		}
 		this.poll_interval=2000;
 		break;
@@ -202,17 +202,18 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			//TODO: escape filenames and id
 			html+="<a href=\"/files/"+id+"/"+user_msg.files[j]+"\">"
 			    +user_msg.files[j]+"</a><br>\n";
-		    output.append(html);
+		    this.session_output.append(html);
 		    break;
 		case "session_end":
 		    this.session_output.append("<div class='done'>Session "+id+ " done</div>");
+		    // Unbinds interact change handlers
+		    $(".urn_uuid_"+this.session_id).die("change");
 		    done=true;
 		    break;
 		case "interact_start":
-		    interact_id = uuid4()
+		    interact_id = this.session_id;
 		    var div_id = "interact-" + interact_id;
-		    console.log(interact_id);
-		    output.append("<div id='"+div_id+"'></div>");
+		    this.session_output.append("<div id='"+div_id+"'></div>");
 		    var interact = new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
@@ -254,25 +255,21 @@ InteractCell.prototype.init = function (selector, data) {
     this.controls = data.controls;
     this.layout = data.layout;
     this.session = data.session;
-    console.log('interact session:');
-    console.log(this.session);
 
     this.renderCanvas();
+    this.bindChange(this);
+}
 
-    // bind some variables for the function below.
-    interact=this
-    $(".urn_uuid_" + this.interact_id).live("change", function(){
+InteractCell.prototype.bindChange = function(interact) {
+    $(".urn_uuid_" + interact.interact_id).live("change", function(){
         var changes = interact.getChanges();
         var code = interact.function_code + "(";
         for (var i in changes) {
 	    code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
         }
         code = code + ")";
-	// TODO: make the output actually be written inside of the interact div
 	interact.session.sendMsg(code);
     });
-    //TODO: unbind the change handler when the session is done
-    
 }
 
 InteractCell.prototype.getChanges = function() {
@@ -284,7 +281,7 @@ InteractCell.prototype.getChanges = function() {
 	   // for text box: this.params[i] = $(id + "-" + i).val();
 	    break;
 	case "input_box":
-	    params[i] = $(id + "-" + i).val();
+	    params[i] = $(id + "_" + i).val();
 	    break;
 	}
     }
@@ -303,7 +300,7 @@ InteractCell.prototype.renderCanvas = function() {
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
-	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "-" + i + "></input>");
+	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "_" + i + "></input>");
 	    break;
 	}
     }
