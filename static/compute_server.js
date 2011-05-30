@@ -94,6 +94,7 @@ Session.prototype.init = function (output) {
     this.poll_interval = 400;
     $(output).append('<div id="session-'+this.session_id+'" class="session_output"><div class="session_title">Session '+this.session_id+'</div></div>');
     this.session_output=$('#session-'+this.session_id);
+    this.eventHandlers = new Array();
     this.setQuery();
 }
 
@@ -165,7 +166,6 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	for (var i = 0; i < content.length; i++) {
             var msg=content[i];
 	    var parent_id=msg.parent_header.msg_id;
-	    var output=this.output(parent_id)
             if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
                 console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
@@ -173,6 +173,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
+	    //TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
 		this.session_output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
@@ -183,7 +184,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
+                    this.session_output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
                 } else if(msg.content.data['text/html']!==undefined) {
 		    this.session_output.append('<div>'+msg.content.data['text/html']+'</div>');
 		}
@@ -218,11 +219,13 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		case "session_end":
 		    this.session_output.append("<div class='done'>Session "+id+ " done</div>");
 		    // Unbinds interact change handlers
-		    $(".urn_uuid_"+this.session_id).die("change");
+		    for (var i in this.eventHandlers) {
+			$(i).die(this.eventHandlers[i]);
+		    }
 		    this.clearQuery();
 		    break;
 		case "interact_start":
-		    interact_id = this.session_id;
+		    interact_id = uuid4();
 		    var div_id = "interact-" + interact_id;
 		    this.session_output.append("<div id='"+div_id+"'></div>");
 		    var interact = new InteractCell("#" + div_id, {
@@ -268,6 +271,7 @@ InteractCell.prototype.init = function (selector, data) {
 }
 
 InteractCell.prototype.bindChange = function(interact) {
+    this.session.eventHandlers[".urn_uuid_" + interact.interact_id] = "change";
     $(".urn_uuid_" + interact.interact_id).live("change", function(){
         var changes = interact.getChanges();
         var code = interact.function_code + "(";
