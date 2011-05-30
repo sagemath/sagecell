@@ -94,6 +94,22 @@ Session.prototype.init = function (output) {
     this.poll_interval = 400;
     $(output).append('<div id="session-'+this.session_id+'" class="session_output"><div class="session_title">Session '+this.session_id+'</div></div>');
     this.session_output=$('#session-'+this.session_id);
+    this.setQuery();
+}
+
+// Manages querying the webserver for messages
+Session.prototype.setQuery = function() {
+    this.queryID = setInterval($.proxy(this, 'get_output'), this.poll_interval);
+}
+
+Session.prototype.clearQuery = function() {
+    clearInterval(this.queryID);
+}
+
+Session.prototype.updateQuery = function(new_interval) {
+    this.poll_interval = new_interval;
+    this.clearQuery();
+    this.setQuery();
 }
 
 Session.prototype.sendMsg = function(code) {
@@ -137,16 +153,12 @@ Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
 }
 
 Session.prototype.get_output = function() {
-    // TODO: instead of each individual request querying the server, we should have a global
-    // TODO: object querying the server. When a message is sent, we should just add the computation
-    // TODO: to the global object to query about.
-    $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence},
-	      $.proxy(this, 'get_output_success'));
+    // POSSIBLE TODO: Have a global object querying the server for a given computation. Right now, it's managed by the session object.
+    $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence}, $.proxy(this, 'get_output_success'));
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     var id=this.session_id;
-    var done = false;
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
@@ -161,7 +173,6 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
-		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
 		this.session_output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
@@ -190,7 +201,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 							.replace(/&/g,"&amp;")
 							.replace(/</g,"&lt;")+"</pre>"));
 		}
-		this.poll_interval=2000;
+		this.updateQuery(2000);
 		break;
 
 	    case 'extension':
@@ -208,7 +219,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.session_output.append("<div class='done'>Session "+id+ " done</div>");
 		    // Unbinds interact change handlers
 		    $(".urn_uuid_"+this.session_id).die("change");
-		    done=true;
+		    this.clearQuery();
 		    break;
 		case "interact_start":
 		    interact_id = this.session_id;
@@ -232,10 +243,6 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    $('#messages').append(document.createElement('div'))
 		.children().last().text(JSON.stringify(msg));
         }
-    }
-    if(!done) {
-        // poll again after a bit
-        setTimeout($.proxy(this, 'get_output'), this.poll_interval);
     }
 }
 
