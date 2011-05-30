@@ -6,6 +6,15 @@
 // sphinx javascript domain: http://sphinx.pocoo.org/domains.html#the-javascript-domain
 
 
+// TODO from Crockford's book:
+
+//  * Make objects *not* use this, but rather make them an associative array that contains functions
+//    which access variables inside of a closure.  Then we don't have to do any $.proxy stuff; 
+//    things will just work.  See chapter 5.
+
+
+
+
 // Set up the editor and evaluate button
 $(function() {
     editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
