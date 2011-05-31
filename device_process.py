@@ -1,3 +1,37 @@
+r"""
+Basic design
+------------
+
+The DEVICE process continuously polls the database for new cells and
+evaluations on current sessions.  It also pulls messages from the
+output queues and puts them into the database.
+
+Each time a new session is required for a computation, the main
+process starts up a WORKER process using a
+:class:`multiprocessing.Pool`.  The DEVICE process creates a pipe to
+communicate with the EXEC process and passes the recieve end of the
+pipe into the WORKER process.  Messages to the EXEC process have the
+form ``('command', dict_of_options)`` or ``('user',
+execute_request_JSON_message)``.
+
+The WORKER process could be a restricted process; I suppose it should
+be, because if it's on another computer, it would have to clean up the
+files, and it may not be trusted.
+
+
+The WORKER process sets up a temporary directory, sets up the output
+object (which points the passed queue), and starts an EXEC process
+
+The EXEC process listens for messages indicating either
+``timeout_change`` commands or commands to execute in the user
+namespace.  The EXEC process is responsible for sending back
+``execute_reply`` messages through the global queue back to the DEVICE
+process.  The EXEC process handles any errors that occur in the user
+code by forming an error status message back.  When the timeouts are
+reached on receiving messages, terminate and
+"""
+
+
 import sys, time, traceback, StringIO, contextlib, random, uuid
 import interact
 
@@ -136,8 +170,8 @@ def run(db, fs, workers, worker_timeout, poll_interval=0.1):
             if session not in sessions:
                 # session has not been set up yet
                 log(device_id, session,message="evaluating '%s'"%X['content']['code'])
-                msg_queue=manager.Queue()
-                command_queue=manager.Queue()
+                msg_queue=manager.Queue() # TODO: make this a pipe
+                command_queue=manager.Queue() # TODO: make this a pipe
                 sessions[session]={'message': msg_queue,
                                    'command': command_queue,
                                    'worker': pool.apply_async(worker,
@@ -322,9 +356,6 @@ Meant to be run as a separate process."""
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          err_msg)
 
-            # TOOD: Should this message be done inside the try
-            # block, since it claims the status is 'ok'?
-            # This doesn't have to use the pyout_queue...any queue in output_handler will work
             execution_count+=1
 
     print "Done executing code: ", code
