@@ -182,7 +182,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    var parent_id=msg.parent_header.msg_id;
             if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
-                console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
+                console.log('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
             }
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
@@ -234,7 +234,9 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.session_output.append("<div class='done'>Session "+id+ " done</div>");
 		    // Unbinds interact change handlers
 		    for (var i in this.eventHandlers) {
-			$(i).die(this.eventHandlers[i]);
+			for (var j in this.eventHandlers[i]) {
+			    $(i).die(j);
+			}
 		    }
 		    this.clearQuery();
 		    break;
@@ -285,16 +287,36 @@ InteractCell.prototype.init = function (selector, data) {
 }
 
 InteractCell.prototype.bindChange = function(interact) {
-    this.session.eventHandlers[".urn_uuid_" + interact.interact_id] = "change";
-    $(".urn_uuid_" + interact.interact_id).live("change", function(){
-        var changes = interact.getChanges();
-        var code = interact.function_code + "(";
-        for (var i in changes) {
-	    code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
-        }
-        code = code + ")";
-	interact.session.sendMsg(code);
-    });
+    var id = ".urn_uuid_" + this.interact_id;
+    var events = {};
+    for (var i in this.controls) {
+	switch(this.controls[i].control_type) {
+	case "html":
+	    break;
+	case "input_box":
+	    events["change"] = 1;
+	    break;
+	case "selector":
+	    events["change"] = 1;
+	    break;
+	case "slider":
+	    events["slidechange"] = 1;
+	    break;
+	}
+    }
+    this.session.eventHandlers[id] = [];
+    for (var i in events) {
+	this.session.eventHandlers[id].push(i);
+	$(id).live(i, function(){
+            var changes = interact.getChanges();
+            var code = interact.function_code + "(";
+            for (var i in changes) {
+		code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
+            }
+            code = code + ")";
+	    interact.session.sendMsg(code);
+	});
+    }
 }
 
 InteractCell.prototype.getChanges = function() {
@@ -310,6 +332,9 @@ InteractCell.prototype.getChanges = function() {
 	    break;
 	case "selector":
 	    params[i] = $(id + "_" + i).val();
+	    break;
+	case "slider":
+	    params[i] = String($(id + "_" + i).slider("value"));
 	    break;
 	}
     }
@@ -340,6 +365,17 @@ InteractCell.prototype.renderCanvas = function() {
 		}
 	    }
 	    this.element.append(html_code);
+	    break;
+	case "slider":
+	    var html_code = "<div class='interact_slider'><p></p><div class = " + id + " id = " + id + "_" + i + " style='width:50%;border:10 px;margin-left:auto;margin-right:auto'></div></div>";
+	    this.element.append(html_code);
+	    $("#" + id + "_" + i).slider({
+		value:this.controls[i]["default"],
+		min:this.controls[i]["range"][0],
+		max:this.controls[i]["range"][1],
+		step:this.controls[i]["step"],
+		change:function(event, ui){}
+	    });
 	    break;
 	}
     }

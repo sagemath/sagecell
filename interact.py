@@ -50,3 +50,17 @@ class Selector(InteractControl):
 
 def selector(*args, **kwargs):
     return Selector(*args, **kwargs)
+
+
+class Slider(InteractControl):
+    def message(self):
+        return {'control_type':'slider',
+                'default':self.kwargs.get('default',0),
+                'range':self.kwargs.get('range',[0,100]),
+                'step':self.kwargs.get('step',20),
+                'label':self.kwargs.get('label',None)}
+    def default(self):
+        return self.kwargs.get('default',0)
+    
+def slider(*args, **kwargs):
+    return Slider(*args, **kwargs)
