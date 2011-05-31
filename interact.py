@@ -33,3 +33,16 @@ class InputBox(InteractControl):
 
 def input_box(*args, **kwargs):
     return InputBox(*args, **kwargs)
+
+
+class Selector(InteractControl):
+    def message(self):
+        return {'control_type': 'selector',
+                'values': self.kwargs.get('values',[0]),
+                'default': self.kwargs.get('default',0),
+                'label':self.kwargs.get('label',None)}
+    def default(self):
+        return self.kwargs.get('values',[0])[self.kwargs.get('default',0)]
+
+def selector(*args, **kwargs):
+    return Selector(*args, **kwargs)

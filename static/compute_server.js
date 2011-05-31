@@ -308,6 +308,10 @@ InteractCell.prototype.getChanges = function() {
 	case "input_box":
 	    params[i] = $(id + "_" + i).val();
 	    break;
+	case "selector":
+	    // CHANGE HANDLER FOR SELECT BOX DOESN'T WORK
+	    params[i] = $(id + "_" + i).val();
+	    break;
 	}
     }
     return params;
@@ -326,6 +330,17 @@ InteractCell.prototype.renderCanvas = function() {
 	    break;
 	case "input_box":
 	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "_" + i + "></input>");
+	    break;
+	case "selector":
+	    var html_code = "<select >";
+	    for (var j in this.controls[i].values) {
+		if (j == this.controls[i].default) {
+		    html_code = html_code + "<option selected='selected' value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		} else {
+		    html_code = html_code + "<option value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		}
+	    }
+	    this.element.append(html_code);
 	    break;
 	}
     }
