@@ -108,6 +108,23 @@ Session.prototype.init = function (output) {
     this.poll_interval = 400;
     $(output).append('<div id="session-'+this.session_id+'" class="session_output"><div class="session_title">Session '+this.session_id+'</div></div>');
     this.session_output=$('#session-'+this.session_id);
+    this.eventHandlers = {};
+    this.setQuery();
+}
+
+// Manages querying the webserver for messages
+Session.prototype.setQuery = function() {
+    this.queryID = setInterval($.proxy(this, 'get_output'), this.poll_interval);
+}
+
+Session.prototype.clearQuery = function() {
+    clearInterval(this.queryID);
+}
+
+Session.prototype.updateQuery = function(new_interval) {
+    this.poll_interval = new_interval;
+    this.clearQuery();
+    this.setQuery();
 }
 
 Session.prototype.sendMsg = function(code) {
@@ -151,23 +168,18 @@ Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
 }
 
 Session.prototype.get_output = function() {
-    // TODO: instead of each individual request querying the server, we should have a global
-    // TODO: object querying the server. When a message is sent, we should just add the computation
-    // TODO: to the global object to query about.
-    $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence},
-	      $.proxy(this, 'get_output_success'));
+    // POSSIBLE TODO: Have a global object querying the server for a given computation. Right now, it's managed by the session object.
+    $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence}, $.proxy(this, 'get_output_success'));
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     var id=this.session_id;
-    var done = false;
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
 	for (var i = 0; i < content.length; i++) {
             var msg=content[i];
 	    var parent_id=msg.parent_header.msg_id;
-	    var output=this.output(parent_id)
             if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
                 console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
@@ -175,36 +187,36 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
-		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
-	    case 'stream': 
-                output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
+	    //TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
+	    case 'stream':
+		this.session_output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
 
 	    case 'pyout':
-                output.append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
+                this.session_output.append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
 		break;
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
+                    this.session_output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
                 } else if(msg.content.data['text/html']!==undefined) {
-		    output.append('<div>'+msg.content.data['text/html']+'</div>');
+		    this.session_output.append('<div>'+msg.content.data['text/html']+'</div>');
 		}
 		break;
 
 	    case 'pyerr':
-		output.append("<pre>"+colorize(msg.content.traceback.join("\n")
+		this.session_output.append("<pre>"+colorize(msg.content.traceback.join("\n")
 						     .replace(/&/g,"&amp;")
 						     .replace(/</g,"&lt;")+"</pre>"));
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    output.append("<pre>"+colorize(msg.content.traceback.join("\n")
-							 .replace(/&/g,"&amp;")
-							 .replace(/</g,"&lt;")+"</pre>"));
+		    this.session_output.append("<pre>"+colorize(msg.content.traceback.join("\n")
+							.replace(/&/g,"&amp;")
+							.replace(/</g,"&lt;")+"</pre>"));
 		}
-		this.poll_interval=2000;
+		this.updateQuery(2000);
 		break;
 
 	    case 'extension':
@@ -216,17 +228,20 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			//TODO: escape filenames and id
 			html+="<a href=\"/files/"+id+"/"+user_msg.files[j]+"\">"
 			    +user_msg.files[j]+"</a><br>\n";
-		    output.append(html);
+		    this.session_output.append(html);
 		    break;
 		case "session_end":
 		    this.session_output.append("<div class='done'>Session "+id+ " done</div>");
-		    done=true;
+		    // Unbinds interact change handlers
+		    for (var i in this.eventHandlers) {
+			$(i).die(this.eventHandlers[i]);
+		    }
+		    this.clearQuery();
 		    break;
 		case "interact_start":
-		    interact_id = uuid4()
+		    interact_id = uuid4();
 		    var div_id = "interact-" + interact_id;
-		    console.log(interact_id);
-		    output.append("<div id='"+div_id+"'></div>");
+		    this.session_output.append("<div id='"+div_id+"'></div>");
 		    var interact = new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
@@ -246,10 +261,6 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		.children().last().text(JSON.stringify(msg));
         }
     }
-    if(!done) {
-        // poll again after a bit
-        setTimeout($.proxy(this, 'get_output'), this.poll_interval);
-    }
 }
 
 /**************************************************************
@@ -268,25 +279,22 @@ InteractCell.prototype.init = function (selector, data) {
     this.controls = data.controls;
     this.layout = data.layout;
     this.session = data.session;
-    console.log('interact session:');
-    console.log(this.session);
 
     this.renderCanvas();
+    this.bindChange(this);
+}
 
-    // bind some variables for the function below.
-    interact=this
-    $(".urn_uuid_" + this.interact_id).live("change", function(){
+InteractCell.prototype.bindChange = function(interact) {
+    this.session.eventHandlers[".urn_uuid_" + interact.interact_id] = "change";
+    $(".urn_uuid_" + interact.interact_id).live("change", function(){
         var changes = interact.getChanges();
         var code = interact.function_code + "(";
         for (var i in changes) {
 	    code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
         }
         code = code + ")";
-	// TODO: make the output actually be written inside of the interact div
 	interact.session.sendMsg(code);
     });
-    //TODO: unbind the change handler when the session is done
-    
 }
 
 InteractCell.prototype.getChanges = function() {
@@ -298,7 +306,7 @@ InteractCell.prototype.getChanges = function() {
 	   // for text box: this.params[i] = $(id + "-" + i).val();
 	    break;
 	case "input_box":
-	    params[i] = $(id + "-" + i).val();
+	    params[i] = $(id + "_" + i).val();
 	    break;
 	}
     }
@@ -317,7 +325,7 @@ InteractCell.prototype.renderCanvas = function() {
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
-	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "-" + i + "></input>");
+	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "_" + i + "></input>");
 	    break;
 	}
     }
