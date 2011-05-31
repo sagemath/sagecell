@@ -235,7 +235,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    // Unbinds interact change handlers
 		    for (var i in this.eventHandlers) {
 			for (var j in this.eventHandlers[i]) {
-			    $(i).die(j);
+			    $(i).die(this.eventHandlers[i][j]);
 			}
 		    }
 		    this.clearQuery();
@@ -294,13 +294,13 @@ InteractCell.prototype.bindChange = function(interact) {
 	case "html":
 	    break;
 	case "input_box":
-	    events["change"] = 1;
+	    events["change"] = null;
 	    break;
 	case "selector":
-	    events["change"] = 1;
+	    events["change"] = null;
 	    break;
 	case "slider":
-	    events["slidechange"] = 1;
+	    events["slidechange"] = null;
 	    break;
 	}
     }
