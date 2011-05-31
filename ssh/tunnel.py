@@ -32,7 +32,10 @@ else:
 try:
     from IPython.external import pexpect
 except ImportError:
-    pexpect = None
+    try: 
+        import pexpect
+    except ImportError:
+        pexpect = None
 
 
 _random_ports = set()
