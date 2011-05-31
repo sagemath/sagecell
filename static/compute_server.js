@@ -8,9 +8,14 @@
 
 // TODO from Crockford's book:
 
-//  * Make objects *not* use this, but rather make them an associative array that contains functions
-//    which access variables inside of a closure.  Then we don't have to do any $.proxy stuff; 
-//    things will just work.  See chapter 5.
+//  * Make objects *not* use this, but rather make them an associative
+//    array that contains functions which access variables inside of a
+//    closure. Then we don't have to do any $.proxy stuff; things will
+//    just work. See chapter 5. However, see
+//    http://bonsaiden.github.com/JavaScript-Garden/#function.constructors,
+//    which argues that it is more inefficient to make objects out of
+//    closures instead of using the prototype property and "new"
+
 
 
 
