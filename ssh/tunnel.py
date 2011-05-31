@@ -34,7 +34,29 @@ try:
 except ImportError:
     pexpect = None
 
-from IPython.parallel.util import select_random_ports
+
+_random_ports = set()
+
+def select_random_ports(n):
+    """Selects and return n random ports that are available."""
+    ports = []
+    for i in xrange(n):
+        sock = socket.socket()
+        sock.bind(('', 0))
+        while sock.getsockname()[1] in _random_ports:
+            sock.close()
+            sock = socket.socket()
+            sock.bind(('', 0))
+        ports.append(sock)
+    for i, sock in enumerate(ports):
+        port = sock.getsockname()[1]
+        sock.close()
+        ports[i] = port
+        _random_ports.add(port)
+    return ports
+
+
+#from IPython.parallel.util import select_random_ports
 
 #-----------------------------------------------------------------------------
 # Code
