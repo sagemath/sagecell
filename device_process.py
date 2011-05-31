@@ -1,25 +1,41 @@
 r"""
-Basic design
-------------
 
 The DEVICE process continuously polls the database for new cells and
 evaluations on current sessions.  It also pulls messages from the
 output queues and puts them into the database.
 
-Each time a new session is required for a computation, the main
-process starts up a WORKER process using a
-:class:`multiprocessing.Pool`.  The DEVICE process creates a pipe to
-communicate with the EXEC process and passes the recieve end of the
-pipe into the WORKER process.  Messages to the EXEC process have the
-form ``('command', dict_of_options)`` or ``('user',
-execute_request_JSON_message)``.
+When the DEVICE starts up, it starts a queue manager and does a
+serve_forever in order to get messages from the EXEC processes.  It
+also sets up a shared secret for the EXEC output messages
 
-The WORKER process could be a restricted process; I suppose it should
-be, because if it's on another computer, it would have to clean up the
-files, and it may not be trusted.
+.. note:: The EXEC processes all have the same shared secret for
+   output messages.  This may lead to security problems if the
+   EXEC_WORKER is compromised by the user code in the EXEC process.
 
+Each time a new session is required for a computation, the DEVICE
+starts up a DEVICE_WORKER process using a
+:class:`multiprocessing.Pool`.  
 
-The WORKER process sets up a temporary directory, sets up the output
+The DEVICE_WORKER process creates a Listener object to communicate
+with the EXEC process and starts the listener.  It then creates an SSH
+connection to an unprivileged user and does something like::
+
+    python
+    import worker
+    worker.exec_worker(MESSAGE_QUEUE, OUTPUT_QUEUE)
+
+where ``MESSAGE_QUEUE`` and ``OUTPUT_QUEUE`` are both triples
+``(address, port, password)`` (where address and password are strings and
+port is an integer).
+
+The EXEC_WORKER process creates a managed queue that hooks up to the
+``OUTPUT_QUEUE`` manager and also creates a Client object that connects
+to the Listener ``MESSAGE_QUEUE``.
+
+Messages to the EXEC_WORKER process have the form ``('command',
+dict_of_options)`` or ``('user', execute_request_JSON_message)``.
+
+The EXEC_WORKER process sets up a temporary directory, sets up the output
 object (which points the passed queue), and starts an EXEC process
 
 The EXEC process listens for messages indicating either
@@ -27,8 +43,7 @@ The EXEC process listens for messages indicating either
 namespace.  The EXEC process is responsible for sending back
 ``execute_reply`` messages through the global queue back to the DEVICE
 process.  The EXEC process handles any errors that occur in the user
-code by forming an error status message back.  When the timeouts are
-reached on receiving messages, terminate and
+code by forming an error status message back.
 """
 
 
@@ -143,13 +158,15 @@ from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_pr
 
 import uuid
 
-def run(db, fs, workers, worker_timeout, poll_interval=0.1):
+def device(db, fs, workers, worker_timeout, poll_interval=0.1):
     """
     This function is the main function. Its responsibility is to
     query the database for more work to do and put messages back into the
     database. We do this so that we can batch the communication with the
     database, which may be running on a different server or sharded among
-    several servers.
+    several servers.  Another option is to the worker processes doing
+    the database communication once a session is set up.  We don't
+    know which is better for a highly scalable system.
 
     This function also creates the worker pool for doing the actual
     computations.
@@ -160,6 +177,17 @@ def run(db, fs, workers, worker_timeout, poll_interval=0.1):
     sessions={}
     from collections import defaultdict
     sequence=defaultdict(int)
+
+#    from multiprocessing.managers import BaseManager
+#    import Queue
+#    queue = Queue.Queue()
+#    class QueueManager(BaseManager): pass
+#    QueueManager.register('get_queue', callable=lambda:queue)
+#    # make random port
+#    m = QueueManager(address=('', 50000), authkey='abracadabra')
+#    s = m.get_server()
+#    s.serve_forever()
+    
     manager = Manager()
     while True:
         # limit new sessions to the number of free workers we have
@@ -422,5 +450,4 @@ if __name__ == "__main__":
     import misc
     db, fs = misc.select_db(sysargs)
     outQueue=Queue()
-    fslock=Lock() #TODO: do we need this lock?
-    run(db, fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout)
+    device(db, fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout)
