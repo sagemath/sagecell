@@ -94,7 +94,7 @@ Session.prototype.init = function (output) {
     this.poll_interval = 400;
     $(output).append('<div id="session-'+this.session_id+'" class="session_output"><div class="session_title">Session '+this.session_id+'</div></div>');
     this.session_output=$('#session-'+this.session_id);
-    this.eventHandlers = new Array();
+    this.eventHandlers = {};
     this.setQuery();
 }
 
