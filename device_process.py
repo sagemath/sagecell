@@ -444,12 +444,25 @@ def worker(session, message_queue, resource_limits):
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
 
+
+def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits):
+    """
+    Set up things and call the main device process
+    """
+    import db_zmq, filestore
+    db = db_zmq.DB(dbaddress)
+    fs = filestore.FileStoreZMQ(fsaddress)
+    device(db=db, fs=fs, workers=workers, interact_timeout=interact_timeout, 
+           resource_limits=resource_limits)
+
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
     # sometime in the summer of 2011, and then we can move this to use argparse.
     from optparse import OptionParser
     parser = OptionParser(description="Run one or more devices to process commands from the client.")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="zmq", help="Database to use")
+    parser.add_option("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
+    parser.add_option("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
     parser.add_option("-w", type=int, default=1, dest="workers",
                       help="Number of workers to start")
     parser.add_option("-t", "--timeout", type=int, default=60,
@@ -458,6 +471,7 @@ if __name__ == "__main__":
     (sysargs, args) = parser.parse_args()
 
     import misc
+    resource_limits=[]
 
     # set up db connection with password
     #
@@ -465,4 +479,5 @@ if __name__ == "__main__":
     # get resource limits as well
     db, fs = misc.select_db(sysargs)
     outQueue=Queue()
-    device(db, fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout, resource_limits=None)
+
+    device(db=db, fs=fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout, resource_limits=resource_limits)
