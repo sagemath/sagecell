@@ -189,16 +189,6 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=N
     from collections import defaultdict
     sequence=defaultdict(int)
 
-#    from multiprocessing.managers import BaseManager
-#    import Queue
-#    queue = Queue.Queue()
-#    class QueueManager(BaseManager): pass
-#    QueueManager.register('get_queue', callable=lambda:queue)
-#    # make random port
-#    m = QueueManager(address=('', 50000), authkey='abracadabra')
-#    s = m.get_server()
-#    s.serve_forever()
-    
     manager = Manager()
     while True:
         # limit new sessions to the number of free workers we have
