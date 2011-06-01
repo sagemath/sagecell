@@ -367,15 +367,17 @@ InteractCell.prototype.renderCanvas = function() {
 	    this.element.append(html_code);
 	    break;
 	case "slider":
-	    var html_code = "<div class='interact_slider'><p></p><div class = " + id + " id = " + id + "_" + i + " style='width:50%;border:10 px;margin-left:auto;margin-right:auto'></div></div>";
+	    var html_code = "<div class='interact_slider' style='width:50%;border:10 px;margin-left:auto;margin-right:auto'><p></p><div class = " + id + " id = " + id + "_" + i + "></div><p>Current Value: <span id='" + id + "_" + i + "_value'></span></p></div>";
 	    this.element.append(html_code);
 	    $("#" + id + "_" + i).slider({
 		value:this.controls[i]["default"],
 		min:this.controls[i]["range"][0],
 		max:this.controls[i]["range"][1],
 		step:this.controls[i]["step"],
-		change:function(event, ui){}
+		slide:function(event, ui){
+		    $("#" + ui.handle.offsetParent.id + "_value").html(ui.value);		},
 	    });
+	    $("#"+id+"_"+i+"_value").html($("#"+id+"_"+i).slider("value"));
 	    break;
 	}
     }
