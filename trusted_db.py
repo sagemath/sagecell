@@ -1,5 +1,6 @@
 import zmq
 import misc
+import os
 from subprocess import Popen, PIPE
 
 if __name__=='__main__':
@@ -19,9 +20,10 @@ if __name__=='__main__':
     dbport=dbreq.bind_to_random_port("tcp://127.0.0.1")
     fsreq=context.socket(zmq.REQ)
     fsport=fsreq.bind_to_random_port("tcp://127.0.0.1")
+    cwd=os.getcwd()
     p=Popen(["ssh", "localhost"],stdin=PIPE)
-    p.stdin.write("""cd Documents/simple-python-db-compute/
-python device_process.py --db zmq --dbaddress tcp://localhost:%i --fsaddress=tcp://localhost:%i\n"""%(dbport,fsport))
+    p.stdin.write("""cd %s
+python device_process.py --db zmq --dbaddress tcp://localhost:%i --fsaddress=tcp://localhost:%i\n"""%(cwd,dbport,fsport))
 #device.run_zmq(workers=1,interact_timeout=60,db_address="tcp://localhost:%i",fsaddress=tcp://localhost:%i)
 #"""%(dbport,fsport))
     #TODO: use SSH forwarding
