@@ -24,12 +24,12 @@ def db_method(method_name, kwarg_keys):
 
 class DB(db.DB):
     def __init__(self, *args, **kwds):
-        db.DB.__init__(self, *args, **kwds)
-
         #TODO: use authentication keys
         self.context=zmq.Context()
         self.rep=self.context.socket(zmq.REP)
         self.rep.connect(kwds['socket'])
+        db.DB.__init__(self, self.rep)
+
         
     new_input_message = db_method('new_input_message', ['msg'])
     get_input_messages = db_method('get_input_messages', ['device', 'limit'])

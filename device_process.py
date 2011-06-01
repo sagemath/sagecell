@@ -453,8 +453,8 @@ def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=N
     Set up things and call the main device process
     """
     import db_zmq, filestore
-    db = db_zmq.DB(dbaddress)
-    fs = filestore.FileStoreZMQ(fsaddress)
+    db = db_zmq.DB(socket=dbaddress)
+    fs = filestore.FileStoreZMQ(socket=fsaddress)
     device(db=db, fs=fs, workers=workers, interact_timeout=interact_timeout, 
            resource_limits=resource_limits)
 
