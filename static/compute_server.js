@@ -300,7 +300,8 @@ InteractCell.prototype.bindChange = function(interact) {
 	    events["change"] = null;
 	    break;
 	case "slider":
-	    events["slidechange"] = null;
+	    events["slidestop"] = null;
+	    events["change"] = null;
 	    break;
 	}
     }
@@ -334,7 +335,9 @@ InteractCell.prototype.getChanges = function() {
 	    params[i] = $(id + "_" + i).val();
 	    break;
 	case "slider":
-	    params[i] = String($(id + "_" + i).slider("value"));
+	    var input = $(id + "_" + i + "_value").val();
+	    $(id + "_" + i).slider("option", "value", input);
+	    params[i] = String(input);
 	    break;
 	}
     }
@@ -367,7 +370,7 @@ InteractCell.prototype.renderCanvas = function() {
 	    this.element.append(html_code);
 	    break;
 	case "slider":
-	    var html_code = "<div class='interact_slider' style='width:50%;border:10 px;margin-left:auto;margin-right:auto'><p></p><div class = " + id + " id = " + id + "_" + i + "></div><p>Current Value: <span id='" + id + "_" + i + "_value'></span></p></div>";
+	    var html_code = "<div class='interact_slider' style='width:50%;border:10 px;margin-left:auto;margin-right:auto'><p></p><div class = " + id + " id = " + id + "_" + i + "></div><p>Current Value: <input type='text' class = " + id + " id='" + id + "_" + i + "_value'></input></p></div>";
 	    this.element.append(html_code);
 	    $("#" + id + "_" + i).slider({
 		value:this.controls[i]["default"],
@@ -375,9 +378,10 @@ InteractCell.prototype.renderCanvas = function() {
 		max:this.controls[i]["range"][1],
 		step:this.controls[i]["step"],
 		slide:function(event, ui){
-		    $("#" + ui.handle.offsetParent.id + "_value").html(ui.value);		},
+		    $("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
+		}
 	    });
-	    $("#"+id+"_"+i+"_value").html($("#"+id+"_"+i).slider("value"));
+	    $("#"+id+"_"+i+"_value").val($("#"+id+"_"+i).slider("value"));
 	    break;
 	}
     }
