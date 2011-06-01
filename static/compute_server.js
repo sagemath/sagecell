@@ -106,8 +106,10 @@ Session.prototype.init = function (output) {
     this.session_id = uuid4();
     this.sequence = 0;
     this.poll_interval = 400;
-    $(output).append('<div id="session-'+this.session_id+'" class="session_output"><div class="session_title">Session '+this.session_id+'</div></div>');
-    this.session_output=$('#session-'+this.session_id);
+    $(output).append('<div id="session_'+this.session_id+'" class="session_container"><div id="session_'+this.session_id+'_title" class="session_title">Session '+this.session_id+'</div><div id="session_'+this.session_id+'_controls" class="session_controls"></div><div id="session_'+this.session_id+'_output" class="session_output"></div></div>');
+    this.session_output=$('#session_'+this.session_id+'_output');
+    this.session_title=$('#session_'+this.session_id+'_title');
+    this.session_controls=$('#session_'+this.session_id+'_controls');
     this.eventHandlers = {};
     this.setQuery();
 }
@@ -189,7 +191,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    switch(msg.msg_type) {
 	    //TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
-		this.session_output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
+		this.session_output.html("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
 
 	    case 'pyout':
@@ -243,7 +245,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		case "interact_start":
 		    interact_id = uuid4();
 		    var div_id = "interact-" + interact_id;
-		    this.session_output.append("<div id='"+div_id+"'></div>");
+		    this.session_controls.append("<div id='"+div_id+"'></div>");
 		    var interact = new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
@@ -351,26 +353,29 @@ InteractCell.prototype.renderCanvas = function() {
 	switch(this.controls[i].control_type) {
 	case "html":
 	    var html_code = this.controls[i].html;
-	    html_code = html_code.replace("$"+i+"$", this.controls[i].default);
+	    html_code = html_code.replace("$"+i+"$", this.controls[i]["default"]);
 	    html_code = html_code.replace("$id$", id);
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
-	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "_" + i + "></input>");
+	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
+	    this.element.append(html_code);
 	    break;
 	case "selector":
-	    var html_code = "<select class = " + id + " id = " + id + "_" + i + ">";
+	    var html_selector = "<select class = " + id + " id = " + id + "_" + i + ">";
 	    for (var j in this.controls[i].values) {
-		if (j == this.controls[i].default) {
-		    html_code = html_code + "<option selected='selected' value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		if (j == this.controls[i]["default"]) {
+		    html_selector = html_selector + "<option selected='selected' value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
 		} else {
-		    html_code = html_code + "<option value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		    html_selector = html_selector + "<option value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
 		}
 	    }
+	    html_selector = html_selector + "</select>";
+	    var html_code = "<div class='interact_select'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + html_selector + "</td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "slider":
-	    var html_code = "<div class='interact_slider' style='width:50%;border:10 px;margin-left:auto;margin-right:auto'><p></p><div class = " + id + " id = " + id + "_" + i + "></div><p>Current Value: <input type='text' class = " + id + " id='" + id + "_" + i + "_value'></input></p></div>";
+	    var html_code = "<div class='interact_slider'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><div class=" + id + " id='" + id + "_" + i + "' style='width:15.0em;margin-right:1.0em;margin-left:1.0em'></div></td><td><input type='text' class=" + id + " id ='" + id + "_" + i + "_value' value='' style='border:none'></input></td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    $("#" + id + "_" + i).slider({
 		value:this.controls[i]["default"],
