@@ -169,6 +169,7 @@ from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_pr
 
 import uuid
 
+outQueue=None
 def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=None):
     """
     This function is the main function. Its responsibility is to
@@ -185,6 +186,8 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=N
     device_id=uuid.uuid4()
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
+    global outQueue
+    outQueue=Queue()
     sessions={}
     from collections import defaultdict
     sequence=defaultdict(int)
@@ -466,18 +469,24 @@ if __name__ == "__main__":
     parser.add_option("-w", type=int, default=1, dest="workers",
                       help="Number of workers to start")
     parser.add_option("-t", "--timeout", type=int, default=60,
-                      dest="worker_timeout",
+                      dest="interact_timeout",
                       help="Worker idle timeout if an interact command is detected")
+    parser.add_option("--cpu", type=float, default=-1,
+                      dest="cpu_limit",
+                      help="CPU time (seconds) allotted to each session (hard limit)")
+    parser.add_option("--mem", type=float, default=-1,
+                      dest="memory_limit",
+                      help="Memory (MB) allotted to each session (hard limit)")
     (sysargs, args) = parser.parse_args()
 
-    import misc
     resource_limits=[]
+    if sysargs.cpu_limit>=0:
+        resource_limits.append((resource.RLIMIT_CPU, (sysargs.cpu_limit, sysargs.cpu_limit)))
+    if sysargs.memory_limit>=0:
+        mem_bytes=sysargs.memory_limit*1048576
+        resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
 
-    # set up db connection with password
-    #
-    
-    # get resource limits as well
+    import misc
     db, fs = misc.select_db(sysargs)
-    outQueue=Queue()
 
     device(db=db, fs=fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout, resource_limits=resource_limits)
