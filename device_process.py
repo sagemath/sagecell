@@ -448,7 +448,7 @@ def worker(session, message_queue, resource_limits):
     shutil.rmtree(tmp_dir)
 
 
-def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits):
+def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=None):
     """
     Set up things and call the main device process
     """
