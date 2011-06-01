@@ -29,7 +29,7 @@ class DB(db.DB):
         #TODO: use authentication keys
         self.context=zmq.Context()
         self.rep=self.context.socket(zmq.REP)
-        rep.connect(kwds['socket'])
+        self.rep.connect(kwds['socket'])
         
     new_input_message = db_method('new_input_message', ['msg'])
     get_input_messages = db_method('get_input_messages', ['device', 'limit'])
