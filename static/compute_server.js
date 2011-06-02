@@ -106,10 +106,33 @@ Session.prototype.init = function (output) {
     this.session_id = uuid4();
     this.sequence = 0;
     this.poll_interval = 400;
-    $(output).append('<div id="session-'+this.session_id+'" class="session_output"><div class="session_title">Session '+this.session_id+'</div></div>');
-    this.session_output=$('#session-'+this.session_id);
+    $(output).append('<div id="session_'+this.session_id+'" class="session_container"><div id="session_'+this.session_id+'_title" class="session_title">Session '+this.session_id+'</div><div id="session_'+this.session_id+'_output" class="session_output"></div></div>');
+    this.session_title=$('#session_'+this.session_id+'_title');
+    this.session_output=$('#session_'+this.session_id+'_output');
+    this.replace_output=false;
+    this.lock_output=false;
     this.eventHandlers = {};
+    this.interacts = {};
     this.setQuery();
+}
+
+// Manages where session output should be sent, whether it should replace existing content, and whether other function calls are allowed to modify it.
+Session.prototype.setOutput = function(location, replace, lock) {
+    if (! this.lock_output) {
+	this.restoreOutput();
+	this.session_output = $(location);
+	if (replace) {
+	    this.replace_output = true;
+	}
+	if (lock) {
+	    this.lock_output = true;
+	}
+    }
+}
+Session.prototype.restoreOutput = function() {
+    this.session_output=$('#session_'+this.session_id+'_output');
+    this.replace_output = false;
+    this.lock_output = false;
 }
 
 // Manages querying the webserver for messages
@@ -127,8 +150,14 @@ Session.prototype.updateQuery = function(new_interval) {
     this.setQuery();
 }
 
-Session.prototype.sendMsg = function(code) {
-    var msg_id=uuid4()
+Session.prototype.sendMsg = function() {
+    var code = arguments[0];
+    var msg_id;
+    if (arguments[1] == undefined){
+	msg_id = uuid4();
+    } else {
+	msg_id = arguments[1];
+    }
     var msg = {"parent_header": {},
 		   "header": {"msg_id": msg_id,
 			  "username": "",
@@ -152,12 +181,14 @@ Session.prototype.sendMsg = function(code) {
 	    console.log(textStatus); 
 	    console.log(errorThrown);
 	});
-    this.session_output.append('<div id="'+msg_id+'"></div>');
-    return msg_id
 }
 
-Session.prototype.output = function(msg_id) {
-    return $('#'+msg_id);
+Session.prototype.output = function(html) {
+    if (this.replace_output) {
+	this.session_output.html(html);
+    } else {
+	this.session_output.append(html);
+    }
 }
 
 Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
@@ -180,39 +211,44 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	for (var i = 0; i < content.length; i++) {
             var msg=content[i];
 	    var parent_id=msg.parent_header.msg_id;
+	    if (this.interacts[parent_id] == 1) {
+		this.setOutput("#"+parent_id, true, false);
+	    } else if (! this.lock_output) {
+		this.restoreOutput();
+	    }
             if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
-                console.log('sequence is out of order; I think it should be '+sequence+', but server claims it is '+msg.sequence);
+                console.log('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
             }
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    //TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
-		this.session_output.append("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
+		this.output("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
 		break;
 
 	    case 'pyout':
-                this.session_output.append("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
+                this.output("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
 		break;
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    this.session_output.append('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
+                    this.output('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
                 } else if(msg.content.data['text/html']!==undefined) {
-		    this.session_output.append('<div>'+msg.content.data['text/html']+'</div>');
+		    this.output('<div>'+msg.content.data['text/html']+'</div>');
 		}
 		break;
 
 	    case 'pyerr':
-		this.session_output.append("<pre>"+colorize(msg.content.traceback.join("\n")
+		this.output("<pre>"+colorize(msg.content.traceback.join("\n")
 						     .replace(/&/g,"&amp;")
 						     .replace(/</g,"&lt;")+"</pre>"));
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    this.session_output.append("<pre>"+colorize(msg.content.traceback.join("\n")
+		    this.output("<pre>"+colorize(msg.content.traceback.join("\n")
 							.replace(/&/g,"&amp;")
 							.replace(/</g,"&lt;")+"</pre>"));
 		}
@@ -228,28 +264,34 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			//TODO: escape filenames and id
 			html+="<a href=\"/files/"+id+"/"+user_msg.files[j]+"\">"
 			    +user_msg.files[j]+"</a><br>\n";
-		    this.session_output.append(html);
+		    this.output(html);
 		    break;
 		case "session_end":
-		    this.session_output.append("<div class='done'>Session "+id+ " done</div>");
+		    this.output("<div class='done'>Session "+id+ " done</div>");
 		    // Unbinds interact change handlers
 		    for (var i in this.eventHandlers) {
-			$(i).die(this.eventHandlers[i]);
+			for (var j in this.eventHandlers[i]) {
+			    $(i).die(this.eventHandlers[i][j]);
+			}
 		    }
 		    this.clearQuery();
 		    break;
 		case "interact_start":
 		    interact_id = uuid4();
 		    var div_id = "interact-" + interact_id;
-		    this.session_output.append("<div id='"+div_id+"'></div>");
+		    this.output("<div class='interact_container'><div class='interact' id='"+div_id+"'></div><div class='interact_output' id="+msg.header.msg_id+"></div></div>");
+		    this.setOutput("#"+msg.header.msg_id, true, true);
+		    this.interacts[msg.header.msg_id] = 1;
 		    var interact = new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
 			'controls': user_msg.content.controls,
 			'function_code': user_msg.content.function_code,
+			'msg_id': msg.header.msg_id,
 			'session': this});
 		    break;
 		case "interact_end":
+		    this.restoreOutput();
 		    break;
 		}
 		break;
@@ -279,22 +321,44 @@ InteractCell.prototype.init = function (selector, data) {
     this.controls = data.controls;
     this.layout = data.layout;
     this.session = data.session;
+    this.msg_id = data.msg_id;
 
     this.renderCanvas();
     this.bindChange(this);
 }
 
 InteractCell.prototype.bindChange = function(interact) {
-    this.session.eventHandlers[".urn_uuid_" + interact.interact_id] = "change";
-    $(".urn_uuid_" + interact.interact_id).live("change", function(){
-        var changes = interact.getChanges();
-        var code = interact.function_code + "(";
-        for (var i in changes) {
-	    code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
-        }
-        code = code + ")";
-	interact.session.sendMsg(code);
-    });
+    var id = ".urn_uuid_" + this.interact_id;
+    var events = {};
+    for (var i in this.controls) {
+	switch(this.controls[i].control_type) {
+	case "html":
+	    break;
+	case "input_box":
+	    events["change"] = null;
+	    break;
+	case "selector":
+	    events["change"] = null;
+	    break;
+	case "slider":
+	    events["slidestop"] = null;
+	    events["change"] = null;
+	    break;
+	}
+    }
+    this.session.eventHandlers[id] = [];
+    for (var i in events) {
+	this.session.eventHandlers[id].push(i);
+	$(id).live(i, function(){
+            var changes = interact.getChanges();
+            var code = interact.function_code + "(";
+            for (var i in changes) {
+		code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
+            }
+            code = code + ")";
+	    interact.session.sendMsg(code, interact.msg_id);
+	});
+    }
 }
 
 InteractCell.prototype.getChanges = function() {
@@ -308,6 +372,14 @@ InteractCell.prototype.getChanges = function() {
 	case "input_box":
 	    params[i] = $(id + "_" + i).val();
 	    break;
+	case "selector":
+	    params[i] = $(id + "_" + i).val();
+	    break;
+	case "slider":
+	    var input = $(id + "_" + i + "_value").val();
+	    $(id + "_" + i).slider("option", "value", input);
+	    params[i] = String(input);
+	    break;
 	}
     }
     return params;
@@ -320,14 +392,41 @@ InteractCell.prototype.renderCanvas = function() {
 	switch(this.controls[i].control_type) {
 	case "html":
 	    var html_code = this.controls[i].html;
-	    html_code = html_code.replace("$"+i+"$", this.controls[i].default);
+	    html_code = html_code.replace("$"+i+"$", this.controls[i]["default"]);
 	    html_code = html_code.replace("$id$", id);
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
-	    this.element.append("<input type='text' value =" + "'" + this.controls[i].default +  "' class = " + id + " id = " + id + "_" + i + "></input>");
+	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
+	    this.element.append(html_code);
+	    break;
+	case "selector":
+	    var html_selector = "<select class = " + id + " id = " + id + "_" + i + ">";
+	    for (var j in this.controls[i].values) {
+		if (j == this.controls[i]["default"]) {
+		    html_selector = html_selector + "<option selected='selected' value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		} else {
+		    html_selector = html_selector + "<option value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		}
+	    }
+	    html_selector = html_selector + "</select>";
+	    var html_code = "<div class='interact_select'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + html_selector + "</td></tr></tbody></table></div>";
+	    this.element.append(html_code);
+	    break;
+	case "slider":
+	    var html_code = "<div class='interact_slider'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><div class=" + id + " id='" + id + "_" + i + "' style='width:15.0em;margin-right:1.0em;margin-left:1.0em'></div></td><td><input type='text' class=" + id + " id ='" + id + "_" + i + "_value' value='' style='border:none'></input></td></tr></tbody></table></div>";
+	    this.element.append(html_code);
+	    $("#" + id + "_" + i).slider({
+		value:this.controls[i]["default"],
+		min:this.controls[i]["range"][0],
+		max:this.controls[i]["range"][1],
+		step:this.controls[i]["step"],
+		slide:function(event, ui){
+		    $("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
+		}
+	    });
+	    $("#"+id+"_"+i+"_value").val($("#"+id+"_"+i).slider("value"));
 	    break;
 	}
     }
 }
-
