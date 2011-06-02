@@ -353,7 +353,11 @@ InteractCell.prototype.bindChange = function(interact) {
             var changes = interact.getChanges();
             var code = interact.function_code + "(";
             for (var i in changes) {
-		code = code + i + "='" +  changes[i].replace(/'/g, "\\'") + "',";
+		if (interact.controls[i].raw == null) {
+		    code = code + i + "='" + changes[i].replace(/'/g, "\\'") + "',";
+		} else {
+		    code = code + i + "=" + changes[i] + ",";
+		}
             }
             code = code + ")";
 	    interact.session.sendMsg(code, interact.msg_id);
