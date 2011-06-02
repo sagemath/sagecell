@@ -31,10 +31,6 @@ class InputBox(InteractControl):
     def default(self):
         return self.kwargs.get('default',None)
 
-def input_box(*args, **kwargs):
-    return InputBox(*args, **kwargs)
-
-
 class Selector(InteractControl):
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
@@ -48,10 +44,6 @@ class Selector(InteractControl):
     def default(self):
         return self.values[self.default_value]
 
-def selector(*args, **kwargs):
-    return Selector(*args, **kwargs)
-
-
 class Slider(InteractControl):
     def message(self):
         return {'control_type':'slider',
@@ -62,5 +54,10 @@ class Slider(InteractControl):
     def default(self):
         return self.kwargs.get('default',0)
     
-def slider(*args, **kwargs):
-    return Slider(*args, **kwargs)
+
+
+# aliases for backwards compatibility
+slider=Slider
+selector=Selector
+input_box=InputBox
+
