@@ -340,6 +340,7 @@ Meant to be run as a separate process."""
 
         if msg[0]=="timeout_change":
             timeout=msg[1]
+            continue
         elif msg[0]=="exec":
             msg=msg[1]
             
