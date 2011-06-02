@@ -23,9 +23,7 @@ if __name__=='__main__':
     cwd=os.getcwd()
     p=Popen(["ssh", "localhost"],stdin=PIPE)
     p.stdin.write("""cd %s
-python device_process.py --db zmq --dbaddress tcp://localhost:%i --fsaddress=tcp://localhost:%i\n"""%(cwd,dbport,fsport))
-#device.run_zmq(workers=1,interact_timeout=60,db_address="tcp://localhost:%i",fsaddress=tcp://localhost:%i)
-#"""%(dbport,fsport))
+python device_process.py --db zmq --timeout 60 --dbaddress tcp://localhost:%i --fsaddress=tcp://localhost:%i\n"""%(cwd,dbport,fsport))
     #TODO: use SSH forwarding
     while True:
         try:

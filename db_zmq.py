@@ -12,10 +12,11 @@ The MongoDB database has the following structure:
 
 import db
 import zmq
+from uuid import uuid4
 
 def db_method(method_name, kwarg_keys):
     def f(self, **kwargs):
-        self.c.send_json({'header': {'msg_id': uuid4()},
+        self.c.send_json({'header': {'msg_id': str(uuid4())},
                           'msg_type': method_name,
                           'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])})
         # wait for output back
@@ -25,11 +26,11 @@ def db_method(method_name, kwarg_keys):
 class DB(db.DB):
     def __init__(self, *args, **kwds):
         #TODO: use authentication keys
-        self.context=zmq.Context()
+        self.context=kwds['context']
         self.rep=self.context.socket(zmq.REP)
         self.rep.connect(kwds['socket'])
         db.DB.__init__(self, self.rep)
-
+        print self.c
         
     new_input_message = db_method('new_input_message', ['msg'])
     get_input_messages = db_method('get_input_messages', ['device', 'limit'])

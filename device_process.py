@@ -170,7 +170,7 @@ from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_pr
 import uuid
 
 outQueue=None
-def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=None):
+def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits=None):
     """
     This function is the main function. Its responsibility is to
     query the database for more work to do and put messages back into the
@@ -183,7 +183,7 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=N
     This function also creates the worker pool for doing the actual
     computations.
     """
-    device_id=uuid.uuid4()
+    device_id=unicode(uuid.uuid4())
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
     global outQueue
@@ -196,7 +196,7 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=N
     while True:
         # limit new sessions to the number of free workers we have
         # TODO: be more intelligent about how many new sessions I can get
-        for X in db.get_input_messages(device_id, limit=workers-len(sessions)):
+        for X in db.get_input_messages(device=device_id, limit=workers-len(sessions)):
             # this gets both new session requests as well as execution
             # requests for current sessions.
             session=X['header']['session']
@@ -239,7 +239,7 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=N
 
             if (msg['msg_type']=='extension' 
                 and msg['content']['msg_type']=="interact_start"):
-                sessions[session]['messages'].put(('timeout_change', worker_timeout))
+                sessions[session]['messages'].put(('timeout_change', interact_timeout))
 
         # delete the output that I'm finished with
         for session in finished:
@@ -256,7 +256,7 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1, resource_limits=N
             del sessions[session]
             db.close_session(device=device_id, session=session)
         if len(new_messages)>0:
-            db.add_messages(None, new_messages)
+            db.add_messages(id=None, messages=new_messages)
 
 
         time.sleep(poll_interval)
@@ -453,8 +453,10 @@ def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=N
     Set up things and call the main device process
     """
     import db_zmq, filestore
-    db = db_zmq.DB(socket=dbaddress)
-    fs = filestore.FileStoreZMQ(socket=fsaddress)
+    import zmq
+    context=zmq.Context()
+    db = db_zmq.DB(context=context, socket=dbaddress)
+    fs = filestore.FileStoreZMQ(context=context, socket=fsaddress)
     device(db=db, fs=fs, workers=workers, interact_timeout=interact_timeout, 
            resource_limits=resource_limits)
 
@@ -487,6 +489,7 @@ if __name__ == "__main__":
         resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
 
     import misc
-    db, fs = misc.select_db(sysargs)
+    import zmq
+    db, fs = misc.select_db(sysargs,context=zmq.Context())
 
-    device(db=db, fs=fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout, resource_limits=resource_limits)
+    device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout, resource_limits=resource_limits)

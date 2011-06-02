@@ -42,3 +42,14 @@ class FileStoreMongo(FileStore):
     def get_file(self, cell_id, filename):
         _id=self._conn.fs.files.find_one({'cell_id':ObjectId(cell_id), 'filename':filename},['_id'])
         return self._fs.get(_id['_id'])
+
+import zmq
+from db_zmq import db_method
+class FileStoreZMQ(FileStoreMongo):
+    def __init__(self, *args, **kwds):
+        self.context=kwds['context']
+        self.rep=self.context.socket(zmq.REP)
+        self.rep.connect(kwds['socket'])
+    new_file=db_method('new_file',['cell_id','filename'])
+    delete_cell_files=db_method('delete_cell_files',['cell_id'])
+    get_file=db_method('get_file',['cell_id','filename'])

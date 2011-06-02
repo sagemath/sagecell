@@ -1,6 +1,6 @@
 import sys
 
-def select_db(sysargs):
+def select_db(sysargs, context=None):
     db=sysargs.db
     if db=="sqlite":
         import db_sqlite
@@ -19,5 +19,5 @@ def select_db(sysargs):
         return db_mongo.DB(connection), filestore.FileStoreMongo(connection)
     elif db=="zmq":
         import db_zmq, filestore
-        return db_zmq.DB(socket=sysargs.dbaddress), filestore.FileStoreZMQ(socket=sysargs.fsaddress)
+        return db_zmq.DB(socket=sysargs.dbaddress, context=context), filestore.FileStoreZMQ(socket=sysargs.fsaddress, context=context)
     
