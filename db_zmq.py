@@ -17,20 +17,26 @@ from uuid import uuid4
 def db_method(method_name, kwarg_keys):
     def f(self, **kwargs):
         self.c.send_json({'header': {'msg_id': str(uuid4())},
+        msg={'header': {'msg_id': str(uuid4())},
                           'msg_type': method_name,
-                          'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])})
+                          'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])}
+        print "Sending",msg
+        self.c.send_json(msg)
         # wait for output back
-        return self.c.recv_pyobj()
+        output=self.c.recv_pyobj()
+        print "Received: ",output
+        return output
     return f
 
 class DB(db.DB):
     def __init__(self, *args, **kwds):
         #TODO: use authentication keys
         self.context=kwds['context']
-        self.rep=self.context.socket(zmq.REP)
-        self.rep.connect(kwds['socket'])
-        db.DB.__init__(self, self.rep)
-        print self.c
+        self.req=self.context.socket(zmq.REQ)
+        print "ZMQ connecting to ",kwds['socket']
+        self.req.connect(kwds['socket'])
+        db.DB.__init__(self, self.req)
+        print "Started ZMQ DB"
         
     new_input_message = db_method('new_input_message', ['msg'])
     get_input_messages = db_method('get_input_messages', ['device', 'limit'])

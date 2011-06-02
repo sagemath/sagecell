@@ -192,7 +192,9 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     from collections import defaultdict
     sequence=defaultdict(int)
 
+
     manager = Manager()
+    log("Getting new messages")
     while True:
         # limit new sessions to the number of free workers we have
         # TODO: be more intelligent about how many new sessions I can get
@@ -212,6 +214,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
                                                                resource_limits))}
             # send execution request down the queue.
             sessions[session]['messages'].put(X)
+            log(device_id, session, message="sent execution request")
         # Get whatever sessions are done
         finished=set(i for i, r in sessions.iteritems() if r['worker'].ready())
         new_messages=[]
@@ -457,6 +460,7 @@ def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=N
     context=zmq.Context()
     db = db_zmq.DB(context=context, socket=dbaddress)
     fs = filestore.FileStoreZMQ(context=context, socket=fsaddress)
+    #fs = filestore.FileStoreZMQ(socket=fsaddress)
     device(db=db, fs=fs, workers=workers, interact_timeout=interact_timeout, 
            resource_limits=resource_limits)
 
