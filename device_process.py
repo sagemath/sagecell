@@ -44,6 +44,17 @@ namespace.  The EXEC process is responsible for sending back
 ``execute_reply`` messages through the global queue back to the DEVICE
 process.  The EXEC process handles any errors that occur in the user
 code by forming an error status message back.
+
+.. todo::
+
+  Untrusted:
+  * Create an untrusted DB class which establishes a connection to the trusted DB server
+  * set rlimits when we fork a DEVICE_WORKER process
+
+  Trusted:
+  * Create a trusted DB server class
+  * Start up device and give a password for DB authentication
+
 """
 
 
@@ -158,7 +169,7 @@ from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_pr
 
 import uuid
 
-def device(db, fs, workers, worker_timeout, poll_interval=0.1):
+def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits=None):
     """
     This function is the main function. Its responsibility is to
     query the database for more work to do and put messages back into the
@@ -171,43 +182,36 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1):
     This function also creates the worker pool for doing the actual
     computations.
     """
-    device_id=uuid.uuid4()
+    device_id=unicode(uuid.uuid4())
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
     sessions={}
     from collections import defaultdict
     sequence=defaultdict(int)
 
-#    from multiprocessing.managers import BaseManager
-#    import Queue
-#    queue = Queue.Queue()
-#    class QueueManager(BaseManager): pass
-#    QueueManager.register('get_queue', callable=lambda:queue)
-#    # make random port
-#    m = QueueManager(address=('', 50000), authkey='abracadabra')
-#    s = m.get_server()
-#    s.serve_forever()
-    
+
     manager = Manager()
+    log("Getting new messages")
     while True:
         # limit new sessions to the number of free workers we have
-        for X in db.get_input_messages(device_id, limit=workers-len(sessions)):
+        # TODO: be more intelligent about how many new sessions I can get
+        for X in db.get_input_messages(device=device_id, limit=workers-len(sessions)):
             # this gets both new session requests as well as execution
             # requests for current sessions.
             session=X['header']['session']
             if session not in sessions:
                 # session has not been set up yet
                 log(device_id, session,message="evaluating '%s'"%X['content']['code'])
+
                 msg_queue=manager.Queue() # TODO: make this a pipe
-                command_queue=manager.Queue() # TODO: make this a pipe
-                sessions[session]={'message': msg_queue,
-                                   'command': command_queue,
+                sessions[session]={'messages': msg_queue,
                                    'worker': pool.apply_async(worker,
                                                               (session,
                                                                msg_queue,
-                                                               command_queue))}
+                                                               resource_limits))}
             # send execution request down the queue.
-            sessions[session]['message'].put(X)
+            sessions[session]['messages'].put(('exec',X))
+            log(device_id, session, message="sent execution request")
         # Get whatever sessions are done
         finished=set(i for i, r in sessions.iteritems() if r['worker'].ready())
         new_messages=[]
@@ -235,8 +239,8 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1):
 
             if (msg['msg_type']=='extension' 
                 and msg['content']['msg_type']=="interact_start"):
-                sessions[session]['command'].put({'msg_type': 'timeout_change',
-                                                  'content': {'new_timeout': worker_timeout}})
+                sessions[session]['messages'].put(('timeout_change', interact_timeout))
+
         # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
@@ -252,7 +256,7 @@ def device(db, fs, workers, worker_timeout, poll_interval=0.1):
             del sessions[session]
             db.close_session(device=device_id, session=session)
         if len(new_messages)>0:
-            db.add_messages(None, new_messages)
+            db.add_messages(id=None, messages=new_messages)
 
 
         time.sleep(poll_interval)
@@ -304,7 +308,7 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, message_queue, command_queue, output_handler):
+def execProcess(cell_id, message_queue, output_handler, resource_limits):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
@@ -317,15 +321,14 @@ Meant to be run as a separate process."""
     timeout=1
     execution_count=1
     empty_times=0
-    while True:
-        # check for new commands every round
-        try:
-            command=command_queue.get(block=False)
-            if command['msg_type']=="timeout_change":
-                timeout=int(command['content']['new_timeout'])
-        except Queue.Empty:
-            pass
 
+    if resource_limits is None:
+        resource_limits=[]
+    from resource import setrlimit
+    for r,l in resource_limits:
+        setrlimit(r, l)
+
+    while True:
         try:
             msg=message_queue.get(timeout=timeout)
         except Queue.Empty:
@@ -335,8 +338,19 @@ Meant to be run as a separate process."""
             else:
                 continue
 
+        if msg[0]=="timeout_change":
+            timeout=msg[1]
+            continue
+        elif msg[0]=="exec":
+            msg=msg[1]
+            
+        # Now msg is an IPython message for the user session
         if msg['msg_type']!="execute_request":
             raise ValueError("Received invalid message: %s"%(msg,))
+
+        # TODO: we probably ought not prepend our own code, in case the user has some 
+        # "from __future__ import ..." statements, which *must* occur at the top of the code block
+        # alternatively, we could move any such statements above our statements
         code=user_code+msg['content']['code']
         code = displayhook_hack(code)
         output_handler.set_parent_header(msg['header'])
@@ -386,11 +400,11 @@ Meant to be run as a separate process."""
 
             execution_count+=1
 
-    print "Done executing code: ", code
+        print "Done executing code: ", code
     
         
 
-def worker(session, message_queue, command_queue):
+def worker(session, message_queue, resource_limits):
     """
     This function is executed by a worker process. It executes the
     given code in a separate process. This function may start a
@@ -415,7 +429,8 @@ def worker(session, message_queue, command_queue):
     # files later
     output_handler=OutputIPython(session, outQueue)
     # listen on queue and send send execution requests to execProcess
-    args=(session, message_queue, command_queue, output_handler)
+    args=(session, message_queue, output_handler, resource_limits)
+
     p=Process(target=execProcess, args=args)
     p.start()
     p.join()
@@ -434,20 +449,51 @@ def worker(session, message_queue, command_queue):
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
 
+
+def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=None):
+    """
+    Set up things and call the main device process
+    """
+    import db_zmq, filestore
+    import zmq
+    context=zmq.Context()
+    db = db_zmq.DB(context=context, socket=dbaddress)
+    fs = filestore.FileStoreZMQ(context=context, socket=fsaddress)
+    #fs = filestore.FileStoreZMQ(socket=fsaddress)
+    device(db=db, fs=fs, workers=workers, interact_timeout=interact_timeout, 
+           resource_limits=resource_limits)
+
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
     # sometime in the summer of 2011, and then we can move this to use argparse.
     from optparse import OptionParser
     parser = OptionParser(description="Run one or more devices to process commands from the client.")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="zmq", help="Database to use")
+    parser.add_option("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
+    parser.add_option("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
     parser.add_option("-w", type=int, default=1, dest="workers",
                       help="Number of workers to start")
     parser.add_option("-t", "--timeout", type=int, default=60,
-                      dest="worker_timeout",
+                      dest="interact_timeout",
                       help="Worker idle timeout if an interact command is detected")
+    parser.add_option("--cpu", type=float, default=-1,
+                      dest="cpu_limit",
+                      help="CPU time (seconds) allotted to each session (hard limit)")
+    parser.add_option("--mem", type=float, default=-1,
+                      dest="memory_limit",
+                      help="Memory (MB) allotted to each session (hard limit)")
     (sysargs, args) = parser.parse_args()
 
-    import misc
-    db, fs = misc.select_db(sysargs)
+    resource_limits=[]
+    if sysargs.cpu_limit>=0:
+        resource_limits.append((resource.RLIMIT_CPU, (sysargs.cpu_limit, sysargs.cpu_limit)))
+    if sysargs.memory_limit>=0:
+        mem_bytes=sysargs.memory_limit*1048576
+        resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
+
     outQueue=Queue()
-    device(db, fs, workers=sysargs.workers, worker_timeout=sysargs.worker_timeout)
+    import misc
+    import zmq
+    db, fs = misc.select_db(sysargs,context=zmq.Context())
+
+    device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout, resource_limits=resource_limits)
