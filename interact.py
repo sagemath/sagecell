@@ -26,8 +26,8 @@ class InteractControl:
 class InputBox(InteractControl):
     def message(self):
         return {'control_type':'input_box',
-                'default':self.kwargs.get('default',None),
-                'raw':self.kwargs.get('raw',None),
+                'default':self.kwargs.get('default',""),
+                'raw':self.kwargs.get('raw',False),
                 'label':self.kwargs.get('label',"")}
     def default(self):
         return self.kwargs.get('default',None)
@@ -45,7 +45,7 @@ class Selector(InteractControl):
         return {'control_type': 'selector',
                 'values': self.values,
                 'default': self.default_value,
-                'raw': self.kwargs.get('raw',None),
+                'raw': self.kwargs.get('raw',False),
                 'label':self.kwargs.get('label',"")}
     def default(self):
         return self.values[self.default_value]
@@ -60,7 +60,7 @@ class Slider(InteractControl):
                 'default':self.kwargs.get('default',0),
                 'range':self.kwargs.get('range',[0,100]),
                 'step':self.kwargs.get('step',20),
-                'raw':self.kwargs.get('raw',1),
+                'raw':self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
     def default(self):
         return self.kwargs.get('default',0)

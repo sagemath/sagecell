@@ -353,10 +353,10 @@ InteractCell.prototype.bindChange = function(interact) {
             var changes = interact.getChanges();
             var code = interact.function_code + "(";
             for (var i in changes) {
-		if (interact.controls[i].raw == null) {
-		    code = code + i + "='" + changes[i].replace(/'/g, "\\'") + "',";
-		} else {
+		if (interact.controls[i].raw) {
 		    code = code + i + "=" + changes[i] + ",";
+		} else {
+		    code = code + i + "='" + changes[i].replace(/'/g, "\\'") + "',";
 		}
             }
             code = code + ")";
