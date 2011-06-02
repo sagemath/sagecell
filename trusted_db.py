@@ -21,7 +21,7 @@ if __name__=='__main__':
     fsrep=context.socket(zmq.REP)
     fsport=fsrep.bind_to_random_port("tcp://127.0.0.1")
     cwd=os.getcwd()
-    p=Popen(["ssh", "localhost"],stdin=PIPE,bufsize=1 )
+    p=Popen(["ssh", "localhost"],stdin=PIPE,bufsize=0 )
     p.stdin.write("""cd %s
 python device_process.py --db zmq --timeout 60 --dbaddress tcp://localhost:%i --fsaddress=tcp://localhost:%i\n"""%(cwd,dbport,fsport))
     #TODO: use SSH forwarding
@@ -29,8 +29,8 @@ python device_process.py --db zmq --timeout 60 --dbaddress tcp://localhost:%i --
     import time
     while True:
         x=dbrep.recv_json()
-        #print "***********Received: ", x
+        print "***********Received: ", x
         result=getattr(db,x['msg_type'])(**x['content'])
-        #print "***********Sending: ",result
+        print "***********Sending: ",result
         dbrep.send_pyobj(result)
         time.sleep(0.5)

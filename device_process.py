@@ -169,7 +169,6 @@ from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_pr
 
 import uuid
 
-outQueue=None
 def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits=None):
     """
     This function is the main function. Its responsibility is to
@@ -186,8 +185,6 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     device_id=unicode(uuid.uuid4())
     log(device_id, message="Starting device loop for device %s..."%device_id)
     pool=Pool(processes=workers)
-    global outQueue
-    outQueue=Queue()
     sessions={}
     from collections import defaultdict
     sequence=defaultdict(int)
@@ -213,7 +210,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
                                                                msg_queue,
                                                                resource_limits))}
             # send execution request down the queue.
-            sessions[session]['messages'].put(X)
+            sessions[session]['messages'].put(('exec',X))
             log(device_id, session, message="sent execution request")
         # Get whatever sessions are done
         finished=set(i for i, r in sessions.iteritems() if r['worker'].ready())
@@ -311,7 +308,7 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, message_queue, command_queue, output_handler):
+def execProcess(cell_id, message_queue, output_handler, resource_limits):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
@@ -431,7 +428,8 @@ def worker(session, message_queue, resource_limits):
     # files later
     output_handler=OutputIPython(session, outQueue)
     # listen on queue and send send execution requests to execProcess
-    args=(session, message_queue, command_queue, output_handler)
+    args=(session, message_queue, output_handler, resource_limits)
+
     p=Process(target=execProcess, args=args)
     p.start()
     p.join()
@@ -492,6 +490,7 @@ if __name__ == "__main__":
         mem_bytes=sysargs.memory_limit*1048576
         resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
 
+    outQueue=Queue()
     import misc
     import zmq
     db, fs = misc.select_db(sysargs,context=zmq.Context())
