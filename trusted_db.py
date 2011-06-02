@@ -16,20 +16,23 @@ if __name__=='__main__':
     db, fs = misc.select_db(sysargs)
 
     context=zmq.Context()
-    dbreq=context.socket(zmq.REQ)
-    dbport=dbreq.bind_to_random_port("tcp://127.0.0.1")
-    fsreq=context.socket(zmq.REQ)
-    fsport=fsreq.bind_to_random_port("tcp://127.0.0.1")
+    dbrep=context.socket(zmq.REP)
+    dbport=dbrep.bind_to_random_port("tcp://127.0.0.1")
+    fsrep=context.socket(zmq.REP)
+    fsport=fsrep.bind_to_random_port("tcp://127.0.0.1")
     cwd=os.getcwd()
-    p=Popen(["ssh", "localhost"],stdin=PIPE)
+    p=Popen(["ssh", "localhost"],stdin=PIPE,bufsize=1 )
     p.stdin.write("""cd %s
 python device_process.py --db zmq --dbaddress tcp://localhost:%i --fsaddress=tcp://localhost:%i\n"""%(cwd,dbport,fsport))
 #device.run_zmq(workers=1,interact_timeout=60,db_address="tcp://localhost:%i",fsaddress=tcp://localhost:%i)
 #"""%(dbport,fsport))
     #TODO: use SSH forwarding
+    print "trusted_db entering request loop"
+    import time
     while True:
-        try:
-            x=req.recv_json()
-            req.send_pyobj(getattr(db,x['msg-type'])(x['content']))
-        except:
-            pass
+        x=dbrep.recv_json()
+        #print "***********Received: ", x
+        result=getattr(db,x['msg_type'])(**x['content'])
+        #print "***********Sending: ",result
+        dbrep.send_pyobj(result)
+        time.sleep(0.5)

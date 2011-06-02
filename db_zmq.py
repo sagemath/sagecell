@@ -12,23 +12,31 @@ The MongoDB database has the following structure:
 
 import db
 import zmq
+from uuid import uuid4
 
 def db_method(method_name, kwarg_keys):
     def f(self, **kwargs):
-        self.c.send_json({'header': {'msg_id': uuid4()},
+        print 'IN ZMQ DB'
+        msg={'header': {'msg_id': str(uuid4())},
                           'msg_type': method_name,
-                          'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])})
+                          'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])}
+        print "Sending",msg
+        self.c.send_json(msg)
         # wait for output back
-        return self.c.recv_pyobj()
+        output=self.c.recv_pyobj()
+        print "Received: ",output
+        return output
     return f
 
 class DB(db.DB):
     def __init__(self, *args, **kwds):
         #TODO: use authentication keys
         self.context=zmq.Context()
-        self.rep=self.context.socket(zmq.REP)
-        self.rep.connect(kwds['socket'])
-        db.DB.__init__(self, self.rep)
+        self.req=self.context.socket(zmq.REQ)
+        print "ZMQ connecting to ",kwds['socket']
+        self.req.connect(kwds['socket'])
+        db.DB.__init__(self, self.req)
+        print "Started ZMQ DB"
 
         
     new_input_message = db_method('new_input_message', ['msg'])
