@@ -33,3 +33,23 @@ def timing(results=None):
         if results is not None:
             results.append(start)
 
+import urllib
+import urllib2
+
+try: import simplejson as json
+except ImportError: import json
+
+def json_request(url, data=None):
+    """
+    Send a JSON message to the URL and return the result as a
+    dictionary.
+
+    :param data: a JSON-stringifiable object, passed in the POST
+      variable ``message``
+    :returns: a JSON-parsed dict/list/whatever from the server reply
+    """
+    if data is not None:
+        data = urllib.urlencode(data)
+    response = urllib2.urlopen(url, data)
+    return json.loads(response.read())
+

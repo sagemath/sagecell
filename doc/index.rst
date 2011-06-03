@@ -17,6 +17,7 @@ Contents:
     device
     filestore
     interact_protocol
+    timing
 
 .. automodule:: misc
     :members:
