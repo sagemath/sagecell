@@ -32,21 +32,22 @@ class FileStoreMongo(FileStore):
         self._fs=GridFS(connection)
 
     def new_file(self, cell_id, filename):
+        self.delete_files(cell_id=cell_id, filename=filename)
         return self._fs.new_file(filename=filename, cell_id=cell_id)
+
+    def delete_files(self, **kwargs):
+        while self._fs.exists(kwargs):
+            self._fs.delete(self._fs.get_last_version(**kwargs)._id)
+
+    def get_file(self, **kwargs):
+        if self._fs.exists(kwargs):
+            return self._fs.get(self._fs.get_last_version(**kwargs)._id)
+        else:
+            return None
     
-    def delete_cell_files(self, cell_id):
-        c=self.conn.find({'cell_id':cell_id}, ['_id'])
-        for _id in c:
-            self._fs.delete(_id)
-
-    def get_file(self, cell_id, filename):
-        _id=self._conn.fs.files.find_one({'cell_id':cell_id, 'filename':filename},['_id'])
-        return self._fs.get(_id['_id'])
-
-    def create_file(self, cell_id, filename):
-        self.new_cell_id=cell_id
-        self.new_filename=filename
-        return ""
+    def create_file(self, file_handle, **kwargs):
+        with self.new_file(**kwargs) as f:
+            f.write(file_handle.read())
 
 import zmq
 from db_zmq import db_method
@@ -57,10 +58,9 @@ class FileStoreZMQ(FileStoreMongo):
         self.context=kwds['context']
         self.c=self.context.socket(zmq.REQ)
         self.c.connect(kwds['socket'])
-    def create_file(self, cell_id, filename, file_handle):
+    def create_file(self, file_handle, **kwargs):
         message=[dumps({'msg_type':'create_file',"header":str(uuid4()),
-                        'content':{'cell_id':cell_id,'filename':filename}}),
-                 file_handle.read()]
+                        'content':kwargs}), file_handle.read()]
         self.c.send_multipart(message,copy=False,track=True).wait()
         self.c.recv()
 

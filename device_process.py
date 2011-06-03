@@ -414,7 +414,7 @@ Meant to be run as a separate process."""
                     file_list.append(filename)
                     try:
                         with open(filename) as f:
-                            fs.create_file(cell_id, filename, f)
+                            fs.create_file(f, cell_id=cell_id, filename=filename)
                     except Exception as e:
                         sys.stdout.write("An exception occurred: %s\n"%(e,))
             if len(file_list)>0:
