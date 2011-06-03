@@ -488,6 +488,7 @@ if __name__ == "__main__":
                       help="Memory (MB) allotted to each session (hard limit)")
     (sysargs, args) = parser.parse_args()
 
+    import resource
     resource_limits=[]
     if sysargs.cpu_limit>=0:
         resource_limits.append((resource.RLIMIT_CPU, (sysargs.cpu_limit, sysargs.cpu_limit)))
