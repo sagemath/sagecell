@@ -292,10 +292,11 @@ def displayhook_hack(string):
     i = len(string)-1
     if i >= 0:
         # skip lines that are either empty or start with whitespace
-        while len(string[i])==0 or string[i][0] in ' \t':
+        # or are comments
+        while len(string[i])==0 or string[i][0] in ' \t#': # indented or comment
             i -= 1
         final_lines = unicode_str('\n'.join(string[i:]))
-        if not final_lines.startswith('def '):
+        if not (final_lines.startswith('def ') or final_lines.startswith('class ')):
             try:
                 compile(final_lines + '\n', '', 'single')
                 string[i] = "exec compile(%r + '\\n', '', 'single')" % final_lines
