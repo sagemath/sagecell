@@ -107,7 +107,7 @@ def output_long_poll(db,fs):
         sleep(poll_interval)
     return jsonify([])
 
-from flask import Response
+from flask import Response, abort
 import mimetypes
 @app.route("/files/<cell_id>/<filename>")
 @get_db
@@ -121,7 +121,11 @@ def cellFile(db,fs,cell_id,filename):
     mimetype=mimetypes.guess_type(filename)[0]
     if mimetype is None:
         mimetype = 'application/octet-stream'
-    return Response(fs.get_file(cell_id, filename), content_type=mimetype)
+    f=fs.get_file(cell_id=cell_id, filename=filename)
+    if f is not None:
+        return Response(f, content_type=mimetype)
+    else:
+        abort(404)
 
 @app.route("/complete")
 @get_db
