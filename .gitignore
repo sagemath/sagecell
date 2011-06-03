@@ -4,3 +4,7 @@ sqlite.db
 sqlalchemy_sqlite.db
 doc/_build/*
 .idea
+
+# ignore timing test results
+timing/results
+2011*
