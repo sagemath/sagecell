@@ -353,6 +353,9 @@ Meant to be run as a separate process."""
         # alternatively, we could move any such statements above our statements
         code=user_code+msg['content']['code']
         code = displayhook_hack(code)
+        # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
+        code += '\n'
+        print "Executing: ",code
         output_handler.set_parent_header(msg['header'])
         with output_handler as MESSAGE:
             try:
