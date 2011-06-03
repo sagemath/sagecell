@@ -364,6 +364,7 @@ Meant to be run as a separate process."""
         code += '\n'
         print "Executing: ",code
         output_handler.set_parent_header(msg['header'])
+        old_files={f:os.stat(f).st_mtime for f in os.listdir(os.getcwd())}
         with output_handler as MESSAGE:
             try:
                 exec code in {'MESSAGE': MESSAGE,
@@ -409,14 +410,15 @@ Meant to be run as a separate process."""
                                                          err_msg)
             file_list=[]
             for filename in os.listdir(os.getcwd()):
-                file_list.append(filename)
-                try:
-                    with open(filename) as f:
-                        fs.create_file(cell_id, filename, f)
-                except Exception as e:
-                    sys.stdout.write("An exception occurred: %s\n"%(e,))
-                if len(file_list)>0:
-                    output_handler.message_queue.message('files', {'files': file_list})
+                if filename not in old_files or old_files[filename]!=os.stat(filename).st_mtime:
+                    file_list.append(filename)
+                    try:
+                        with open(filename) as f:
+                            fs.create_file(cell_id, filename, f)
+                    except Exception as e:
+                        sys.stdout.write("An exception occurred: %s\n"%(e,))
+            if len(file_list)>0:
+                output_handler.message_queue.message('files', {'files': file_list})
 
             execution_count+=1
 
