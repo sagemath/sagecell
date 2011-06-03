@@ -226,6 +226,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
         # TODO: or maybe just a max number of messages we can handle in one loop
         while not outQueue.empty():
             msg=outQueue.get()
+            session = msg['parent_header']['session']
             last_msg=last_message.get(session)
             # Consolidate session messages of stderr or stdout
             # channels
