@@ -17,13 +17,11 @@ from uuid import uuid4
 def db_method(method_name, kwarg_keys):
     def f(self, **kwargs):
         msg={'header': {'msg_id': str(uuid4())},
-                          'msg_type': method_name,
-                          'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])}
-        print "Sent: ",msg
+             'msg_type': method_name,
+             'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])}
         self.c.send_json(msg)
         # wait for output back
         output=self.c.recv_pyobj()
-        print "Received: ",output
         return output
     return f
 

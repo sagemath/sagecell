@@ -95,7 +95,7 @@ class QueueOut(StringIO.StringIO):
                'header': {'msg_id':unicode(msg_id)},
                'content': content}
         self.queue.put(msg)
-        sys.__stdout__.write("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
+#        sys.__stdout__.write("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
 
 class ChannelQueue(QueueOut):
     def __init__(self, session, queue, channel, parent_header=None):
@@ -170,7 +170,7 @@ class OutputIPython(object):
         # supress the exception
         return False
 
-from multiprocessing import Pool, TimeoutError, Process, Queue, Lock, current_process, Manager
+from multiprocessing import Pool, TimeoutError, Process, Queue, current_process, Manager
 
 import uuid
 
@@ -226,7 +226,6 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
         # TODO: or maybe just a max number of messages we can handle in one loop
         while not outQueue.empty():
             msg=outQueue.get()
-            session = msg['parent_header']['session']
             last_msg=last_message.get(session)
             # Consolidate session messages of stderr or stdout
             # channels
@@ -410,8 +409,6 @@ Meant to be run as a separate process."""
             execution_count+=1
 
         print "Done executing code: ", code
-    
-        
 
 def worker(session, message_queue, resource_limits):
     """
@@ -424,7 +421,7 @@ def worker(session, message_queue, resource_limits):
     device queue.  These messages represent the output and results of
     executing the code.
     """
-    # the fs variable is inherited from the parent process
+    db, fs=misc.select_db(sysargs, context=zmq.Context())
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     print "Temp files in "+tmp_dir
@@ -434,25 +431,24 @@ def worker(session, message_queue, resource_limits):
     # Daemonic processes cannot create children
     current_process().daemon=False
     os.chdir(tmp_dir)
-    # we need the output handler here so we can add messages about
+
     # files later
     output_handler=OutputIPython(session, outQueue)
+    output_handler.set_parent_header({'session':session})
     # listen on queue and send send execution requests to execProcess
     args=(session, message_queue, output_handler, resource_limits)
-
     p=Process(target=execProcess, args=args)
     p.start()
     p.join()
     current_process().daemon=oldDaemon
     file_list=[]
-    fslock.acquire() #TODO: do we need this lock?
     for filename in os.listdir(tmp_dir):
-        file_list.append(filename)
-        fs_file=fs.new_file(session, filename)
-        with open(filename) as f:
-            fs_file.write(f.read())
-        fs_file.close()
-    fslock.release()
+        try:
+            file_list.append(filename)
+            with open(filename) as f:
+                fs.create_file(session, filename, f)
+        except Exception as e:
+            sys.stdout.write("An exception occurred: %s\n"%(e,))
     if len(file_list)>0:
         output_handler.message_queue.message('files', {'files': file_list})
     os.chdir(curr_dir)
@@ -468,7 +464,6 @@ def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=N
     context=zmq.Context()
     db = db_zmq.DB(context=context, socket=dbaddress)
     fs = filestore.FileStoreZMQ(context=context, socket=fsaddress)
-    #fs = filestore.FileStoreZMQ(socket=fsaddress)
     device(db=db, fs=fs, workers=workers, interact_timeout=interact_timeout, 
            resource_limits=resource_limits)
 
@@ -498,7 +493,7 @@ if __name__ == "__main__":
     if sysargs.cpu_limit>=0:
         resource_limits.append((resource.RLIMIT_CPU, (sysargs.cpu_limit, sysargs.cpu_limit)))
     if sysargs.memory_limit>=0:
-        mem_bytes=sysargs.memory_limit*1048576
+        mem_bytes=sysargs.memory_limit*(2**20)
         resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
 
     outQueue=Queue()
