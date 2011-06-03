@@ -259,11 +259,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		var user_msg=msg.content;
 		switch(user_msg.msg_type) {
 		case "files":
+		    var files=user_msg.content.files
 		    var html="<div>\n";
-		    for(var j=0; j<user_msg.files.length; j++)
+		    for(var j=0; j<files.length; j++)
 			//TODO: escape filenames and id
-			html+="<a href=\"/files/"+id+"/"+user_msg.files[j]+"\">"
-			    +user_msg.files[j]+"</a><br>\n";
+			html+="<a href=\"/files/"+id+"/"+files[j]+"\">"
+			    +files[j]+"</a><br>\n";
 		    this.output(html);
 		    break;
 		case "session_end":
