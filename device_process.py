@@ -292,10 +292,11 @@ def displayhook_hack(string):
     i = len(string)-1
     if i >= 0:
         # skip lines that are either empty or start with whitespace
-        while len(string[i])==0 or string[i][0] in ' \t':
+        # or are comments
+        while len(string[i])==0 or string[i][0] in ' \t#': # indented or comment
             i -= 1
         final_lines = unicode_str('\n'.join(string[i:]))
-        if not final_lines.startswith('def '):
+        if not (final_lines.startswith('def ') or final_lines.startswith('class ')):
             try:
                 compile(final_lines + '\n', '', 'single')
                 string[i] = "exec compile(%r + '\\n', '', 'single')" % final_lines
@@ -353,6 +354,9 @@ Meant to be run as a separate process."""
         # alternatively, we could move any such statements above our statements
         code=user_code+msg['content']['code']
         code = displayhook_hack(code)
+        # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
+        code += '\n'
+        print "Executing: ",code
         output_handler.set_parent_header(msg['header'])
         with output_handler as MESSAGE:
             try:
@@ -468,7 +472,7 @@ if __name__ == "__main__":
     # sometime in the summer of 2011, and then we can move this to use argparse.
     from optparse import OptionParser
     parser = OptionParser(description="Run one or more devices to process commands from the client.")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="zmq", help="Database to use")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="mongo", help="Database to use")
     parser.add_option("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
     parser.add_option("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
     parser.add_option("-w", type=int, default=1, dest="workers",
@@ -493,7 +497,10 @@ if __name__ == "__main__":
 
     outQueue=Queue()
     import misc
-    import zmq
-    db, fs = misc.select_db(sysargs,context=zmq.Context())
+    kwargs={}
+    if sysargs.db=="zmq":
+        import zmq
+        kwargs['context']=zmq.Context()
+    db, fs = misc.select_db(sysargs,**kwargs)
 
     device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout, resource_limits=resource_limits)
