@@ -83,11 +83,16 @@ class QueueOut(StringIO.StringIO):
         """
         Send a message where you can change the outer IPython msg_type and completely specify the content.
         """
+        # We don't use uuid4() for the msg_id since there is a bug in
+        # older python versions (fixed in 2.6.6, I think) on OSX
+        # that leads to each session having exactly the same sequence of UUIDs
+        # see http://bugs.python.org/issue8621
+        msg_id = random.randrange(sys.maxint)
         msg = {'msg_type': msg_type,
                'parent_header': self.parent_header,
                # We don't transmit the session id in the header since
                # it should already be in the parent_header
-               'header': {'msg_id':unicode(uuid.uuid4())},
+               'header': {'msg_id':unicode(msg_id)},
                'content': content}
         self.queue.put(msg)
         sys.__stdout__.write("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
