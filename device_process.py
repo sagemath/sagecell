@@ -364,7 +364,7 @@ Meant to be run as a separate process."""
         code += '\n'
         print "Executing: ",code
         output_handler.set_parent_header(msg['header'])
-        old_files={f:os.stat(f).st_mtime for f in os.listdir(os.getcwd())}
+        old_files=dict([(f,os.stat(f).st_mtime) for f in os.listdir(os.getcwd())])
         with output_handler as MESSAGE:
             try:
                 exec code in {'MESSAGE': MESSAGE,
