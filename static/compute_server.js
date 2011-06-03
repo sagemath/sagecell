@@ -120,7 +120,7 @@ Session.prototype.init = function (output) {
 Session.prototype.setOutput = function(location, replace, lock) {
     if (! this.lock_output) {
 	this.restoreOutput();
-	this.session_output = $(location);
+	this.session_output = $("#session_"+this.session_id+" "+location);
 	if (replace) {
 	    this.replace_output = true;
 	}
@@ -130,7 +130,7 @@ Session.prototype.setOutput = function(location, replace, lock) {
     }
 }
 Session.prototype.restoreOutput = function() {
-    this.session_output=$('#session_'+this.session_id+'_output');
+    this.session_output=$("#session_"+this.session_id+" #session_"+this.session_id+"_output");
     this.replace_output = false;
     this.lock_output = false;
 }
