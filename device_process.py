@@ -107,7 +107,7 @@ class ChannelQueue(QueueOut):
                          content={'data': output, 'name':self.channel})
 
 class QueueOutMessage(QueueOut):
-    def __init__(self, session, queue):
+    def __init__(self, session, queue, parent_header=None):
         QueueOut.__init__(self, session=session, queue=queue)
 
     def message(self, msg_type, content):
@@ -125,12 +125,12 @@ class QueueOutMessage(QueueOut):
                          content={'data':data})
 
 class OutputIPython(object):
-    def __init__(self, session, queue):
+    def __init__(self, session, queue, parent_header=None):
         self.session=session
         self.queue=queue
-        self.stdout_queue=ChannelQueue(self.session, self.queue, "stdout")
-        self.stderr_queue=ChannelQueue(self.session, self.queue, "stderr")
-        self.message_queue=QueueOutMessage(self.session, self.queue)
+        self.stdout_queue=ChannelQueue(self.session, self.queue, "stdout", parent_header)
+        self.stderr_queue=ChannelQueue(self.session, self.queue, "stderr", parent_header)
+        self.message_queue=QueueOutMessage(self.session, self.queue, parent_header)
 
     def set_parent_header(self, parent_header):
         """
@@ -313,10 +313,11 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, message_queue, output_handler, resource_limits):
+def execProcess(cell_id, message_queue, output_handler, resource_limits, sysargs):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
+    fs=misc.select_db(sysargs, context=zmq.Context())[1]
     import Queue
     global user_code
     # timeout has to be long enough so we don't miss the first message
@@ -405,6 +406,16 @@ Meant to be run as a separate process."""
                                execution_count=execution_count)
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          err_msg)
+            file_list=[]
+            for filename in os.listdir(os.getcwd()):
+                file_list.append(filename)
+                try:
+                    with open(filename) as f:
+                        fs.create_file(cell_id, filename, f)
+                except Exception as e:
+                    sys.stdout.write("An exception occurred: %s\n"%(e,))
+                if len(file_list)>0:
+                    output_handler.message_queue.message('files', {'files': file_list})
 
             execution_count+=1
 
@@ -436,21 +447,11 @@ def worker(session, message_queue, resource_limits):
     output_handler=OutputIPython(session, outQueue)
     output_handler.set_parent_header({'session':session})
     # listen on queue and send send execution requests to execProcess
-    args=(session, message_queue, output_handler, resource_limits)
+    args=(session, message_queue, output_handler, resource_limits, sysargs)
     p=Process(target=execProcess, args=args)
     p.start()
     p.join()
     current_process().daemon=oldDaemon
-    file_list=[]
-    for filename in os.listdir(tmp_dir):
-        try:
-            file_list.append(filename)
-            with open(filename) as f:
-                fs.create_file(session, filename, f)
-        except Exception as e:
-            sys.stdout.write("An exception occurred: %s\n"%(e,))
-    if len(file_list)>0:
-        output_handler.message_queue.message('files', {'files': file_list})
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
 
