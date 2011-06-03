@@ -472,7 +472,7 @@ if __name__ == "__main__":
     # sometime in the summer of 2011, and then we can move this to use argparse.
     from optparse import OptionParser
     parser = OptionParser(description="Run one or more devices to process commands from the client.")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="zmq", help="Database to use")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="mongo", help="Database to use")
     parser.add_option("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
     parser.add_option("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
     parser.add_option("-w", type=int, default=1, dest="workers",
@@ -497,7 +497,10 @@ if __name__ == "__main__":
 
     outQueue=Queue()
     import misc
-    import zmq
-    db, fs = misc.select_db(sysargs,context=zmq.Context())
+    kwargs={}
+    if sysargs.db=="zmq":
+        import zmq
+        kwargs['context']=zmq.Context()
+    db, fs = misc.select_db(sysargs,**kwargs)
 
     device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout, resource_limits=resource_limits)
