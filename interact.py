@@ -1,5 +1,7 @@
 _INTERACTS={}
 
+__single_cell_timeout__=0
+
 def interact(f):
     import inspect
     from uuid import uuid4
@@ -15,6 +17,8 @@ def interact(f):
                     {'function_code':'_get_interact_function("%s")'%function_id,
                      'controls':dict(zip(args,[c.message() for c in defaults])),
                      'layout':args})
+    global __single_cell_timeout__
+    __single_cell_timeout__=60
     f(**dict(zip(args,[c.default() for c in defaults])))
     MESSAGE.message('interact_end',{})
 

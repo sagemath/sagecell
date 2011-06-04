@@ -242,10 +242,6 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
                 new_messages.append(msg)
                 last_message[session]=msg
 
-            if (msg['msg_type']=='extension' 
-                and msg['content']['msg_type']=="interact_start"):
-                sessions[session]['messages'].put(('timeout_change', interact_timeout))
-
         # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
@@ -327,7 +323,8 @@ Meant to be run as a separate process."""
     # and so that we don't miss a command that may come after the first message.
     # thus, this default timeout should be much longer than the polling interval
     # for the output queue
-    timeout=0.5
+    MAX_TIMEOUT=60
+    timeout=0.1
     execution_count=1
     empty_times=0
 
@@ -341,18 +338,13 @@ Meant to be run as a separate process."""
         try:
             msg=message_queue.get(timeout=timeout)
         except Queue.Empty:
-            empty_times+=1
-            if empty_times>=2:
-                break
-            else:
-                continue
+            break
 
-        if msg[0]=="timeout_change":
-            timeout=msg[1]
-            continue
-        elif msg[0]=="exec":
+        if msg[0]=="exec":
             msg=msg[1]
-            
+        else:
+            break
+
         # Now msg is an IPython message for the user session
         if msg['msg_type']!="execute_request":
             raise ValueError("Received invalid message: %s"%(msg,))
@@ -369,8 +361,9 @@ Meant to be run as a separate process."""
         old_files=dict([(f,os.stat(f).st_mtime) for f in os.listdir(os.getcwd())])
         with output_handler as MESSAGE:
             try:
-                exec code in {'MESSAGE': MESSAGE,
-                              'interact': interact}
+                locals={'MESSAGE': MESSAGE,
+                              'interact': interact},
+                exec code in locals
                 # I've commented out fields we aren't using below to
                 # save bandwidth
                 output_handler.message_queue.raw_message("execute_reply", 
@@ -410,20 +403,22 @@ Meant to be run as a separate process."""
                                execution_count=execution_count)
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          err_msg)
-            file_list=[]
-            for filename in os.listdir(os.getcwd()):
-                if filename not in old_files or old_files[filename]!=os.stat(filename).st_mtime:
-                    file_list.append(filename)
-                    try:
-                        with open(filename) as f:
-                            fs.create_file(f, cell_id=cell_id, filename=filename)
-                    except Exception as e:
-                        sys.stdout.write("An exception occurred: %s\n"%(e,))
-            if len(file_list)>0:
-                output_handler.message_queue.message('files', {'files': file_list})
 
-            execution_count+=1
+        # TODO: security implications here calling something that the user had access to.
+        timeout=max(0,min(float(interact.__single_cell_timeout__), MAX_TIMEOUT))
+        file_list=[]
+        for filename in os.listdir(os.getcwd()):
+            if filename not in old_files or old_files[filename]!=os.stat(filename).st_mtime:
+                file_list.append(filename)
+                try:
+                    with open(filename) as f:
+                        fs.create_file(f, cell_id=cell_id, filename=filename)
+                except Exception as e:
+                    sys.stdout.write("An exception occurred: %s\n"%(e,))
+        if len(file_list)>0:
+            output_handler.message_queue.message('files', {'files': file_list})
 
+        execution_count+=1
         log("Done executing code: %s"%code)
 
 def worker(session, message_queue, resource_limits):
