@@ -97,7 +97,7 @@ python device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://
             if s is fsrep and x['msg_type']=='create_file':
                 with fs.new_file(**x['content']) as f:
                     f.write(s.recv())
-                fsrep.send('')
+                s.send('')
             elif s is dbrep and x['msg_type']=='set_device_pgid':
                 # have to add the ssh account to this
                 sendTo.set_device_pgid(device=x['content']['device'], 
