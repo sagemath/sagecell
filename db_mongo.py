@@ -56,16 +56,16 @@ class DB(db.DB):
                                           '$atomic':True},
                                          {'$set': {'evaluated':True}}, multi=True)
 
-        # if limit is None, do the query without limit
-        # if the limit is >=1, do the query with the limit
-        # otherwise, don't do the query.
+        # if limit is 0, don't do the query (just return empty list)
+        # if limit is None or negative, do the query without limit
+        # otherwise do the query with the specified limit
 
-        if limit is not None and limit<1:
+        if limit==0:
             unassigned_messages=[]
         else:
             q=self.c.input_messages.find({'device':None,
                                           'evaluated':False})
-            if limit is not None:
+            if limit is not None and limit>=0:
                 q=q.limit(limit)
             
             unassigned_messages=list(q)

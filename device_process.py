@@ -198,9 +198,9 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     manager = Manager()
     log("Getting new messages")
     while True:
-        # limit new sessions to the number of free workers we have
         # TODO: be more intelligent about how many new sessions I can get
-        for X in db.get_input_messages(device=device_id, limit=3*(workers-len(sessions))):
+        # one option is to make limit=3*(workers-len(sessions)))
+        for X in db.get_input_messages(device=device_id, limit=-1):
             # this gets both new session requests as well as execution
             # requests for current sessions.
             session=X['header']['session']
