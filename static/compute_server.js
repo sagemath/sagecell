@@ -27,8 +27,10 @@ $(function() {
 	indentUnit:4,
 	tabMode:"shift",
 	lineNumbers:true,
-	matchBrackets:true});
-    editor.setValue("")
+	matchBrackets:true,
+	onKeyEvent:handleKeyEvent});
+    if(window.sessionStorage)
+	editor.setValue(sessionStorage['editorValue']);
     editor.focus();
     
     $('#command_form').submit(function() {
@@ -94,6 +96,16 @@ function colorize(text) {
 	    result+=text[i].substr(text[i].indexOf("m")+1);
     }
     return result;
+}
+
+function handleKeyEvent(editor, event) {
+    if(event.which==13 && event.shiftKey && event.type=="keypress") {
+	$("#command_form").submit();
+	return true;
+    }
+    if(window.sessionStorage)
+	sessionStorage['editorValue']=editor.getValue();
+    return false;
 }
 
 /**************************************************************
