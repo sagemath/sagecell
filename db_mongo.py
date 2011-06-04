@@ -142,3 +142,4 @@ class DB(db.DB):
         self.c.code.update({'_id': {'$in': [i['_id'] for i in unassigned_cells]}, '$atomic':True}, {'$set': {'device': device_id}}, multi=True)
         return unassigned_cells
 
+    valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')

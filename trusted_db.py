@@ -42,4 +42,5 @@ python device_process.py --db zmq --timeout 60 --dbaddress tcp://localhost:%i --
                 fsrep.send('')
             else:
                 sendTo=db if s is dbrep else fs
-                s.send_pyobj(getattr(sendTo,x['msg_type'])(**x['content']))
+                if x['msg_type'] in sendTo.valid_untrusted_methods:
+                    s.send_pyobj(getattr(sendTo,x['msg_type'])(**x['content']))

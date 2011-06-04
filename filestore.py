@@ -50,6 +50,8 @@ class FileStoreMongo(FileStore):
         with self.new_file(**kwargs) as f:
             f.write(file_handle.read())
 
+    valid_untrusted_methods=('get_file',)
+
 import zmq
 from db_zmq import db_method
 from uuid import uuid4
