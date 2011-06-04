@@ -1,6 +1,77 @@
 This is a very simple demo of a 3-component Python compute service,
 using mongodb.  
 
+
+INSTALLATION
+------------
+
+Install
+
+  * ZeroMQ::
+  
+      wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
+      tar -xzvf zeromq-2.1.7.tar.gz
+      cd zeromq-2.1.7
+      ./configure --prefix=/scratch/jason/sage-4.7/local/
+      make
+      make install
+     
+ * nginx::
+  
+      wget http://nginx.org/download/nginx-1.0.4.tar.gz
+      tar -xzvf nginx-1.0.4.tar.gz 
+      cd nginx-1.0.4
+      ./configure --prefix=`pwd`/install && make install
+    
+    Make the ``install/conf/nginx.conf`` file have only one ``server``
+    entry::
+
+      server {
+          listen 5467;
+          server_name localhost;
+          charset utf-8;
+          #root   /Users/wstein/sd29/nb/ss/;  
+          location / {
+              uwsgi_pass  unix:/tmp/uwsgi.sock;
+              include     uwsgi_params;
+          }
+      }
+
+    launch nginx::
+        ./install/sbin/nginx 
+
+  * uwsgi (based on `these instructions <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_)::
+
+      wget  http://projects.unbit.it/downloads/uwsgi-0.9.7.2.tar.gz
+      tar -xzvf uwsgi-0.9.7.2.tar.gz 
+      cd uwsgi-0.9.7.2/buildconf
+      cp default.ini myproject.ini # change xml line to xml = false
+      cd ..
+      sage -python uwsgiconfig.py --build myproject
+      
+
+
+  * Python packages::
+
+      pip install --upgrade setuptools # need upgrade for pymongo
+      pip install flask
+      pip install pymongo
+      pip install pyzmq --install-option="--zmq=/scratch/jason/sage-4.7/local/"
+      
+      
+
+
+  #. Flask
+  #. MongoDB
+  #. Pymongo (at least version 0.10.1, which is newer than the version
+     packaged in Ubuntu!)
+  #. 
+
+
+
+
+
+
 DEPENDENCIES:
 
    * Flask -- install with "easy_install flask"   (see http://flask.pocoo.org/)
