@@ -198,7 +198,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     while True:
         # limit new sessions to the number of free workers we have
         # TODO: be more intelligent about how many new sessions I can get
-        for X in db.get_input_messages(device=device_id, limit=workers-len(sessions)):
+        for X in db.get_input_messages(device=device_id, limit=3*(workers-len(sessions))):
             # this gets both new session requests as well as execution
             # requests for current sessions.
             session=X['header']['session']
@@ -325,7 +325,7 @@ Meant to be run as a separate process."""
     # and so that we don't miss a command that may come after the first message.
     # thus, this default timeout should be much longer than the polling interval
     # for the output queue
-    timeout=1
+    timeout=0.5
     execution_count=1
     empty_times=0
 
