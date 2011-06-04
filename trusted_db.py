@@ -87,24 +87,27 @@ python device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://
     poller=zmq.Poller()
     poller.register(dbrep,zmq.POLLIN)
     poller.register(fsrep,zmq.POLLIN)
-    while True:
-        socket_list=[s[0] for s in poller.poll(500)]
-        for s in socket_list:
-            x=s.recv_json()
-            sendTo=db if s is dbrep else fs
-            if x['msg_type']!='get_input_messages':
-                log(x)
-            if s is fsrep and x['msg_type']=='create_file':
-                with fs.new_file(**x['content']) as f:
-                    f.write(s.recv())
-                s.send('')
-            elif s is dbrep and x['msg_type']=='set_device_pgid':
-                # have to add the ssh account to this
-                sendTo.set_device_pgid(device=x['content']['device'], 
-                                       account=sysargs.untrusted_account, 
-                                       pgid=x['content']['pgid'])
-                device_pgid=x['content']['pgid']
-                s.send_pyobj(None)
-            else:
-                if x['msg_type'] in sendTo.valid_untrusted_methods:
-                    s.send_pyobj(getattr(sendTo,x['msg_type'])(**x['content']))
+    try:
+        while True:
+            socket_list=[s[0] for s in poller.poll(500)]
+            for s in socket_list:
+                x=s.recv_json()
+                sendTo=db if s is dbrep else fs
+                if x['msg_type']!='get_input_messages':
+                    log(x)
+                if s is fsrep and x['msg_type']=='create_file':
+                    with fs.new_file(**x['content']) as f:
+                        f.write(s.recv())
+                    s.send('')
+                elif s is dbrep and x['msg_type']=='set_device_pgid':
+                    # have to add the ssh account to this
+                    sendTo.set_device_pgid(device=x['content']['device'], 
+                                           account=sysargs.untrusted_account, 
+                                           pgid=x['content']['pgid'])
+                    device_pgid=x['content']['pgid']
+                    s.send_pyobj(None)
+                else:
+                    if x['msg_type'] in sendTo.valid_untrusted_methods:
+                        s.send_pyobj(getattr(sendTo,x['msg_type'])(**x['content']))
+    except:
+        signal_handler(None, None)
