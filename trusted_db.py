@@ -26,7 +26,7 @@ if __name__=='__main__':
     sysargs=parser.parse_args()
 
     if sysargs.untrusted_account is "":
-        print "You must give an untrusted account we can ssh into"
+        print "You must give an untrusted account we can ssh into using --untrusted-account"
         sys.exit(1)
 
     if sysargs.quiet:
