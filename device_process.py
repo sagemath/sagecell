@@ -362,7 +362,7 @@ Meant to be run as a separate process."""
         with output_handler as MESSAGE:
             try:
                 locals={'MESSAGE': MESSAGE,
-                              'interact': interact},
+                              'interact': interact}
                 exec code in locals
                 # I've commented out fields we aren't using below to
                 # save bandwidth
