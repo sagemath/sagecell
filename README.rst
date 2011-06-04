@@ -3,7 +3,7 @@ using mongodb.
 
 
 INSTALLATION
-------------
+============
 
 Dependencies
 
@@ -11,11 +11,10 @@ Dependencies
 #. MongoDB
 #. Pymongo (at least version 0.10.1, which is newer than the version
    packaged in Ubuntu!)
-#. 
 
 
 Install
-
+-------
 * ZeroMQ::
   
       wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
