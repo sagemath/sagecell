@@ -19,5 +19,5 @@ def select_db(sysargs, context=None):
         return db_mongo.DB(connection), filestore.FileStoreMongo(connection)
     elif db=="zmq":
         import db_zmq, filestore
-        return db_zmq.DB(socket=sysargs.dbaddress, context=context), filestore.FileStoreZMQ(socket=sysargs.fsaddress, context=context)
+        return db_zmq.DB(address=sysargs.dbaddress), filestore.FileStoreZMQ(address=sysargs.fsaddress)
     

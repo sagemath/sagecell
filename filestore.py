@@ -54,15 +54,39 @@ from db_zmq import db_method
 from uuid import uuid4
 from json import dumps
 class FileStoreZMQ(FileStoreMongo):
-    def __init__(self, *args, **kwds):
-        self.context=kwds['context']
-        self.c=self.context.socket(zmq.REQ)
-        self.c.connect(kwds['socket'])
+    def __init__(self, *args, **kwargs):
+        """
+        ``address`` is a kwarg, which should be the address the database should connect with
+        """
+        self.address=kwargs['address']
+        self._req=None
+    
+    @property
+    def req(self):
+        """
+        The ``req`` property is automatically initialized the first
+        time it is called. We do this since we shouldn't create a
+        context in a parent process. Instead, we'll wait until we
+        actually start using the db api to create a context. If you
+        use the same class in a child process, you should first call
+        the :meth:`new_context` method.
+        """
+        if self._req is None:
+            self.new_context()
+        return self._req
+
+    def new_context(self):
+        self._context=zmq.Context()
+        self._req=self._context.socket(zmq.REQ)
+        print "ZMQ connecting to ",self.address
+        self._req.connect(self.address)
+        print "Started ZMQ DB"
+
     def create_file(self, file_handle, **kwargs):
         message=[dumps({'msg_type':'create_file',"header":str(uuid4()),
                         'content':kwargs}), file_handle.read()]
-        self.c.send_multipart(message,copy=False,track=True).wait()
-        self.c.recv()
+        self.req.send_multipart(message,copy=False,track=True).wait()
+        self.req.recv()
 
     new_file=db_method('new_file',['cell_id','filename'])
     delete_cell_files=db_method('delete_cell_files',['cell_id'])

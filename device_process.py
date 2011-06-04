@@ -318,7 +318,9 @@ def execProcess(cell_id, message_queue, output_handler, resource_limits, sysargs
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
-    fs=misc.select_db(sysargs, context=zmq.Context())[1]
+
+    # we need a new context since we just forked
+    fs.new_context()
     import Queue
     global user_code
     # timeout has to be long enough so we don't miss the first message
@@ -435,7 +437,6 @@ def worker(session, message_queue, resource_limits):
     device queue.  These messages represent the output and results of
     executing the code.
     """
-    db, fs=misc.select_db(sysargs, context=zmq.Context())
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     print "Temp files in "+tmp_dir
@@ -502,10 +503,6 @@ if __name__ == "__main__":
 
     outQueue=Queue()
     import misc
-    kwargs={}
-    if sysargs.db=="zmq":
-        import zmq
-        kwargs['context']=zmq.Context()
-    db, fs = misc.select_db(sysargs,**kwargs)
+    db, fs = misc.select_db(sysargs)
 
     device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout, resource_limits=resource_limits)
