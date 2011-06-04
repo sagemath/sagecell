@@ -12,6 +12,7 @@ db=None
 fs=None
 xreq=None
 messages=[]
+sysargs=None
 
 def print_exception(f):
     """
@@ -35,6 +36,14 @@ def get_db(f):
     def wrapper(*args, **kwds):
         global db
         global fs
+        global sysargs
+        if sysargs is None:
+            # Fake a sysargs object for a default
+            # this is for when we don't call this file directly
+            class A: pass
+            sysargs=A()
+            sysargs.db='mongo'
+
         if db is None or fs is None:
             db,fs=misc.select_db(sysargs)
         args = (db,fs) + args
@@ -140,14 +149,11 @@ def tabComplete(db,fs):
     return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
 
 if __name__ == "__main__":
-    global sysargs
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
     # sometime in the summer of 2011, and then we can move this to use argparse.
     from optparse import OptionParser
     parser = OptionParser(description="The web server component of the notebook")
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
-    parser.add_option("--noipython", action="store_false", dest="ipython", help="Do not use ipython workers")
-    parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
     (sysargs, args) = parser.parse_args()
 
     app.run(debug=True)
