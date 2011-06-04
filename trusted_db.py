@@ -11,8 +11,10 @@ if __name__=='__main__':
         from IPython.external import argparse
         ArgumentParser=argparse.ArgumentParser
     parser=ArgumentParser(description="Starts a connection between a trusted and an untrusted process.")
-    parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use on trusted side")
     parser.add_argument("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    parser.add_argument("--print", action="store_true", dest="print_cmd", default=False, 
+                        help="Print out command to launch workers instead of launching them automatically")
     sysargs=parser.parse_args()
     db, fs = misc.select_db(sysargs)
 
@@ -22,9 +24,14 @@ if __name__=='__main__':
     fsrep=context.socket(zmq.REP)
     fsport=fsrep.bind_to_random_port("tcp://127.0.0.1")
     cwd=os.getcwd()
-#    p=Popen(["ssh", "localhost"],stdin=PIPE,bufsize=0 )
-    print("""cd %s
-python device_process.py --db zmq --timeout 60 --dbaddress tcp://localhost:%i --fsaddress=tcp://localhost:%i\n"""%(cwd,dbport,fsport))
+    cmd="""cd %(cwd)s
+python device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(dbport)i --fsaddress=tcp://localhost:%(fsport)i\n"""%dict(cwd=cwd, workers=sysargs.workers, dbport=dbport, fsport=fsport)
+    if sysargs.print_cmd:
+        print cmd
+    else:
+        p=Popen(["ssh", "localhost"],stdin=PIPE)
+        p.stdin.write(cmd)
+        p.stdin.flush()
     #TODO: use SSH forwarding
     log("trusted_db entering request loop")
     poller=zmq.Poller()
