@@ -31,8 +31,8 @@ Install
       cd nginx-1.0.4
       ./configure --prefix=`pwd`/install && make install
     
-   Make the ``install/conf/nginx.conf`` file have only one ``server``
-   entry::
+  Make the ``install/conf/nginx.conf`` file have only one ``server``
+  entry::
 
       server {
           listen 5467;
@@ -45,7 +45,7 @@ Install
           }
       }
 
-    launch nginx::
+  launch nginx::
         ./install/sbin/nginx 
 
 * uwsgi (based on `these instructions <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_)::
