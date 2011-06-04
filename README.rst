@@ -5,9 +5,18 @@ using mongodb.
 INSTALLATION
 ------------
 
+Dependencies
+
+#. Flask
+#. MongoDB
+#. Pymongo (at least version 0.10.1, which is newer than the version
+   packaged in Ubuntu!)
+#. 
+
+
 Install
 
-  * ZeroMQ::
+* ZeroMQ::
   
       wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
       tar -xzvf zeromq-2.1.7.tar.gz
@@ -16,15 +25,15 @@ Install
       make
       make install
      
- * nginx::
+* nginx::
   
       wget http://nginx.org/download/nginx-1.0.4.tar.gz
       tar -xzvf nginx-1.0.4.tar.gz 
       cd nginx-1.0.4
       ./configure --prefix=`pwd`/install && make install
     
-    Make the ``install/conf/nginx.conf`` file have only one ``server``
-    entry::
+   Make the ``install/conf/nginx.conf`` file have only one ``server``
+   entry::
 
       server {
           listen 5467;
@@ -40,7 +49,7 @@ Install
     launch nginx::
         ./install/sbin/nginx 
 
-  * uwsgi (based on `these instructions <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_)::
+* uwsgi (based on `these instructions <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_)::
 
       wget  http://projects.unbit.it/downloads/uwsgi-0.9.7.2.tar.gz
       tar -xzvf uwsgi-0.9.7.2.tar.gz 
@@ -51,21 +60,18 @@ Install
       
 
 
-  * Python packages::
+* Python packages::
 
       pip install --upgrade setuptools # need upgrade for pymongo
       pip install flask
       pip install pymongo
       pip install pyzmq --install-option="--zmq=/scratch/jason/sage-4.7/local/"
       
-      
+Old instructions
+================
+Pay no attention to the instructions below.  They are old and woefully
+out of date.      
 
-
-  #. Flask
-  #. MongoDB
-  #. Pymongo (at least version 0.10.1, which is newer than the version
-     packaged in Ubuntu!)
-  #. 
 
 
 
