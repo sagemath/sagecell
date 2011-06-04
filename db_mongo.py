@@ -101,6 +101,23 @@ class DB(db.DB):
         self.c.messages.insert(messages)
         log("INSERTED: %s"%('\n'.join(str(m) for m in messages),))
     
+
+    def set_device_pgid(self, device, account, pgid):
+        """
+        Sets the device process group id in the specific account.
+
+        We store this so that we can later kill the device and all subprocesses by sshing into the account (if set) and doing::
+
+            import os, signal
+            os.kill(pgid, signal.SIGKILL) #or signal.SIGTERM to be nicer about it
+        """
+        doc={"device":device, "account":account, "pgid":pgid}
+        self.c.device.insert(doc)
+        log("REGISTERED DEVICE: %s"%doc)
+
+    def get_pgids(self):
+        return list(self.c.device.find())
+
     def set_ipython_ports(self, kernel):
         self.c.ipython.remove()
         self.c.ipython.insert({"pid":kernel[0].pid, "xreq":kernel[1], "sub":kernel[2], "rep":kernel[3]})

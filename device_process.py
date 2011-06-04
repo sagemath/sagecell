@@ -187,6 +187,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     """
     device_id=unicode(uuid.uuid4())
     log("Starting device loop for device %s..."%device_id, device_id)
+    db.set_device_pgid(device=device_id, account=None, pgid=os.getpgid(0))
     pool=Pool(processes=workers)
     sessions={}
     from collections import defaultdict
@@ -473,6 +474,9 @@ def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=N
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
     # sometime in the summer of 2011, and then we can move this to use argparse.
+    import os
+    os.setsid()
+    print "PROCESS GROUP ID: ",os.getpgid(0)
     from optparse import OptionParser
     parser = OptionParser(description="Run one or more devices to process commands from the client.")
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="mongo", help="Database to use")

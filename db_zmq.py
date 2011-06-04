@@ -62,3 +62,4 @@ class DB(db.DB):
     close_session = db_method('close_session', ['device', 'session'])
     get_messages = db_method('get_messages', ['id','sequence'])
     add_messages = db_method('add_messages', ['id', 'messages'])
+    set_device_pgid = db_method('set_device_pgid',['device', 'account', 'pgid'])
