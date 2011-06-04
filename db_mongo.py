@@ -110,36 +110,4 @@ class DB(db.DB):
 
 
 
-    def get_evaluated_cells(self, id=None):
-        "DEPRECATED"
-        import pymongo
-        if id is None:
-            # return all evaluated cells
-            return self.c.code.find({'output':{'$exists': True}, }).sort('_id', direction=DESCENDING)
-        else:
-            # return just the request cell if it is evaluated
-            return self.c.code.find_one({'output':{'$exists': True}, '_id':ObjectId(id)})
-    
-    def set_output(self, id, output):
-        "DEPRECATED"
-        self.c.code.update({'_id':id}, {'$set':{'output':output}})
-    def create_cell(self, input):
-        "DEPRECATED"
-        _id=self.c.code.insert({'input':input, 'device':-1})
-        return str(_id)
-    
-    def get_unevaluated_cells(self, device_id, limit=None):
-        """
-        DEPRECATED
-
-        Find the computations that haven't been started yet
-        Mark them as in-progress with the device id and return the cells
-        The `limit` keyword can give an upper limit on the number of cells returned
-        """
-        if limit is None:
-            limit=0
-        unassigned_cells=list(self.c.code.find({'device':-1}).limit(limit))
-        self.c.code.update({'_id': {'$in': [i['_id'] for i in unassigned_cells]}, '$atomic':True}, {'$set': {'device': device_id}}, multi=True)
-        return unassigned_cells
-
     valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')
