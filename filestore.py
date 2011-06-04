@@ -2,6 +2,7 @@
 This is a base class for File Stores
 
 """
+from util import log
 
 class FileStore(object):
 
@@ -78,9 +79,8 @@ class FileStoreZMQ(FileStoreMongo):
     def new_context(self):
         self._context=zmq.Context()
         self._req=self._context.socket(zmq.REQ)
-        print "ZMQ connecting to ",self.address
         self._req.connect(self.address)
-        print "Started ZMQ DB"
+        log("ZMQ connecting to %s"%self.address)
 
     def create_file(self, file_handle, **kwargs):
         message=[dumps({'msg_type':'create_file',"header":str(uuid4()),

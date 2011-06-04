@@ -60,6 +60,7 @@ code by forming an error status message back.
 
 import sys, time, traceback, StringIO, contextlib, random, uuid
 import interact
+from util import log
 
 user_code="""
 import sys
@@ -68,9 +69,6 @@ def _get_interact_function(id):
     import interact
     return interact._INTERACTS[id]
 """
-
-def log(device_id, code_id=None, message=None):
-    print "%s   %s: %s"%(device_id,code_id, message)
 
 class QueueOut(StringIO.StringIO):
     def __init__(self, session, queue, parent_header=None):
@@ -95,7 +93,7 @@ class QueueOut(StringIO.StringIO):
                'header': {'msg_id':unicode(msg_id)},
                'content': content}
         self.queue.put(msg)
-#        sys.__stdout__.write("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
+        log("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
 
 class ChannelQueue(QueueOut):
     def __init__(self, session, queue, channel, parent_header=None):
@@ -188,7 +186,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     computations.
     """
     device_id=unicode(uuid.uuid4())
-    log(device_id, message="Starting device loop for device %s..."%device_id)
+    log("Starting device loop for device %s..."%device_id, device_id)
     pool=Pool(processes=workers)
     sessions={}
     from collections import defaultdict
@@ -206,7 +204,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
             session=X['header']['session']
             if session not in sessions:
                 # session has not been set up yet
-                log(device_id, session,message="evaluating '%s'"%X['content']['code'])
+                log("evaluating '%s'"%X['content']['code'], device_id+' '+session)
 
                 msg_queue=manager.Queue() # TODO: make this a pipe
                 sessions[session]={'messages': msg_queue,
@@ -216,7 +214,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
                                                                resource_limits))}
             # send execution request down the queue.
             sessions[session]['messages'].put(('exec',X))
-            log(device_id, session, message="sent execution request")
+            log("sent execution request", device_id+' '+session)
         # Get whatever sessions are done
         finished=set(i for i, r in sessions.iteritems() if r['worker'].ready())
         new_messages=[]
@@ -364,7 +362,7 @@ Meant to be run as a separate process."""
         code = displayhook_hack(code)
         # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
         code += '\n'
-        print "Executing: ",code
+        log("Executing: %s"%code)
         output_handler.set_parent_header(msg['header'])
         old_files=dict([(f,os.stat(f).st_mtime) for f in os.listdir(os.getcwd())])
         with output_handler as MESSAGE:
@@ -424,7 +422,7 @@ Meant to be run as a separate process."""
 
             execution_count+=1
 
-        print "Done executing code: ", code
+        log("Done executing code: %s"%code)
 
 def worker(session, message_queue, resource_limits):
     """
@@ -439,7 +437,7 @@ def worker(session, message_queue, resource_limits):
     """
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
-    print "Temp files in "+tmp_dir
+    log("Temp files in "+tmp_dir)
     #TODO: We should have a process that cleans up any children
     # that may hang around, similar to the sage-cleaner process.
     oldDaemon=current_process().daemon
@@ -502,6 +500,7 @@ if __name__ == "__main__":
         resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
 
     outQueue=Queue()
+
     import misc
     db, fs = misc.select_db(sysargs)
 

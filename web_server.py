@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json
 from time import time, sleep
 from functools import wraps
+from util import log
 import uuid
 import zmq
 from ip_receiver import IPReceiver
@@ -57,9 +58,9 @@ def root():
 @app.route("/eval", methods=['GET','POST'])
 @get_db
 def evaluate(db,fs):
-    print 'received request', request.values['message']
+    log('received request: %s'%(request.values['message'],))
     message=json.loads(request.values['message'])
-    print message
+    log(message)
     session_id=message['header']['session']
     db.new_input_message(message)
     # TODO: computation_id -> session_id
@@ -86,7 +87,7 @@ def output_poll(db,fs):
     computation_id=request.values['computation_id']
     sequence=int(request.values.get('sequence',0))
     results = db.get_messages(id=computation_id,sequence=sequence)
-    print "Retrieved messages", results
+    log("Retrieved messages: %s"%(results,))
     if results is not None and len(results)>0:
         return jsonify(content=results)
     return jsonify([])
@@ -147,6 +148,7 @@ def tabComplete(db,fs):
     xreq.socket.send_json({"header":header, "msg_type":"complete_request", "content": { \
                 "text":"", "line":code, "block":code, "cursor_pos":request.values["pos"]}})
     return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
+
 
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded

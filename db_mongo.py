@@ -14,6 +14,8 @@ import db
 import pymongo.objectid
 from pymongo.objectid import ObjectId
 from pymongo import ASCENDING, DESCENDING
+from util import log
+
 class DB(db.DB):
     def __init__(self, *args, **kwds):
         db.DB.__init__(self, *args, **kwds)
@@ -29,7 +31,7 @@ class DB(db.DB):
             msg['device']=doc['device']
  
         msg['evaluated']=False
-        print msg, type(msg)
+        log("%s %s"%(msg,type(msg)))
         self.c.input_messages.insert(msg)
     
     def get_input_messages(self, device, limit=None):
@@ -73,9 +75,9 @@ class DB(db.DB):
                                              {'$set': {'device': device, 'evaluated':True}}, multi=True)
                 self.c.sessions.insert([{'session':m['header']['session'], 'device':device} 
                                         for m in unassigned_messages])
-                print "DEVICE %s took SESSIONS %s"%(device,
+                log("DEVICE %s took SESSIONS %s"%(device,
                                                     [m['header']['session']
-                                                     for m in unassigned_messages])
+                                                     for m in unassigned_messages]))
         return device_messages+unassigned_messages
 
     def close_session(self, device, session):
@@ -97,7 +99,7 @@ class DB(db.DB):
         "Add messages to the database"
         #TODO: doesn't use the id parameter; delete?
         self.c.messages.insert(messages)
-        print "INSERTED: ",'\n'.join(str(m) for m in messages)
+        log("INSERTED: %s"%('\n'.join(str(m) for m in messages),))
     
     def set_ipython_ports(self, kernel):
         self.c.ipython.remove()

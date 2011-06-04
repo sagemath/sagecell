@@ -15,6 +15,7 @@ import zmq
 from uuid import uuid4
 from random import randrange
 from sys import maxint
+from util import log
 
 def db_method(method_name, kwarg_keys):
     def f(self, **kwargs):
@@ -52,9 +53,8 @@ class DB(db.DB):
     def new_context(self):
         self._context=zmq.Context()
         self._req=self._context.socket(zmq.REQ)
-        print "ZMQ connecting to ",self.address
         self._req.connect(self.address)
-        print "Started ZMQ DB"
+        log("ZMQ connecting to %s"%self.address)
         
             
     new_input_message = db_method('new_input_message', ['msg'])
