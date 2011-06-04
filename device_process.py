@@ -60,6 +60,7 @@ code by forming an error status message back.
 
 import sys, time, traceback, StringIO, contextlib, random, uuid
 import interact
+import util
 from util import log
 
 user_code="""
@@ -493,7 +494,11 @@ if __name__ == "__main__":
     parser.add_option("--mem", type=float, default=-1,
                       dest="memory_limit",
                       help="Memory (MB) allotted to each session (hard limit)")
+    parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
     (sysargs, args) = parser.parse_args()
+
+    if sysargs.quiet:
+        util.LOGGING=False
 
     import resource
     resource_limits=[]

@@ -4,6 +4,7 @@ import os
 import signal
 import sys
 from subprocess import Popen, PIPE
+import util
 from util import log
 shutting_down=False
 
@@ -19,11 +20,18 @@ if __name__=='__main__':
     parser.add_argument("--print", action="store_true", dest="print_cmd", default=False, 
                         help="Print out command to launch workers instead of launching them automatically")
     parser.add_argument("--untrusted-account", dest="untrusted_account", help="untrusted account; should be something you can ssh into without a password", default="")
+    parser.add_argument("-q", action="store_true", dest="quiet", help="Turn off most logging")
+
+
     sysargs=parser.parse_args()
 
     if sysargs.untrusted_account is "":
         print "You must give an untrusted account we can ssh into"
         sys.exit(1)
+
+    if sysargs.quiet:
+        util.LOGGING=False
+
     db, fs = misc.select_db(sysargs)
 
     context=zmq.Context()
@@ -63,8 +71,9 @@ exit
 
 
     cwd=os.getcwd()
+    options=dict(cwd=cwd, workers=sysargs.workers, dbport=dbport, fsport=fsport,quiet='-q' if sysargs.quiet else '')
     cmd="""cd %(cwd)s
-python device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(dbport)i --fsaddress=tcp://localhost:%(fsport)i\n"""%dict(cwd=cwd, workers=sysargs.workers, dbport=dbport, fsport=fsport)
+python device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(dbport)i --fsaddress=tcp://localhost:%(fsport)i %(quiet)s\n"""%options
     if sysargs.print_cmd:
         print cmd
     else:

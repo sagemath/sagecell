@@ -1,5 +1,6 @@
 import sys
+LOGGING=True
 def log(message, key=' '):
-    sys.__stdout__.write("%s\t: %s\n"%(key, message))
-    pass
+    if LOGGING:
+        sys.__stdout__.write("%s\t: %s\n"%(key, message))
 
