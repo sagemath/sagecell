@@ -56,6 +56,8 @@ import zmq
 from db_zmq import db_method
 from uuid import uuid4
 from json import dumps
+from os import fstat
+import mmap
 class FileStoreZMQ(FileStoreMongo):
     def __init__(self, *args, **kwargs):
         """
@@ -85,8 +87,14 @@ class FileStoreZMQ(FileStoreMongo):
         log("ZMQ connecting to %s"%self.address)
 
     def create_file(self, file_handle, **kwargs):
+        # Use mmap if the filesize is larger than 1MiB;
+        # otherwise just copy the string to memory before sending it
+        if fstat(file_handle.fileno()).st_size>2**20:
+            f=mmap.mmap(file_handle.fileno(),0,access=mmap.ACCESS_READ)
+        else:
+            f=file_handle.read()
         message=[dumps({'msg_type':'create_file',"header":str(uuid4()),
-                        'content':kwargs}), file_handle.read()]
+                        'content':kwargs}), f]
         self.req.send_multipart(message,copy=False,track=True).wait()
         self.req.recv()
 
