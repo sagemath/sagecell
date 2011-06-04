@@ -156,4 +156,4 @@ if __name__ == "__main__":
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
     (sysargs, args) = parser.parse_args()
 
-    app.run(debug=True)
+    app.run(port=8080, debug=True)
