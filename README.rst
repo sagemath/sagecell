@@ -46,6 +46,7 @@ Install
       }
 
   launch nginx::
+
         ./install/sbin/nginx 
 
 * uwsgi (based on `these instructions <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_)::
