@@ -16,7 +16,10 @@ if __name__=='__main__':
     parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
     parser.add_option("--print", action="store_true", dest="print_cmd", default=False, 
                         help="Print out command to launch workers instead of launching them automatically")
-    parser.add_option("--untrusted-account", dest="untrusted_account", help="untrusted account; should be something you can ssh into without a password", default="")
+    parser.add_option("--untrusted-account", dest="untrusted_account", 
+                      help="untrusted account; should be something you can ssh into without a password", default="")
+    parser.add_option("--untrusted-python", dest="untrusted_python", default="python", 
+                      help="the path to the python the untrusted user should use")
     parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
 
 
@@ -68,9 +71,11 @@ exit
 
 
     cwd=os.getcwd()
-    options=dict(cwd=cwd, workers=sysargs.workers, dbport=dbport, fsport=fsport,quiet='-q' if sysargs.quiet else '')
+    options=dict(cwd=cwd, workers=sysargs.workers, dbport=dbport, fsport=fsport,
+                 quiet='-q' if sysargs.quiet else '',
+                 untrusted_python=sysargs.untrusted_python)
     cmd="""cd %(cwd)s
-python device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(dbport)i --fsaddress=tcp://localhost:%(fsport)i %(quiet)s\n"""%options
+%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(dbport)i --fsaddress=tcp://localhost:%(fsport)i %(quiet)s\n"""%options
     if sysargs.print_cmd:
         print cmd
     else:
