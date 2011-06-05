@@ -9,21 +9,18 @@ from util import log
 shutting_down=False
 
 if __name__=='__main__':
-    try:
-        from argparse import ArgumentParser
-    except ImportError:
-        from IPython.external import argparse
-        ArgumentParser=argparse.ArgumentParser
-    parser=ArgumentParser(description="Starts a connection between a trusted and an untrusted process.")
-    parser.add_argument("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use on trusted side")
-    parser.add_argument("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
-    parser.add_argument("--print", action="store_true", dest="print_cmd", default=False, 
+    # We cannot use argparse until Sage's python is upgraded.
+    from optparse import OptionParser
+    parser=OptionParser(description="Starts a connection between a trusted and an untrusted process.")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use on trusted side")
+    parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    parser.add_option("--print", action="store_true", dest="print_cmd", default=False, 
                         help="Print out command to launch workers instead of launching them automatically")
-    parser.add_argument("--untrusted-account", dest="untrusted_account", help="untrusted account; should be something you can ssh into without a password", default="")
-    parser.add_argument("-q", action="store_true", dest="quiet", help="Turn off most logging")
+    parser.add_option("--untrusted-account", dest="untrusted_account", help="untrusted account; should be something you can ssh into without a password", default="")
+    parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
 
 
-    sysargs=parser.parse_args()
+    (sysargs,args)=parser.parse_args()
 
     if sysargs.untrusted_account is "":
         print "You must give an untrusted account we can ssh into using --untrusted-account"
