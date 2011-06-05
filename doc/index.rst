@@ -11,7 +11,7 @@ Contents:
 .. toctree::
     :maxdepth: 2
 
-
+    README.rst
     db
     web_server
     device
