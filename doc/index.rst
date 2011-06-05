@@ -18,6 +18,7 @@ Contents:
     filestore
     interact_protocol
     timing
+    js
 
 .. automodule:: misc
     :members:
