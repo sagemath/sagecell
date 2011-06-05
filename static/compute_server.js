@@ -22,7 +22,7 @@
 
 // Set up the editor and evaluate button
 $(function() {
-    editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
+    var editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
 	mode:"python",
 	indentUnit:4,
 	tabMode:"shift",
@@ -34,7 +34,7 @@ $(function() {
     $('#command_form').submit(function() {
 	var session = new Session('#output');
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
-	msg=session.sendMsg(editor.getValue());
+	session.sendMsg(editor.getValue());
 	return false;
     });
 });
@@ -43,7 +43,7 @@ $(function() {
 // Create UUID4-compliant ID
 // Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
 function uuid4() {
-    uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
     return uuid.replace(/[xy]/g, function(c) {
 	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
 	return v.toString(16);
@@ -68,18 +68,19 @@ function makeClass(){
 * Colorize Tracebacks
 * 
 **************************************************************/
-colorCodes={"30":"black",
-	    "31":"red",
-	    "32":"green",
-	    "33":"goldenrod",
-	    "34":"blue",
-	    "35":"purple",
-	    "36":"darkcyan",
-	    "37":"gray"};
 
 function colorize(text) {
+    var color, colorCodes, result = "";
+    colorCodes = {"30":"black",
+	"31":"red",
+	"32":"green",
+	"33":"goldenrod",
+	"34":"blue",
+	"35":"purple",
+	"36":"darkcyan",
+	"37":"gray"};
+
     text=text.split("\u001b[");
-    result="";
     for(i in text) {
 	if(text[i]=="")
 	    continue;
@@ -151,14 +152,14 @@ Session.prototype.updateQuery = function(new_interval) {
 }
 
 Session.prototype.sendMsg = function() {
-    var code = arguments[0];
-    var msg_id;
+    var code = arguments[0], msg, msg_id;
+
     if (arguments[1] == undefined){
 	msg_id = uuid4();
     } else {
 	msg_id = arguments[1];
     }
-    var msg = {"parent_header": {},
+    msg = {"parent_header": {},
 		   "header": {"msg_id": msg_id,
 			  "username": "",
 			  "session": this.session_id},
@@ -208,9 +209,9 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
-	for (var i = 0; i < content.length; i++) {
-            var msg=content[i];
-	    var parent_id=msg.parent_header.msg_id;
+	for (var i = 0, i_max = content.length; i < i_max; i++) {
+            var msg = content[i];
+	    var parent_id = msg.parent_header.msg_id;
 	    if (this.interacts[parent_id] == 1) {
 		this.setOutput("#"+parent_id, true, false);
 	    } else if (! this.lock_output) {
@@ -259,12 +260,11 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		var user_msg=msg.content;
 		switch(user_msg.msg_type) {
 		case "files":
-		    var files=user_msg.content.files
+		    var files = user_msg.content.files;
 		    var html="<div>\n";
-		    for(var j=0; j<files.length; j++)
+		    for(var j = 0, j_max = files.length; j < j_max; j++)
 			//TODO: escape filenames and id
-			html+="<a href=\"/files/"+id+"/"+files[j]+"\" target=\"_blank\">"
-			    +files[j]+"</a><br>\n";
+			html+="<a href=\"/files/"+id+"/"+files[j]+"\" target=\"_blank\">"+files[j]+"</a><br>\n";
 		    html+="</div>";
 		    this.output(html);
 		    break;
@@ -279,7 +279,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.clearQuery();
 		    break;
 		case "interact_start":
-		    interact_id = uuid4();
+		    var interact_id = uuid4();
 		    var div_id = "interact-" + interact_id;
 		    this.output("<div class='interact_container'><div class='interact' id='"+div_id+"'></div><div class='interact_output' id="+msg.header.msg_id+"></div></div>");
 		    this.setOutput("#"+msg.header.msg_id, true, true);
@@ -317,7 +317,6 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 var InteractCell = makeClass();
 InteractCell.prototype.init = function (selector, data) {
     this.element = $(selector);
-    this.element.data("interact", this);
     this.interact_id = data.interact_id
     this.function_code = data.function_code;
     this.controls = data.controls;
@@ -368,7 +367,7 @@ InteractCell.prototype.bindChange = function(interact) {
 }
 
 InteractCell.prototype.getChanges = function() {
-    id = "#urn_uuid_" + this.interact_id;
+    var id = "#urn_uuid_" + this.interact_id;
     var params = {};
     for (var i in this.controls){
 	switch(this.controls[i].control_type) {
@@ -393,7 +392,7 @@ InteractCell.prototype.getChanges = function() {
 
 InteractCell.prototype.renderCanvas = function() {
     // TODO: use this.layout to lay out the controls
-    id = "urn_uuid_" + this.interact_id;
+    var id = "urn_uuid_" + this.interact_id;
     for (var i in this.controls) {
 	switch(this.controls[i].control_type) {
 	case "html":
