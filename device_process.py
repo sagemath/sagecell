@@ -362,7 +362,7 @@ Meant to be run as a separate process."""
         if 'files' in msg['content']:
             for filename in msg['content']['files']:
                 with open(filename,'w') as f:
-                    f.write(fs.get_file(cell_id=session, filename=filename).read())
+                    fs.copy_file(f,filename=filename, cell_id=cell_id)
                 old_files[filename]=-1
         with output_handler as MESSAGE:
             try:
