@@ -19,7 +19,10 @@ from util import log
 class DB(db.DB):
     def __init__(self, *args, **kwds):
         db.DB.__init__(self, *args, **kwds)
-        self.c.code.ensure_index([('device', ASCENDING)])
+        self.c.sessions.ensure_index([('session', ASCENDING)])
+        self.c.input_messages.ensure_index([('device', ASCENDING)])
+        self.c.input_messages.ensure_index([('evaluated',ASCENDING)])
+        self.c.messages.ensure_index([('parent_header.session', ASCENDING)])
 
     def new_input_message(self, msg):
         # look up device; None means a device has not yet been assigned

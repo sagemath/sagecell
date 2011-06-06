@@ -29,7 +29,6 @@ def select_db(sysargs, context=None):
                 URI=config['mongo_uri']+'/'+config['mongo_db']
             else:
                 URI = config['mongo_uri']
-            print URI
             conn=pymongo.Connection(URI)
             database=pymongo.database.Database(conn, config['mongo_db'])
         else:

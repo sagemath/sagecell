@@ -156,6 +156,11 @@ if __name__ == "__main__":
     from optparse import OptionParser
     parser = OptionParser(description="The web server component of the notebook")
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
     (sysargs, args) = parser.parse_args()
+
+    if sysargs.quiet:
+        util.LOGGING=False
+
 
     app.run(port=8080, debug=True)
