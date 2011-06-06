@@ -43,9 +43,9 @@ def callback(socket,msgs, db, pipe, isFS):
                 f.write(msgs[1].bytes)
                 socket.send('')
         elif msg['msg_type']=='copy_file':
-            with db.get_file(**msg['content']) as f:
-                socket.send(f.read(), copy=False, Track=True).wait()
-    elif not isFS and msg['msg_type']=='set_device_pgid':
+            contents=db.get_file(**msg['content']).read()
+            socket.send(contents, copy=False, track=True).wait()
+    elif msg['msg_type']=='set_device_pgid':
         # have to add the ssh account to this
         db.set_device_pgid(device=msg['content']['device'], 
                            account=sysargs.untrusted_account, 
