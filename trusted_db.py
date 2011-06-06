@@ -119,7 +119,7 @@ exit
                         # around this.
                         # Basically, we need to make sure the keys
                         # are *not* unicode strings.
-                        x['content']=dict((str(k),v) for k,v in x.items())
+                        x['content']=dict((str(k),v) for k,v in x['content'].items())
 
                         s.send_pyobj(getattr(sendTo,x['msg_type'])(**x['content']))
     except:
