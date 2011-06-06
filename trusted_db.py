@@ -4,9 +4,89 @@ import os
 import signal
 import sys
 from subprocess import Popen, PIPE
+from multiprocessing import Process, Pipe
+from zmq.eventloop import ioloop, zmqstream
 import util
 from util import log
+from json import loads
 shutting_down=False
+
+class MessageLoop:
+    def __init__(self, db, isFS=False):
+        conn,self.pipe=Pipe()
+        self.process=Process(target=loop, args=(conn, db, callback, isFS))
+        self.process.start()
+        self.port=self.pipe.recv()
+
+    def pgid(self):
+        if self.pipe.closed:
+            return self._pgid
+        else:
+            self._pgid=self.pipe.recv()
+            self.pipe.close()
+            return self._pgid
+
+def loop(pipe, db, callback, isFS):
+    context=zmq.Context()
+    rep=context.socket(zmq.REP)
+    pipe.send(rep.bind_to_random_port('tcp://127.0.0.1'))
+    loop=ioloop.IOLoop()
+    stream=zmqstream.ZMQStream(rep,loop)
+    stream.on_recv(lambda msgs:callback(rep,msgs,db,pipe,isFS), copy=False)
+    loop.start()
+
+def callback(socket,msgs, db, pipe, isFS):
+    msg=loads(msgs[0].bytes)
+    if isFS and msg['msg_type']=='create_file':
+        with db.new_file(**msg['content']) as f:
+            f.write(msgs[1].bytes)
+            socket.send('')
+    elif not isFS and msg['msg_type']=='set_device_pgid':
+        # have to add the ssh account to this
+        db.set_device_pgid(device=msg['content']['device'], 
+                           account=sysargs.untrusted_account, 
+                           pgid=msg['content']['pgid'])
+        pipe.send(msg['content']['pgid'])
+        socket.send_pyobj(None)
+    else:
+        if msg['msg_type'] in db.valid_untrusted_methods:
+            # Since Sage ships an old version of Python,
+            # we need to work around this python bug:
+            # http://bugs.python.org/issue2646 (see also
+            # the fix: http://bugs.python.org/issue4978).
+            # Unicode as keywords works in python 2.7, so
+            # upgrading Sage's python means we can get
+            # around this.
+            # Basically, we need to make sure the keys
+            # are *not* unicode strings.
+            msg['content']=dict((str(k),v) for k,v in msg['content'].items())
+            socket.send_pyobj(getattr(db,msg['msg_type'])(**msg['content']))
+
+def signal_handler(signal, frame, pgid):
+    # TODO: handle the case where ctrl-c is pressed twice better
+    # that's what this shutting_down variable is about
+    global shutting_down
+    if shutting_down:
+        return
+    else:
+        shutting_down=True
+
+    # exit process, but first, kill the device I just started
+    # security implications: we're killing a pg id that the untrusted side sent us
+    # however, we are making sure we ssh into that account first, so it can only affect things from that account
+    print "Shutting down device...",
+    cmd="""
+python -c 'import os,signal; os.killpg(%d,signal.SIGKILL)'
+exit
+"""%int(pgid)
+    # reset signal handler so we don't call ourselves again
+    #signal.signal(signal.SIGINT, signal.SIG_DFL)
+    p=Popen(["ssh", sysargs.untrusted_account],stdin=PIPE)
+    p.stdin.write(cmd)
+    p.stdin.flush()
+    p.wait()
+    print "done",
+    sys.exit(0)
 
 if __name__=='__main__':
     # We cannot use argparse until Sage's python is upgraded.
@@ -22,7 +102,6 @@ if __name__=='__main__':
                       help="the path to the python the untrusted user should use")
     parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
 
-
     (sysargs,args)=parser.parse_args()
 
     if sysargs.untrusted_account is "":
@@ -31,51 +110,17 @@ if __name__=='__main__':
 
     if sysargs.quiet:
         util.LOGGING=False
-
     db, fs = misc.select_db(sysargs)
-
-    context=zmq.Context()
-    dbrep=context.socket(zmq.REP)
-    dbport=dbrep.bind_to_random_port("tcp://127.0.0.1")
-    fsrep=context.socket(zmq.REP)
-    fsport=fsrep.bind_to_random_port("tcp://127.0.0.1")
-
-
-    def signal_handler(signal, frame):
-        # TODO: handle the case where ctrl-c is pressed twice better
-        # that's what this shutting_down variable is about
-        global shutting_down
-        if shutting_down:
-            return
-        else:
-            shutting_down=True
-
-        # exit process, but first, kill the device I just started
-        # security implications: we're killing a pg id that the untrusted side sent us
-        # however, we are making sure we ssh into that account first, so it can only affect things from that account
-        print "Shutting down device...",
-        cmd="""
-python -c 'import os,signal; os.killpg(%d,signal.SIGKILL)'
-exit
-"""%int(device_pgid)
-        # reset signal handler so we don't call ourselves again
-        #signal.signal(signal.SIGINT, signal.SIG_DFL)
-        p=Popen(["ssh", sysargs.untrusted_account],stdin=PIPE)
-        p.stdin.write(cmd)
-        p.stdin.flush()
-        p.wait()
-        print "done",
-        sys.exit(0)
-
+    db_loop=MessageLoop(db)
+    fs_loop=MessageLoop(fs, isFS=True)
     signal.signal(signal.SIGINT, signal_handler)
 
-
     cwd=os.getcwd()
-    options=dict(cwd=cwd, workers=sysargs.workers, dbport=dbport, fsport=fsport,
+    options=dict(cwd=cwd, workers=sysargs.workers, db_port=db_loop.port, fs_port=fs_loop.port,
                  quiet='-q' if sysargs.quiet else '',
                  untrusted_python=sysargs.untrusted_python)
     cmd="""cd %(cwd)s
-%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(dbport)i --fsaddress=tcp://localhost:%(fsport)i %(quiet)s\n"""%options
+%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i %(quiet)s\n"""%options
     if sysargs.print_cmd:
         print cmd
     else:
@@ -86,41 +131,7 @@ exit
 
     #TODO: use SSH forwarding
     log("trusted_db entering request loop")
-    poller=zmq.Poller()
-    poller.register(dbrep,zmq.POLLIN)
-    poller.register(fsrep,zmq.POLLIN)
     try:
-        while True:
-            socket_list=[s[0] for s in poller.poll(500)]
-            for s in socket_list:
-                x=s.recv_json()
-                sendTo=db if s is dbrep else fs
-                if x['msg_type']!='get_input_messages':
-                    log(x)
-                if s is fsrep and x['msg_type']=='create_file':
-                    with fs.new_file(**x['content']) as f:
-                        f.write(s.recv())
-                    s.send('')
-                elif s is dbrep and x['msg_type']=='set_device_pgid':
-                    # have to add the ssh account to this
-                    sendTo.set_device_pgid(device=x['content']['device'], 
-                                           account=sysargs.untrusted_account, 
-                                           pgid=x['content']['pgid'])
-                    device_pgid=x['content']['pgid']
-                    s.send_pyobj(None)
-                else:
-                    if x['msg_type'] in sendTo.valid_untrusted_methods:
-                        # Since Sage ships an old version of Python,
-                        # we need to work around this python bug:
-                        # http://bugs.python.org/issue2646 (see also
-                        # the fix: http://bugs.python.org/issue4978).
-                        # Unicode as keywords works in python 2.7, so
-                        # upgrading Sage's python means we can get
-                        # around this.
-                        # Basically, we need to make sure the keys
-                        # are *not* unicode strings.
-                        x['content']=dict((str(k),v) for k,v in x['content'].items())
-
-                        s.send_pyobj(getattr(sendTo,x['msg_type'])(**x['content']))
+        db_loop.process.join()
     except:
-        signal_handler(None, None)
+        signal_handler(None, None, db_loop.pgid())
