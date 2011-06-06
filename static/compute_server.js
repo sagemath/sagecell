@@ -29,8 +29,9 @@ $(function() {
 	lineNumbers:true,
 	matchBrackets:true,
 	onKeyEvent:handleKeyEvent});
-    if(window.sessionStorage)
+    if(window.sessionStorage) {
 	editor.setValue(sessionStorage['editorValue']);
+    }
     editor.focus();
     
     $('#command_form').submit(function() {
@@ -103,8 +104,9 @@ function handleKeyEvent(editor, event) {
 	$("#command_form").submit();
 	return true;
     }
-    if(window.sessionStorage)
+    if(window.sessionStorage) {
 	sessionStorage['editorValue']=editor.getValue();
+    }
     return false;
 }
 
