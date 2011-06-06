@@ -359,6 +359,11 @@ Meant to be run as a separate process."""
         log("Executing: %s"%code)
         output_handler.set_parent_header(msg['header'])
         old_files=dict([(f,os.stat(f).st_mtime) for f in os.listdir(os.getcwd())])
+        if 'files' in msg['content']:
+            for filename in msg['content']['files']:
+                with open(filename,'w') as f:
+                    f.write(fs.get_file(cell_id=session, filename=filename).read())
+                old_files[filename]=-1
         with output_handler as MESSAGE:
             try:
                 locals={'MESSAGE': MESSAGE,
