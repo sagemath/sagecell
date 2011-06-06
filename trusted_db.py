@@ -110,6 +110,17 @@ exit
                     s.send_pyobj(None)
                 else:
                     if x['msg_type'] in sendTo.valid_untrusted_methods:
+                        # Since Sage ships an old version of Python,
+                        # we need to work around this python bug:
+                        # http://bugs.python.org/issue2646 (see also
+                        # the fix: http://bugs.python.org/issue4978).
+                        # Unicode as keywords works in python 2.7, so
+                        # upgrading Sage's python means we can get
+                        # around this.
+                        # Basically, we need to make sure the keys
+                        # are *not* unicode strings.
+                        x['content']=dict((str(k),v) for k,v in x.items())
+
                         s.send_pyobj(getattr(sendTo,x['msg_type'])(**x['content']))
     except:
         signal_handler(None, None)
