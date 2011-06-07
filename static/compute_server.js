@@ -29,7 +29,7 @@ $(function() {
 	lineNumbers:true,
 	matchBrackets:true,
 	onKeyEvent:handleKeyEvent});
-    if(window.sessionStorage) {
+    if(window.sessionStorage && window.sessionStorage['editorValue']) {
 	editor.setValue(sessionStorage['editorValue']);
     }
     editor.focus();
