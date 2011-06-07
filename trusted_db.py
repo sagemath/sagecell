@@ -88,43 +88,47 @@ def callback(socket, msgs, db, pipe, isFS):
     :type socket: zmq.Socket
     :arg msgs: list of Message objects
     :type msgs: list
-    :arg pipe: one end of a multiprocessing Pipe, for sending information back into the main process
-    :type pipe: _multiprocessing.Connection
     :arg db: the database to which to send the commands received
     :type db: db.DB
+    :arg pipe: one end of a multiprocessing Pipe, for sending information back into the main process
+    :type pipe: _multiprocessing.Connection
     :arg isFS: True if the database is a filestore; False if not
     :type isFS: bool
     """
     
-    msg=loads(msgs[0].bytes)
-    # Since Sage ships an old version of Python,
-    # we need to work around this python bug:
-    # http://bugs.python.org/issue2646 (see also
-    # the fix: http://bugs.python.org/issue4978).
-    # Unicode as keywords works in python 2.7, so
-    # upgrading Sage's python means we can get
-    # around this.
-    # Basically, we need to make sure the keys
-    # are *not* unicode strings.
-    msg['content']=dict((str(k),v) for k,v in msg['content'].items())
-    if isFS:
-        if msg['msg_type']=='create_file':
-            with db.new_file(**msg['content']) as f:
-                f.write(msgs[1].bytes)
-                socket.send('')
-        elif msg['msg_type']=='copy_file':
-            contents=db.get_file(**msg['content']).read()
-            socket.send(contents, copy=False, track=True).wait()
-    elif msg['msg_type']=='register_device':
-        db.register_device(device=msg['content']['device'], 
-                           account=sysargs.untrusted_account, 
-                           workers=sysargs.workers,
-                           pgid=msg['content']['pgid'])
-        pipe.send(msg['content'])
-        socket.send_pyobj(None)
-    else:
-        if msg['msg_type'] in db.valid_untrusted_methods:
+    try:
+        msg=loads(msgs[0].bytes)
+        # Since Sage ships an old version of Python,
+        # we need to work around this python bug:
+        # http://bugs.python.org/issue2646 (see also
+        # the fix: http://bugs.python.org/issue4978).
+        # Unicode as keywords works in python 2.7, so
+        # upgrading Sage's python means we can get
+        # around this.
+        # Basically, we need to make sure the keys
+        # are *not* unicode strings.
+        msg['content']=dict((str(k),v) for k,v in msg['content'].items())
+        if isFS:
+            if msg['msg_type']=='create_file':
+                with db.new_file(**msg['content']) as f:
+                    f.write(msgs[1].bytes)
+                    socket.send_pyobj(None)
+            elif msg['msg_type']=='copy_file':
+                contents=db.get_file(**msg['content']).read()
+                socket.send(contents, copy=False, track=True).wait()
+        elif msg['msg_type']=='register_device':
+            db.register_device(device=msg['content']['device'], 
+                               account=sysargs.untrusted_account, 
+                               workers=sysargs.workers,
+                               pgid=msg['content']['pgid'])
+            pipe.send(msg['content'])
+            socket.send_pyobj(None)
+        elif msg['msg_type'] in db.valid_untrusted_methods:
             socket.send_pyobj(getattr(db,msg['msg_type'])(**msg['content']))
+        else:
+            socket.send('')
+    except:
+        socket.send('')
 
 def signal_handler(signal, frame):
     """
