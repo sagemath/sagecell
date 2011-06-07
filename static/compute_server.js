@@ -51,17 +51,10 @@ $(function() {
     });
     
     $('#command_form #evalButton').click(function() {
-	var filenames = [], session;
-	for (var i = 0; i <= files; i++) {
-	    if ($("#file"+i).val() !== "") {
-		// Strip off 'fakepath' security feature that most browsers prefix file upload input values with.
-		filenames.push($("#file"+i).val().replace("C:\\fakepath\\",""));
-	    }
-	}
-	session = new Session("#output", filenames);
+	var session = new Session("#output");
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
-	session.sendMsg(editor.getValue());
 	$('#command_form #session_id').val(session.session_id);
+	$('#command_form #msg_id').val(uuid4());
 	$('#command_form').submit();
 	return false;
     });
@@ -152,7 +145,6 @@ Session.prototype.init = function (output, filenames) {
     this.replace_output=false;
     this.lock_output=false;
     this.eventHandlers = {};
-    this.files = filenames;
     this.interacts = {};
     this.setQuery();
 }
@@ -206,7 +198,6 @@ Session.prototype.sendMsg = function() {
 		   "msg_type": "execute_request",
 		   "content": {"code": code,
 			   "silent": false,
-			   "files": this.files,
 			   "user_variables": [],
 			   "user_expressions": {}}
 	      };
