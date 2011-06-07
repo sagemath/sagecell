@@ -84,8 +84,8 @@ class DB(db.DB):
         return device_messages+unassigned_messages
 
     def close_session(self, device, session):
-        """
-        Delete a session<->device mapping.
+        u"""
+        Delete a session\u2194device mapping.
         """
         self.c.sessions.remove({'session':session, 'device':device})    
 

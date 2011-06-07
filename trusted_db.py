@@ -1,3 +1,8 @@
+u"""
+Starts a worker on an untrusted user account, connected over \xd8MQ
+to the database.
+"""
+
 import zmq
 import misc
 import os
@@ -12,6 +17,17 @@ from json import loads
 shutting_down=False
 
 class MessageLoop:
+    u"""
+    A \xd8MQ IO loop that runs in a separate process.
+    It receives database commands over \xd8MQ, executes them,
+    and sends the results back.
+
+    :arg db: the database to send the commands to
+    :type db: db.DB
+    :arg isFS: True if the database is a filestore; False if not
+    :type isFS: bool
+    """
+
     def __init__(self, db, isFS=False):
         conn,self.pipe=Pipe()
         self.process=Process(target=loop, args=(conn, db, callback, isFS))
@@ -19,6 +35,10 @@ class MessageLoop:
         self.port=self.pipe.recv()
 
     def pgid(self):
+        """
+        :return: the PGID of the process group associated with the device.
+        :rtype: int
+        """
         if self.pipe.closed:
             return self._pgid
         else:
@@ -27,6 +47,16 @@ class MessageLoop:
             return self._pgid
 
 def loop(pipe, db, callback, isFS):
+    u"""
+    Create a \xd8MQ socket and an event loop listening for new messages.
+
+    :arg pipe: one end of a multiprocessing Pipe, for sending information back into the main process
+    :type pipe: _multiprocessing.Connection
+    :arg db: the database to which to send the commands received
+    :type db: db.DB
+    :arg isFS: True if the database is a filestore; False if not
+    :type isFS: bool
+    """
     context=zmq.Context()
     rep=context.socket(zmq.REP)
     pipe.send(rep.bind_to_random_port('tcp://127.0.0.1'))
@@ -35,7 +65,22 @@ def loop(pipe, db, callback, isFS):
     stream.on_recv(lambda msgs:callback(rep,msgs,db,pipe,isFS), copy=False)
     loop.start()
 
-def callback(socket,msgs, db, pipe, isFS):
+def callback(socket, msgs, db, pipe, isFS):
+    u"""
+    Callback triggered by a new message received in the \xd8MQ socket.
+
+    :arg socket: \xd8MQ REP socket
+    :type socket: zmq.Socket
+    :arg msgs: list of Message objects
+    :type msgs: list
+    :arg pipe: one end of a multiprocessing Pipe, for sending information back into the main process
+    :type pipe: _multiprocessing.Connection
+    :arg db: the database to which to send the commands received
+    :type db: db.DB
+    :arg isFS: True if the database is a filestore; False if not
+    :type isFS: bool
+    """
+    
     msg=loads(msgs[0].bytes)
     if isFS and msg['msg_type']=='create_file':
         with db.new_file(**msg['content']) as f:

@@ -112,13 +112,21 @@ class QueueOutMessage(QueueOut):
     def message(self, msg_type, content):
         """
         Send a user message with a specific type.  This will be wrapped in an IPython 'extension' message and sent to the client.
+
+        :arg msg_type: custom message type
+        :type msg_type: str
+        :arg content: The contents of the custom message
+        :type content: dict
         """
         self.raw_message(msg_type='extension',
                          content={'content': content, 'msg_type': msg_type})
 
     def display(self, data):
         """
-        Send a display_data message.  Content should be a dict of mime types and data
+        Send a display_data message.
+
+        :arg data: a dict of MIME types and data
+        :type data: dict
         """
         self.raw_message(msg_type='display_data',
                          content={'data':data})
