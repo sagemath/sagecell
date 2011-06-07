@@ -57,27 +57,34 @@ class Selector(InteractControl):
         return self.values[self.default_value]
 
 class Slider(InteractControl):
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self.interval = self.kwargs.get('range',[0,100])
+        self.default_value = self.kwargs.get('default',self.interval[0])
     def message(self):
         return {'control_type':'slider',
-                'default':self.kwargs.get('default',0),
-                'range':self.kwargs.get('range',[0,100]),
+                'default':self.default_value,
+                'range':self.interval,
                 'step':self.kwargs.get('step',1),
                 'raw':self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
     def default(self):
-        return self.kwargs.get('default',0)
+        return self.default_value
 
 def automatic_control(default):
     from numbers import Number
     label = ""
     default_value = 0
     
+    if isinstance(default, InteractControl):
+        return default
+    
     for _ in range(2):
         if isinstance(default, tuple) and len(default) == 2 and isinstance(default[0], str):
             label, default = default
         if isinstance(default, tuple) and len(default) == 2 and isinstance(default[1], (tuple, list)):
             default_value, default = default
-    
+
     if isinstance(default, str):
         C = input_box(default = default, label = label)
     elif isinstance(default, Number):
