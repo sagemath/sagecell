@@ -36,9 +36,10 @@ Session Class
 ^^^^^^^^^^^^^
 
 .. _Session:
-.. class:: Session(selector)
+.. class:: Session(selector, filenames)
 
     :param String selector: JQuery selector for overall session output.
+    :param Array filenames: List of filenames uploaded with computation.
 
 Session Functions
 _________________
