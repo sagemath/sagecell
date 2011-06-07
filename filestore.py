@@ -50,7 +50,7 @@ class FileStoreMongo(FileStore):
         with self.new_file(**kwargs) as f:
             f.write(file_handle.read())
 
-    valid_untrusted_methods=('get_file',)
+    valid_untrusted_methods=()
 
 import zmq
 from db_zmq import db_method
@@ -97,6 +97,10 @@ class FileStoreZMQ(FileStoreMongo):
                         'content':kwargs}), f]
         self.req.send_multipart(message,copy=False,track=True).wait()
         self.req.recv()
+
+    def copy_file(self, file_handle, **kwargs):
+        self.req.send_json({'msg_type':'copy_file', 'content':kwargs})
+        file_handle.write(self.req.recv())
 
     new_file=db_method('new_file',['cell_id','filename'])
     delete_cell_files=db_method('delete_cell_files',['cell_id'])

@@ -37,11 +37,15 @@ def loop(pipe, db, callback, isFS):
 
 def callback(socket,msgs, db, pipe, isFS):
     msg=loads(msgs[0].bytes)
-    if isFS and msg['msg_type']=='create_file':
-        with db.new_file(**msg['content']) as f:
-            f.write(msgs[1].bytes)
-            socket.send('')
-    elif not isFS and msg['msg_type']=='set_device_pgid':
+    if isFS:
+        if msg['msg_type']=='create_file':
+            with db.new_file(**msg['content']) as f:
+                f.write(msgs[1].bytes)
+                socket.send('')
+        elif msg['msg_type']=='copy_file':
+            contents=db.get_file(**msg['content']).read()
+            socket.send(contents, copy=False, track=True).wait()
+    elif msg['msg_type']=='set_device_pgid':
         # have to add the ssh account to this
         db.set_device_pgid(device=msg['content']['device'], 
                            account=sysargs.untrusted_account, 

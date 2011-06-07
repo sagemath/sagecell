@@ -5,8 +5,10 @@ from util import log
 import uuid
 import zmq
 from ip_receiver import IPReceiver
+from werkzeug import secure_filename
 
 app = Flask(__name__)
+app.allowed_extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 # is it safe to have global variables here?
 db=None
@@ -54,6 +56,21 @@ def get_db(f):
 @app.route("/")
 def root():
     return render_template('ipython_root.html')
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.',1)[1] in app.allowed_extensions
+
+@app.route("/submit", methods=['GET','POST'])
+@get_db
+def upload(db,fs):
+    import os
+    if request.method == "POST":
+        for file in request.files.getlist("file"):
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                fs.create_file(file, filename=filename, cell_id=request.form.get("session_id"))
+    return ""
 
 @app.route("/eval", methods=['GET','POST'])
 @get_db
