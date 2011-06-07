@@ -9,6 +9,14 @@ except ImportError:
 
 
 def select_db(sysargs, context=None):
+    u"""
+    Create connections to the database and filestore given in sysargs.
+
+    :arg sysargs: system arguments, created by OptionParser
+    :arg context: the context for a \xd8MQ connection, if one is needed
+    :type context: zmq.Context
+    :returns: a tuple of the form ``(db, fs)``
+    """
     db=sysargs.db
     if db=="sqlite":
         import db_sqlite
@@ -37,4 +45,3 @@ def select_db(sysargs, context=None):
     elif db=="zmq":
         import db_zmq, filestore
         return db_zmq.DB(address=sysargs.dbaddress), filestore.FileStoreZMQ(address=sysargs.fsaddress)
-    

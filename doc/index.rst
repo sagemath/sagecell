@@ -11,8 +11,9 @@ Contents:
 .. toctree::
     :maxdepth: 2
 
-    README.rst
+    README
     db
+    trusted_db
     web_server
     device
     filestore

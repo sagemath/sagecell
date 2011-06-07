@@ -1,11 +1,9 @@
-"""
-This is a base class for File Stores
-
-"""
 from util import log
 
 class FileStore(object):
-
+    """
+    This is a base class for File Stores
+    """
     def __init__(self, connection=None):
         pass
 
@@ -27,16 +25,31 @@ class FileStore(object):
 from gridfs import GridFS
 from pymongo.objectid import ObjectId
 class FileStoreMongo(FileStore):
-    
+    """
+    Filestore database using GridFS
+
+    :arg connection: MongoDB database object
+    :type connection: pymongo.database.Database
+    """
+
     def __init__(self, connection):
         self._conn=connection
         self._fs=GridFS(connection)
 
-    def new_file(self, cell_id, filename):
-        self.delete_files(cell_id=cell_id, filename=filename)
-        return self._fs.new_file(filename=filename, cell_id=cell_id)
+    def new_file(self, **kwargs):
+        """
+        Create or recreate a file labeled with the given keyword arguments.
+
+        :returns: an open file handle for the new file
+        :rtype: gridfs.GridIn
+        """
+        self.delete_files(**kwargs)
+        return self._fs.new_file(**kwargs)
 
     def delete_files(self, **kwargs):
+        """
+        Delete every file in the filestore labeled with the keyword arguments.
+        """
         while self._fs.exists(kwargs):
             self._fs.delete(self._fs.get_last_version(**kwargs)._id)
 
@@ -47,6 +60,13 @@ class FileStoreMongo(FileStore):
             return None
     
     def create_file(self, file_handle, **kwargs):
+        """
+        Copy an existing file into the filestore database.
+
+        :arg file_handle: a handle to a file open for reading
+        :type file_handle: file
+        :arg \*\*kwargs: labels (including filename) for the new file
+        """
         with self.new_file(**kwargs) as f:
             f.write(file_handle.read())
 
@@ -59,11 +79,17 @@ from json import dumps
 from os import fstat
 import mmap
 class FileStoreZMQ(FileStoreMongo):
-    def __init__(self, *args, **kwargs):
-        """
-        ``address`` is a kwarg, which should be the address the database should connect with
-        """
-        self.address=kwargs['address']
+    u"""
+    A connection to a filestore database over \xd8MQ.
+    This can be used in the same way as a normal filestore,
+    but without risk of compromising the database.
+
+    :arg address: the address the database should connect with
+    :type address: str
+    """
+
+    def __init__(self, address):
+        self.address=address
         self._req=None
     
     @property

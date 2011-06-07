@@ -1,3 +1,7 @@
+"""
+Flask web server for frontend
+"""
+
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json
 from time import time, sleep
 from functools import wraps
@@ -140,6 +144,9 @@ def cellFile(db,fs,cell_id,filename):
 @app.route("/complete")
 @get_db
 def tabComplete(db,fs):
+    """
+    Perform tab completion using IPython
+    """
     global xreq
     if xreq==None:
         xreq=IPReceiver(zmq.XREQ,db.get_ipython_port("xreq"))
