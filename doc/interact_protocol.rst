@@ -1,12 +1,160 @@
+Interacts
+=========
+
+Supported Interacts
+-------------------
+
+**Supported / Partially Supported Interact Controls:**
+
+[X] Input Box
+
+* String, Numerical, and Boolean values
+
+[A] Selector
+
+* Only drop-down menu is available (no button bar)
+* No iterator support
+* No multiple select (only single-item select)
+
+[A] Slider
+
+* Adds numerical input box which updates slider / interact (click on the displayed slider value)
+
+* No iterator support
+
+**Not Supported Interact Controls:**
+
+[ ] Checkbox
+
+[ ] Matrix / Grid / Button Bar
+
+[ ] Color Picker
+
+**Not Supported Interact Features:**
+
+[ ] Layouts
+
+[ ] Colors
+
+Using Interacts
+---------------
+
+Verbose Syntax
+^^^^^^^^^^^^^^
+
+The verbose form of all interacts uses the following structure::
+
+    # Interact decorator
+    @interacts.interact
+    
+    # Function definition, including name, variables, and the variables' control types / options
+    def <function name>(<variable> = interact.<control type>(<control options>)):
+        [function body]
+
+Full declarations of each control (with default parameter values shown) 
+would be:
+
+* Input Box::
+
+    interact.input_box(default = "", raw = False, label = "")
+
+  - default (String / Number / Bool): Default value of the input box.
+  - raw (Bool): Boolean flag indicating whether the value of the input box should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is False to enable text input including spaces, but if the control is to be used in any sort of numerical calculation or control flow, this flag should be True.
+  - label (String): Label of the control.
+
+
+* Selector::
+
+    interact.selector(default = 0, values = [0], raw = False, label = "")
+
+  - default (Int): Initially selected index of [values].
+  - values (List): List of values (String, Number, and/or Boolean) from which the user can select.
+  - raw (Bool): Boolean flag indicating whether the selected value should be treated as should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is False to enable text including spaces, but if the control is to be used in any sort of numerical calculation or control flow, this flag should be True.
+  - label (String): Label of the control.
+
+
+* Slider::
+
+    interact.slider(default = 0, range = (0, 100), step = 1, raw = True, label = "")
+
+  - default (Number): Initial value of the slider.
+  - range (List): Two-value numeric tuple with the form (min, max).
+  - step (Number): Step size for the slider.
+  - raw (Bool): Boolean flag indicating whether the selected value should be treated as should be treated as "quoted" (String) or "unquoted" (raw). Since the slider currently only supports numerical values, there is little reason for raw to be True.
+  - label (String): Label of the control.
+
+Note that for each control, not all parameters must be given; the device 
+will automatically assign default parameters as needed.
+
+Also, the function declaration supports multiple interact control parameters. For 
+instance, the following would construct two sliders with default configurations 
+and print the sum of their values::
+
+    @interact.interact
+    def f(n = interact.slider(), p = interact.slider()):
+        print n + p
+
+Interact Decorators
+^^^^^^^^^^^^^^^^^^^
+
+The interact decorator can be called in three different ways (using a 
+basic slider control as an example):
+
+* Normal decorator::
+
+    @interact.interact
+    def f(n = interact.slider()):
+        print n
+
+* Verbose decorator::
+
+    def g(n = interact.slider()):
+        print n
+    interact.interact(g)
+
+* Importing the interact class::
+
+    from interact import *
+    @interact
+    def f(n = slider()):
+        print n
+
+If multiple interacts are used in the same input, the first two styles
+of decorators can be used interchangeably. However, using the third style
+necessarily requires that all interacts following the import statement 
+conform to the same decorator syntax.
+
+Autoguessing Syntax
+^^^^^^^^^^^^^^^^^^^
+
+If an interact control is not explicitely given, the device will 
+automatically attempt to guess which control should be rendered. The 
+syntax for this follows the current syntax in the Sage notebook. See the 
+`Sage Documentation <http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.automatic_control>`_ 
+for more details. For instance, to create an input box with a label 'Label'
+and an initial value of 15 that prints twice its (numerical) input, one 
+could submit::
+
+    @interact.interact
+    def f(n = ("Label", 15)):
+        print 2 * n
+
+This is equivalent to::
+
+    @interact.interact
+    def f(n = interact.input_box(label = "Label", default = 15, raw = True)):
+        print 2 * n
+
+
 Interact Protocol
-=================
+-----------------
 
 Here we give a rough definition of what happens to get an interact working.
 
 USER types into SINGLE CELL::
 
-    @interact
-    def f(n=slider(1,20,step=1)):
+    @interact.interact
+    def f(n = interact.slider(range = (1,20), step = 1)):
         print n
 
 and presses "Submit"
@@ -28,9 +176,11 @@ It:
      controls: a dict, with keys=variables, values=dict representing control::
 
         {'n': {'type': 'slider'
-              'start': 0
-              'end': 20
-              'step': 1}}
+              'range': [0, 20],
+              'step': 1,
+              'default': 0,
+              'raw': True,
+              'label':""}}
      layout: the layout parameters for controls.  By default this is a list in order of arguments
          ['n']
 
@@ -66,8 +216,8 @@ An interesting way to think about this architecture is:
 So the FLASK-DB-DEVICE-DEVICE WORKER chain is really just a huge long
 message channel between the BROWSER and the SESSION
 
-TODO
-====
+Interact TODO List
+------------------
 
 [X] Change the execution requests to use IPython messages.  We still
 probably want to store these in a special table, rather than just
@@ -79,7 +229,7 @@ database is merely a large buffer for the 0MQ channels.
 flask/DB assign a session id (this is what we call the computation id
 right now).
 
-[ ] When later execution requests are sent for the same session id,
+[X] When later execution requests are sent for the same session id,
 they also have an message id.  In interacts, this is the function
 that needs to be executed.  In this way, old requests for execution
 are overwritten and old output is also overwritten.  This saves time
@@ -100,7 +250,7 @@ timeout on the poll is triggered, the worker terminates.  This allows
 a server administrator to specify that worker processes should be
 terminated if they are idle for 10 seconds, say.
 
-[ ] HTML control::
+[ ] Generic HTML control that would allow user-defined controls ::
 
     msg_type: "interact_control"
     content: {"control_type": "html",
@@ -110,8 +260,27 @@ terminated if they are idle for 10 seconds, say.
     takes in the div containing only the "html" string, and returns a
     string representing the value of the control}
 
-[ ] Select Box control
+[A] Select Box control
 
-[ ] JqueryUI slider control
+[A] JqueryUI slider control
 
-[ ] Get current Sage interact theme
+[X] Get current Sage interact theme
+
+[ ] Use sent layout parameters and css / tables to output interacts.
+
+[ ] Other interact controls (checkbox, matrix/grid, buttons, etc.)
+
+
+Interact Backend
+----------------
+
+This script is responsible for interpreting interact definitions and 
+sending interact messages to the client.
+
+.. automodule:: interact
+    :members:
+
+Interact Frontend
+-----------------
+
+See the :doc:`js` Documentation.
