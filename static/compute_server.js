@@ -34,10 +34,28 @@ $(function() {
     }
     editor.focus();
     
-    $('#command_form').submit(function() {
-	var session = new Session('#output');
+    var files = 0
+
+    $('#command_form #clear_files').click(function(event){
+	files = 0;
+	$('#command_form #file_upload').html("<input type='file' id='file0' name='file' /><br>");
+	event.preventDefault();
+	return false;
+    });
+
+    $('#command_form #add_file').click(function(event){
+	files += 1;
+	$('#command_form #file_upload').append("<input type='file' id='file"+files+"' name='file' /><br>");
+	event.preventDefault();
+	return false;
+    });
+    
+    $('#command_form #evalButton').click(function() {
+	var session = new Session("#output");
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
-	session.sendMsg(editor.getValue());
+	$('#command_form #session_id').val(session.session_id);
+	$('#command_form #msg_id').val(uuid4());
+	$('#command_form').submit();
 	return false;
     });
 });
@@ -123,7 +141,7 @@ function handleKeyEvent(editor, event) {
 **************************************************************/
 
 var Session = makeClass();
-Session.prototype.init = function (output) {
+Session.prototype.init = function (output, filenames) {
     this.session_id = uuid4();
     this.sequence = 0;
     this.poll_interval = 400;

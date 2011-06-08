@@ -9,8 +9,10 @@ from util import log
 import uuid
 import zmq
 from ip_receiver import IPReceiver
+from werkzeug import secure_filename
 
 app = Flask(__name__)
+app.allowed_extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 # is it safe to have global variables here?
 db=None
@@ -59,16 +61,47 @@ def get_db(f):
 def root():
     return render_template('ipython_root.html')
 
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.',1)[1] in app.allowed_extensions
+
 @app.route("/eval", methods=['GET','POST'])
 @get_db
 def evaluate(db,fs):
-    log('received request: %s'%(request.values['message'],))
-    message=json.loads(request.values['message'])
-    log(message)
-    session_id=message['header']['session']
-    db.new_input_message(message)
-    # TODO: computation_id -> session_id
-    return jsonify(computation_id=session_id)
+    if request.method == "POST":
+         if request.values.get("message") is not None:
+            log('Received Request: %s'%(request.values['message'],))
+            message=json.loads(request.values['message'])
+            session_id=message['header']['session']
+            db.new_input_message(message)
+            # TODO: computation_id -> session_id
+            return jsonify(computation_id=session_id)
+         else:
+            session_id = request.form.get("session_id")
+            files = []
+            parent_header = "parent_header"
+            for file in request.files.getlist("file"):
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    fs.create_file(file, filename=filename, cell_id=session_id)
+                    files.append(filename)
+            message = {"parent_header": {},
+                   "header": {"msg_id": request.form.get("msg_id"),
+                              "username": "",
+                              "session": session_id
+                              },
+                   "msg_type": "execute_request",
+                   "content": {"code": request.form.get("commands"),
+                               "silent": False,
+                               "files": files,
+                               "user_variables": [],
+                               "user_expressions": {}
+                               }
+                   }
+            log("Received Request: %s"%(message))
+            db.new_input_message(message)
+            return ""
+    return ""
 
 @app.route("/answers")
 @print_exception
@@ -76,7 +109,6 @@ def evaluate(db,fs):
 def answers(db,fs):
     results = db.get_evaluated_cells()
     return render_template('answers.html', results=results)
-
 
 @app.route("/output_poll")
 @print_exception
