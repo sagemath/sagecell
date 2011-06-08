@@ -1,0 +1,21 @@
+mongo_config={
+    'mongo_uri': 'mongodb://localhost',
+    'mongo_db': 'demo'
+    }
+
+web_server_config={
+    'processes': 50,
+    'listen': 500,
+    'disable-logging': '',
+    'socket': '/tmp/uwsgi.sock',
+    }
+
+python='python'
+device_config={
+    'workers': 100,
+    'quiet': '',
+    'python': python,
+    'untrusted-account': 'localhost',
+    'untrusted-python': python
+    }
+

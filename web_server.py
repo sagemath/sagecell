@@ -194,12 +194,12 @@ def config():
     s=''
     s+='WEB SERVER\n'
     s+='----------\n'
-    for k in ('workers', 'listen', 'disable-logging', 'quiet'):
-        s+='%s: %s\n'%(k,c.web_server_config[k])
+    for k in ('processes', 'listen', 'disable-logging'):
+        s+='%s: %s\n'%(k,c.web_server_config.get(k,'Not Specified'))
     s+='\nDEVICE\n'
     s+='------\n'
     for k in ('workers', 'quiet'):
-        s+='%s: %s\n'%(k,c.device_config[k])
+        s+='%s: %s\n'%(k,c.device_config.get(k, 'Not Specified'))
 
     return Response(s, content_type='text/plain')
 

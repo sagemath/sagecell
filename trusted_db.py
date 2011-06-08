@@ -142,14 +142,14 @@ if __name__=='__main__':
     from optparse import OptionParser
     parser=OptionParser(description="Starts a connection between a trusted and an untrusted process.")
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use on trusted side")
-    parser.add_option("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    parser.add_option("-w", "--workers", type=int, default=1, dest="workers", help="Number of workers to start.")
     parser.add_option("--print", action="store_true", dest="print_cmd", default=False, 
                         help="Print out command to launch workers instead of launching them automatically")
     parser.add_option("--untrusted-account", dest="untrusted_account", 
                       help="untrusted account; should be something you can ssh into without a password", default="")
     parser.add_option("--untrusted-python", dest="untrusted_python", default="python", 
                       help="the path to the python the untrusted user should use")
-    parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
+    parser.add_option("-q", "--quiet", action="store_true", dest="quiet", help="Turn off most logging")
 
     (sysargs,args)=parser.parse_args()
 

@@ -226,14 +226,13 @@ arbitrary user code).
     same computer as the server.
 
 #. Create a configuration file
-   ``$SERVER/single-cell-server/singlecell_conf.py``, where ``<SINGLECELL_USER>``
-   and ``<SINGLECELL_PASSWORD>`` are the mongodb username and password
-   set up above. ::
+   ``$SERVER/single-cell-server/singlecell_config.py`` by copying and
+   modifying
+   ``$SERVER/single-cell-server/singelcell_config.py.default``.  The
+   ``mongo_uri`` should be something like
+   ``<SINGLECELL_USER>:<SINGLECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
 
-    config={'mongo_uri': 'mongodb://<SINGLECELL_USER>:<SINGLECELL_PASSWORD>@localhost:<MONGODB_PORT>',
-            'mongo_db': 'singlecelldb'}
-
-  .. warning:: Make the ``singlecell_conf.py`` file *only* readable by
+  .. warning:: Make the ``singlecell_config.py`` file *only* readable by
       the trusted account, not by the untrusted account, since it
       contains the password to the database.
 
