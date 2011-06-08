@@ -1,5 +1,5 @@
 import sys
-LOGGING=True
+from singlecell_config import LOGGING
 def log(message, key=' '):
     if LOGGING:
         sys.__stdout__.write("%s\t: %s\n"%(key, message))

@@ -19,3 +19,4 @@ device_config={
     'untrusted-python': python
     }
 
+LOGGING=True
