@@ -42,6 +42,24 @@ class InteractControl:
         self.args=args
         self.kwargs=kwargs
 
+class Checkbox(InteractControl):
+    """
+    Defines a checkbox control.
+    """
+    def message(self):
+        """
+        :returns: Checkbox control configuration for an interact_start message.
+        """
+        return {'control_type':'checkbox',
+                'default':self.kwargs.get('default',True),
+                'raw':self.kwargs.get('raw',True),
+                'label':self.kwargs.get('label',"")}
+    def default(self):
+        """
+        :returns: Default value of control.
+        """
+        return self.kwargs.get('default',True)
+
 class InputBox(InteractControl):
     """
     Defines an input box control.
@@ -138,9 +156,9 @@ def automatic_control(default):
 
     if isinstance(default, str):
         C = input_box(default = default, label = label)
-    elif isinstance(default, Number):
-        C = input_box(default = default, label = label, raw = True)
     elif isinstance(default, bool):
+        C = checkbox(default = default, label = label, raw = True)
+    elif isinstance(default, Number):
         C = input_box(default = default, label = label, raw = True)
     elif isinstance(default, list):
         C = selector(default = default_value, label = label, values = default)
@@ -161,3 +179,4 @@ def automatic_control(default):
 slider=Slider
 selector=Selector
 input_box=InputBox
+checkbox=Checkbox

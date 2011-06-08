@@ -373,6 +373,8 @@ InteractCell.prototype.bindChange = function(interact) {
 	switch(this.controls[i].control_type) {
 	case "html":
 	    break;
+	case "checkbox":
+	    events["change"] = null;
 	case "input_box":
 	    events["change"] = null;
 	    break;
@@ -412,6 +414,13 @@ InteractCell.prototype.getChanges = function() {
 	case "html":
 	   // for text box: this.params[i] = $(id + "-" + i).val();
 	    break;
+	case "checkbox":
+	    if ($(id + "_" + i).attr("checked") == true) {
+		params[i] = "True";
+	    } else {
+		params[i] = "False";
+	    }
+	    break;
 	case "input_box":
 	    params[i] = $(id + "_" + i).val();
 	    break;
@@ -437,6 +446,10 @@ InteractCell.prototype.renderCanvas = function() {
 	    var html_code = this.controls[i].html;
 	    html_code = html_code.replace("$"+i+"$", this.controls[i]["default"]);
 	    html_code = html_code.replace("$id$", id);
+	    this.element.append(html_code);
+	    break;
+	case "checkbox":
+	    var html_code = "<div class='interact_checkbox'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='checkbox' checked = " + this.controls[i].default + " class= " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
