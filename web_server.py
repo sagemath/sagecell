@@ -203,6 +203,20 @@ def config():
 
     s+='\nLOGGING: %s'%(c.LOGGING)
     s+='\n'
+    try:
+        git=''
+        import subprocess
+        # in python 2.7, we can just use the check_output command instead of Popen
+        process = subprocess.Popen(['/usr/bin/env git rev-parse HEAD'], shell=True, stdout=subprocess.PIPE)
+        git+='Git Revision: %s\n'%process.communicate()[0]
+        process = subprocess.Popen(['git diff'], shell=True, stdout=subprocess.PIPE)
+        git+='%s'%process.communicate()[0]
+        s+='\nGIT\n'
+        s+='---\n'
+        s+=git
+    except E:
+        # maybe we don't have git on the system
+        pass
 
     return Response(s, content_type='text/plain')
 
