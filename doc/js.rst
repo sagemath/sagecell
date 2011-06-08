@@ -155,6 +155,7 @@ InteractCell Class
 .. class:: InteractCell(selector, data)
 
     Manages the configuration, display, and state of an interact control.
+    See :doc:`interact_protocol` for more details.
     
     :param String selector: JQuery selector for the location of the interact control.
     
