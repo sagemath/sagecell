@@ -201,6 +201,9 @@ def config():
     for k in ('workers', 'quiet'):
         s+='%s: %s\n'%(k,c.device_config.get(k, 'Not Specified'))
 
+    s+='\nLOGGING: %s'%(c.LOGGING)
+    s+='\n'
+
     return Response(s, content_type='text/plain')
 
 
