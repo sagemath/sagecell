@@ -105,8 +105,13 @@ function handleKeyEvent(editor, event) {
 	return true;
     }
     if(window.sessionStorage) {
-	sessionStorage.removeItem('editorValue');
-	sessionStorage.setItem('editorValue',editor.getValue());
+	try {
+	    sessionStorage.removeItem('editorValue');
+	    sessionStorage.setItem('editorValue',editor.getValue());
+	} catch (e) {
+	    // if we can't store, we don't do anything
+	    // for example, in chrome if we block cookies, we can't store, it seems.
+	};
     }
     return false;
 }
