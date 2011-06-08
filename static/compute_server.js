@@ -29,8 +29,8 @@ $(function() {
 	lineNumbers:true,
 	matchBrackets:true,
 	onKeyEvent:handleKeyEvent});
-    if(window.sessionStorage) {
-	editor.setValue(sessionStorage['editorValue']);
+    if(window.sessionStorage && sessionStorage.getItem('editorValue')) {
+	editor.setValue(sessionStorage.getItem('editorValue'));
     }
     editor.focus();
     
@@ -105,7 +105,8 @@ function handleKeyEvent(editor, event) {
 	return true;
     }
     if(window.sessionStorage) {
-	sessionStorage['editorValue']=editor.getValue();
+	sessionStorage.removeItem('editorValue');
+	sessionStorage.setItem('editorValue',editor.getValue());
     }
     return false;
 }
