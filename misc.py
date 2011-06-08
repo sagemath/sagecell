@@ -29,7 +29,7 @@ def select_db(sysargs, context=None):
         import pymongo, db_mongo, filestore
         if '@' in mongo_config['mongo_uri']:
             # password specified, so we need to include the database in the URI
-            URI=mongo_config['mongo_uri']+'/'+config['mongo_db']
+            URI=mongo_config['mongo_uri']+'/'+mongo_config['mongo_db']
         else:
             URI = mongo_config['mongo_uri']
         conn=pymongo.Connection(URI)
