@@ -95,7 +95,9 @@ def callback(socket, msgs, db, pipe, isFS):
     :arg isFS: True if the database is a filestore; False if not
     :type isFS: bool
     """
-    
+
+    send_finally=True
+    to_send=None
     try:
         msg=loads(msgs[0].bytes)
         # Since Sage ships an old version of Python,
@@ -112,23 +114,21 @@ def callback(socket, msgs, db, pipe, isFS):
             if msg['msg_type']=='create_file':
                 with db.new_file(**msg['content']) as f:
                     f.write(msgs[1].bytes)
-                    socket.send_pyobj(None)
             elif msg['msg_type']=='copy_file':
                 contents=db.get_file(**msg['content']).read()
                 socket.send(contents, copy=False, track=True).wait()
+                send_finally=False
         elif msg['msg_type']=='register_device':
             db.register_device(device=msg['content']['device'], 
                                account=sysargs.untrusted_account, 
                                workers=sysargs.workers,
                                pgid=msg['content']['pgid'])
             pipe.send(msg['content'])
-            socket.send_pyobj(None)
         elif msg['msg_type'] in db.valid_untrusted_methods:
-            socket.send_pyobj(getattr(db,msg['msg_type'])(**msg['content']))
-        else:
-            socket.send('')
-    except:
-        socket.send('')
+            to_send=getattr(db,msg['msg_type'])(**msg['content'])
+    finally:
+        if send_finally:
+            socket.send_pyobj(to_send)
 
 def signal_handler(signal, frame):
     """
