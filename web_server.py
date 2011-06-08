@@ -188,6 +188,21 @@ def tabComplete(db,fs):
                 "text":"", "line":code, "block":code, "cursor_pos":request.values["pos"]}})
     return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
 
+@app.route("/config")
+def config():
+    import singlecell_config as c
+    s=''
+    s+='WEB SERVER\n'
+    s+='----------\n'
+    for k in ('workers', 'listen', 'disable-logging', 'quiet'):
+        s+='%s: %s\n'%(k,c.web_server_config[k])
+    s+='\nDEVICE\n'
+    s+='------\n'
+    for k in ('workers', 'quiet'):
+        s+='%s: %s\n'%(k,c.device_config[k])
+
+    return Response(s, content_type='text/plain')
+
 
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
