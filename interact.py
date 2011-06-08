@@ -86,10 +86,10 @@ class InputGrid(InteractControl):
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
         self.rows = self.kwargs.get('rows',1)
-        self.columns = self.kwargs.get('columns'1)
+        self.columns = self.kwargs.get('columns',1)
         self.default_value = self.kwargs.get('default',0)
         if not isinstance(self.default_value, list):
-            default_value = [[default_value for _ in range(self.columns)] for _ in range(self.rows)]
+            self.default_value = [[self.default_value for _ in range(self.columns)] for _ in range(self.rows)]
     def message(self):
         return {'control_type': 'input_grid',
                 'rows': self.rows,
