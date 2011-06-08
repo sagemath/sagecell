@@ -2,6 +2,7 @@
 .error {color: red}
 .stderr {color: red}
 .CodeMirror {border: 1px solid black; height: 200px}
+.codemirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
 .done {color: red}
 .session_output {border: 2px solid black;}
 .session_title {border-bottom: 1px solid blue;}
