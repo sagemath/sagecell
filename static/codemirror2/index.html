@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>CodeMirror</title>
+    <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Sans|Droid+Sans:bold"/>
     <link rel="stylesheet" type="text/css" href="css/docs.css"/>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <link rel="alternate" href="http://twitter.com/statuses/user_timeline/242283288.rss" type="application/rss+xml"/>
@@ -47,6 +48,7 @@
       <li><a href="mode/smalltalk/index.html">Smalltalk</a></li>
       <li><a href="mode/rst/index.html">reStructuredText</a></li>
       <li><a href="mode/plsql/index.html">PL/SQL</a></li>
+      <li><a href="mode/lua/index.html">Lua</a></li>
     </ul>
 
   </div><div class="left2 blk">
@@ -60,6 +62,8 @@
       <li><a href="demo/resize.html">Auto-resizing editor</a></li>
       <li><a href="demo/marker.html">Setting breakpoints</a></li>
       <li><a href="demo/activeline.html">Highlighting the current line</a></li>
+      <li><a href="demo/theme.html">Theming</a></li>
+      <li><a href="demo/runmode.html">Stand-alone highlighting</a></li>
     </ul>
 
   </div></div>
@@ -149,6 +153,25 @@
 
   <h2>Releases:</h2>
 
+  <p class="rel">07-06-2011: <a href="http://codemirror.net/codemirror-2.02.zip">Version 2.1</a>:</p>
+  <p class="rel-note">Add
+  a <a href="manual.html#option_theme">theme</a> system
+  (<a href="demo/theme.html">demo</a>). Note that this is not
+  backwards-compatible—you'll have to update your styles and
+  modes!</p>
+
+  <p class="rel">07-06-2011: <a href="http://codemirror.net/codemirror-2.02.zip">Version 2.02</a>:</p>
+  <ul class="rel-note">
+    <li>Add a <a href="mode/lua/index.html">Lua mode</a>.</li>
+    <li>Fix reverse-searching for a regexp.</li>
+    <li>Empty lines can no longer break highlighting.</li>
+    <li>Rework scrolling model (the outer wrapper no longer does the scrolling).</li>
+    <li>Solve horizontal jittering on long lines.</li>
+    <li>Add <a href="demo/runmode.html">runmode.js</a>.</li>
+    <li>Immediately re-highlight text when typing.</li>
+    <li>Fix problem with 'sticking' horizontal scrollbar.</li>
+  </ul>
+
   <p class="rel">26-05-2011: <a href="http://codemirror.net/codemirror-2.01.zip">Version 2.01</a>:</p>
   <ul class="rel-note">
     <li>Add a <a href="mode/smalltalk/index.html">Smalltalk mode</a>.</li>
@@ -195,17 +218,6 @@
   <p class="rel-note">CodeMirror 2 is a complete rewrite of
   CodeMirror, no longer depending on an editable frame.</p>
 
-  <p class="rel">19-01-2011: <a href="http://codemirror.net/codemirror-0.93.zip">Version 0.93</a>:</p>
-  <ul class="rel-note">
-    <li>Added a <a href="contrib/regex/index.html">Regular Expression</a> parser.</li>
-    <li>Fixes to the PHP parser.</li>
-    <li>Support for regular expression in search/replace.</li>
-    <li>Add <code>save</code> method to instances created with <code>fromTextArea</code>.</li>
-    <li>Add support for MS T-SQL in the SQL parser.</li>
-    <li>Support use of CSS classes for highlighting brackets.</li>
-    <li>Fix yet another hang with line-numbering in hidden editors.</li>
-  </ul>
-
   <p><a href="oldrelease.html">Older releases...</a></p>
 
 </div></div>
@@ -216,8 +228,6 @@
     <input type="hidden" name="cmd" value="_s-xclick"/>
     <input type="hidden" name="hosted_button_id" value="3FVHS5FGUY7CC"/>
   </form>
-
-  <script type="text/javascript" src="css/font.js"></script>
 
   </body>
 </html>
