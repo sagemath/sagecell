@@ -71,6 +71,7 @@ class InputBox(InteractControl):
         """
         return {'control_type':'input_box',
                 'default':self.kwargs.get('default',""),
+                'size':self.kwargs.get('size',0),
                 'raw':self.kwargs.get('raw',False),
                 'label':self.kwargs.get('label',"")}
     def default(self):
@@ -95,6 +96,7 @@ class InputGrid(InteractControl):
                 'rows': self.rows,
                 'columns': self.columns,
                 'default': self.default_value,
+                'size':self.kwargs.get('size',0),
                 'raw': self.kwargs.get('raw', True),
                 'label': self.kwargs.get('label',"")}
     def default(self):

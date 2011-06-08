@@ -468,16 +468,17 @@ InteractCell.prototype.renderCanvas = function() {
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
-	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
+	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + " size = '" + this.controls[i].size + "'></input></td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "input_grid":
 	    var default_values = this.controls[i]["default"];
+	    var size = this.controls[i].size;
 	    var inner_table = "<table><tbody>";
 	    for (var j = 0, j_max = this.controls[i].rows; j < j_max; j ++) {
 		inner_table += "<tr>";
 		for (var k = 0, k_max = this.controls[i].columns; k < k_max; k ++) {
-		    inner_table += "<td><input type='text' class=" + id + " id = '" + id + "_" + i + "_" + j  + "_" + k + "' value='" + default_values[j][k] + "'></input></td>";
+		    inner_table += "<td><input type='text' class=" + id + " id = '" + id + "_" + i + "_" + j  + "_" + k + "' value='" + default_values[j][k] + "' size='" + size + "'></input></td>";
 		}
 		inner_table += "</tr>";
 	    }
