@@ -82,6 +82,16 @@ def callback(socket, msgs, db, pipe, isFS):
     """
     
     msg=loads(msgs[0].bytes)
+    # Since Sage ships an old version of Python,
+    # we need to work around this python bug:
+    # http://bugs.python.org/issue2646 (see also
+    # the fix: http://bugs.python.org/issue4978).
+    # Unicode as keywords works in python 2.7, so
+    # upgrading Sage's python means we can get
+    # around this.
+    # Basically, we need to make sure the keys
+    # are *not* unicode strings.
+    msg['content']=dict((str(k),v) for k,v in msg['content'].items())
     if isFS:
         if msg['msg_type']=='create_file':
             with db.new_file(**msg['content']) as f:
@@ -99,16 +109,6 @@ def callback(socket, msgs, db, pipe, isFS):
         socket.send_pyobj(None)
     else:
         if msg['msg_type'] in db.valid_untrusted_methods:
-            # Since Sage ships an old version of Python,
-            # we need to work around this python bug:
-            # http://bugs.python.org/issue2646 (see also
-            # the fix: http://bugs.python.org/issue4978).
-            # Unicode as keywords works in python 2.7, so
-            # upgrading Sage's python means we can get
-            # around this.
-            # Basically, we need to make sure the keys
-            # are *not* unicode strings.
-            msg['content']=dict((str(k),v) for k,v in msg['content'].items())
             socket.send_pyobj(getattr(db,msg['msg_type'])(**msg['content']))
 
 def signal_handler(signal, frame, pgid):
