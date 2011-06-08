@@ -79,6 +79,27 @@ class InputBox(InteractControl):
         """
         return self.kwargs.get('default',None)
 
+class InputGrid(InteractControl):
+    """
+    Defines an interact grid control.
+    """
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self.rows = self.kwargs.get('rows',1)
+        self.columns = self.kwargs.get('columns'1)
+        self.default_value = self.kwargs.get('default',0)
+        if not isinstance(self.default_value, list):
+            default_value = [[default_value for _ in range(self.columns)] for _ in range(self.rows)]
+    def message(self):
+        return {'control_type': 'input_grid',
+                'rows': self.rows,
+                'columns': self.columns,
+                'default': self.default_value,
+                'raw': self.kwargs.get('raw', True),
+                'label': self.kwargs.get('label',"")}
+    def default(self):
+        return self.default_value
+
 class Selector(InteractControl):
     """
     Defines a selector interact control.
@@ -179,4 +200,5 @@ def automatic_control(default):
 slider=Slider
 selector=Selector
 input_box=InputBox
+input_grid=InputGrid
 checkbox=Checkbox
