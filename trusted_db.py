@@ -8,13 +8,21 @@ import misc
 import os
 import signal
 import sys
+import json
 from subprocess import Popen, PIPE
-from multiprocessing import Process, Pipe
+from multiprocessing import Process, Pipe, Lock
+import hmac
+from hashlib import sha1
 from zmq.eventloop import ioloop, zmqstream
 import util
 from util import log
-from json import loads
 shutting_down=False
+
+class AuthenticationException(Exception):
+    """
+    An exception that occurs if a message fails HMAC authentication
+    """
+    pass
 
 class MessageLoop:
     u"""
@@ -30,7 +38,7 @@ class MessageLoop:
 
     def __init__(self, db, isFS=False):
         conn,self.pipe=Pipe()
-        self.process=Process(target=loop, args=(conn, db, callback, isFS))
+        self.process=Process(target=loop, args=(db, conn, isFS))
         self.process.start()
         self.port=self.pipe.recv()
         self._device_info = None
@@ -61,14 +69,14 @@ class MessageLoop:
         self._device_info=self.pipe.recv()
         self.pipe.close()
 
-def loop(pipe, db, callback, isFS):
+def loop(db, pipe, isFS):
     u"""
     Create a \xd8MQ socket and an event loop listening for new messages.
 
-    :arg pipe: one end of a multiprocessing Pipe, for sending information back into the main process
-    :type pipe: _multiprocessing.Connection
     :arg db: the database to which to send the commands received
     :type db: db.DB
+    :arg pipe: one end of a multiprocessing Pipe, for sending information back into the main process
+    :type pipe: _multiprocessing.Connection
     :arg isFS: True if the database is a filestore; False if not
     :type isFS: bool
     """
@@ -76,22 +84,27 @@ def loop(pipe, db, callback, isFS):
     rep=context.socket(zmq.REP)
     pipe.send(rep.bind_to_random_port('tcp://127.0.0.1'))
     loop=ioloop.IOLoop()
+    fs_auth_dict={}
+    db_auth_dict={}
     stream=zmqstream.ZMQStream(rep,loop)
-    stream.on_recv(lambda msgs:callback(rep,msgs,db,pipe,isFS), copy=False)
+    stream.on_recv(lambda msgs:callback(db,pipe,fs_auth_dict if isFS else db_auth_dict,rep,msgs,isFS), copy=False)
     loop.start()
 
-def callback(socket, msgs, db, pipe, isFS):
+def callback(db, pipe, auth_dict, socket, msgs, isFS):
     u"""
     Callback triggered by a new message received in the \xd8MQ socket.
 
-    :arg socket: \xd8MQ REP socket
-    :type socket: zmq.Socket
-    :arg msgs: list of Message objects
-    :type msgs: list
+
     :arg db: the database to which to send the commands received
     :type db: db.DB
     :arg pipe: one end of a multiprocessing Pipe, for sending information back into the main process
     :type pipe: _multiprocessing.Connection
+    :arg auth_dict: a dictionary of HMAC objects keyed by session ID
+    :type auth_dict: dict
+    :arg socket: \xd8MQ REP socket
+    :type socket: zmq.Socket
+    :arg msgs: list of Message objects
+    :type msgs: list
     :arg isFS: True if the database is a filestore; False if not
     :type isFS: bool
     """
@@ -99,7 +112,8 @@ def callback(socket, msgs, db, pipe, isFS):
     send_finally=True
     to_send=None
     try:
-        msg=loads(msgs[0].bytes)
+        msg_str=msgs[0].bytes
+        msg=json.loads(msg_str)
         # Since Sage ships an old version of Python,
         # we need to work around this python bug:
         # http://bugs.python.org/issue2646 (see also
@@ -110,10 +124,16 @@ def callback(socket, msgs, db, pipe, isFS):
         # Basically, we need to make sure the keys
         # are *not* unicode strings.
         msg['content']=dict((str(k),v) for k,v in msg['content'].items())
-        if isFS:
+        if msg['msg_type'] not in ['create_secret','set_device_pgid','add_messages'] and 'session' in msg['content']:
+            authenticate(msg_str, msgs[1].bytes, msg['content']['session'], auth_dict)
+        if msg['msg_type']=='create_secret':
+            secret=os.urandom(32)
+            auth_dict[msg['content']['session']]=hmac.new(secret)
+            to_send=secret
+        elif isFS:
             if msg['msg_type']=='create_file':
                 with db.new_file(**msg['content']) as f:
-                    f.write(msgs[1].bytes)
+                    f.write(msgs[2].bytes)
             elif msg['msg_type']=='copy_file':
                 contents=db.get_file(**msg['content']).read()
                 socket.send(contents, copy=False, track=True).wait()
@@ -124,11 +144,41 @@ def callback(socket, msgs, db, pipe, isFS):
                                workers=sysargs.workers,
                                pgid=msg['content']['pgid'])
             pipe.send(msg['content'])
+        elif msg['msg_type']=='add_messages':
+            messages=[json.loads(m) for m,_ in msg['content']['messages']]
+            for i in range(len(messages)):
+                m,d=msg['content']['messages'][i]
+                authenticate(m,d,messages[i]['parent_header']['session'],auth_dict,True)
+            db.add_messages(None,messages)
         elif msg['msg_type'] in db.valid_untrusted_methods:
             to_send=getattr(db,msg['msg_type'])(**msg['content'])
+    except AuthenticationException:
+        log("Authentication failed")
     finally:
         if send_finally:
             socket.send_pyobj(to_send)
+
+def authenticate(msg_str, digest, session, auth_dict, hexdigest=False):
+    """
+    Authenticate a message using HMAC
+
+    :arg msg_str: the message, in string form
+    :type msg_str: str
+    :arg digest: the digest, as claimed by the sender
+    :type digest: str
+    :arg session: the session ID
+    :type session: str
+    :arg auth_dict: a dict of HMAC objects, indexed by session ID
+    :type auth_dict: dict
+    :arg hexdigest: True if the digest was generated by ``hmac.hexdigest``, False if by ``hmac.digest``
+    :type hexdigest: bool
+    :raises AuthenticationException: upon a failed authentication
+    :rtype: None
+    """
+    auth_dict[session].update(msg_str)
+    real_digest=auth_dict[session].hexdigest() if hexdigest else auth_dict[session].digest()
+    if real_digest!=digest:
+        raise AuthenticationException
 
 def signal_handler(signal, frame):
     """

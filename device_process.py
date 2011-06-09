@@ -60,7 +60,9 @@ code by forming an error status message back.
 
 import sys, time, traceback, StringIO, contextlib, random, uuid
 import util
+import hmac
 from util import log
+from json import dumps
 import interact_singlecell
 
 try:
@@ -216,6 +218,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
 
     manager = Manager()
     log("Getting new messages")
+    hmacs={}
     while True:
         # TODO: be more intelligent about how many new sessions I can get
         # one option is to make limit=3*(workers-len(sessions)))
@@ -226,13 +229,12 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
             if session not in sessions:
                 # session has not been set up yet
                 log("evaluating '%s'"%X['content']['code'], device_id+' '+session)
-
+                hmacs[session]=hmac.new(db.create_secret(session=session))
+                print session
                 msg_queue=manager.Queue() # TODO: make this a pipe
+                args=(session, msg_queue, resource_limits, fs.create_secret(session=session))
                 sessions[session]={'messages': msg_queue,
-                                   'worker': pool.apply_async(worker,
-                                                              (session,
-                                                               msg_queue,
-                                                               resource_limits))}
+                                   'worker': pool.apply_async(worker,args)}
             # send execution request down the queue.
             sessions[session]['messages'].put(('exec',X))
             log("sent execution request", device_id+' '+session)
@@ -260,7 +262,16 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
                 sequence[session]+=1
                 new_messages.append(msg)
                 last_message[session]=msg
-
+        for i in range(len(new_messages)):
+            session=new_messages[i]['parent_header']['session']
+            msg=dumps(new_messages[i])
+            if session in hmacs:
+                hmacs[session].update(msg)
+                new_messages[i]=(msg,hmacs[session].hexdigest())
+            else:
+                new_messages[i]=(msg,None)
+        if len(new_messages)>0:
+            db.add_messages(id=None, messages=new_messages)
         # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
@@ -274,11 +285,8 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
             # should send back an execution_state: idle message too
             del sequence[session]
             del sessions[session]
-            db.close_session(device=device_id, session=session)
-        if len(new_messages)>0:
-            db.add_messages(id=None, messages=new_messages)
-
-
+            db.close_session(device=device_id, session=session,hmac=hmacs[session])
+            del hmacs[session]
         time.sleep(poll_interval)
 
 
@@ -329,7 +337,7 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, message_queue, output_handler, resource_limits, sysargs):
+def execProcess(cell_id, message_queue, output_handler, resource_limits, sysargs, fs_secret):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
     # TODO: Have some sort of process limits on CPU time/memory
@@ -352,7 +360,7 @@ Meant to be run as a separate process."""
     from resource import setrlimit
     for r,l in resource_limits:
         setrlimit(r, l)
-
+    fs_hmac=hmac.new(fs_secret)
     while True:
         try:
             msg=message_queue.get(timeout=timeout)
@@ -389,7 +397,7 @@ Meant to be run as a separate process."""
         if 'files' in msg['content']:
             for filename in msg['content']['files']:
                 with open(filename,'w') as f:
-                    fs.copy_file(f,filename=filename, cell_id=cell_id)
+                    fs.copy_file(f,filename=filename, cell_id=cell_id, hmac=fs_hmac)
                 old_files[filename]=-1
         with output_handler as MESSAGE:
             try:
@@ -454,7 +462,7 @@ Meant to be run as a separate process."""
                 file_list.append(filename)
                 try:
                     with open(filename) as f:
-                        fs.create_file(f, cell_id=cell_id, filename=filename)
+                        fs.create_file(f, cell_id=cell_id, filename=filename, hmac=fs_hmac)
                 except Exception as e:
                     sys.stdout.write("An exception occurred: %s\n"%(e,))
         if len(file_list)>0:
@@ -463,7 +471,7 @@ Meant to be run as a separate process."""
         execution_count+=1
         log("Done executing code: %s"%code)
 
-def worker(session, message_queue, resource_limits):
+def worker(session, message_queue, resource_limits, fs_secret):
     """
     This function is executed by a worker process. It executes the
     given code in a separate process. This function may start a
@@ -483,12 +491,10 @@ def worker(session, message_queue, resource_limits):
     # Daemonic processes cannot create children
     current_process().daemon=False
     os.chdir(tmp_dir)
-
-    # files later
     output_handler=OutputIPython(session, outQueue)
     output_handler.set_parent_header({'session':session})
     # listen on queue and send send execution requests to execProcess
-    args=(session, message_queue, output_handler, resource_limits, sysargs)
+    args=(session, message_queue, output_handler, resource_limits, sysargs, fs_secret)
     p=Process(target=execProcess, args=args)
     p.start()
     p.join()

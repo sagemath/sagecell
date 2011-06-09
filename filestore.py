@@ -112,22 +112,27 @@ class FileStoreZMQ(FileStoreMongo):
         self._req.connect(self.address)
         log("ZMQ connecting to %s"%self.address)
 
-    def create_file(self, file_handle, **kwargs):
+    def create_file(self, file_handle, hmac, **kwargs):
         # Use mmap if the filesize is larger than 1MiB;
         # otherwise just copy the string to memory before sending it
         if fstat(file_handle.fileno()).st_size>2**20:
             f=mmap.mmap(file_handle.fileno(),0,access=mmap.ACCESS_READ)
         else:
             f=file_handle.read()
-        message=[dumps({'msg_type':'create_file',"header":str(uuid4()),
-                        'content':kwargs}), f]
+        msg_str=dumps({'msg_type':'create_file',"header":str(uuid4()),
+                        'content':kwargs})
+        hmac.update(msg_str)
+        message=[msg_str, hmac.digest(), f]
         self.req.send_multipart(message,copy=False,track=True).wait()
         self.req.recv()
 
-    def copy_file(self, file_handle, **kwargs):
-        self.req.send_json({'msg_type':'copy_file', 'content':kwargs})
+    def copy_file(self, file_handle, hmac, **kwargs):
+        msg_str=dumps({'msg_type':'copy_file','content':kwargs})
+        hmac.update(msg_str)
+        self.req.send_multipart([msg_str, hmac.digest()])
         file_handle.write(self.req.recv())
 
+    create_secret=db_method('create_secret',['session'])
     new_file=db_method('new_file',['cell_id','filename'])
     delete_cell_files=db_method('delete_cell_files',['cell_id'])
     get_file=db_method('get_file',['cell_id','filename'])

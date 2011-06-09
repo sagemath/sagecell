@@ -16,13 +16,19 @@ from uuid import uuid4
 from random import randrange
 from sys import maxint
 from util import log
+from json import dumps
 
 def db_method(method_name, kwarg_keys):
-    def f(self, **kwargs):
+    def f(self, hmac=None, **kwargs):
         msg={'header': {'msg_id': str(randrange(maxint))},
              'msg_type': method_name,
              'content': dict([(kw,kwargs[kw]) for kw in kwarg_keys])}
-        self.req.send_json(msg)
+        if hmac is not None:
+            msg_str=dumps(msg)
+            hmac.update(msg_str)
+            self.req.send_multipart([msg_str,hmac.digest()])
+        else:
+            self.req.send_json(msg)
         # wait for output back
         output=self.req.recv_pyobj()
         return output
@@ -55,10 +61,10 @@ class DB(db.DB):
         self._req=self._context.socket(zmq.REQ)
         self._req.connect(self.address)
         log("ZMQ connecting to %s"%self.address)
-        
-            
+
     new_input_message = db_method('new_input_message', ['msg'])
     get_input_messages = db_method('get_input_messages', ['device', 'limit'])
+    create_secret = db_method('create_secret', ['session'])
     close_session = db_method('close_session', ['device', 'session'])
     get_messages = db_method('get_messages', ['id','sequence'])
     add_messages = db_method('add_messages', ['id', 'messages'])
