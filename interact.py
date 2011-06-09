@@ -109,7 +109,19 @@ class Selector(InteractControl):
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
         self.values = self.kwargs.get('values',[0])
-        self.default_value = self.kwargs.get('default',0)
+        self.default_value = int(self.kwargs.get('default',0))
+        
+        # Assign selector labels and values.
+        if len(self.values) > 0 and isinstance(self.values[0], tuple) and len(self.values[0]) == 2:
+            self.value_labels = [str(z[1]) if z[1] is not None else None for z in self.values]
+            self.values = [z[0] for z in self.values]
+        else:
+            self.value_labels = self.values
+        
+        # Ensure that default index is always in the correct range.
+        if self.default_value < 0 or self.default_value >= len(self.values):
+            self.default_value = 0
+
     def message(self):
         """
         :returns: Selector control configuration for an interact_start message.
@@ -117,8 +129,9 @@ class Selector(InteractControl):
         """
         return {'control_type': 'selector',
                 'values': self.values,
+                'value_labels': self.value_labels,
                 'default': self.default_value,
-                'raw': self.kwargs.get('raw',False),
+                'raw': self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
     def default(self):
         """

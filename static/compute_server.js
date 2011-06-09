@@ -490,9 +490,9 @@ InteractCell.prototype.renderCanvas = function() {
 	    var html_selector = "<select class = " + id + " id = " + id + "_" + i + ">";
 	    for (var j in this.controls[i].values) {
 		if (j == this.controls[i]["default"]) {
-		    html_selector = html_selector + "<option selected='selected' value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		    html_selector = html_selector + "<option selected='selected' value='" + this.controls[i].values[j] + "'>" + this.controls[i].value_labels[j] + "</option>";
 		} else {
-		    html_selector = html_selector + "<option value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+		    html_selector = html_selector + "<option value='" + this.controls[i].values[j] + "'>" + this.controls[i].value_labels[j] + "</option>";
 		}
 	    }
 	    html_selector = html_selector + "</select>";
