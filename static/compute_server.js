@@ -49,13 +49,24 @@ $(function() {
 	event.preventDefault();
 	return false;
     });
-    
+
     $('#command_form #evalButton').click(function() {
 	var session = new Session("#output");
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
 	$('#command_form #session_id').val(session.session_id);
 	$('#command_form #msg_id').val(uuid4());
+	$('#command_form').attr("target", "upload_target_"+session.session_id);
+	session.session_output.append("<iframe style='display:none' name = 'upload_target_"+session.session_id+"' id='upload_target_"+session.session_id+"'></iframe>");
 	$('#command_form').submit();
+
+	$("#upload_target_"+session.session_id).load($.proxy(function(event){
+	    var server_response = $("#upload_target_"+session.session_id).contents().find('body').html();
+	    if (server_response !== "") {
+		session.session_output.append(server_response);
+		session.clearQuery();
+	    }
+	    $("#upload_target_"+session.session_id).unbind();
+	}),session);
 	return false;
     });
 });
