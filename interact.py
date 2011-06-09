@@ -57,6 +57,7 @@ class Checkbox(InteractControl):
     def default(self):
         """
         :returns: Default value of control.
+        :rtype: Dict
         """
         return self.kwargs.get('default',True)
 
@@ -92,6 +93,10 @@ class InputGrid(InteractControl):
         if not isinstance(self.default_value, list):
             self.default_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
     def message(self):
+        """
+        :returns: Input grid control configuration for an interact_start message.
+        :rtype: Dict
+        """
         return {'control_type': 'input_grid',
                 'nrows': self.nrows,
                 'ncols': self.ncols,
@@ -100,6 +105,9 @@ class InputGrid(InteractControl):
                 'raw': self.kwargs.get('raw', True),
                 'label': self.kwargs.get('label',"")}
     def default(self):
+        """
+        :returns: Default value of control.
+        """
         return self.default_value
 
 class Selector(InteractControl):
