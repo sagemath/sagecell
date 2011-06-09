@@ -1,5 +1,11 @@
 import sys
-from singlecell_config import LOGGING
+
+try:
+    from singlecell_config import LOGGING
+except ImportError:
+    # the untrusted user will probably not have access to the singlecell_config file
+    LOGGING=True
+
 def log(message, key=' '):
     if LOGGING:
         sys.__stdout__.write("%s\t: %s\n"%(key, message))

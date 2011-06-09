@@ -187,7 +187,7 @@ if __name__=='__main__':
 
     cwd=os.getcwd()
     options=dict(cwd=cwd, workers=sysargs.workers, db_port=db_loop.port, fs_port=fs_loop.port,
-                 quiet='-q' if sysargs.quiet else '',
+                 quiet='-q' if sysargs.quiet or util.LOGGING is False else '',
                  untrusted_python=sysargs.untrusted_python)
     cmd="""cd %(cwd)s
 %(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i %(quiet)s\n"""%options
