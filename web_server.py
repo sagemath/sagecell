@@ -188,6 +188,13 @@ def tabComplete(db,fs):
                 "text":"", "line":code, "block":code, "cursor_pos":request.values["pos"]}})
     return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
 
+@app.route("/ping_json")
+def ping():
+    """
+    A small url to ping for performance testing
+    """
+    return jsonify({'reply':'pong'})
+
 @app.route("/config")
 @get_db
 def config(db, fs):
