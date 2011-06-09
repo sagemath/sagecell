@@ -1,8 +1,5 @@
 import sys
 
-import singlecell_config
-from singlecell_config import mongo_config
-
 
 def select_db(sysargs, context=None):
     u"""
@@ -27,6 +24,9 @@ def select_db(sysargs, context=None):
         return db_sqlalchemy.DB('sqlalchemy_sqlite.db'), None # None should be replaced by the sqlite filestore
     elif db=="mongo":
         import pymongo, db_mongo, filestore
+        import singlecell_config
+        from singlecell_config import mongo_config
+
         if '@' in mongo_config['mongo_uri']:
             # password specified, so we need to include the database in the URI
             URI=mongo_config['mongo_uri']+'/'+mongo_config['mongo_db']
