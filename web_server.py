@@ -10,9 +10,9 @@ import uuid
 import zmq
 from ip_receiver import IPReceiver
 from werkzeug import secure_filename
+from os import fstat
 
 app = Flask(__name__)
-app.allowed_extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 # is it safe to have global variables here?
 db=None
@@ -61,14 +61,11 @@ def get_db(f):
 def root():
     return render_template('ipython_root.html')
 
-def allowed_file(filename):
-    return '.' in filename and \
-        filename.rsplit('.',1)[1] in app.allowed_extensions
-
 @app.route("/eval", methods=['GET','POST'])
 @get_db
 def evaluate(db,fs):
     if request.method == "POST":
+        # If the request is a JSON message, such as from an interact update:
          if request.values.get("message") is not None:
             log('Received Request: %s'%(request.values['message'],))
             message=json.loads(request.values['message'])
@@ -76,22 +73,35 @@ def evaluate(db,fs):
             db.new_input_message(message)
             # TODO: computation_id -> session_id
             return jsonify(computation_id=session_id)
+         # Else if the request is the initial form submission at the beginning of a session:
          else:
             session_id = request.form.get("session_id")
+            valid_request = True
+            code = ""
             files = []
-            parent_header = "parent_header"
+            # Checks if too many files were uploaded.
+            if len(request.files.getlist("file")) > 10:
+                code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
+                valid_request = False
+            # Checks if any uploaded files are too large.
             for file in request.files.getlist("file"):
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    fs.create_file(file, filename=filename, cell_id=session_id)
-                    files.append(filename)
+                if file and fstat(file.fileno()).st_size > 1024 * 4000:
+                    code += "print('ERROR: Maximum file size (4 mB) exceeded in file: "+file.filename+"')\n"
+                    valid_request = False
+            if valid_request:
+                for file in request.files.getlist("file"):
+                    if file:
+                        filename = secure_filename(file.filename)
+                        fs.create_file(file, filename=filename, cell_id=session_id)
+                        files.append(filename)
+                code = request.form.get("commands")
             message = {"parent_header": {},
                    "header": {"msg_id": request.form.get("msg_id"),
                               "username": "",
                               "session": session_id
                               },
                    "msg_type": "execute_request",
-                   "content": {"code": request.form.get("commands"),
+                   "content": {"code": code,
                                "silent": False,
                                "files": files,
                                "user_variables": [],
