@@ -33,18 +33,33 @@ class MessageLoop:
         self.process=Process(target=loop, args=(conn, db, callback, isFS))
         self.process.start()
         self.port=self.pipe.recv()
+        self._device_info = None
+
+    def device_id(self):
+        """
+        Get the device id for the remote device.
+
+        :return: the device id
+        """
+        if self._device_info is None:
+            self._get_device_info()
+        return self._device_info['device']
 
     def pgid(self):
         """
-        :return: the PGID of the process group associated with the device.
+        :return: the process group id of the process group associated with the device.
         :rtype: int
         """
-        if self.pipe.closed:
-            return self._pgid
-        else:
-            self._pgid=self.pipe.recv()
-            self.pipe.close()
-            return self._pgid
+        if self._device_info is None:
+            self._get_device_info()
+        return self._device_info['pgid']
+
+    def _get_device_info(self):
+        """
+        Get the device information and store it in ``self._device_info``.
+        """
+        self._device_info=self.pipe.recv()
+        self.pipe.close()
 
 def loop(pipe, db, callback, isFS):
     u"""
@@ -100,18 +115,25 @@ def callback(socket, msgs, db, pipe, isFS):
         elif msg['msg_type']=='copy_file':
             contents=db.get_file(**msg['content']).read()
             socket.send(contents, copy=False, track=True).wait()
-    elif msg['msg_type']=='set_device_pgid':
-        # have to add the ssh account to this
-        db.set_device_pgid(device=msg['content']['device'], 
+    elif msg['msg_type']=='register_device':
+        db.register_device(device=msg['content']['device'], 
                            account=sysargs.untrusted_account, 
+                           workers=sysargs.workers,
                            pgid=msg['content']['pgid'])
-        pipe.send(msg['content']['pgid'])
+        pipe.send(msg['content'])
         socket.send_pyobj(None)
     else:
         if msg['msg_type'] in db.valid_untrusted_methods:
             socket.send_pyobj(getattr(db,msg['msg_type'])(**msg['content']))
 
-def signal_handler(signal, frame, pgid):
+def signal_handler(signal, frame):
+    """
+    Clean up device
+    """
+    cleanup_device(device=db_loop.device_id(), pgid=db_loop.pgid())
+    
+
+def cleanup_device(device, pgid):
     # TODO: handle the case where ctrl-c is pressed twice better
     # that's what this shutting_down variable is about
     global shutting_down
@@ -121,19 +143,18 @@ def signal_handler(signal, frame, pgid):
         shutting_down=True
 
     # exit process, but first, kill the device I just started
-    # security implications: we're killing a pg id that the untrusted side sent us
+    # TODO: security implications: we're killing a pg id that the untrusted side sent us
     # however, we are making sure we ssh into that account first, so it can only affect things from that account
     print "Shutting down device...",
     cmd="""
 python -c 'import os,signal; os.killpg(%d,signal.SIGKILL)'
 exit
 """%int(pgid)
-    # reset signal handler so we don't call ourselves again
-    #signal.signal(signal.SIGINT, signal.SIG_DFL)
     p=Popen(["ssh", sysargs.untrusted_account],stdin=PIPE)
     p.stdin.write(cmd)
     p.stdin.flush()
     p.wait()
+    db.delete_device(device=device)
     print "done",
     sys.exit(0)
 
@@ -183,4 +204,4 @@ if __name__=='__main__':
     try:
         db_loop.process.join()
     except:
-        signal_handler(None, None, db_loop.pgid())
+        cleanup_device(device=db_loop.device_id(), pgid=db_loop.pgid())

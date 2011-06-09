@@ -196,7 +196,7 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     """
     device_id=unicode(uuid.uuid4())
     log("Starting device loop for device %s..."%device_id, device_id)
-    db.set_device_pgid(device=device_id, account=None, pgid=os.getpgid(0))
+    db.register_device(device=device_id, account=None, workers=workers, pgid=os.getpgid(0))
     pool=Pool(processes=workers)
     sessions={}
     from collections import defaultdict
