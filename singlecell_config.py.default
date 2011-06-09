@@ -21,7 +21,6 @@ device_config={
 
 flask_config={
     'max_files': 10,
-    'max_file_size': 4 # Size in mB
     }
 
 LOGGING=True

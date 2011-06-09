@@ -180,6 +180,7 @@ nginx
         listen <SERVER_PORT>;
         server_name localhost;
         charset utf-8;
+        client_max_body_size 4M; # Maximum file upload size, M stands for mB.
         location / {
             uwsgi_pass  unix:/tmp/uwsgi.sock;
             include  uwsgi_params;

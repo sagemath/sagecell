@@ -14,8 +14,6 @@ from os import fstat
 
 
 import singlecell_config
-# Converts max file size in mB to bytes
-MAX_FILE_SIZE = singlecell_config.flask_config['max_file_size'] * 1000 * 1024
 MAX_FILES = singlecell_config.flask_config['max_files']
 
 app = Flask(__name__)
@@ -92,12 +90,6 @@ def evaluate(db,fs):
              if len(request.files.getlist("file")) > MAX_FILES:
                  code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
                  valid_request = False
-
-             # Checks if any uploaded files are too large.
-             for file in uploaded_files:
-                if file and fstat(file.fileno()).st_size > MAX_FILE_SIZE:
-                    code += "print('ERROR: Maximum file size (4 mB) exceeded in file: "+file.filename+"')\n"
-                    valid_request = False
 
              if valid_request:
                  for file in uploaded_files:
