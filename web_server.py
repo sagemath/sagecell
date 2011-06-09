@@ -203,10 +203,10 @@ def config(db, fs):
     
     total_workers=0
     for device in db.get_devices():
-        s+='    (%r: %r), #workers\n'%(device['account'], device['workers'])
+        s+='    (%r: %r), #workers\n'%(str(device['account']), device['workers'])
         total_workers+=device['workers']
     s+=']\n'
-    s+='#Total workers: %s\n'%total_workers
+    s+='# Total workers: %s\n'%total_workers
 
     s+='\nLOGGING=%s'%(c.LOGGING)
     s+='\n'
