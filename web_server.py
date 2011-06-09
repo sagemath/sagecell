@@ -12,6 +12,12 @@ from ip_receiver import IPReceiver
 from werkzeug import secure_filename
 from os import fstat
 
+
+import singlecell_config
+# Converts max file size in mB to bytes
+MAX_FILE_SIZE = singlecell_config.flask_config['max_file_size'] * 1000 * 1024
+MAX_FILES = singlecell_config.flask_config['max_files']
+
 app = Flask(__name__)
 
 # is it safe to have global variables here?
@@ -79,25 +85,31 @@ def evaluate(db,fs):
              sage_mode = False
              valid_request = True
              code = ""
+             uploaded_files = request.files.getlist("file")
              files = []
+
              # Checks if too many files were uploaded.
-             if len(request.files.getlist("file")) > 10:
+             if len(request.files.getlist("file")) > MAX_FILES:
                  code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
                  valid_request = False
-            # Checks if any uploaded files are too large.
-             for file in request.files.getlist("file"):
-                if file and fstat(file.fileno()).st_size > 1024 * 4000:
+
+             # Checks if any uploaded files are too large.
+             for file in uploaded_files:
+                if file and fstat(file.fileno()).st_size > MAX_FILE_SIZE:
                     code += "print('ERROR: Maximum file size (4 mB) exceeded in file: "+file.filename+"')\n"
                     valid_request = False
+
              if valid_request:
-                 for file in request.files.getlist("file"):
+                 for file in uploaded_files:
                      if file:
                          filename = secure_filename(file.filename)
                          fs.create_file(file, filename=filename, cell_id=session_id)
                          files.append(filename)
                  code = request.form.get("commands")
-                 if request.form.get("sage_mode"):
-                     sage_mode = True;
+
+                 if request.form.get("sage_mode") is "True":
+                     sage_mode = True
+
              message = {"parent_header": {},
                        "header": {"msg_id": request.form.get("msg_id"),
                                   "username": "",
@@ -210,7 +222,7 @@ def config(db, fs):
     
     s=''
     s+='webserver={\n'
-
+    
     for k in [key for key in ('processes', 'listen', 'disable-logging') if key in c.web_server_config]:
         s+='    %r: %r\n'%(k,c.web_server_config[k])
     s+='}\n\ndevices=[\n'
@@ -224,6 +236,7 @@ def config(db, fs):
 
     s+='\nLOGGING=%s'%(c.LOGGING)
     s+='\n'
+
     try:
         git=''
         import subprocess
