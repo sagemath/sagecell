@@ -229,7 +229,7 @@ def automatic_control(default):
     elif isinstance(default, Number):
         C = input_box(default = default, label = label, raw = True)
     elif isinstance(default, list):
-        C = selector(default = default_value, label = label, values = default)
+        C = selector(buttons = len(default) <= 5, default = default_value, label = label, values = default, raw = False)
     elif isinstance (default, tuple):
         if len(default) == 2:
             C = slider(default = default_value, range = (default[0], default[1]), label = label)
