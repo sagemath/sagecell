@@ -10,26 +10,23 @@ from multiprocessing import Pool
 import contextlib
 import traceback
 
-MAXRAND=2**30
-#BASE_URL="http://127.0.0.1:8080"
-BASE_URL="http://boxen.math.washington.edu:5467"
-POLL_INTERVAL=0.1
-
 from timing_util import timing, json, json_request
 
 class Transaction(object):
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.custom_timers={}
-
-
+        self.MAXRAND=kwargs.get('maxrand', 2**30)
+        self.BASE_URL=kwargs.get('base_url', 'localhost')
+        self.POLL_INTERVAL=kwargs.get('poll_interval', 0.1)
+        
     def run(self):
         """
         Ask for the sum of two random numbers and check the result
         """
         computation_times=[]
         response_times=[]
-        a=int(random()*MAXRAND)
-        b=int(random()*MAXRAND)
+        a=int(random()*self.MAXRAND)
+        b=int(random()*self.MAXRAND)
         code='print %d+%d'%(a,b)
         msg_id=str(random())
         session=str(random())
@@ -38,20 +35,21 @@ class Transaction(object):
                                                        "session": session},
                                             "msg_type": "execute_request",
                                             "content": {"code": code}})}
-        eval_url=BASE_URL+'/eval'
+        eval_url=self.BASE_URL+'/eval'
 
-        poll_url=BASE_URL+'/output_poll?'
+        poll_url=self.BASE_URL+'/output_poll?'
         poll_values={'computation_id': session, 'sequence':0}
-
+        
         with timing(computation_times):
             with timing(response_times):
                 returned_session=json_request(eval_url,execute_msg)['computation_id']
+
             if returned_session!=session:
                 raise ValueError("Session id returned does not match session id sent")
             output=None
             done=False
             while not done:
-                sleep(POLL_INTERVAL)
+                sleep(self.POLL_INTERVAL)
                 with timing(response_times):
                     r=json_request(poll_url+urlencode(poll_values))
                 if len(r)==0 or 'content' not in r:
@@ -67,6 +65,7 @@ class Transaction(object):
                         else:
                             done=True
                             break
+
         self.custom_timers['Computation']=computation_times
         self.custom_timers['Response']=response_times
 
