@@ -189,30 +189,36 @@ def tabComplete(db,fs):
     return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
 
 @app.route("/config")
-def config():
+@get_db
+def config(db, fs):
+    #TODO: reload this module to get the most current configuration
     import singlecell_config as c
+    
     s=''
-    s+='WEB SERVER\n'
-    s+='----------\n'
-    for k in [key for key in ('processes', 'listen', 'disable-logging') if key in c.web_server_config]:
-        s+='%s: %s\n'%(k,c.web_server_config[k])
-    s+='\nDEVICE\n'
-    s+='------\n'
-    for k in [key for key in ('workers', 'quiet') if key in c.device_config]:
-        s+='%s: %s\n'%(k,c.device_config[k])
+    s+='webserver={\n'
 
-    s+='\nLOGGING: %s'%(c.LOGGING)
+    for k in [key for key in ('processes', 'listen', 'disable-logging') if key in c.web_server_config]:
+        s+='    %r: %r\n'%(k,c.web_server_config[k])
+    s+='}\n\ndevices=[\n'
+    
+    total_workers=0
+    for device in db.get_devices():
+        s+='    (%r: %r), #workers\n'%(device['account'], device['workers'])
+        total_workers+=device['workers']
+    s+=']\n'
+    s+='#Total workers: %s\n'%total_workers
+
+    s+='\nLOGGING=%s'%(c.LOGGING)
     s+='\n'
     try:
         git=''
         import subprocess
         # in python 2.7, we can just use the check_output command instead of Popen
         process = subprocess.Popen(['/usr/bin/env git rev-parse HEAD'], shell=True, stdout=subprocess.PIPE)
-        git+='Git Revision: %s\n'%process.communicate()[0]
+        git+='git_revision=%r\n'%process.communicate()[0].strip()
         process = subprocess.Popen(['git diff'], shell=True, stdout=subprocess.PIPE)
-        git+='%s'%process.communicate()[0]
-        s+='\nGIT\n'
-        s+='---\n'
+        # We assume that the string doesn't have any triple single quotes
+        git+="git_diff=r'''\n%s\n'''"%process.communicate()[0]
         s+=git
     except E:
         # maybe we don't have git on the system
