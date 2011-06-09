@@ -42,6 +42,25 @@ class InteractControl:
         self.args=args
         self.kwargs=kwargs
 
+class Checkbox(InteractControl):
+    """
+    Defines a checkbox control.
+    """
+    def message(self):
+        """
+        :returns: Checkbox control configuration for an interact_start message.
+        """
+        return {'control_type':'checkbox',
+                'default':self.kwargs.get('default',True),
+                'raw':self.kwargs.get('raw',True),
+                'label':self.kwargs.get('label',"")}
+    def default(self):
+        """
+        :returns: Default value of control.
+        :rtype: Dict
+        """
+        return self.kwargs.get('default',True)
+
 class InputBox(InteractControl):
     """
     Defines an input box control.
@@ -53,6 +72,7 @@ class InputBox(InteractControl):
         """
         return {'control_type':'input_box',
                 'default':self.kwargs.get('default',""),
+                'width':self.kwargs.get('width',""),
                 'raw':self.kwargs.get('raw',False),
                 'label':self.kwargs.get('label',"")}
     def default(self):
@@ -60,6 +80,35 @@ class InputBox(InteractControl):
         :returns: Default value of control.
         """
         return self.kwargs.get('default',None)
+
+class InputGrid(InteractControl):
+    """
+    Defines an interact grid control.
+    """
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self.nrows = self.kwargs.get('nrows',1)
+        self.ncols = self.kwargs.get('ncols',1)
+        self.default_value = self.kwargs.get('default',0)
+        if not isinstance(self.default_value, list):
+            self.default_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
+    def message(self):
+        """
+        :returns: Input grid control configuration for an interact_start message.
+        :rtype: Dict
+        """
+        return {'control_type': 'input_grid',
+                'nrows': self.nrows,
+                'ncols': self.ncols,
+                'default': self.default_value,
+                'width':self.kwargs.get('width',""),
+                'raw': self.kwargs.get('raw', True),
+                'label': self.kwargs.get('label',"")}
+    def default(self):
+        """
+        :returns: Default value of control.
+        """
+        return self.default_value
 
 class Selector(InteractControl):
     """
@@ -69,6 +118,38 @@ class Selector(InteractControl):
         self.kwargs = kwargs
         self.values = self.kwargs.get('values',[0])
         self.default_value = self.kwargs.get('default',0)
+        self.ncols = self.kwargs.get('ncols',None)
+        self.nrows = self.kwargs.get('nrows',None)
+        self.buttons = self.kwargs.get('buttons',False)
+        
+        # Assign selector labels and values.
+        if len(self.values) > 0 and isinstance(self.values[0], tuple) and len(self.values[0]) == 2:
+            self.value_labels = [str(z[1]) if z[1] is not None else str(z[0]) for z in self.values]
+            self.values = [z[0] for z in self.values]
+        else:
+            self.value_labels = self.values
+        
+        # Ensure that default index is always in the correct range.
+        if self.default_value < 0 or self.default_value >= len(self.values):
+            self.default_value = 0
+
+        # If using buttons rather than dropdown, check/set rows and columns for layout.
+        if self.buttons:
+            if self.nrows is None:
+                if self.ncols is not None:
+                    self.nrows = len(self.values) / self.ncols
+                    if self.ncols * self.nrows < len(self.values):
+                        self.nrows += 1
+                else:
+                    self.nrows = 1
+            elif self.nrows <= 0:
+                    self.nrows = 1
+
+            if self.ncols is None:
+                self.ncols = len(self.values) / self.nrows
+                if self.ncols * self.nrows < len(self.values):
+                    self.ncols += 1
+
     def message(self):
         """
         :returns: Selector control configuration for an interact_start message.
@@ -76,8 +157,13 @@ class Selector(InteractControl):
         """
         return {'control_type': 'selector',
                 'values': self.values,
+                'value_labels': self.value_labels,
                 'default': self.default_value,
-                'raw': self.kwargs.get('raw',False),
+                'buttons': self.buttons,
+                'nrows': self.nrows,
+                'ncols': self.ncols,
+                'width': self.kwargs.get('width',""),
+                'raw': self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
     def default(self):
         """
@@ -138,12 +224,12 @@ def automatic_control(default):
 
     if isinstance(default, str):
         C = input_box(default = default, label = label)
+    elif isinstance(default, bool):
+        C = checkbox(default = default, label = label, raw = True)
     elif isinstance(default, Number):
         C = input_box(default = default, label = label, raw = True)
-    elif isinstance(default, bool):
-        C = input_box(default = default, label = label, raw = True)
     elif isinstance(default, list):
-        C = selector(default = default_value, label = label, values = default)
+        C = selector(buttons = len(default) <= 5, default = default_value, label = label, values = default, raw = False)
     elif isinstance (default, tuple):
         if len(default) == 2:
             C = slider(default = default_value, range = (default[0], default[1]), label = label)
@@ -161,3 +247,5 @@ def automatic_control(default):
 slider=Slider
 selector=Selector
 input_box=InputBox
+input_grid=InputGrid
+checkbox=Checkbox
