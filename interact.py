@@ -109,11 +109,14 @@ class Selector(InteractControl):
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
         self.values = self.kwargs.get('values',[0])
-        self.default_value = int(self.kwargs.get('default',0))
+        self.default_value = self.kwargs.get('default',0)
+        self.ncols = self.kwargs.get('ncols',None)
+        self.nrows = self.kwargs.get('nrows',None)
+        self.buttons = self.kwargs.get('buttons',False)
         
         # Assign selector labels and values.
         if len(self.values) > 0 and isinstance(self.values[0], tuple) and len(self.values[0]) == 2:
-            self.value_labels = [str(z[1]) if z[1] is not None else None for z in self.values]
+            self.value_labels = [str(z[1]) if z[1] is not None else str(z[0]) for z in self.values]
             self.values = [z[0] for z in self.values]
         else:
             self.value_labels = self.values
@@ -121,6 +124,23 @@ class Selector(InteractControl):
         # Ensure that default index is always in the correct range.
         if self.default_value < 0 or self.default_value >= len(self.values):
             self.default_value = 0
+
+        # If using buttons rather than dropdown, check/set rows and columns for layout.
+        if self.buttons:
+            if self.nrows is None:
+                if self.ncols is not None:
+                    self.nrows = len(self.values) / self.ncols
+                    if self.ncols * self.nrows < len(self.values):
+                        self.nrows += 1
+                else:
+                    self.nrows = 1
+            elif self.nrows <= 0:
+                    self.nrows = 1
+
+            if self.ncols is None:
+                self.ncols = len(self.values) / self.nrows
+                if self.ncols * self.nrows < len(self.values):
+                    self.ncols += 1
 
     def message(self):
         """
@@ -131,6 +151,10 @@ class Selector(InteractControl):
                 'values': self.values,
                 'value_labels': self.value_labels,
                 'default': self.default_value,
+                'buttons': self.buttons,
+                'nrows': self.nrows,
+                'ncols': self.ncols,
+                'width': self.kwargs.get('width',""),
                 'raw': self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
     def default(self):
