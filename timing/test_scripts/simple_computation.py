@@ -16,7 +16,7 @@ class Transaction(object):
     def __init__(self, **kwargs):
         self.custom_timers={}
         self.MAXRAND=kwargs.get('maxrand', 2**30)
-        self.BASE_URL=kwargs.get('base_url', 'localhost')
+        self.BASE_URL=kwargs.get('base_url', 'http://localhost')
         self.POLL_INTERVAL=kwargs.get('poll_interval', 0.1)
         
     def run(self):
