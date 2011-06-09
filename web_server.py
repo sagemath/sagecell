@@ -75,42 +75,46 @@ def evaluate(db,fs):
             return jsonify(computation_id=session_id)
          # Else if the request is the initial form submission at the beginning of a session:
          else:
-            session_id = request.form.get("session_id")
-            valid_request = True
-            code = ""
-            files = []
-            # Checks if too many files were uploaded.
-            if len(request.files.getlist("file")) > 10:
-                code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
-                valid_request = False
+             session_id = request.form.get("session_id")
+             sage_mode = False
+             valid_request = True
+             code = ""
+             files = []
+             # Checks if too many files were uploaded.
+             if len(request.files.getlist("file")) > 10:
+                 code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
+                 valid_request = False
             # Checks if any uploaded files are too large.
-            for file in request.files.getlist("file"):
+             for file in request.files.getlist("file"):
                 if file and fstat(file.fileno()).st_size > 1024 * 4000:
                     code += "print('ERROR: Maximum file size (4 mB) exceeded in file: "+file.filename+"')\n"
                     valid_request = False
-            if valid_request:
-                for file in request.files.getlist("file"):
-                    if file:
-                        filename = secure_filename(file.filename)
-                        fs.create_file(file, filename=filename, cell_id=session_id)
-                        files.append(filename)
-                code = request.form.get("commands")
-            message = {"parent_header": {},
-                   "header": {"msg_id": request.form.get("msg_id"),
-                              "username": "",
-                              "session": session_id
-                              },
-                   "msg_type": "execute_request",
-                   "content": {"code": code,
-                               "silent": False,
-                               "files": files,
-                               "user_variables": [],
-                               "user_expressions": {}
-                               }
-                   }
-            log("Received Request: %s"%(message))
-            db.new_input_message(message)
-            return ""
+             if valid_request:
+                 for file in request.files.getlist("file"):
+                     if file:
+                         filename = secure_filename(file.filename)
+                         fs.create_file(file, filename=filename, cell_id=session_id)
+                         files.append(filename)
+                 code = request.form.get("commands")
+                 if request.form.get("sage_mode"):
+                     sage_mode = True;
+             message = {"parent_header": {},
+                       "header": {"msg_id": request.form.get("msg_id"),
+                                  "username": "",
+                                  "session": session_id
+                                  },
+                        "msg_type": "execute_request",
+                        "content": {"code": code,
+                                    "silent": False,
+                                    "files": files,
+                                    "sage_mode": sage_mode,
+                                    "user_variables": [],
+                                    "user_expressions": {}
+                                    }
+                        }
+             log("Received Request: %s"%(message))
+             db.new_input_message(message)
+             return ""
     return ""
 
 @app.route("/answers")
