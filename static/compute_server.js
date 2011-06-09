@@ -382,11 +382,7 @@ InteractCell.prototype.bindChange = function(interact) {
 	    events["change"] = null;
 	    break;
 	case "selector":
-	    if (this.controls[i].buttons) {
-		events["change"] = null;
-	    } else {
-		events["change"] = null;
-	    }
+	    events["change"] = null;
 	    break;
 	case "slider":
 	    events["slidestop"] = null;
@@ -433,9 +429,9 @@ InteractCell.prototype.getChanges = function() {
 	    break;
 	case "input_grid":
 	    var values = "[";
-	    for (var j = 0, j_max = this.controls[i].rows; j < j_max; j ++) {
+	    for (var j = 0, j_max = this.controls[i].nrows; j < j_max; j ++) {
 		values += "[";
-		for (var k = 0, k_max = this.controls[i].columns; k < k_max; k ++) {
+		for (var k = 0, k_max = this.controls[i].ncols; k < k_max; k ++) {
 		    values += $(id + "_" + i + "_" + j + "_" + k).val() + ", ";
 		}
 		values += "],";
@@ -445,6 +441,12 @@ InteractCell.prototype.getChanges = function() {
 	    break;
 	case "selector":
 	    if (this.controls[i].buttons) {
+		/* When a button is clicked, it sets the value of a hidden input
+		   box to its sequence number and calls the change handler. The
+		   previously-selected button's sequence number is the name of
+		   the input box. This allows for specifically flipping the CSS
+		   border styles of the previously and currently-selected
+		   buttons while passing back the correct updated selection. */
 		var new_button = this.locateButtonIndex($(id+"_current").val(), this.controls[i].ncols);
 		var old_button = this.locateButtonIndex($(id+"_current").attr("name"), this.controls[i].ncols);
 		new_button.location = id+"_"+i+"_"+new_button.row+"_"+new_button.col;
@@ -479,21 +481,21 @@ InteractCell.prototype.renderCanvas = function() {
 	    this.element.append(html_code);
 	    break;
 	case "checkbox":
-	    var html_code = "<div class='interact_checkbox'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='checkbox' checked = " + this.controls[i].default + " class= " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
+	    var html_code = "<div class='interact_checkbox'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='checkbox' checked = " + this.controls[i]["default"] + " class= " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
-	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + " size = '" + this.controls[i].size + "'></input></td></tr></tbody></table></div>";
+	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + " size = '" + this.controls[i].width + "'></input></td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "input_grid":
 	    var default_values = this.controls[i]["default"];
-	    var size = this.controls[i].size;
+	    var width = this.controls[i].width;
 	    var inner_table = "<table><tbody>";
-	    for (var j = 0, j_max = this.controls[i].rows; j < j_max; j ++) {
+	    for (var j = 0, j_max = this.controls[i].nrows; j < j_max; j ++) {
 		inner_table += "<tr>";
-		for (var k = 0, k_max = this.controls[i].columns; k < k_max; k ++) {
-		    inner_table += "<td><input type='text' class=" + id + " id = '" + id + "_" + i + "_" + j  + "_" + k + "' value='" + default_values[j][k] + "' size='" + size + "'></input></td>";
+		for (var k = 0, k_max = this.controls[i].ncols; k < k_max; k ++) {
+		    inner_table += "<td><input type='text' class=" + id + " id = '" + id + "_" + i + "_" + j  + "_" + k + "' value='" + default_values[j][k] + "' size='" + width + "'></input></td>";
 		}
 		inner_table += "</tr>";
 	    }
@@ -513,9 +515,9 @@ InteractCell.prototype.renderCanvas = function() {
 		    inner_table += "<tr>";
 		    for (var k = 0; k < ncols; k ++) {
 			if (c === default_value) {
-			    inner_table += "<td><button type='button' style='border-style:inset' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button><input type='hidden' class=" + id + " id = '" + id + "_current' name='"+(c+1)+"' value='"+(c+1)+"'/></td>";
+			    inner_table += "<td><button type='button' style='border-style:inset;width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button><input type='hidden' class=" + id + " id = '" + id + "_current' name='"+(c+1)+"' value='"+(c+1)+"'/></td>";
 			} else {
-			    inner_table += "<td><button type='button' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button></td>";
+			    inner_table += "<td><button type='button' style='width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button></td>";
 			    
 			}
 			c ++;

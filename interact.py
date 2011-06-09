@@ -71,7 +71,7 @@ class InputBox(InteractControl):
         """
         return {'control_type':'input_box',
                 'default':self.kwargs.get('default',""),
-                'size':self.kwargs.get('size',0),
+                'width':self.kwargs.get('width',""),
                 'raw':self.kwargs.get('raw',False),
                 'label':self.kwargs.get('label',"")}
     def default(self):
@@ -86,17 +86,17 @@ class InputGrid(InteractControl):
     """
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
-        self.rows = self.kwargs.get('rows',1)
-        self.columns = self.kwargs.get('columns',1)
+        self.nrows = self.kwargs.get('nrows',1)
+        self.ncols = self.kwargs.get('ncols',1)
         self.default_value = self.kwargs.get('default',0)
         if not isinstance(self.default_value, list):
-            self.default_value = [[self.default_value for _ in range(self.columns)] for _ in range(self.rows)]
+            self.default_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
     def message(self):
         return {'control_type': 'input_grid',
-                'rows': self.rows,
-                'columns': self.columns,
+                'nrows': self.nrows,
+                'ncols': self.ncols,
                 'default': self.default_value,
-                'size':self.kwargs.get('size',0),
+                'width':self.kwargs.get('width',""),
                 'raw': self.kwargs.get('raw', True),
                 'label': self.kwargs.get('label',"")}
     def default(self):
