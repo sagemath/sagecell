@@ -301,7 +301,7 @@ Interact Backend
 This script is responsible for interpreting interact definitions and 
 sending interact messages to the client.
 
-.. automodule:: interact
+.. automodule:: interact_singlecell
     :members:
 
 Interact Frontend
