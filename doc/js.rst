@@ -64,6 +64,7 @@ _________________
     Outputs content to the JQUery selector defined in :ref:`session_output <Session.session_output>`.
     
     :param String html: Html markup to be inserted.
+    :returns: Jquery selector of last child element of the output location, which can be used to chain output.
     
 .. _Session.restoreOutput:
 .. function:: Session.restoreOutput()
