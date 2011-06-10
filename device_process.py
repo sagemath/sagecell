@@ -63,6 +63,7 @@ import util
 import hmac
 from util import log
 from json import dumps
+from hashlib import sha1
 import interact_singlecell
 
 try:
@@ -194,7 +195,7 @@ from multiprocessing import Pool, TimeoutError, Process, Queue, current_process,
 
 import uuid
 
-def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits=None):
+def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_limits=None):
     """
     This function is the main function. Its responsibility is to
     query the database for more work to do and put messages back into the
@@ -215,7 +216,6 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
     from collections import defaultdict
     sequence=defaultdict(int)
 
-
     manager = Manager()
     log("Getting new messages")
     hmacs={}
@@ -229,10 +229,15 @@ def device(db, fs, workers, interact_timeout, poll_interval=0.1, resource_limits
             if session not in sessions:
                 # session has not been set up yet
                 log("evaluating '%s'"%X['content']['code'], device_id+' '+session)
-                hmacs[session]=hmac.new(db.create_secret(session=session))
-                print session
+                while not db.create_secret(session=session):
+                    pass
+                keys[0]=sha1(keys[0]).digest()
+                hmacs[session]=hmac.new(keys[0],digestmod=sha1)
+                while not fs.create_secret(session=session):
+                    pass
+                keys[1]=sha1(keys[1]).digest()
                 msg_queue=manager.Queue() # TODO: make this a pipe
-                args=(session, msg_queue, resource_limits, fs.create_secret(session=session))
+                args=(session, msg_queue, resource_limits, keys[1])
                 sessions[session]={'messages': msg_queue,
                                    'worker': pool.apply_async(worker,args)}
             # send execution request down the queue.
@@ -360,7 +365,7 @@ Meant to be run as a separate process."""
     from resource import setrlimit
     for r,l in resource_limits:
         setrlimit(r, l)
-    fs_hmac=hmac.new(fs_secret)
+    fs_hmac=hmac.new(fs_secret, digestmod=sha1)
     while True:
         try:
             msg=message_queue.get(timeout=timeout)
@@ -553,7 +558,15 @@ if __name__ == "__main__":
 
     outQueue=Queue()
 
+    filename="/tmp/sage_shared_key%i_copy"
+    keys=[None,None]
+    for i in (0,1):
+        with open(filename%i,"rb") as f:
+            keys[i]=f.read()
+        os.remove(filename%i)
+
     import misc
     db, fs = misc.select_db(sysargs)
 
-    device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout, resource_limits=resource_limits)
+    device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout,
+           keys=keys, resource_limits=resource_limits)
