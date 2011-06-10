@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# This version slightly modified (returns list from VerboseTB() rather than
-# string) from the version that shipped with IPython 0.10.
+# This version modified (returns list from VerboseTB() rather than
+# string and removes a nubmer of functions) from the version that 
+# shipped with IPython 0.10.
 #   Alex Kramer <kramer.alex.kramer@gmail.com>
 
 # Comments and documentation can be found in Ipython/ultraTB.py in your
