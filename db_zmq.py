@@ -26,11 +26,11 @@ def db_method(method_name, kwarg_keys):
         if hmac is not None:
             msg_str=dumps(msg)
             hmac.update(msg_str)
-            self.req.send_multipart([msg_str,hmac.digest()])
+            self.socket.send_multipart([msg_str,hmac.digest()])
         else:
-            self.req.send_json(msg)
+            self.socket.send_json(msg)
         # wait for output back
-        output=self.req.recv_pyobj()
+        output=self.socket.recv_pyobj()
         return output
     return f
 
@@ -43,9 +43,9 @@ class DB(db.DB):
         self._req=None
     
     @property
-    def req(self):
+    def socket(self):
         """
-        The ``req`` property is automatically initialized the first
+        The ``socket`` property is automatically initialized the first
         time it is called. We do this since we shouldn't create a
         context in a parent process. Instead, we'll wait until we
         actually start using the db api to create a context. If you
@@ -62,10 +62,21 @@ class DB(db.DB):
         self._req.connect(self.address)
         log("ZMQ connecting to %s"%self.address)
 
+    def add_messages(self, messages, hmac=None, id=None):
+        new=[]
+        for m in messages:
+            s=dumps(m)
+            if hmac is not None:
+                hmac.update(s)
+                d=hmac.hexdigest()
+            else:
+                d=None
+            new.append((s,d))
+        db_method('add_messages',['id','messages'])(self, id=None, messages=new)
+
     new_input_message = db_method('new_input_message', ['msg'])
     get_input_messages = db_method('get_input_messages', ['device', 'limit'])
     create_secret = db_method('create_secret', ['session'])
     close_session = db_method('close_session', ['device', 'session'])
     get_messages = db_method('get_messages', ['id','sequence'])
-    add_messages = db_method('add_messages', ['id', 'messages'])
     register_device = db_method('register_device',['device', 'account', 'workers', 'pgid'])

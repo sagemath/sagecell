@@ -90,26 +90,26 @@ class FileStoreZMQ(FileStoreMongo):
 
     def __init__(self, address):
         self.address=address
-        self._req=None
+        self._xreq=None
     
     @property
-    def req(self):
+    def socket(self):
         """
-        The ``req`` property is automatically initialized the first
+        The ``socket`` property is automatically initialized the first
         time it is called. We do this since we shouldn't create a
         context in a parent process. Instead, we'll wait until we
         actually start using the db api to create a context. If you
         use the same class in a child process, you should first call
         the :meth:`new_context` method.
         """
-        if self._req is None:
+        if self._xreq is None:
             self.new_context()
-        return self._req
+        return self._xreq
 
     def new_context(self):
         self._context=zmq.Context()
-        self._req=self._context.socket(zmq.REQ)
-        self._req.connect(self.address)
+        self._xreq=self._context.socket(zmq.XREQ)
+        self._xreq.connect(self.address)
         log("ZMQ connecting to %s"%self.address)
 
     def create_file(self, file_handle, hmac, **kwargs):
@@ -120,17 +120,18 @@ class FileStoreZMQ(FileStoreMongo):
         else:
             f=file_handle.read()
         msg_str=dumps({'msg_type':'create_file',"header":str(uuid4()),
-                        'content':kwargs})
+                       'content':kwargs})
         hmac.update(msg_str)
         message=[msg_str, hmac.digest(), f]
-        self.req.send_multipart(message,copy=False,track=True).wait()
-        self.req.recv()
+        self.socket.send_multipart(message,copy=False,track=True).wait()
+        self.socket.recv()
 
     def copy_file(self, file_handle, hmac, **kwargs):
         msg_str=dumps({'msg_type':'copy_file','content':kwargs})
         hmac.update(msg_str)
-        self.req.send_multipart([msg_str, hmac.digest()])
-        file_handle.write(self.req.recv())
+        print msg_str
+        self.socket.send_multipart([msg_str, hmac.digest()])
+        file_handle.write(self.socket.recv())
 
     create_secret=db_method('create_secret',['session'])
     new_file=db_method('new_file',['cell_id','filename'])

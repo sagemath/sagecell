@@ -9,6 +9,7 @@ import os
 import signal
 import sys
 import json
+import pickle
 from subprocess import Popen, PIPE
 from multiprocessing import Process, Pipe, Lock
 import hmac
@@ -86,7 +87,7 @@ def loop(db, key, pipe, isFS):
     :type isFS: bool
     """
     context=zmq.Context()
-    rep=context.socket(zmq.REP)
+    rep=context.socket(zmq.XREP if isFS else zmq.REP)
     pipe.send(rep.bind_to_random_port('tcp://127.0.0.1'))
     loop=ioloop.IOLoop()
     fs_auth_dict={}
@@ -119,6 +120,9 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
 
     send_finally=True
     to_send=None
+    if isFS:
+        sender=msgs[0].bytes
+        msgs=msgs[1:]
     try:
         msg_str=msgs[0].bytes
         msg=json.loads(msg_str)
@@ -143,8 +147,8 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
                 with db.new_file(**msg['content']) as f:
                     f.write(msgs[2].bytes)
             elif msg['msg_type']=='copy_file':
-                contents=db.get_file(**msg['content']).read()
-                socket.send(contents, copy=False, track=True).wait()
+                reply=[sender,db.get_file(**msg['content']).read()]
+                socket.send_multipart(reply, copy=False, track=True).wait()
                 send_finally=False
         elif msg['msg_type']=='register_device':
             db.register_device(device=msg['content']['device'], 
@@ -164,7 +168,10 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
         log("Authentication failed")
     finally:
         if send_finally:
-            socket.send_pyobj(to_send)
+            if isFS:
+                socket.send_multipart([sender,pickle.dumps(to_send)])
+            else:
+                socket.send_pyobj(to_send)
 
 def authenticate(msg_str, digest, session, auth_dict, hexdigest=False):
     """

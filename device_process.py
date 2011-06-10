@@ -267,17 +267,7 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                 sequence[session]+=1
                 new_messages.append(msg)
                 last_message[session]=msg
-        for i in range(len(new_messages)):
-            session=new_messages[i]['parent_header']['session']
-            msg=dumps(new_messages[i])
-            if session in hmacs:
-                hmacs[session].update(msg)
-                new_messages[i]=(msg,hmacs[session].hexdigest())
-            else:
-                new_messages[i]=(msg,None)
-        if len(new_messages)>0:
-            db.add_messages(id=None, messages=new_messages)
-        # delete the output that I'm finished with
+         # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
             # request, not at the end of a session
@@ -290,6 +280,10 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
             # should send back an execution_state: idle message too
             del sequence[session]
             del sessions[session]
+        if len(new_messages)>0:
+            db.add_messages(messages=new_messages,
+                            hmac=hmacs[session] if session in hmacs else None)
+        for session in finished:
             db.close_session(device=device_id, session=session,hmac=hmacs[session])
             del hmacs[session]
         time.sleep(poll_interval)
