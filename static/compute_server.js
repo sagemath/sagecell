@@ -235,9 +235,9 @@ Session.prototype.sendMsg = function() {
 
 Session.prototype.output = function(html) {
     if (this.replace_output) {
-	this.session_output.html(html);
+	return this.session_output.html(html);
     } else {
-	this.session_output.append(html);
+	return this.session_output.append(html).children().last();
     }
 }
 
@@ -275,11 +275,11 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    switch(msg.msg_type) {
 	    //TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
-		this.output("<pre class='"+msg.content.name+"'>"+msg.content.data+"</pre>");
+		this.output("<pre class='"+msg.content.name+"'></pre>").text(msg.content.data);
 		break;
 
 	    case 'pyout':
-                this.output("<pre class='pyout'>"+msg.content.data['text/plain']+"</pre>");
+                this.output("<pre class='pyout'></pre>").append(msg.content.data['text/plain']);
 		break;
 
 	    case 'display_data':
@@ -298,9 +298,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    this.output("<pre>"+colorize(msg.content.traceback.join("\n")
-							.replace(/&/g,"&amp;")
-							.replace(/</g,"&lt;")+"</pre>"));
+		    this.output("<pre></pre>").html(colorize(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
 		}
 		this.updateQuery(2000);
 		break;
