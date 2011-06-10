@@ -23,7 +23,9 @@ class FileStore(object):
 
     
 from gridfs import GridFS
+import pymongo
 from pymongo.objectid import ObjectId
+from singlecell_config import mongo_config
 class FileStoreMongo(FileStore):
     """
     Filestore database using GridFS
@@ -34,7 +36,8 @@ class FileStoreMongo(FileStore):
 
     def __init__(self, connection):
         self._conn=connection
-        self._fs=GridFS(connection)
+        self.new_context()
+        self._fs=GridFS(self.database)
 
     def new_file(self, **kwargs):
         """
@@ -69,6 +72,13 @@ class FileStoreMongo(FileStore):
         """
         with self.new_file(**kwargs) as f:
             f.write(file_handle.read())
+
+    def new_context(self):
+        self.database=pymongo.database.Database(self._conn, mongo_config['mongo_db'])
+        uri=mongo_config['mongo_uri']
+        if '@' in uri:
+            self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
+        self._fs=GridFS(self.database)
 
     valid_untrusted_methods=()
 

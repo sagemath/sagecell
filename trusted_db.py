@@ -72,6 +72,7 @@ def loop(pipe, db, callback, isFS):
     :arg isFS: True if the database is a filestore; False if not
     :type isFS: bool
     """
+    db.new_context()
     context=zmq.Context()
     rep=context.socket(zmq.REP)
     pipe.send(rep.bind_to_random_port('tcp://127.0.0.1'))
