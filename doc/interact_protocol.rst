@@ -45,7 +45,7 @@ Verbose Syntax
 The verbose form of all interacts uses the following structure::
 
     # Interact decorator
-    @interacts.interact
+    @interact_singlecell.interact
     
     # Function definition, including name, variables, and the variables' control types / options
     def <function name>(<variable> = interact.<control type>(<control options>)):
@@ -56,7 +56,7 @@ would be:
 
 * Checkbox::
 
-    interact.checkbox(default = True, raw = True, label ="")
+    interact_singlecell.checkbox(default = True, raw = True, label ="")
 
   - default (Bool): Boolean value of the control.
   - raw (Bool): Boolean flag indicating that the value should be treated as "unquoted" (raw), so it can be used in control structures. There are few conceivable situations in which raw should be set to be false, but it is available.
@@ -64,7 +64,7 @@ would be:
 
 * Input Box::
 
-    interact.input_box(default = "", width = "", raw = False, label = "")
+    interact_singlecell.input_box(default = "", width = "", raw = False, label = "")
 
   - default (String / Number / Bool): Default value of the input box.
   - width (Int): Character width of the input box;
@@ -73,7 +73,7 @@ would be:
 
 * Input Grid::
 
-    interact.input_grid(nrows = 1, ncols = 1, width = "", default = 0, raw = True, label ="")
+    interact_singlecell.input_grid(nrows = 1, ncols = 1, width = "", default = 0, raw = True, label ="")
 
   - nrows (Int): Number of row of the grid.
   - ncols (Int): Number of columns of the grid.
@@ -84,7 +84,7 @@ would be:
 
 * Selector::
 
-    interact.selector(default = 0, values = [0], raw = False, buttons = False, nrows = 1, ncols = 1, width = "", label = "")
+    interact_singlecell.selector(default = 0, values = [0], raw = False, buttons = False, nrows = 1, ncols = 1, width = "", label = "")
 
   - default (Int): Initially selected index of [values].
   - values (List or List of Tuples): List of values (String, Number, and/or Boolean) from which the user can select. Can also be passed a list of tuples of the form [(Value, Label),(Value, Label)]. In such a case, only the label will be displayed, but the value will be assigned to the variable. If a list of values (rather than tuples) is given, there is no distinction drawn between values and labels.
@@ -97,7 +97,7 @@ would be:
 
 * Slider::
 
-    interact.slider(default = 0, range = (0, 100), step = 1, raw = True, label = "")
+    interact_singlecell.slider(default = 0, range = (0, 100), step = 1, raw = True, label = "")
 
   - default (Number): Initial value of the slider.
   - range (List): Two-value numeric tuple with the form (min, max).
@@ -112,39 +112,28 @@ Also, the function declaration supports multiple interact control parameters. Fo
 instance, the following would construct two sliders with default configurations 
 and print the sum of their values::
 
-    @interact.interact
-    def f(n = interact.slider(), p = interact.slider()):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.slider(), p = interact_singlecell.slider()):
         print n + p
 
 Interact Decorators
 ^^^^^^^^^^^^^^^^^^^
 
-The interact decorator can be called in three different ways (using a 
+The interact decorator can be called in two different ways (using a 
 basic slider control as an example):
 
 * Normal decorator::
 
-    @interact.interact
-    def f(n = interact.slider()):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.slider()):
         print n
-
-* Verbose decorator::
-
-    def g(n = interact.slider()):
-        print n
-    interact.interact(g)
 
 * Importing the interact class::
 
-    from interact import *
+    from interact_singlecell import *
     @interact
     def f(n = slider()):
         print n
-
-If multiple interacts are used in the same input, the first two styles
-of decorators can be used interchangeably. However, using the third style
-necessarily requires that all interacts following the import statement 
-conform to the same decorator syntax.
 
 Autoguessing Syntax
 ^^^^^^^^^^^^^^^^^^^
@@ -157,14 +146,14 @@ for more details. For instance, to create an input box with a label 'Label'
 and an initial value of 15 that prints twice its (numerical) input, one 
 could submit::
 
-    @interact.interact
+    @interact_singlecell.interact
     def f(n = ("Label", 15)):
         print 2 * n
 
 This is equivalent to::
 
-    @interact.interact
-    def f(n = interact.input_box(label = "Label", default = 15, raw = True)):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.input_box(label = "Label", default = 15, raw = True)):
         print 2 * n
 
 Note that this feature is limited, and some of the common sage features
@@ -177,8 +166,8 @@ Here we give a rough definition of what happens to get an interact working.
 
 USER types into SINGLE CELL::
 
-    @interact.interact
-    def f(n = interact.slider(range = (1,20), step = 1)):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.slider(range = (1,20), step = 1)):
         print n
 
 and presses "Submit"
