@@ -6,27 +6,25 @@ Supported Interacts
 
 **Supported / Partially Supported Interact Controls:**
 
+[X] Checkbox
+
 [X] Input Box
 
-* String, Numerical, and Boolean values
+[A] Input Grid
 
-[A] Selector
+* No matrix or iterator support
 
-* Only drop-down menu is available (no button bar)
+[A] Selector (Dropdown and Button)
+
 * No iterator support
 * No multiple select (only single-item select)
 
 [A] Slider
 
 * Adds numerical input box which updates slider / interact (click on the displayed slider value)
-
 * No iterator support
 
 **Not Supported Interact Controls:**
-
-[ ] Checkbox
-
-[ ] Matrix / Grid / Button Bar
 
 [ ] Color Picker
 
@@ -35,6 +33,8 @@ Supported Interacts
 [ ] Layouts
 
 [ ] Colors
+
+[ ] Non-auto update
 
 Using Interacts
 ---------------
@@ -54,24 +54,46 @@ The verbose form of all interacts uses the following structure::
 Full declarations of each control (with default parameter values shown) 
 would be:
 
+* Checkbox::
+
+    interact.checkbox(default = True, raw = True, label ="")
+
+  - default (Bool): Boolean value of the control.
+  - raw (Bool): Boolean flag indicating that the value should be treated as "unquoted" (raw), so it can be used in control structures. There are few conceivable situations in which raw should be set to be false, but it is available.
+  - label (String): Label of the control.
+
 * Input Box::
 
-    interact.input_box(default = "", raw = False, label = "")
+    interact.input_box(default = "", width = "", raw = False, label = "")
 
   - default (String / Number / Bool): Default value of the input box.
+  - width (Int): Character width of the input box;
   - raw (Bool): Boolean flag indicating whether the value of the input box should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is False to enable text input including spaces, but if the control is to be used in any sort of numerical calculation or control flow, this flag should be True.
   - label (String): Label of the control.
 
+* Input Grid::
+
+    interact.input_grid(nrows = 1, ncols = 1, width = "", default = 0, raw = True, label ="")
+
+  - nrows (Int): Number of row of the grid.
+  - ncols (Int): Number of columns of the grid.
+  - width (Int): Character width of each input box.
+  - default (String / Number / Bool or List): Default values of the control. A multi-dimensional list specifies the values of individual inputs while a single value sets the value of all inputs.
+  - raw (Bool): Boolean flag indicating whether the values of the input grid should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is True, because the primary uses of input grids are in mathematical calculations.
+  - label (String): Label of the control.
 
 * Selector::
 
-    interact.selector(default = 0, values = [0], raw = False, label = "")
+    interact.selector(default = 0, values = [0], raw = False, buttons = False, nrows = 1, ncols = 1, width = "", label = "")
 
   - default (Int): Initially selected index of [values].
-  - values (List): List of values (String, Number, and/or Boolean) from which the user can select.
-  - raw (Bool): Boolean flag indicating whether the selected value should be treated as should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is False to enable text including spaces, but if the control is to be used in any sort of numerical calculation or control flow, this flag should be True.
+  - values (List or List of Tuples): List of values (String, Number, and/or Boolean) from which the user can select. Can also be passed a list of tuples of the form [(Value, Label),(Value, Label)]. In such a case, only the label will be displayed, but the value will be assigned to the variable. If a list of values (rather than tuples) is given, there is no distinction drawn between values and labels.
+  - raw (Bool): Boolean flag indicating whether the selected value should be treated as should be treated as "quoted" (String) or "unquoted" (raw). Note that this applies to the values of the selector, not the labels.
+  - buttons (Bool): Boolean flag indicating whether the control should be rendered as a series of buttons or a dropdown list. If this parameter is False (dropdown list), the ncols, nrows, and width parameters are ignored.
+  - ncols (Int): Number of columns of buttons.
+  - nrows (Int): Number of rows of buttons.
+  - width (Int or String): CSS width of buttons.
   - label (String): Label of the control.
-
 
 * Slider::
 
@@ -145,6 +167,8 @@ This is equivalent to::
     def f(n = interact.input_box(label = "Label", default = 15, raw = True)):
         print 2 * n
 
+Note that this feature is limited, and some of the common sage features
+(particularly iterators) are not supported.
 
 Interact Protocol
 -----------------
@@ -268,7 +292,7 @@ terminated if they are idle for 10 seconds, say.
 
 [ ] Use sent layout parameters and css / tables to output interacts.
 
-[ ] Other interact controls (checkbox, matrix/grid, buttons, etc.)
+[A] Other interact controls (checkbox, matrix/grid, buttons, etc.)
 
 
 Interact Backend

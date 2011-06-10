@@ -373,7 +373,12 @@ InteractCell.prototype.bindChange = function(interact) {
 	switch(this.controls[i].control_type) {
 	case "html":
 	    break;
+	case "checkbox":
+	    events["change"] = null;
 	case "input_box":
+	    events["change"] = null;
+	    break;
+	case "input_grid":
 	    events["change"] = null;
 	    break;
 	case "selector":
@@ -412,11 +417,47 @@ InteractCell.prototype.getChanges = function() {
 	case "html":
 	   // for text box: this.params[i] = $(id + "-" + i).val();
 	    break;
+	case "checkbox":
+	    if ($(id + "_" + i).attr("checked") == true) {
+		params[i] = "True";
+	    } else {
+		params[i] = "False";
+	    }
+	    break;
 	case "input_box":
 	    params[i] = $(id + "_" + i).val();
 	    break;
+	case "input_grid":
+	    var values = "[";
+	    for (var j = 0, j_max = this.controls[i].nrows; j < j_max; j ++) {
+		values += "[";
+		for (var k = 0, k_max = this.controls[i].ncols; k < k_max; k ++) {
+		    values += $(id + "_" + i + "_" + j + "_" + k).val() + ", ";
+		}
+		values += "],";
+	    }
+	    values += "]"
+	    params[i] = values;
+	    break;
 	case "selector":
-	    params[i] = $(id + "_" + i).val();
+	    if (this.controls[i].buttons) {
+		/* When a button is clicked, it sets the value of a hidden input
+		   box to its sequence number and calls the change handler. The
+		   previously-selected button's sequence number is the name of
+		   the input box. This allows for specifically flipping the CSS
+		   border styles of the previously and currently-selected
+		   buttons while passing back the correct updated selection. */
+		var new_button = this.locateButtonIndex($(id+"_current").val(), this.controls[i].ncols);
+		var old_button = this.locateButtonIndex($(id+"_current").attr("name"), this.controls[i].ncols);
+		new_button.location = id+"_"+i+"_"+new_button.row+"_"+new_button.col;
+		old_button.location = id+"_"+i+"_"+old_button.row+"_"+old_button.col;
+		$(old_button.location).css("border-style", "outset");
+		$(id+"_current").attr("name",new_button.button);
+		$(new_button.location).css("border-style", "inset");
+		params[i] = $(new_button.location).val(); // new inset/selected
+	    } else {
+		params[i] = String($(id + "_" + i).val());
+	    }
 	    break;
 	case "slider":
 	    var input = $(id + "_" + i + "_value").val();
@@ -439,21 +480,64 @@ InteractCell.prototype.renderCanvas = function() {
 	    html_code = html_code.replace("$id$", id);
 	    this.element.append(html_code);
 	    break;
+	case "checkbox":
+	    var html_code = "<div class='interact_checkbox'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='checkbox' checked = " + this.controls[i]["default"] + " class= " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
+	    this.element.append(html_code);
+	    break;
 	case "input_box":
-	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
+	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + " size = '" + this.controls[i].width + "'></input></td></tr></tbody></table></div>";
+	    this.element.append(html_code);
+	    break;
+	case "input_grid":
+	    var default_values = this.controls[i]["default"];
+	    var width = this.controls[i].width;
+	    var inner_table = "<table><tbody>";
+	    for (var j = 0, j_max = this.controls[i].nrows; j < j_max; j ++) {
+		inner_table += "<tr>";
+		for (var k = 0, k_max = this.controls[i].ncols; k < k_max; k ++) {
+		    inner_table += "<td><input type='text' class=" + id + " id = '" + id + "_" + i + "_" + j  + "_" + k + "' value='" + default_values[j][k] + "' size='" + width + "'></input></td>";
+		}
+		inner_table += "</tr>";
+	    }
+	    inner_table += "</tbody></table>";
+	    var html_code = "<div class='interact_input_grid'><table><tbody><tr><td class=" + id + " id ='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + inner_table + "</td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "selector":
-	    var html_selector = "<select class = " + id + " id = " + id + "_" + i + ">";
-	    for (var j in this.controls[i].values) {
-		if (j == this.controls[i]["default"]) {
-		    html_selector = html_selector + "<option selected='selected' value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
-		} else {
-		    html_selector = html_selector + "<option value'" + this.controls[i].values[j] + "'>" + this.controls[i].values[j] + "</option>";
+	    if (this.controls[i].buttons) {
+		var nrows = this.controls[i].nrows, 
+		ncols = this.controls[i].ncols,
+		values = this.controls[i].values,
+		value_labels = this.controls[i].value_labels,
+		default_value = this.controls[i]["default"];
+		var inner_table = "<table><tbody>";
+		for (var c = 0, j = 0; j < nrows; j ++) {
+		    inner_table += "<tr>";
+		    for (var k = 0; k < ncols; k ++) {
+			if (c === default_value) {
+			    inner_table += "<td><button type='button' style='border-style:inset;width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button><input type='hidden' class=" + id + " id = '" + id + "_current' name='"+(c+1)+"' value='"+(c+1)+"'/></td>";
+			} else {
+			    inner_table += "<td><button type='button' style='width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button></td>";
+			    
+			}
+			c ++;
+		    }
+		    inner_table += "</tr>";
 		}
+		inner_table += "</tbody></table>";
+		var html_code = "<div class='interact_select_buttons'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + inner_table + "</td></tr></tbody></table></div>";
+	    } else {
+		var html_selector = "<select class = " + id + " id = " + id + "_" + i + ">";
+		for (var j in this.controls[i].values) {
+		    if (j == this.controls[i]["default"]) {
+			html_selector = html_selector + "<option selected='selected' value='" + this.controls[i].values[j] + "'>" + this.controls[i].value_labels[j] + "</option>";
+		    } else {
+			html_selector = html_selector + "<option value='" + this.controls[i].values[j] + "'>" + this.controls[i].value_labels[j] + "</option>";
+		    }
+		}
+		html_selector = html_selector + "</select>";
+		var html_code = "<div class='interact_select'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + html_selector + "</td></tr></tbody></table></div>";
 	    }
-	    html_selector = html_selector + "</select>";
-	    var html_code = "<div class='interact_select'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + html_selector + "</td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "slider":
@@ -473,3 +557,15 @@ InteractCell.prototype.renderCanvas = function() {
 	}
     }
 }
+
+InteractCell.prototype.locateButtonIndex = function(n, ncols) {
+    var location = {};
+    location.button = n;
+    location.row = Math.floor(n / ncols) - 1;
+    if (location.row < 0) {
+	location.row = 0;
+    }
+    location.col = location.button - (location.row * ncols) - 1;
+    return location;
+}
+
