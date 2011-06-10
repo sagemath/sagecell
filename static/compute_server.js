@@ -237,7 +237,7 @@ Session.prototype.sendMsg = function() {
 
 Session.prototype.output = function(html) {
     if (this.replace_output) {
-	return this.session_output.html(html);
+	return this.session_output.html(html).children().last();
     } else {
 	return this.session_output.append(html).children().last();
     }
