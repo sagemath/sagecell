@@ -10,7 +10,6 @@ import uuid
 import zmq
 from ip_receiver import IPReceiver
 from werkzeug import secure_filename
-from os import fstat
 
 
 import singlecell_config
@@ -99,7 +98,8 @@ def evaluate(db,fs):
                          files.append(filename)
                  code = request.form.get("commands")
 
-                 if request.form.get("sage_mode") is "True":
+                 if bool(request.form.get("sage_mode")) is True:
+                     print "SAGE MODE ACTIVATED"
                      sage_mode = True
 
              message = {"parent_header": {},

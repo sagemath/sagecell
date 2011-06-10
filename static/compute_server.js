@@ -51,7 +51,7 @@ $(function() {
     });
 
     $('#command_form #evalButton').click(function() {
-	var session = new Session("#output");
+	var session = new Session("#output", $("#sage_mode").attr("checked"));
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
 	$('#command_form #session_id').val(session.session_id);
 	$('#command_form #msg_id').val(uuid4());
@@ -152,8 +152,9 @@ function handleKeyEvent(editor, event) {
 **************************************************************/
 
 var Session = makeClass();
-Session.prototype.init = function (output, filenames) {
+Session.prototype.init = function (output, sage_mode) {
     this.session_id = uuid4();
+    this.sage_mode = sage_mode;
     this.sequence = 0;
     this.poll_interval = 400;
     $(output).append('<div id="session_'+this.session_id+'" class="session_container"><div id="session_'+this.session_id+'_title" class="session_title">Session '+this.session_id+'</div><div id="session_'+this.session_id+'_output" class="session_output"></div></div>');
@@ -210,13 +211,14 @@ Session.prototype.sendMsg = function() {
     }
     msg = {"parent_header": {},
 		   "header": {"msg_id": msg_id,
-			  "username": "",
-			  "session": this.session_id},
+			      "username": "",
+			      "session": this.session_id},
 		   "msg_type": "execute_request",
 		   "content": {"code": code,
-			   "silent": false,
-			   "user_variables": [],
-			   "user_expressions": {}}
+			       "silent": false,
+			       "sage_mode": this.sage_mode,
+			       "user_variables": [],
+			       "user_expressions": {}}
 	      };
     /* We need to make a proxy object; see
        http://api.jquery.com/bind/#comment-74776862 or

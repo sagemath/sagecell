@@ -2,7 +2,7 @@
 {% block body %}
  <form id="command_form" action="/eval" enctype="multipart/form-data" method="post" target="file_upload_target">
  <textarea name="commands" id="commands"></textarea><br />
- <input type="checkbox" checked="yes" name="sage_mode" value="True" /> Use Sage Mode for code execution<br />
+ <input type="checkbox" checked="yes" id="sage_mode" name="sage_mode" value="True" /> Use Sage Mode for code execution<br />
  <p><a href='' id='add_file'>Add File</a>&nbsp;&nbsp;&nbsp;<a href='' id='clear_files'>Clear Files</a></p>
  <div id = "file_upload">
      <input type='file' id='file0' name='file' /><br>
