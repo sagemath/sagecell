@@ -61,6 +61,7 @@ code by forming an error status message back.
 import sys, time, traceback, StringIO, contextlib, random, uuid
 import util
 from util import log
+import interact_singlecell
 
 try:
     import sage
@@ -68,8 +69,6 @@ try:
     enable_sage = True
 except ImportError as e:
     enable_sage = False
-
-import interact_singlecell
 
 user_code="""
 import sys
@@ -376,17 +375,18 @@ Meant to be run as a separate process."""
         # TODO: we probably ought not prepend our own code, in case the user has some 
         # "from __future__ import ..." statements, which *must* occur at the top of the code block
         # alternatively, we could move any such statements above our statements
-        
+        code=""
         sage_mode = msg['content']['sage_mode']
         if enable_sage and sage_mode:
             code = user_code_sage + "\n" + sage.all.preparse(msg['content']['code'])
+        elif sage_mode:
+            code = "print 'NOTE: Sage Mode is unavailable, which may cause errors if using Sage-specific syntax.'\n" + user_code + msg['content']['code']
         else:
-            code=user_code+msg['content']['code']
+            code = user_code + msg['content']['code']
 
         code = displayhook_hack(code)
         # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
         code += '\n'
-        sys.__stdout__.write(code)
         log("Executing: %s"%code)
         output_handler.set_parent_header(msg['header'])
         old_files=dict([(f,os.stat(f).st_mtime) for f in os.listdir(os.getcwd())])
