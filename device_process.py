@@ -360,6 +360,7 @@ Meant to be run as a separate process."""
     for r,l in resource_limits:
         setrlimit(r, l)
     fs_hmac=hmac.new(fs_secret, digestmod=sha1)
+    del(fs_secret)
     while True:
         try:
             msg=message_queue.get(timeout=timeout)
