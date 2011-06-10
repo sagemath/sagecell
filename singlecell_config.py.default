@@ -19,4 +19,8 @@ device_config={
     'untrusted-python': python
     }
 
+flask_config={
+    'max_files': 10,
+    }
+
 LOGGING=True
