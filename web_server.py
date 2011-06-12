@@ -11,8 +11,11 @@ import zmq
 from ip_receiver import IPReceiver
 from werkzeug import secure_filename
 
+
+import singlecell_config
+MAX_FILES = singlecell_config.flask_config['max_files']
+
 app = Flask(__name__)
-app.allowed_extensions = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
 # is it safe to have global variables here?
 db=None
@@ -61,14 +64,11 @@ def get_db(f):
 def root():
     return render_template('ipython_root.html')
 
-def allowed_file(filename):
-    return '.' in filename and \
-        filename.rsplit('.',1)[1] in app.allowed_extensions
-
 @app.route("/eval", methods=['GET','POST'])
 @get_db
 def evaluate(db,fs):
     if request.method == "POST":
+        # If the request is a JSON message, such as from an interact update:
          if request.values.get("message") is not None:
             log('Received Request: %s'%(request.values['message'],))
             message=json.loads(request.values['message'])
@@ -76,31 +76,49 @@ def evaluate(db,fs):
             db.new_input_message(message)
             # TODO: computation_id -> session_id
             return jsonify(computation_id=session_id)
+         # Else if the request is the initial form submission at the beginning of a session:
          else:
-            session_id = request.form.get("session_id")
-            files = []
-            parent_header = "parent_header"
-            for file in request.files.getlist("file"):
-                if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    fs.create_file(file, filename=filename, cell_id=session_id)
-                    files.append(filename)
-            message = {"parent_header": {},
-                   "header": {"msg_id": request.form.get("msg_id"),
-                              "username": "",
-                              "session": session_id
-                              },
-                   "msg_type": "execute_request",
-                   "content": {"code": request.form.get("commands"),
-                               "silent": False,
-                               "files": files,
-                               "user_variables": [],
-                               "user_expressions": {}
-                               }
-                   }
-            log("Received Request: %s"%(message))
-            db.new_input_message(message)
-            return ""
+             session_id = request.form.get("session_id")
+             sage_mode = False
+             valid_request = True
+             code = ""
+             uploaded_files = request.files.getlist("file")
+             files = []
+
+             # Checks if too many files were uploaded.
+             if len(request.files.getlist("file")) > MAX_FILES:
+                 code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
+                 valid_request = False
+
+             if valid_request:
+                 for file in uploaded_files:
+                     if file:
+                         filename = secure_filename(file.filename)
+                         fs.create_file(file, filename=filename, cell_id=session_id)
+                         files.append(filename)
+                 code = request.form.get("commands")
+
+                 if bool(request.form.get("sage_mode")) is True:
+                     print "SAGE MODE ACTIVATED"
+                     sage_mode = True
+
+             message = {"parent_header": {},
+                       "header": {"msg_id": request.form.get("msg_id"),
+                                  "username": "",
+                                  "session": session_id
+                                  },
+                        "msg_type": "execute_request",
+                        "content": {"code": code,
+                                    "silent": False,
+                                    "files": files,
+                                    "sage_mode": sage_mode,
+                                    "user_variables": [],
+                                    "user_expressions": {}
+                                    }
+                        }
+             log("Received Request: %s"%(message))
+             db.new_input_message(message)
+             return ""
     return ""
 
 @app.route("/answers")
@@ -196,7 +214,7 @@ def config(db, fs):
     
     s=''
     s+='webserver={\n'
-
+    
     for k in [key for key in ('processes', 'listen', 'disable-logging') if key in c.web_server_config]:
         s+='    %r: %r\n'%(k,c.web_server_config[k])
     s+='}\n\ndevices=[\n'
@@ -210,6 +228,7 @@ def config(db, fs):
 
     s+='\nLOGGING=%s'%(c.LOGGING)
     s+='\n'
+
     try:
         git=''
         import subprocess

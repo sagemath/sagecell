@@ -64,6 +64,7 @@ _________________
     Outputs content to the JQUery selector defined in :ref:`session_output <Session.session_output>`.
     
     :param String html: Html markup to be inserted.
+    :returns: Jquery selector of last child element of the output location, which can be used to chain output.
     
 .. _Session.restoreOutput:
 .. function:: Session.restoreOutput()
@@ -177,6 +178,15 @@ ______________________
     Gets the values of an interact's controls.
     
     :returns: Dictionary of parameters and values for a given interact.
+
+.. _InteractCell.locateButtonIndex:
+.. function:: InteractCell.locateButtonIndex(n, nCols)
+
+    Gets the index position (row, col) of the nth entry of a two-dimensional array. Used for the selector interacts.
+    
+    :param Int n: Entry in the array (e.g. 1st, 2nd, 3rd, etc. entry), where n is calculated by incrementing a counter at each entry while progressing along columns, then rows.
+    :param Int nCols: Number of columns in the two-dimensional array.
+    :return: Dictionary, where dict[location] = n, dict[row] = row, dict[col] = col.
 
 .. _InteractCell.renderCanvas:
 .. function:: InteractCell.renderCanvas()

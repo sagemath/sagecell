@@ -6,27 +6,25 @@ Supported Interacts
 
 **Supported / Partially Supported Interact Controls:**
 
+[X] Checkbox
+
 [X] Input Box
 
-* String, Numerical, and Boolean values
+[A] Input Grid
 
-[A] Selector
+* No matrix or iterator support
 
-* Only drop-down menu is available (no button bar)
+[A] Selector (Dropdown and Button)
+
 * No iterator support
 * No multiple select (only single-item select)
 
 [A] Slider
 
 * Adds numerical input box which updates slider / interact (click on the displayed slider value)
-
 * No iterator support
 
 **Not Supported Interact Controls:**
-
-[ ] Checkbox
-
-[ ] Matrix / Grid / Button Bar
 
 [ ] Color Picker
 
@@ -35,6 +33,8 @@ Supported Interacts
 [ ] Layouts
 
 [ ] Colors
+
+[ ] Non-auto update
 
 Using Interacts
 ---------------
@@ -45,7 +45,7 @@ Verbose Syntax
 The verbose form of all interacts uses the following structure::
 
     # Interact decorator
-    @interacts.interact
+    @interact_singlecell.interact
     
     # Function definition, including name, variables, and the variables' control types / options
     def <function name>(<variable> = interact.<control type>(<control options>)):
@@ -54,28 +54,50 @@ The verbose form of all interacts uses the following structure::
 Full declarations of each control (with default parameter values shown) 
 would be:
 
+* Checkbox::
+
+    interact_singlecell.checkbox(default = True, raw = True, label ="")
+
+  - default (Bool): Boolean value of the control.
+  - raw (Bool): Boolean flag indicating that the value should be treated as "unquoted" (raw), so it can be used in control structures. There are few conceivable situations in which raw should be set to be false, but it is available.
+  - label (String): Label of the control.
+
 * Input Box::
 
-    interact.input_box(default = "", raw = False, label = "")
+    interact_singlecell.input_box(default = "", width = "", raw = False, label = "")
 
   - default (String / Number / Bool): Default value of the input box.
+  - width (Int): Character width of the input box;
   - raw (Bool): Boolean flag indicating whether the value of the input box should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is False to enable text input including spaces, but if the control is to be used in any sort of numerical calculation or control flow, this flag should be True.
   - label (String): Label of the control.
 
+* Input Grid::
+
+    interact_singlecell.input_grid(nrows = 1, ncols = 1, width = "", default = 0, raw = True, label ="")
+
+  - nrows (Int): Number of row of the grid.
+  - ncols (Int): Number of columns of the grid.
+  - width (Int): Character width of each input box.
+  - default (String / Number / Bool or List): Default values of the control. A multi-dimensional list specifies the values of individual inputs while a single value sets the value of all inputs.
+  - raw (Bool): Boolean flag indicating whether the values of the input grid should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is True, because the primary uses of input grids are in mathematical calculations.
+  - label (String): Label of the control.
 
 * Selector::
 
-    interact.selector(default = 0, values = [0], raw = False, label = "")
+    interact_singlecell.selector(default = 0, values = [0], raw = False, buttons = False, nrows = 1, ncols = 1, width = "", label = "")
 
   - default (Int): Initially selected index of [values].
-  - values (List): List of values (String, Number, and/or Boolean) from which the user can select.
-  - raw (Bool): Boolean flag indicating whether the selected value should be treated as should be treated as "quoted" (String) or "unquoted" (raw). By default, raw is False to enable text including spaces, but if the control is to be used in any sort of numerical calculation or control flow, this flag should be True.
+  - values (List or List of Tuples): List of values (String, Number, and/or Boolean) from which the user can select. Can also be passed a list of tuples of the form [(Value, Label),(Value, Label)]. In such a case, only the label will be displayed, but the value will be assigned to the variable. If a list of values (rather than tuples) is given, there is no distinction drawn between values and labels.
+  - raw (Bool): Boolean flag indicating whether the selected value should be treated as should be treated as "quoted" (String) or "unquoted" (raw). Note that this applies to the values of the selector, not the labels.
+  - buttons (Bool): Boolean flag indicating whether the control should be rendered as a series of buttons or a dropdown list. If this parameter is False (dropdown list), the ncols, nrows, and width parameters are ignored.
+  - ncols (Int): Number of columns of buttons.
+  - nrows (Int): Number of rows of buttons.
+  - width (Int or String): CSS width of buttons.
   - label (String): Label of the control.
-
 
 * Slider::
 
-    interact.slider(default = 0, range = (0, 100), step = 1, raw = True, label = "")
+    interact_singlecell.slider(default = 0, range = (0, 100), step = 1, raw = True, label = "")
 
   - default (Number): Initial value of the slider.
   - range (List): Two-value numeric tuple with the form (min, max).
@@ -90,39 +112,28 @@ Also, the function declaration supports multiple interact control parameters. Fo
 instance, the following would construct two sliders with default configurations 
 and print the sum of their values::
 
-    @interact.interact
-    def f(n = interact.slider(), p = interact.slider()):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.slider(), p = interact_singlecell.slider()):
         print n + p
 
 Interact Decorators
 ^^^^^^^^^^^^^^^^^^^
 
-The interact decorator can be called in three different ways (using a 
+The interact decorator can be called in two different ways (using a 
 basic slider control as an example):
 
 * Normal decorator::
 
-    @interact.interact
-    def f(n = interact.slider()):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.slider()):
         print n
-
-* Verbose decorator::
-
-    def g(n = interact.slider()):
-        print n
-    interact.interact(g)
 
 * Importing the interact class::
 
-    from interact import *
+    from interact_singlecell import *
     @interact
     def f(n = slider()):
         print n
-
-If multiple interacts are used in the same input, the first two styles
-of decorators can be used interchangeably. However, using the third style
-necessarily requires that all interacts following the import statement 
-conform to the same decorator syntax.
 
 Autoguessing Syntax
 ^^^^^^^^^^^^^^^^^^^
@@ -135,16 +146,18 @@ for more details. For instance, to create an input box with a label 'Label'
 and an initial value of 15 that prints twice its (numerical) input, one 
 could submit::
 
-    @interact.interact
+    @interact_singlecell.interact
     def f(n = ("Label", 15)):
         print 2 * n
 
 This is equivalent to::
 
-    @interact.interact
-    def f(n = interact.input_box(label = "Label", default = 15, raw = True)):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.input_box(label = "Label", default = 15, raw = True)):
         print 2 * n
 
+Note that this feature is limited, and some of the common sage features
+(particularly iterators) are not supported.
 
 Interact Protocol
 -----------------
@@ -153,8 +166,8 @@ Here we give a rough definition of what happens to get an interact working.
 
 USER types into SINGLE CELL::
 
-    @interact.interact
-    def f(n = interact.slider(range = (1,20), step = 1)):
+    @interact_singlecell.interact
+    def f(n = interact_singlecell.slider(range = (1,20), step = 1)):
         print n
 
 and presses "Submit"
@@ -268,7 +281,7 @@ terminated if they are idle for 10 seconds, say.
 
 [ ] Use sent layout parameters and css / tables to output interacts.
 
-[ ] Other interact controls (checkbox, matrix/grid, buttons, etc.)
+[A] Other interact controls (checkbox, matrix/grid, buttons, etc.)
 
 
 Interact Backend
@@ -277,7 +290,7 @@ Interact Backend
 This script is responsible for interpreting interact definitions and 
 sending interact messages to the client.
 
-.. automodule:: interact
+.. automodule:: interact_singlecell
     :members:
 
 Interact Frontend
