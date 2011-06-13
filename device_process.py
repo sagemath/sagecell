@@ -75,16 +75,12 @@ import sys
 sys._sage_messages=MESSAGE
 def _get_interact_function(id):
     import interact_singlecell
-    return interact_singlecell._INTERACTS[id]
+    return interact_singlecell._INTERACTS[id]['function']
 """
+
 user_code_sage="""
 from sage.all import *
-import sys
-sys._sage_messages=MESSAGE
-def _get_interact_function(id):
-    import interact_singlecell
-    return interact_singlecell._INTERACTS[id]
-"""
+"""+user_code
 
 class QueueOut(StringIO.StringIO):
     def __init__(self, session, queue, parent_header=None):

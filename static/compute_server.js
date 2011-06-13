@@ -211,15 +211,19 @@ Session.prototype.sendMsg = function() {
     }
     msg = {"parent_header": {},
 		   "header": {"msg_id": msg_id,
-			      "username": "",
+			      //"username": "",
 			      "session": this.session_id},
 		   "msg_type": "execute_request",
 		   "content": {"code": code,
-			       "silent": false,
+			       //"silent": false,
 			       "sage_mode": this.sage_mode,
-			       "user_variables": [],
-			       "user_expressions": {}}
+			       //"user_variables": [],
+			       //"user_expressions": {}
+			      }
 	      };
+    $('#messages').append(document.createElement('div'))
+	.children().last().text("*******SEND: "+JSON.stringify(msg));
+
     /* We need to make a proxy object; see
        http://api.jquery.com/bind/#comment-74776862 or
        http://bitstructures.com/2007/11/javascript-method-callbacks
@@ -233,6 +237,8 @@ Session.prototype.sendMsg = function() {
 	    console.log(textStatus); 
 	    console.log(errorThrown);
 	});
+
+
 }
 
 Session.prototype.output = function(html) {
@@ -484,6 +490,7 @@ InteractCell.prototype.renderCanvas = function() {
     // TODO: use this.layout to lay out the controls
     var id = "urn_uuid_" + this.interact_id;
     for (var i in this.controls) {
+	// We assume layout is a list of variables, in order
 	switch(this.controls[i].control_type) {
 	case "html":
 	    var html_code = this.controls[i].html;
@@ -492,11 +499,11 @@ InteractCell.prototype.renderCanvas = function() {
 	    this.element.append(html_code);
 	    break;
 	case "checkbox":
-	    var html_code = "<div class='interact_checkbox'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='checkbox' checked = " + this.controls[i]["default"] + " class= " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
+	    var html_code = "<div class='interact_checkbox'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + escape(this.controls[i].label) + "</td><td><input type='checkbox' checked = " + this.controls[i]["default"] + " class= " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "input_box":
-	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + " size = '" + this.controls[i].width + "'></input></td></tr></tbody></table></div>";
+	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + escape(this.controls[i].label) + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + " size = '" + this.controls[i].width + "'></input></td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "input_grid":
@@ -511,7 +518,7 @@ InteractCell.prototype.renderCanvas = function() {
 		inner_table += "</tr>";
 	    }
 	    inner_table += "</tbody></table>";
-	    var html_code = "<div class='interact_input_grid'><table><tbody><tr><td class=" + id + " id ='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + inner_table + "</td></tr></tbody></table></div>";
+	    var html_code = "<div class='interact_input_grid'><table><tbody><tr><td class=" + id + " id ='" + id + "_" + i + "_label' style='width:5em'>" + escape(this.controls[i].label) + "</td><td>" + inner_table + "</td></tr></tbody></table></div>";
 	    this.element.append(html_code);
 	    break;
 	case "selector":
@@ -526,9 +533,9 @@ InteractCell.prototype.renderCanvas = function() {
 		    inner_table += "<tr>";
 		    for (var k = 0; k < ncols; k ++) {
 			if (c === default_value) {
-			    inner_table += "<td><button type='button' style='border-style:inset;width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button><input type='hidden' class=" + id + " id = '" + id + "_current' name='"+(c+1)+"' value='"+(c+1)+"'/></td>";
+			    inner_table += "<td><button type='button' style='border-style:inset;width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + escape(value_labels[c]) + "</button><input type='hidden' class=" + id + " id = '" + id + "_current' name='"+(c+1)+"' value='"+(c+1)+"'/></td>";
 			} else {
-			    inner_table += "<td><button type='button' style='width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + value_labels[c] + "</button></td>";
+			    inner_table += "<td><button type='button' style='width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + escape(value_labels[c]) + "</button></td>";
 			    
 			}
 			c ++;
@@ -541,9 +548,9 @@ InteractCell.prototype.renderCanvas = function() {
 		var html_selector = "<select class = " + id + " id = " + id + "_" + i + ">";
 		for (var j in this.controls[i].values) {
 		    if (j == this.controls[i]["default"]) {
-			html_selector = html_selector + "<option selected='selected' value='" + this.controls[i].values[j] + "'>" + this.controls[i].value_labels[j] + "</option>";
+			html_selector = html_selector + "<option selected='selected' value='" + this.controls[i].values[j] + "'>" + escape(this.controls[i].value_labels[j]) + "</option>";
 		    } else {
-			html_selector = html_selector + "<option value='" + this.controls[i].values[j] + "'>" + this.controls[i].value_labels[j] + "</option>";
+			html_selector = html_selector + "<option value='" + this.controls[i].values[j] + "'>" + escape(this.controls[i].value_labels[j]) + "</option>";
 		    }
 		}
 		html_selector = html_selector + "</select>";
@@ -580,3 +587,6 @@ InteractCell.prototype.locateButtonIndex = function(n, ncols) {
     return location;
 }
 
+var escape = function(s) {
+    return $('<div></div>').text(s).html();
+}

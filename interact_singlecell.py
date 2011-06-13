@@ -24,7 +24,14 @@ def interact(f):
     
     import sys
     function_id=uuid4().get_hex()
-    _INTERACTS[function_id]=f
+
+    def _(**kwargs):
+        # remap parameters
+        for k,v in kwargs.items():
+            kwargs[k]=controls[args.index(k)].adapter(v)
+        return f(**kwargs)
+
+    _INTERACTS[function_id]={'function': _}
     MESSAGE.message('interact_start',
                     {'function_code':'_get_interact_function("%s")'%function_id,
                      'controls':dict(zip(args,[c.message() for c in controls])),
@@ -34,6 +41,8 @@ def interact(f):
     f(**dict(zip(args,[c.default() for c in controls])))
     MESSAGE.message('interact_end',{})
 
+    return f
+
 class InteractControl:
     """
     Base class for all interact controls.
@@ -41,6 +50,9 @@ class InteractControl:
     def __init__(self, *args, **kwargs):
         self.args=args
         self.kwargs=kwargs
+
+    def adapter(self, v):
+        return v
 
 class Checkbox(InteractControl):
     """
@@ -92,6 +104,7 @@ class InputGrid(InteractControl):
         self.default_value = self.kwargs.get('default',0)
         if not isinstance(self.default_value, list):
             self.default_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
+
     def message(self):
         """
         :returns: Input grid control configuration for an interact_start message.
@@ -127,7 +140,8 @@ class Selector(InteractControl):
             self.value_labels = [str(z[1]) if z[1] is not None else str(z[0]) for z in self.values]
             self.values = [z[0] for z in self.values]
         else:
-            self.value_labels = self.values
+            self.value_labels = [str(z) for z in self.values]
+        print '-'*30,self.value_labels
         
         # Ensure that default index is always in the correct range.
         if self.default_value < 0 or self.default_value >= len(self.values):
@@ -156,7 +170,7 @@ class Selector(InteractControl):
         :rtype: Dict
         """
         return {'control_type': 'selector',
-                'values': self.values,
+                'values': range(len(self.values)),
                 'value_labels': self.value_labels,
                 'default': self.default_value,
                 'buttons': self.buttons,
@@ -170,6 +184,9 @@ class Selector(InteractControl):
         :returns: Default value of control.
         """
         return self.values[self.default_value]
+                
+    def adapter(self, v):
+        return self.values[int(v)]
 
 class Slider(InteractControl):
     """
@@ -185,8 +202,8 @@ class Slider(InteractControl):
         :rtype: Dict
         """
         return {'control_type':'slider',
-                'default':self.default_value,
-                'range':self.interval,
+                'default':int(self.default_value),
+                'range':[int(i) for i in self.interval],
                 'step':self.kwargs.get('step',1),
                 'raw':self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
