@@ -1,5 +1,5 @@
 This is a very simple demo of a 3-component Python compute service,
-using mongodb.  
+using mongodb.
 
 
 Installation
@@ -32,25 +32,25 @@ ZeroMQ
 I had problems trying to build this using Sage's shell, but it seems
 to work fine if I build it outside of the sage shell, but just install
 it into the Sage tree::
-  
+
     cd $SERVER
     wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
     tar -xzvf zeromq-2.1.7.tar.gz
     cd zeromq-2.1.7
     ./configure --prefix=$SAGE_ROOT
     make install
-     
+
 nginx
 ^^^^^
-  
+
 Get and make nginx in the ``install`` directory::
-  
+
     cd $SERVER
     wget http://nginx.org/download/nginx-1.0.4.tar.gz
-    tar -xzvf nginx-1.0.4.tar.gz 
+    tar -xzvf nginx-1.0.4.tar.gz
     cd nginx-1.0.4
     ./configure --prefix=`pwd`/install && make install
-    
+
 
 uwsgi
 ^^^^^
@@ -59,25 +59,25 @@ These instructions are based on `these instructions
 <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_.  We don't
 want to require libxml2 (it's just for the config files, I believe),
 so we'll make our own build configuration that doesn't support xml build
-files.
+files.  Also note that version of uwsgi before 0.9.8 will not build with gcc-4.6.
 
 #. Get uwsgi::
 
     cd $SERVER
-    wget  http://projects.unbit.it/downloads/uwsgi-0.9.7.2.tar.gz
-    tar -xzvf uwsgi-0.9.7.2.tar.gz 
+    wget  http://projects.unbit.it/downloads/uwsgi-0.9.8.tar.gz
+    tar -xzvf uwsgi-0.9.8.tar.gz
 
 #. Change the configuration file to set ``xml = false``::
 
-    cd uwsgi-0.9.7.2/buildconf
+    cd uwsgi-0.9.8/buildconf
     cp default.ini myproject.ini
     # edit myproject.ini to make the xml line read: xml = false
     cd ..
-     
+
 #. Build uwsgi::
 
     sage -python uwsgiconfig.py --build myproject
-      
+
 
 
 Python packages
@@ -93,7 +93,7 @@ pymongo.  ::
     pip install flask
     pip install pymongo
     pip install pyzmq --install-option="--zmq=$SAGE_LOCAL"
-      
+
 
 Single Cell Server
 ^^^^^^^^^^^^^^^^^^
@@ -134,7 +134,7 @@ MongoDB
     logpath = $SERVER/mongodb/mongodb.log
     logappend = true
     nohttpinterface = true
-    
+
     # Comment the below out (don't just switch to false)
     # in order to cut down on logging
     verbose = true
@@ -148,7 +148,7 @@ MongoDB
 #. Now we need to set up usernames and passwords for database access,
    if the database is running on a shared server.
 
-   .. note:: 
+   .. note::
 
      Mongodb `authentication documentation
      <http://www.mongodb.org/display/DOCS/Security+and+Authentication>`_
@@ -157,7 +157,7 @@ MongoDB
 
    We set up an admin user, authenticate, then set up a user for the
    ``singlecelldb`` database.  Since we include the
-   ``<SINGLECELL_USER>`` and ``<SINGLECELL_PASSWORD`` in a URL later,
+   ``<SINGLECELL_USER>`` and ``<SINGLECELL_PASSWORD>`` in a URL later,
    it's helpful if neither of them contain any of ``%:/@`` (e.g., any
    length of password with letters and numbers would be okay).  ::
 
@@ -168,13 +168,13 @@ MongoDB
       > use singlecelldb
       > db.addUser("<SINGLECELL_USER>", "<SINGLECELL_PASSWORD>")
 
-    
+
 nginx
 ^^^^^
 
 #. Make the ``$SERVER/nginx-1.0.4/install/conf/nginx.conf`` file have only one server
    entry (delete all the others).  Adjust ``<SERVER_PORT>`` to be whatever port you plan to
-   expose to the public.  ::
+   expose to the public (should be different than ``<MONGODB_PORT>``).  ::
 
     server {
         listen <SERVER_PORT>;
@@ -190,7 +190,7 @@ nginx
 
 #. Start nginx::
 
-    $SERVER/nginx-1.0.4/install/sbin/nginx 
+    $SERVER/nginx-1.0.4/install/sbin/nginx
 
 
 uwsgi
@@ -214,7 +214,7 @@ of workers via passwordless SSH into an untrusted account (i.e., an
 account with heavy restrictions; this account will be executing
 arbitrary user code).
 
-.. warning:: 
+.. warning::
 
     The untrusted account will execute arbitrary user code, which may
     include malicious code.  Make *sure* that you are securing the
@@ -222,7 +222,7 @@ arbitrary user code).
     good idea here.  Since the untrusted accounts can be on any
     computer, one way to isolate these accounts is to host them in a
     virtual machine that can be reset if the machine is compromised.
-    
+
     These instructions assume that the locked-down account is on the
     same computer as the server.
 
@@ -252,9 +252,9 @@ clean up the worker processes.
 To Use Tsung on OSX
 ===================
 
-Install tsung via macports: 
+Install tsung via macports:
 
-    sudo port install tsung 
+    sudo port install tsung
 
 (make sure to get the 1.3.3 version; you might have to apply the patch
 `https://trac.macports.org/ticket/28826 <https://trac.macports.org/ticket/28826>`_)
@@ -275,7 +275,7 @@ Change the tsung.xml script to reference the dtd in ::
      <?xml version="1.0" encoding="UTF-8"?>
     -<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd" [] >
     +<!DOCTYPE tsung SYSTEM "/opt/local/share/tsung/tsung-1.0.dtd" [] >
- 
+
      <!--
      This is a configuration file for Tsung (http://tsung.erlang-projects.org),
 
