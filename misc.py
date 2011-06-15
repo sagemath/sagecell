@@ -33,8 +33,7 @@ def select_db(sysargs, context=None):
         else:
             URI = mongo_config['mongo_uri']
         conn=pymongo.Connection(URI)
-        database=pymongo.database.Database(conn, mongo_config['mongo_db'])
-        return db_mongo.DB(database), filestore.FileStoreMongo(database)
+        return db_mongo.DB(conn), filestore.FileStoreMongo(conn)
     elif db=="zmq":
         import db_zmq, filestore
         return db_zmq.DB(address=sysargs.dbaddress), filestore.FileStoreZMQ(address=sysargs.fsaddress)
