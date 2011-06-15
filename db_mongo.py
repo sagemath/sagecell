@@ -14,19 +14,21 @@ import db
 import pymongo.objectid
 from pymongo.objectid import ObjectId
 from pymongo import ASCENDING, DESCENDING
+from singlecell_config import mongo_config
 from util import log
 
 class DB(db.DB):
     def __init__(self, *args, **kwds):
         db.DB.__init__(self, *args, **kwds)
-        self.c.sessions.ensure_index([('session', ASCENDING)])
-        self.c.input_messages.ensure_index([('device', ASCENDING)])
-        self.c.input_messages.ensure_index([('evaluated',ASCENDING)])
-        self.c.messages.ensure_index([('parent_header.session', ASCENDING)])
+        self.new_context()
+        self.database.sessions.ensure_index([('session', ASCENDING)])
+        self.database.input_messages.ensure_index([('device', ASCENDING)])
+        self.database.input_messages.ensure_index([('evaluated',ASCENDING)])
+        self.database.messages.ensure_index([('parent_header.session', ASCENDING)])
 
     def new_input_message(self, msg):
         # look up device; None means a device has not yet been assigned
-        doc=self.c.sessions.find_one({'session':msg['header']['session']}, 
+        doc=self.database.sessions.find_one({'session':msg['header']['session']}, 
                                         {'device': 1})
         if doc is None:
             msg['device']=None
@@ -35,7 +37,7 @@ class DB(db.DB):
  
         msg['evaluated']=False
         log("%s %s"%(msg,type(msg)))
-        self.c.input_messages.insert(msg)
+        self.database.input_messages.insert(msg)
     
     def get_input_messages(self, device, limit=None):
         """
@@ -50,12 +52,11 @@ class DB(db.DB):
         return the sessions that are currently active. I'm not sure which is
         faster.
         """
-
         
         # find the sessions for this device
-        device_messages=list(self.c.input_messages.find({'device':device, 'evaluated':False }))
+        device_messages=list(self.database.input_messages.find({'device':device, 'evaluated':False }))
         if len(device_messages)>0:
-            self.c.input_messages.update({'_id':{'$in': [i['_id'] for i in device_messages]},
+            self.database.input_messages.update({'_id':{'$in': [i['_id'] for i in device_messages]},
                                           '$atomic':True},
                                          {'$set': {'evaluated':True}}, multi=True)
 
@@ -66,17 +67,17 @@ class DB(db.DB):
         if limit==0:
             unassigned_messages=[]
         else:
-            q=self.c.input_messages.find({'device':None,
+            q=self.database.input_messages.find({'device':None,
                                           'evaluated':False})
             if limit is not None and limit>=0:
                 q=q.limit(limit)
             
             unassigned_messages=list(q)
             if len(unassigned_messages)>0:
-                self.c.input_messages.update({'_id': {'$in': [i['_id'] for i in unassigned_messages]}, 
+                self.database.input_messages.update({'_id': {'$in': [i['_id'] for i in unassigned_messages]}, 
                                               '$atomic':True}, 
                                              {'$set': {'device': device, 'evaluated':True}}, multi=True)
-                self.c.sessions.insert([{'session':m['header']['session'], 'device':device} 
+                self.database.sessions.insert([{'session':m['header']['session'], 'device':device} 
                                         for m in unassigned_messages])
                 log("DEVICE %s took SESSIONS %s"%(device,
                                                     [m['header']['session']
@@ -87,11 +88,11 @@ class DB(db.DB):
         u"""
         Delete a session\u2194device mapping.
         """
-        self.c.sessions.remove({'session':session, 'device':device})    
+        self.database.sessions.remove({'session':session, 'device':device})    
 
     def get_messages(self, id, sequence=0):
         "Get the messages since the message with sequence number ``sequence``"
-        messages=list(self.c.messages.find({'parent_header.session':id,
+        messages=list(self.database.messages.find({'parent_header.session':id,
                                             'sequence':{'$gte':sequence}}))
         #TODO: just get the fields we want instead of deleting the ones we don't want
         for m in messages:
@@ -101,7 +102,7 @@ class DB(db.DB):
     def add_messages(self, id, messages):
         "Add messages to the database"
         #TODO: doesn't use the id parameter; delete?
-        self.c.messages.insert(messages)
+        self.database.messages.insert(messages)
         log("INSERTED: %s"%('\n'.join(str(m) for m in messages),))
     
 
@@ -116,7 +117,7 @@ class DB(db.DB):
             os.kill(pgid, signal.SIGKILL) #or signal.SIGTERM to be nicer about it
         """
         doc={"device":device, "account":account, "workers": workers, "pgid":pgid}
-        self.c.device.insert(doc)
+        self.database.device.insert(doc)
         log("REGISTERED DEVICE: %s"%doc)
 
     def delete_device(self, device):
@@ -124,21 +125,25 @@ class DB(db.DB):
         Delete a device record from the database
 
         """
-        self.c.device.remove({'device': device})
+        self.database.device.remove({'device': device})
 
     def get_devices(self):
         """
         Return a list of currently registered devices.
         """
-        return list(self.c.device.find())
+        return list(self.database.device.find())
 
     def set_ipython_ports(self, kernel):
-        self.c.ipython.remove()
-        self.c.ipython.insert({"pid":kernel[0].pid, "xreq":kernel[1], "sub":kernel[2], "rep":kernel[3]})
+        self.database.ipython.remove()
+        self.database.ipython.insert({"pid":kernel[0].pid, "xreq":kernel[1], "sub":kernel[2], "rep":kernel[3]})
     
     def get_ipython_port(self, channel):
-        return self.c.ipython.find().next()[channel]
+        return self.database.ipython.find().next()[channel]
 
-
+    def new_context(self):
+        self.database=pymongo.database.Database(self.c, mongo_config['mongo_db'])
+        uri=mongo_config['mongo_uri']
+        if '@' in uri:
+            self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
 
     valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')
