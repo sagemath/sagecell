@@ -144,7 +144,6 @@ class DB(db.DB):
         self.database=pymongo.database.Database(self.c, mongo_config['mongo_db'])
         uri=mongo_config['mongo_uri']
         if '@' in uri:
-            print uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')]
             # strip off optional mongodb:// part
             if uri.startswith('mongodb://'):
                 uri=uri[len('mongodb://'):]

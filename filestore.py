@@ -83,8 +83,12 @@ class FileStoreMongo(FileStore):
         self.database=pymongo.database.Database(self._conn, mongo_config['mongo_db'])
         uri=mongo_config['mongo_uri']
         if '@' in uri:
-            self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
-        self._fs=GridFS(self.database)
+            # strip off optional mongodb:// part
+            if uri.startswith('mongodb://'):
+                uri=uri[len('mongodb://'):]
+            result=self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
+            if result==0:
+                raise UserError("Authentication problem")
 
     valid_untrusted_methods=()
 
