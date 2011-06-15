@@ -18,29 +18,29 @@ def interact(f):
     if defaults is None:
         defaults=[]
     n = len(args) - len(defaults)
-    
     controls = [automatic_control(defaults[i] if i >= n else None) 
         for (i, arg) in enumerate(args)]
     
     import sys
     function_id=uuid4().get_hex()
 
-    def _(**kwargs):
+    def adapted_f(**kwargs):
+        MESSAGE.push_output_id(function_id)
         # remap parameters
         for k,v in kwargs.items():
             kwargs[k]=controls[args.index(k)].adapter(v)
-        return f(**kwargs)
+        returned=f(**kwargs)
+        MESSAGE.pop_output_id()
+        return returned
 
-    _INTERACTS[function_id]={'function': _}
-    MESSAGE.message('interact_start',
-                    {'function_code':'_get_interact_function("%s")'%function_id,
-                     'controls':dict(zip(args,[c.message() for c in controls])),
-                     'layout':args})
+    _INTERACTS[function_id]=adapted_f
+    MESSAGE.message_queue.message('interact_prepare',
+                                   {'interact_id':function_id,
+                                    'controls':dict(zip(args,[c.message() for c in controls])),
+                                    'layout':args})
     global __single_cell_timeout__
     __single_cell_timeout__=60
-    f(**dict(zip(args,[c.default() for c in controls])))
-    MESSAGE.message('interact_end',{})
-
+    adapted_f(**dict(zip(args,[c.default() for c in controls])))
     return f
 
 class InteractControl:
@@ -60,7 +60,7 @@ class Checkbox(InteractControl):
     """
     def message(self):
         """
-        :returns: Checkbox control configuration for an interact_start message.
+        :returns: Checkbox control configuration for an interact_prepare message.
         """
         return {'control_type':'checkbox',
                 'default':self.kwargs.get('default',True),
@@ -79,7 +79,7 @@ class InputBox(InteractControl):
     """
     def message(self):
         """
-        :returns: Input box control configuration for an interact_start message.
+        :returns: Input box control configuration for an interact_prepare message.
         :rtype: Dict
         """
         return {'control_type':'input_box',
@@ -107,7 +107,7 @@ class InputGrid(InteractControl):
 
     def message(self):
         """
-        :returns: Input grid control configuration for an interact_start message.
+        :returns: Input grid control configuration for an interact_prepare message.
         :rtype: Dict
         """
         return {'control_type': 'input_grid',
@@ -165,7 +165,7 @@ class Selector(InteractControl):
 
     def message(self):
         """
-        :returns: Selector control configuration for an interact_start message.
+        :returns: Selector control configuration for an interact_prepare message.
         :rtype: Dict
         """
         return {'control_type': 'selector',
@@ -193,11 +193,11 @@ class Slider(InteractControl):
     """
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
-        self.interval = self.kwargs.get('range',[0,100])
+        self.interval = self.kwargs.get('range',(0,100))
         self.default_value = self.kwargs.get('default',self.interval[0])
     def message(self):
         """
-        :returns: Slider control configuration for am interact_start message.
+        :returns: Slider control configuration for an interact_prepare message.
         :rtype: Dict
         """
         return {'control_type':'slider',
@@ -248,7 +248,7 @@ def automatic_control(default):
         C = selector(buttons = len(default) <= 5, default = default_value, label = label, values = default, raw = False)
     elif isinstance (default, tuple):
         if len(default) == 2:
-            C = slider(default = default_value, range = (default[0], default[1]), label = label)
+            C = slider(default = default[0], range = (default[0], default[1]), label = label)
         elif len(default) == 3:
             C = slider(default = default_value, range = (default[0], default[1]), step = default[2], label = label)
         else:

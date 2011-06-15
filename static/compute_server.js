@@ -87,7 +87,7 @@ function initPage() {
 	    try {
 		var server_response = $("#upload_target_"+session.session_id).contents().find('body').html();
 		if (server_response !== "") {
-		    session.session_output.append(server_response);
+		session.output(server_response);
 		    session.clearQuery();
 		}
 	    } catch(e) {}
@@ -184,33 +184,13 @@ Session.prototype.init = function (output, sage_mode) {
     this.sage_mode = sage_mode;
     this.sequence = 0;
     this.poll_interval = 400;
-    $(output).append('<div id="session_'+this.session_id+'" class="session_container"><div id="session_'+this.session_id+'_title" class="session_title">Session '+this.session_id+'</div><div id="session_'+this.session_id+'_output" class="session_output"></div></div>');
+    $(output).append('<div id="session_'+this.session_id+'" class="session_container"><div id="session_'+this.session_id+'_title" class="session_title">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="session_output"></div></div>');
     this.session_title=$('#session_'+this.session_id+'_title');
-    this.session_output=$('#session_'+this.session_id+'_output');
     this.replace_output=false;
     this.lock_output=false;
     this.eventHandlers = {};
     this.interacts = {};
     this.setQuery();
-}
-
-// Manages where session output should be sent, whether it should replace existing content, and whether other function calls are allowed to modify it.
-Session.prototype.setOutput = function(location, replace, lock) {
-    if (! this.lock_output) {
-	this.restoreOutput();
-	this.session_output = $("#session_"+this.session_id+" "+location);
-	if (replace) {
-	    this.replace_output = true;
-	}
-	if (lock) {
-	    this.lock_output = true;
-	}
-    }
-}
-Session.prototype.restoreOutput = function() {
-    this.session_output=$("#session_"+this.session_id+" #session_"+this.session_id+"_output");
-    this.replace_output = false;
-    this.lock_output = false;
 }
 
 // Manages querying the webserver for messages
@@ -266,12 +246,13 @@ Session.prototype.sendMsg = function() {
 	});
 }
 
-Session.prototype.output = function(html) {
+Session.prototype.output = function(html, block_id) {
+    var output_block=$("#output_"+(block_id || this.session_id));
     if (this.replace_output) {
-	return this.session_output.html(html).children().last();
-    } else {
-	return this.session_output.append(html).children().last();
+	output_block.empty();
+	this.replace_output=false;
     }
+    return output_block.append(html).children().last();
 }
 
 Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
@@ -294,11 +275,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	for (var i = 0, i_max = content.length; i < i_max; i++) {
             var msg = content[i];
 	    var parent_id = msg.parent_header.msg_id;
-	    if (this.interacts[parent_id] == 1) {
-		this.setOutput("#"+parent_id, true, false);
-	    } else if (! this.lock_output) {
-		this.restoreOutput();
-	    }
+	    var output_block = msg.output_block;
             if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
                 console.log('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
@@ -308,30 +285,30 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    switch(msg.msg_type) {
 	    //TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
-		this.output("<pre class='"+msg.content.name+"'></pre>").text(msg.content.data);
+		this.output("<pre class='"+msg.content.name+"'></pre>",output_block).text(msg.content.data);
 		break;
 
 	    case 'pyout':
-                this.output("<pre class='pyout'></pre>").append(msg.content.data['text/plain']);
+                this.output("<pre class='pyout'></pre>",output_block).append(msg.content.data['text/plain']);
 		break;
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    this.output('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>');
+                    this.output('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>',output_block);
                 } else if(msg.content.data['text/html']!==undefined) {
-		    this.output('<div>'+msg.content.data['text/html']+'</div>');
+		    this.output('<div>'+msg.content.data['text/html']+'</div>',output_block);
 		}
 		break;
 
 	    case 'pyerr':
 		this.output("<pre>"+colorize(msg.content.traceback.join("\n")
-						     .replace(/&/g,"&amp;")
-						     .replace(/</g,"&lt;")+"</pre>"));
+					     .replace(/&/g,"&amp;")
+					     .replace(/</g,"&lt;")+"</pre>"),output_block);
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    this.output("<pre></pre>").html(colorize(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
+		    this.output("<pre></pre>",output_block).html(colorize(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
 		}
 		this.updateQuery(2000);
 		break;
@@ -346,10 +323,10 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			//TODO: escape filenames and id
 			html+='<a href="'+$URL['root']+'/files/'+id+'/'+files[j]+'" target="_blank">'+files[j]+'</a><br>\n';
 		    html+="</div>";
-		    this.output(html);
+		    this.output(html,output_block);
 		    break;
 		case "session_end":
-		    this.output("<div class='done'>Session "+id+ " done</div>");
+		    this.output("<div class='done'>Session "+id+ " done</div>",output_block);
 		    // Unbinds interact change handlers
 		    for (var i in this.eventHandlers) {
 			for (var j in this.eventHandlers[i]) {
@@ -358,22 +335,16 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    }
 		    this.clearQuery();
 		    break;
-		case "interact_start":
-		    var interact_id = uuid4();
+		case "interact_prepare":
+		    var interact_id = user_msg.content.interact_id;
 		    var div_id = "interact-" + interact_id;
-		    this.output("<div class='interact_container'><div class='interact' id='"+div_id+"'></div><div class='interact_output' id="+msg.header.msg_id+"></div></div>");
-		    this.setOutput("#"+msg.header.msg_id, true, true);
-		    this.interacts[msg.header.msg_id] = 1;
+		    this.output("<div class='interact_container'><div class='interact' id='"+div_id+"'></div><div class='interact_output' id='output_"+interact_id+"'></div></div>",output_block);
+		    this.interacts[interact_id] = 1;
 		    new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
 			'controls': user_msg.content.controls,
-			'function_code': user_msg.content.function_code,
-			'msg_id': msg.header.msg_id,
 			'session': this});
-		    break;
-		case "interact_end":
-		    this.restoreOutput();
 		    break;
 		}
 		break;
@@ -437,7 +408,7 @@ InteractCell.prototype.bindChange = function(interact) {
 	this.session.eventHandlers[id].push(i);
 	$(id).live(i, function(){
             var changes = interact.getChanges();
-            var code = interact.function_code + "(";
+	    var code = "_get_interact_function('"+interact.interact_id+"')(";
             for (var i in changes) {
 		if (interact.controls[i].raw) {
 		    code = code + i + "=" + changes[i] + ",";
@@ -447,6 +418,7 @@ InteractCell.prototype.bindChange = function(interact) {
             }
             code = code + ")";
 	    interact.session.sendMsg(code, interact.msg_id);
+	    interact.session.replace_output=true
 	});
     }
 }
