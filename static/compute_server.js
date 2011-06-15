@@ -130,7 +130,8 @@ function colorize(text) {
 
 function handleKeyEvent(editor, event) {
     if(event.which==13 && event.shiftKey && event.type=="keypress") {
-	$("#command_form").submit();
+	$('#command_form #evalButton').click()
+	event.stop()
 	return true;
     }
     if(window.sessionStorage) {
