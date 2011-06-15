@@ -141,7 +141,6 @@ class Selector(InteractControl):
             self.values = [z[0] for z in self.values]
         else:
             self.value_labels = [str(z) for z in self.values]
-        print '-'*30,self.value_labels
         
         # Ensure that default index is always in the correct range.
         if self.default_value < 0 or self.default_value >= len(self.values):
