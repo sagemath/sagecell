@@ -144,6 +144,12 @@ class DB(db.DB):
         self.database=pymongo.database.Database(self.c, mongo_config['mongo_db'])
         uri=mongo_config['mongo_uri']
         if '@' in uri:
-            self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
+            print uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')]
+            # strip off optional mongodb:// part
+            if uri.startswith('mongodb://'):
+                uri=uri[len('mongodb://'):]
+            result=self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
+            if result==0:
+                raise UserError("Authentication problem")
 
     valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')
