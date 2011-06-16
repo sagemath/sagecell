@@ -2,46 +2,74 @@ _INTERACTS={}
 
 __single_cell_timeout__=0
 
-def interact(f):
+def interact(controls=[], **kwargs):
     """
-    Interprets interact functions and their controls and sends interact
-    start, interact evaluation, and interact end messages.
+    A decorator that creates an interact.
 
-    :arg f: A function definition.
+    Each control can be given as an :class:`.InteractControl` object
+    or a value, defined in :func:`.automatic_control`, that will be
+    interpreted as the parameters for some control.
+
+    The decorator can be used in several ways::
+
+        @interact([name1, (name2, control2), (name3, control3)])
+        def f(**kwargs):
+            ...
+
+        @interact(name1=control1, name2=control2)
+        def f(**kwargs):
+            ...
+
+        @interact
+        def f(name1, name2=control2, name3=control3):
+            ...
+
+    In the first and third examples, ``name1``, with no associated control,
+    will default to a text box. The second example listed does not
+    guarantee that the controls will appear in the order given.
     """
-    import inspect
-    from uuid import uuid4
-    from sys import _sage_messages as MESSAGE
-    global _INTERACTS
-    
-    (args, varargs, varkw, defaults) = inspect.getargspec(f)
-    if defaults is None:
-        defaults=[]
-    n = len(args) - len(defaults)
-    controls = [automatic_control(defaults[i] if i >= n else None) 
-        for (i, arg) in enumerate(args)]
-    
-    import sys
-    function_id=uuid4().get_hex()
+    if isinstance(controls,list):
+        controls=controls[:]
+    from types import FunctionType
+    if isinstance(controls,FunctionType):
+        import inspect
+        (args, varargs, varkw, defaults) = inspect.getargspec(controls)
+        if defaults is None:
+            defaults=[]
+        n=len(args)-len(defaults)
+        return interact(zip(args,[None]*n+list(defaults)))(controls)
+    for i,c in enumerate(controls):
+        if not (isinstance(c,tuple) and len(c)==2):
+            controls[i]=(c, None)
+    controls+=list(kwargs.iteritems())
+    names=[n for n,_ in controls]
+    controls=[automatic_control(c) for _,c in controls]
+    def decorator(f):
+        from uuid import uuid4
+        from sys import _sage_messages as MESSAGE
+        global _INTERACTS
 
-    def adapted_f(**kwargs):
-        MESSAGE.push_output_id(function_id)
-        # remap parameters
-        for k,v in kwargs.items():
-            kwargs[k]=controls[args.index(k)].adapter(v)
-        returned=f(**kwargs)
-        MESSAGE.pop_output_id()
-        return returned
+        function_id=uuid4().get_hex()
 
-    _INTERACTS[function_id]=adapted_f
-    MESSAGE.message_queue.message('interact_prepare',
-                                   {'interact_id':function_id,
-                                    'controls':dict(zip(args,[c.message() for c in controls])),
-                                    'layout':args})
-    global __single_cell_timeout__
-    __single_cell_timeout__=60
-    adapted_f(**dict(zip(args,[c.default() for c in controls])))
-    return f
+        def adapted_f(**kwargs):
+            MESSAGE.push_output_id(function_id)
+            # remap parameters
+            for k,v in kwargs.items():
+                kwargs[k]=controls[names.index(k)].adapter(v)
+            returned=f(**kwargs)
+            MESSAGE.pop_output_id()
+            return returned
+
+        _INTERACTS[function_id]=adapted_f
+        MESSAGE.message_queue.message('interact_prepare',
+                                      {'interact_id':function_id,
+                                       'controls':dict(zip(names,[c.message() for c in controls])),
+                                       'layout':names})
+        global __single_cell_timeout__
+        __single_cell_timeout__=60
+        adapted_f(**dict(zip(names,[c.default() for c in controls])))
+        return f
+    return decorator
 
 class InteractControl:
     """
@@ -91,7 +119,7 @@ class InputBox(InteractControl):
         """
         :returns: Default value of control.
         """
-        return self.kwargs.get('default',None)
+        return self.kwargs.get('default','')
 
 class InputGrid(InteractControl):
     """
@@ -212,11 +240,11 @@ class Slider(InteractControl):
         """
         return self.default_value
 
-def automatic_control(default):
+def automatic_control(control):
     """
     Guesses the desired interact control from the syntax of the parameter.
     
-    :arg default: Parameter value.
+    :arg control: Parameter value.
     
     :returns: An InteractControl object.
     :rtype: InteractControl
@@ -228,33 +256,33 @@ def automatic_control(default):
     default_value = 0
     
     # Checks for interact controls that are verbosely defined
-    if isinstance(default, InteractControl):
-        return default
+    if isinstance(control, InteractControl):
+        return control
     
-    # Checks for labels and default values
+    # Checks for labels and control values
     for _ in range(2):
-        if isinstance(default, tuple) and len(default) == 2 and isinstance(default[0], str):
-            label, default = default
-        if isinstance(default, tuple) and len(default) == 2 and isinstance(default[1], (tuple, list)):
-            default_value, default = default
+        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
+            label, control = control
+        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list)):
+            default_value, control = control
 
-    if isinstance(default, str):
-        C = input_box(default = default, label = label)
-    elif isinstance(default, bool):
-        C = checkbox(default = default, label = label, raw = True)
-    elif isinstance(default, Number):
-        C = input_box(default = default, label = label, raw = True)
-    elif isinstance(default, list):
-        C = selector(buttons = len(default) <= 5, default = default_value, label = label, values = default, raw = False)
-    elif isinstance (default, tuple):
-        if len(default) == 2:
-            C = slider(default = default[0], range = (default[0], default[1]), label = label)
-        elif len(default) == 3:
-            C = slider(default = default_value, range = (default[0], default[1]), step = default[2], label = label)
+    if isinstance(control, str):
+        C = input_box(control = control, label = label)
+    elif isinstance(control, bool):
+        C = checkbox(control = control, label = label, raw = True)
+    elif isinstance(control, Number):
+        C = input_box(control = control, label = label, raw = True)
+    elif isinstance(control, list):
+        C = selector(buttons = len(control) <= 5, control = default_value, label = label, values = control, raw = False)
+    elif isinstance (control, tuple):
+        if len(control) == 2:
+            C = slider(control = control[0], range = (control[0], control[1]), label = label)
+        elif len(control) == 3:
+            C = slider(control = default_value, range = (control[0], control[1]), step = control[2], label = label)
         else:
-            C = slider(list(default), default = default_value, label = label)
+            C = slider(list(control), control = default_value, label = label)
     else:
-        C = input_box(default = default, label=label)
+        C = input_box(control = control, label=label)
     
     return C
 
