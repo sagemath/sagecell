@@ -43,14 +43,15 @@ def decorator_defaults(func):
         (3, 4)
         my_fun
     """
+    from inspect import isfunction
     @wraps(func)
     def my_wrap(*args,**kwargs):
-        if len(kwargs)==0 and len(args)==1:
+        if len(kwargs)==0 and len(args)==1 and isfunction(args[0]):
             # call without parentheses
             return func(*args)
         else:
             def _(f):
-                return func(f, *args, **kwds)
+                return func(f, *args, **kwargs)
             return _
     return my_wrap
 
@@ -88,11 +89,11 @@ def interact(f, controls=[]):
         for i,name in enumerate(controls):
             if isinstance(name, str):
                 controls[i]=(name, None)
-            elif not isinstance(controls[0], str):
-                raise ValueError("interact control must have a string name, but %s isn't a string"%controls[0])
+            elif not isinstance(name[0], str):
+                raise ValueError("interact control must have a string name, but %s isn't a string"%(name[0],))
 
     import inspect
-    (args, varargs, varkw, defaults) = inspect.getargspec(controls)
+    (args, varargs, varkw, defaults) = inspect.getargspec(f)
     if defaults is None:
         defaults=[]
     n=len(args)-len(defaults)
