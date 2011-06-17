@@ -1,16 +1,26 @@
-{% extends 'base.html' %}
-{% block body %}
- <form id="command_form" action="">
- <!-- TODO: Use CodeMirror version 2 -->
- <textarea rows="20" cols="150" name="commands" id="commands"></textarea><br>
-  <input type="submit" value="submit">
- </form>
-
-
-Computation ID: <div id="computation_id"></div>
-<br/>
-<div id="output"><br/><br/></div>
-
-<a href="{{url_for('answers')}}">All commands in database</a>
-
-{% endblock body %}
+<html>
+  <head>
+    <title>Simple Compute Server</title>
+    {% for script in scripts -%}
+    <script type="text/javascript" src="{{ url_for('static', filename=script, _external=True) }}"></script>
+    {% endfor -%}
+    {% for stylesheet in stylesheets -%}
+    <link rel="stylesheet" href="{{ url_for('static', filename=stylesheet, _external=True) }}">
+    {% endfor -%}
+    <script type="text/javascript">
+      // Make the script root available to jquery
+      $URL={'root': {{ request.url_root|tojson|safe }},
+      'evaluate': {{url_for('evaluate',_external=True)|tojson|safe}},
+      'output_poll': {{url_for('output_poll',_external=True)|tojson|safe}},
+      'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
+      };
+      $(initPage);
+    </script>
+  </head>
+</script>
+  <body>
+    <div id="singlecell">
+      {% include 'singlecell.html' %}
+    </div>
+  </body>
+</html>
