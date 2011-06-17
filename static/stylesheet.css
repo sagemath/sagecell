@@ -1,4 +1,6 @@
 #completion {height: 36pt; white-space: nowrap; overflow:auto}
+#file_input {width: 30%;}
+#sc_form {visibility: hidden;}
 .error {color: red}
 .stderr {color: red}
 .CodeMirror {border: 1px solid black; height: 200px}

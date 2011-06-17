@@ -2,7 +2,8 @@
 Flask web server for frontend
 """
 
-from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json
+from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json, Response, abort
+import mimetypes
 from time import time, sleep
 from functools import wraps
 from util import log
@@ -23,6 +24,17 @@ fs=None
 xreq=None
 messages=[]
 sysargs=None
+
+scripts=['codemirror2/lib/codemirror.js',
+         'codemirror2/mode/python/python.js',
+         'jquery-1.5.min.js',
+         'compute_server.js',
+         'jqueryui/js/jquery-ui-1.8.13.custom.min.js']
+
+stylesheets=['codemirror2/lib/codemirror.css',
+             'codemirror2/theme/default.css',
+             'stylesheet.css',
+             'jqueryui/css/sage/jquery-ui-1.8.13.custom.css']
 
 def print_exception(f):
     """
@@ -60,65 +72,72 @@ def get_db(f):
         return f(*args, **kwds)
     return wrapper
 
+def jsonify_with_callback(callback, *args, **kwargs):
+    if callback is None:
+        return jsonify(*args, **kwargs)
+    else:
+        return Response(callback+'('+json.dumps(kwargs)+')',
+
+                        mimetype='text/javascript')
+
 @app.route("/")
 def root():
-    return render_template('ipython_root.html')
+    return render_template('root.html',scripts=scripts,stylesheets=stylesheets)
 
 @app.route("/eval", methods=['GET','POST'])
 @get_db
 def evaluate(db,fs):
-    if request.method == "POST":
-        # If the request is a JSON message, such as from an interact update:
-         if request.values.get("message") is not None:
-            log('Received Request: %s'%(request.values['message'],))
-            message=json.loads(request.values['message'])
-            session_id=message['header']['session']
-            db.new_input_message(message)
-            # TODO: computation_id -> session_id
-            return jsonify(computation_id=session_id)
-         # Else if the request is the initial form submission at the beginning of a session:
-         else:
-             session_id = request.form.get("session_id")
-             sage_mode = False
-             valid_request = True
-             code = ""
-             uploaded_files = request.files.getlist("file")
-             files = []
+    # If the request is a JSON message, such as from an interact update:
+    if request.values.get("message") is not None:
+        log('Received Request: %s'%(request.values['message'],))
+        message=json.loads(request.values['message'])
+        session_id=message['header']['session']
+        db.new_input_message(message)
+        # TODO: computation_id -> session_id
+        callback=request.values['callback'] if 'callback' in request.values else None
+        return jsonify_with_callback(callback, computation_id=session_id)
+     # Else if the request is the initial form submission at the beginning of a session:
+    else:
+        session_id = request.form.get("session_id")
+        sage_mode = False
+        valid_request = True
+        code = ""
+        uploaded_files = request.files.getlist("file")
+        files = []
 
-             # Checks if too many files were uploaded.
-             if len(request.files.getlist("file")) > MAX_FILES:
-                 code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
-                 valid_request = False
+        # Checks if too many files were uploaded.
+        if len(request.files.getlist("file")) > MAX_FILES:
+            code += "print('ERROR: Too many files uploaded. Maximum number of uploaded files is 10.')\n"
+            valid_request = False
 
-             if valid_request:
-                 for file in uploaded_files:
-                     if file:
-                         filename = secure_filename(file.filename)
-                         fs.create_file(file, filename=filename, cell_id=session_id)
-                         files.append(filename)
-                 code = request.form.get("commands")
+        if valid_request:
+            for file in uploaded_files:
+                if file:
+                    filename = secure_filename(file.filename)
+                    fs.create_file(file, filename=filename, cell_id=session_id)
+                    files.append(filename)
+            code = request.form.get("commands")
 
-                 if bool(request.form.get("sage_mode")) is True:
-                     print "SAGE MODE ACTIVATED"
-                     sage_mode = True
+            if bool(request.form.get("sage_mode")) is True:
+                print "SAGE MODE ACTIVATED"
+                sage_mode = True
 
-             message = {"parent_header": {},
+            message = {"parent_header": {},
                        "header": {"msg_id": request.form.get("msg_id"),
                                   "username": "",
                                   "session": session_id
                                   },
-                        "msg_type": "execute_request",
-                        "content": {"code": code,
-                                    "silent": False,
-                                    "files": files,
-                                    "sage_mode": sage_mode,
-                                    "user_variables": [],
-                                    "user_expressions": {}
-                                    }
-                        }
-             log("Received Request: %s"%(message))
-             db.new_input_message(message)
-             return ""
+                       "msg_type": "execute_request",
+                       "content": {"code": code,
+                                   "silent": False,
+                                   "files": files,
+                                   "sage_mode": sage_mode,
+                                   "user_variables": [],
+                                   "user_expressions": {}
+                                   }
+                       }
+        log("Received Request: %s"%(message))
+        db.new_input_message(message)
     return ""
 
 @app.route("/answers")
@@ -138,13 +157,14 @@ def output_poll(db,fs):
     If a computation id has output, then return to browser. If no
     output is entered, then return nothing.
     """
+    callback=request.values['callback'] if 'callback' in request.values else None
     computation_id=request.values['computation_id']
     sequence=int(request.values.get('sequence',0))
     results = db.get_messages(id=computation_id,sequence=sequence)
     log("Retrieved messages: %s"%(results,))
     if results is not None and len(results)>0:
-        return jsonify(content=results)
-    return jsonify([])
+        return jsonify_with_callback(callback, content=results)
+    return jsonify_with_callback(callback, [])
 
 @app.route("/output_long_poll")
 @print_exception
@@ -171,8 +191,6 @@ def output_long_poll(db,fs):
         sleep(poll_interval)
     return jsonify([])
 
-from flask import Response, abort
-import mimetypes
 @app.route("/files/<cell_id>/<filename>")
 @get_db
 def cellFile(db,fs,cell_id,filename):
@@ -245,6 +263,10 @@ def config(db, fs):
 
     return Response(s, content_type='text/plain')
 
+@app.route("/embedded_singlecell.js")
+def embedded():
+    return render_template("embedded_singlecell.js",
+                           scripts=scripts, stylesheets=stylesheets)
 
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded

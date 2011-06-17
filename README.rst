@@ -247,6 +247,16 @@ arbitrary user code).
 To shut down the server, just press Ctrl-C.  This should automatically
 clean up the worker processes.
 
+Embedded Single-Cell
+^^^^^^^^^^^^^^^^^^^^
+
+To embed the single-cell on a webpage hosted on another server (or locally),
+insert the following code into an HTML file:
+
+.. code-block:: html
+
+    <script type="text/javascript" src="http://[host-server]/embedded_singlecell.js"></script>
+    <div id="singlecell"></div>
 
 
 To Use Tsung on OSX
