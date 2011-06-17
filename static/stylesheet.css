@@ -1,10 +1,9 @@
 #completion {height: 36pt; white-space: nowrap; overflow:auto}
-#file_input {width: 30%;}
 #sc_form {visibility: hidden;}
 .error {color: red}
 .stderr {color: red}
 .CodeMirror {border: 1px solid black; height: 200px}
-.codemirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
+.CodeMirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
 .done {color: red}
 .session_output {border: 2px solid black; padding: 5px;}
 .session_title {border-bottom: 1px solid blue;}

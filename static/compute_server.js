@@ -127,32 +127,33 @@ function makeClass(){
 * 
 **************************************************************/
 
-function colorize(text) {
-    var color, colorCodes, result = "";
-    colorCodes = {"30":"black",
-	"31":"red",
-	"32":"green",
-	"33":"goldenrod",
-	"34":"blue",
-	"35":"purple",
-	"36":"darkcyan",
-	"37":"gray"};
-
-    text=text.split("\u001b[");
-    for(i in text) {
-	if(text[i]=="")
-	    continue;
-	color=text[i].substr(0,text[i].indexOf("m")).split(";");
-	if(color.length==2) {
-	    result+="<span style=\"color:"+colorCodes[color[1]];
-	    if(color[0]==1)
-		result+="; font-weight:bold";
-	    result+="\">"+text[i].substr(text[i].indexOf("m")+1)+"</span>";
-	} else
-	    result+=text[i].substr(text[i].indexOf("m")+1);
+colorize = (function(){
+    var color_codes = {"30":"black",
+		       "31":"red",
+		       "32":"green",
+		       "33":"goldenrod",
+		       "34":"blue",
+		       "35":"purple",
+		       "36":"darkcyan",
+		       "37":"gray"};
+    return function(text) {
+	var color, result = "";
+	text=text.split("\u001b[");
+	for(i in text) {
+	    if(text[i]=="")
+		continue;
+	    color=text[i].substr(0,text[i].indexOf("m")).split(";");
+	    if(color.length==2) {
+		result+="<span style=\"color:"+color_codes[color[1]];
+		if(color[0]==1)
+		    result+="; font-weight:bold";
+		result+="\">"+text[i].substr(text[i].indexOf("m")+1)+"</span>";
+	    } else
+		result+=text[i].substr(text[i].indexOf("m")+1);
+	}
+	return result;
     }
-    return result;
-}
+})();
 
 function handleKeyEvent(editor, event) {
     if(event.which==13 && event.shiftKey && event.type=="keypress") {
