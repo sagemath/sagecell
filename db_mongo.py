@@ -36,7 +36,6 @@ class DB(db.DB):
             msg['device']=doc['device']
  
         msg['evaluated']=False
-        log("%s %s"%(msg,type(msg)))
         self.database.input_messages.insert(msg)
     
     def get_input_messages(self, device, limit=None):

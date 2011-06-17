@@ -16,61 +16,87 @@
 //    which argues that it is more inefficient to make objects out of
 //    closures instead of using the prototype property and "new"
 
-
-
-
-
 // Set up the editor and evaluate button
-$(function() {
-    var editor=CodeMirror.fromTextArea(document.getElementById("commands"),{
+function initPage() {
+    var editor=CodeMirror.fromTextArea($("#commands")[0],{
 	mode:"python",
 	indentUnit:4,
 	tabMode:"shift",
 	lineNumbers:true,
 	matchBrackets:true,
 	onKeyEvent:handleKeyEvent});
-    if(window.sessionStorage && sessionStorage.getItem('editorValue')) {
-	editor.setValue(sessionStorage.getItem('editorValue'));
-    }
+    try {
+	if(sessionStorage.editor_value) {
+	    editor.setValue(sessionStorage.getItem('editor_value'));
+	}
+	if(sessionStorage.sage_mode) {
+	    $('#sage_mode').attr('checked',sessionStorage.getItem('sage_mode')=='true');
+	}
+    } catch(e) {}
     editor.focus();
     
     var files = 0
 
-    $('#command_form #clear_files').click(function(event){
+    $('#sage_mode').change(function(e) {
+	try {
+	    sessionStorage.setItem('sage_mode',$(e.target).attr('checked'));
+	} catch(e) {};
+    });
+
+    $(document.body).append('<form id="sc_form"></form>');
+    $('#sc_form').attr('action',$URL.evaluate);
+    $('#sc_form').attr('enctype','multipart/form-data');
+    $('#sc_form').attr('method','POST');
+    $('#singlecell #add_file').click(function(){$('.file_current').click()});
+    $('.file_current').live('change',function(e) {
+	files++;
+	var v=e.target.value;
+	if(v) {
+	    $('#file_upload').append(v+'<br>');
+	} else {
+	    $('#file_upload').text(files+' files to be uploaded<br>')
+	}
+	$('#sc_form').append('<input type="file" id="file'+files+' name="file'+files+'>');
+	$('.file_current').removeClass('file_current');
+	$('#file'+files).addClass('file_current');
+    })
+
+    $('#singlecell #clear_files').click(function(){
 	files = 0;
-	$('#command_form #file_upload').html("<input type='file' id='file0' name='file' /><br>");
-	event.preventDefault();
-	return false;
+	$('#sc_form').empty();
+	$('#file_upload').empty();
+	$('#sc_form').html('<input type="file" id="file0" name="file" class="file_current"><br><span id="upload_values"></span>');
     });
 
-    $('#command_form #add_file').click(function(event){
-	files += 1;
-	$('#command_form #file_upload').append("<input type='file' id='file"+files+"' name='file' /><br>");
-	event.preventDefault();
-	return false;
-    });
+    $('#singlecell #clear_files').click();
 
-    $('#command_form #evalButton').click(function() {
+    $('#singlecell #eval_button').click(function() {
 	var session = new Session("#output", $("#sage_mode").attr("checked"));
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
-	$('#command_form #session_id').val(session.session_id);
-	$('#command_form #msg_id').val(uuid4());
-	$('#command_form').attr("target", "upload_target_"+session.session_id);
-	session.session_output.append("<iframe style='display:none' name = 'upload_target_"+session.session_id+"' id='upload_target_"+session.session_id+"'></iframe>");
-	$('#command_form').submit();
-
+	$('#singlecell #session_id').val(session.session_id);
+	$('#singlecell #msg_id').val(uuid4());
+	$('#sc_form #upload_values').empty()
+	$('#sc_form #upload_values').append('<input type="hidden" name="commands">').children().last().val(editor.getValue());
+	$('#singlecell #session_id,#msg_id,#sage_mode').each(function(i) {
+	    $(this).clone().appendTo($("#sc_form #upload_values"));
+	});
+	$('#sc_form').attr("target", "upload_target_"+session.session_id);
+	$('#singlecell').append("<iframe style='display:none' name = 'upload_target_"+session.session_id+"' id='upload_target_"+session.session_id+"'></iframe>");
+	$('#sc_form').submit();
 	$("#upload_target_"+session.session_id).load($.proxy(function(event){
-	    var server_response = $("#upload_target_"+session.session_id).contents().find('body').html();
-	    if (server_response !== "") {
-		session.session_output.append(server_response);
-		session.clearQuery();
-	    }
+	    try {
+		var server_response = $("#upload_target_"+session.session_id).contents().find('body').html();
+		if (server_response !== "") {
+		    session.session_output.append(server_response);
+		    session.clearQuery();
+		}
+	    } catch(e) {}
 	    $("#upload_target_"+session.session_id).unbind();
+	    $("#singlecell #clear_files").click();	    
 	}),session);
 	return false;
     });
-});
-
+}
 
 // Create UUID4-compliant ID
 // Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -130,14 +156,14 @@ function colorize(text) {
 
 function handleKeyEvent(editor, event) {
     if(event.which==13 && event.shiftKey && event.type=="keypress") {
-	$('#command_form #evalButton').click()
+	$('#singlecell #eval_button').click()
 	event.stop()
 	return true;
     }
     if(window.sessionStorage) {
 	try {
-	    sessionStorage.removeItem('editorValue');
-	    sessionStorage.setItem('editorValue',editor.getValue());
+	    sessionStorage.removeItem('editor_value');
+	    sessionStorage.setItem('editor_value',editor.getValue());
 	} catch (e) {
 	    // if we can't store, we don't do anything
 	    // for example, in chrome if we block cookies, we can't store, it seems.
@@ -231,15 +257,13 @@ Session.prototype.sendMsg = function() {
        for why. If we don't do the proxy, then "this" in the
        send_computation_success function will *not* refer to the
        session object. */
-    $.post($URL.evaluate, {message: JSON.stringify(msg)}, dataType="json")
-	.success($.proxy( this, 'send_computation_success' ), "json")
+    $.post($URL.evaluate, {message: JSON.stringify(msg)}, function(){})
+	.success($.proxy( this, 'send_computation_success' ))
 	.error(function(jqXHR, textStatus, errorThrown) {
 	    console.log(jqXHR); 
 	    console.log(textStatus); 
 	    console.log(errorThrown);
 	});
-
-
 }
 
 Session.prototype.output = function(html) {
@@ -320,7 +344,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    var html="<div>\n";
 		    for(var j = 0, j_max = files.length; j < j_max; j++)
 			//TODO: escape filenames and id
-			html+="<a href=\"/files/"+id+"/"+files[j]+"\" target=\"_blank\">"+files[j]+"</a><br>\n";
+			html+='<a href="'+$URL['root']+'/files/'+id+'/'+files[j]+'" target="_blank">'+files[j]+'</a><br>\n';
 		    html+="</div>";
 		    this.output(html);
 		    break;
@@ -340,7 +364,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.output("<div class='interact_container'><div class='interact' id='"+div_id+"'></div><div class='interact_output' id="+msg.header.msg_id+"></div></div>");
 		    this.setOutput("#"+msg.header.msg_id, true, true);
 		    this.interacts[msg.header.msg_id] = 1;
-		    var interact = new InteractCell("#" + div_id, {
+		    new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
 			'controls': user_msg.content.controls,
