@@ -267,7 +267,7 @@ class Selector(InteractControl):
         """
         :returns: Default value of control.
         """
-        return self.values[self.default_value]
+        return self.default_value
                 
     def adapter(self, v):
         return self.values[int(v)]
