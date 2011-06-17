@@ -2,7 +2,60 @@ _INTERACTS={}
 
 __single_cell_timeout__=0
 
-def interact(controls=[], **kwargs):
+from functools import wraps
+
+def decorator_defaults(func):
+    """
+    This function allows a decorator to have default arguments.
+
+    Normally, a decorator can be called with or without arguments.
+    However, the two cases call for different types of return values.
+    If a decorator is called with no parentheses, it should be run
+    directly on the function.  However, if a decorator is called with
+    parentheses (i.e., arguments), then it should return a function
+    that is then in turn called with the defined function as an
+    argument.
+
+    This decorator allows us to have these default arguments without
+    worrying about the return type.
+
+    EXAMPLES::
+    
+        sage: from sage.misc.decorators import decorator_defaults
+        sage: @decorator_defaults
+        ... def my_decorator(f,*args,**kwds):
+        ...     print kwds
+        ...     print args
+        ...     print f.__name__
+        ...       
+        sage: @my_decorator
+        ... def my_fun(a,b):
+        ...     return a,b
+        ...  
+        {}
+        ()
+        my_fun
+        sage: @my_decorator(3,4,c=1,d=2)
+        ... def my_fun(a,b):
+        ...     return a,b
+        ...   
+        {'c': 1, 'd': 2}
+        (3, 4)
+        my_fun
+    """
+    @wraps(func)
+    def my_wrap(*args,**kwargs):
+        if len(kwargs)==0 and len(args)==1:
+            # call without parentheses
+            return func(*args)
+        else:
+            def _(f):
+                return func(f, *args, **kwds)
+            return _
+    return my_wrap
+
+@decorator_defaults
+def interact(f, controls=[]):
     """
     A decorator that creates an interact.
 
@@ -16,60 +69,63 @@ def interact(controls=[], **kwargs):
         def f(**kwargs):
             ...
 
-        @interact(name1=control1, name2=control2)
-        def f(**kwargs):
-            ...
-
         @interact
         def f(name1, name2=control2, name3=control3):
             ...
 
-    In the first and third examples, ``name1``, with no associated control,
-    will default to a text box. The second example listed does not
-    guarantee that the controls will appear in the order given.
+
+    The two ways can also be combined::
+
+        @interact([name1, (name2, control2)])
+        def f(name3, name4=control4, name5=control5):
+            ...
+
+    In each example, ``name1``, with no associated control,
+    will default to a text box.
     """
-    if isinstance(controls,list):
-        controls=controls[:]
-    from types import FunctionType
-    if isinstance(controls,FunctionType):
-        import inspect
-        (args, varargs, varkw, defaults) = inspect.getargspec(controls)
-        if defaults is None:
-            defaults=[]
-        n=len(args)-len(defaults)
-        return interact(zip(args,[None]*n+list(defaults)))(controls)
-    for i,c in enumerate(controls):
-        if not (isinstance(c,tuple) and len(c)==2):
-            controls[i]=(c, None)
-    controls+=list(kwargs.iteritems())
+    if isinstance(controls,(list,tuple)):
+        controls=list(controls)
+        for i,name in enumerate(controls):
+            if isinstance(name, str):
+                controls[i]=(name, None)
+            elif not isinstance(controls[0], str):
+                raise ValueError("interact control must have a string name, but %s isn't a string"%controls[0])
+
+    import inspect
+    (args, varargs, varkw, defaults) = inspect.getargspec(controls)
+    if defaults is None:
+        defaults=[]
+    n=len(args)-len(defaults)
+    
+    controls=zip(args,[None]*n+list(defaults))+controls
+
     names=[n for n,_ in controls]
     controls=[automatic_control(c) for _,c in controls]
-    def decorator(f):
-        from uuid import uuid4
-        from sys import _sage_messages as MESSAGE
-        global _INTERACTS
 
-        function_id=uuid4().get_hex()
+    from uuid import uuid4
+    from sys import _sage_messages as MESSAGE
+    global _INTERACTS
 
-        def adapted_f(**kwargs):
-            MESSAGE.push_output_id(function_id)
-            # remap parameters
-            for k,v in kwargs.items():
-                kwargs[k]=controls[names.index(k)].adapter(v)
-            returned=f(**kwargs)
-            MESSAGE.pop_output_id()
-            return returned
+    function_id=uuid4().get_hex()
 
-        _INTERACTS[function_id]=adapted_f
-        MESSAGE.message_queue.message('interact_prepare',
-                                      {'interact_id':function_id,
-                                       'controls':dict(zip(names,[c.message() for c in controls])),
-                                       'layout':names})
-        global __single_cell_timeout__
-        __single_cell_timeout__=60
-        adapted_f(**dict(zip(names,[c.default() for c in controls])))
-        return f
-    return decorator
+    def adapted_f(**kwargs):
+        MESSAGE.push_output_id(function_id)
+        # remap parameters
+        for k,v in kwargs.items():
+            kwargs[k]=controls[names.index(k)].adapter(v)
+        returned=f(**kwargs)
+        MESSAGE.pop_output_id()
+        return returned
+
+    _INTERACTS[function_id]=adapted_f
+    MESSAGE.message_queue.message('interact_prepare',
+                                  {'interact_id':function_id,
+                                   'controls':dict(zip(names,[c.message() for c in controls])),
+                                   'layout':names})
+    global __single_cell_timeout__
+    __single_cell_timeout__=60
+    adapted_f(**dict(zip(names,[c.default() for c in controls])))
+    return f
 
 class InteractControl:
     """
