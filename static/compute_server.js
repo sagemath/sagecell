@@ -84,13 +84,15 @@ function initPage() {
 	$('#singlecell').append("<iframe style='display:none' name = 'upload_target_"+session.session_id+"' id='upload_target_"+session.session_id+"'></iframe>");
 	$('#sc_form').submit();
 	$("#upload_target_"+session.session_id).load($.proxy(function(event){
-	    try {
+	    if($URL.root==(location.protocol+'//'+location.host+'/')) {
+		// if the hosts are the same, communication between frames
+		// is allowed
 		var server_response = $("#upload_target_"+session.session_id).contents().find('body').html();
 		if (server_response !== "") {
 		    session.session_output.append(server_response);
 		    session.clearQuery();
 		}
-	    } catch(e) {}
+	    }
 	    $("#upload_target_"+session.session_id).unbind();
 	    $("#singlecell #clear_files").click();	    
 	}),session);
