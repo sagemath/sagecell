@@ -626,17 +626,6 @@ InteractCell.prototype.renderCanvas = (function() {
     }
 })();
 
-InteractCell.prototype.locateButtonIndex = function(n, ncols) {
-    var location = {};
-    location.button = n;
-    location.row = Math.floor(n / ncols) - 1;
-    if (location.row < 0) {
-	location.row = 0;
-    }
-    location.col = location.button - (location.row * ncols) - 1;
-    return location;
-}
-
 var escape = function(s) {
     return $('<div></div>').text(s).html();
 }
