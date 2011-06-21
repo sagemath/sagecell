@@ -111,13 +111,13 @@ function uuid4() {
 // makeClass - By John Resig (MIT Licensed)
 // see http://ejohn.org/blog/simple-class-instantiation/
 function makeClass(){
-  return function(args){
-    if ( this instanceof arguments.callee ) {
-      if ( typeof this.init == "function" )
-        this.init.apply( this, args.callee ? args : arguments );
-    } else
-      return new arguments.callee( arguments );
-  };
+    return function(args){
+	if ( this instanceof arguments.callee ) {
+	    if ( typeof this.init == "function" )
+		this.init.apply( this, args.callee ? args : arguments );
+	} else
+	    return new arguments.callee( arguments );
+    };
 }
 
 
@@ -238,17 +238,17 @@ Session.prototype.sendMsg = function() {
 	msg_id = arguments[1];
     }
     msg = {"parent_header": {},
-		   "header": {"msg_id": msg_id,
-			      //"username": "",
-			      "session": this.session_id},
-		   "msg_type": "execute_request",
-		   "content": {"code": code,
-			       //"silent": false,
-			       "sage_mode": this.sage_mode,
-			       //"user_variables": [],
-			       //"user_expressions": {}
-			      }
-	      };
+	   "header": {"msg_id": msg_id,
+		      //"username": "",
+		      "session": this.session_id},
+	   "msg_type": "execute_request",
+	   "content": {"code": code,
+		       //"silent": false,
+		       "sage_mode": this.sage_mode,
+		       //"user_variables": [],
+		       //"user_expressions": {}
+		      }
+	  };
     $('#messages').append(document.createElement('div'))
 	.children().last().text("*******SEND: "+JSON.stringify(msg));
 
@@ -307,7 +307,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
-	    //TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
+		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
 		this.output("<pre class='"+msg.content.name+"'></pre>").text(msg.content.data);
 		break;
@@ -326,8 +326,8 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 
 	    case 'pyerr':
 		this.output("<pre>"+colorize(msg.content.traceback.join("\n")
-						     .replace(/&/g,"&amp;")
-						     .replace(/</g,"&lt;")+"</pre>"));
+					     .replace(/&/g,"&amp;")
+					     .replace(/</g,"&lt;")+"</pre>"));
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
@@ -455,152 +455,159 @@ InteractCell.prototype.bindChange = function(interact) {
 InteractCell.prototype.getChanges = function() {
     var id = "#urn_uuid_" + this.interact_id;
     var params = {};
-    for (var i in this.controls){
-	switch(this.controls[i].control_type) {
+    for (var name in this.controls){
+	switch(this.controls[name].control_type) {
 	case "html":
-	   // for text box: this.params[i] = $(id + "-" + i).val();
+	    // for text box: this.params[name] = $(id + "-" + name).val();
 	    break;
 	case "checkbox":
-	    if ($(id + "_" + i).attr("checked") == true) {
-		params[i] = "True";
+	    if ($(id + "_" + name).attr("checked") == true) {
+		params[name] = "True";
 	    } else {
-		params[i] = "False";
+		params[name] = "False";
 	    }
 	    break;
 	case "input_box":
-	    params[i] = $(id + "_" + i).val();
+	    params[name] = $(id + "_" + name).val();
 	    break;
 	case "input_grid":
 	    var values = "[";
-	    for (var j = 0, j_max = this.controls[i].nrows; j < j_max; j ++) {
+	    for (var j = 0, j_max = this.controls[name].nrows; j < j_max; j ++) {
 		values += "[";
-		for (var k = 0, k_max = this.controls[i].ncols; k < k_max; k ++) {
-		    values += $(id + "_" + i + "_" + j + "_" + k).val() + ", ";
+		for (var k = 0, k_max = this.controls[name].ncols; k < k_max; k ++) {
+		    values += $(id + "_" + name + "_" + j + "_" + k).val() + ", ";
 		}
 		values += "],";
 	    }
 	    values += "]"
-	    params[i] = values;
+	    params[name] = values;
 	    break;
 	case "selector":
-	    if (this.controls[i].buttons) {
-		/* When a button is clicked, it sets the value of a hidden input
-		   box to its sequence number and calls the change handler. The
-		   previously-selected button's sequence number is the name of
-		   the input box. This allows for specifically flipping the CSS
-		   border styles of the previously and currently-selected
-		   buttons while passing back the correct updated selection. */
-		var new_button = this.locateButtonIndex($(id+"_current").val(), this.controls[i].ncols);
-		var old_button = this.locateButtonIndex($(id+"_current").attr("name"), this.controls[i].ncols);
-		new_button.location = id+"_"+i+"_"+new_button.row+"_"+new_button.col;
-		old_button.location = id+"_"+i+"_"+old_button.row+"_"+old_button.col;
-		$(old_button.location).css("border-style", "outset");
-		$(id+"_current").attr("name",new_button.button);
-		$(new_button.location).css("border-style", "inset");
-		params[i] = $(new_button.location).val(); // new inset/selected
-	    } else {
-		params[i] = String($(id + "_" + i).val());
-	    }
+	    params[name] = String($(id + "_" + name).val());
 	    break;
 	case "slider":
-	    var input = $(id + "_" + i + "_value").val();
-	    $(id + "_" + i).slider("option", "value", input);
-	    params[i] = String(input);
+	    var input = $(id + "_" + name + "_value").val();
+	    $(id + "_" + name).slider("option", "value", input);
+	    params[name] = String(input);
 	    break;
 	}
     }
     return params;
 }
 
-InteractCell.prototype.renderCanvas = function() {
-    // TODO: use this.layout to lay out the controls
-    var id = "urn_uuid_" + this.interact_id;
-    for (var i in this.controls) {
-	// We assume layout is a list of variables, in order
-	switch(this.controls[i].control_type) {
-	case "html":
-	    var html_code = this.controls[i].html;
-	    html_code = html_code.replace("$"+i+"$", this.controls[i]["default"]);
-	    html_code = html_code.replace("$id$", id);
-	    this.element.append(html_code);
-	    break;
-	case "checkbox":
-	    var html_code = "<div class='interact_checkbox'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + escape(this.controls[i].label) + "</td><td><input type='checkbox' checked = " + this.controls[i]["default"] + " class= " + id + " id = " + id + "_" + i + "></input></td></tr></tbody></table></div>";
-	    this.element.append(html_code);
-	    break;
-	case "input_box":
-	    var html_code = "<div class='interact_input_box'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + escape(this.controls[i].label) + "</td><td><input type='text' value =" + "'" + this.controls[i]["default"] +  "' class = " + id + " id = " + id + "_" + i + " size = '" + this.controls[i].width + "'></input></td></tr></tbody></table></div>";
-	    this.element.append(html_code);
-	    break;
-	case "input_grid":
-	    var default_values = this.controls[i]["default"];
-	    var width = this.controls[i].width;
-	    var inner_table = "<table><tbody>";
-	    for (var j = 0, j_max = this.controls[i].nrows; j < j_max; j ++) {
-		inner_table += "<tr>";
-		for (var k = 0, k_max = this.controls[i].ncols; k < k_max; k ++) {
-		    inner_table += "<td><input type='text' class=" + id + " id = '" + id + "_" + i + "_" + j  + "_" + k + "' value='" + default_values[j][k] + "' size='" + width + "'></input></td>";
-		}
-		inner_table += "</tr>";
-	    }
-	    inner_table += "</tbody></table>";
-	    var html_code = "<div class='interact_input_grid'><table><tbody><tr><td class=" + id + " id ='" + id + "_" + i + "_label' style='width:5em'>" + escape(this.controls[i].label) + "</td><td>" + inner_table + "</td></tr></tbody></table></div>";
-	    this.element.append(html_code);
-	    break;
-	case "selector":
-	    if (this.controls[i].buttons) {
-		var nrows = this.controls[i].nrows, 
-		ncols = this.controls[i].ncols,
-		values = this.controls[i].values,
-		value_labels = this.controls[i].value_labels,
-		default_value = this.controls[i]["default"];
+InteractCell.prototype.renderCanvas = (function() {
+    var addRow=function(table, labeltext, name, controlHTML, id) {
+	var row=document.createElement("tr");
+	var c_td=document.createElement("td");
+	if(labeltext) {
+	    var l_td=document.createElement("td");
+	    var label=document.createElement("label");
+	    label.setAttribute('for',id);
+	    label.setAttribute('title',name);
+	    label.appendChild(document.createTextNode(labeltext));
+	    l_td.appendChild(label);
+	    row.appendChild(l_td);
+	} else {
+	    console.log("#3")
+	    c_td.setAttribute("colspan",2);
+	}
+	c_td.innerHTML=controlHTML;
+	row.appendChild(c_td);
+	table.appendChild(row);
+    }
+    var select_labels={};
+    return function() {
+	// TODO: use this.layout to lay out the controls
+	var id = "urn_uuid_" + this.interact_id;
+	var table = document.createElement("table");
+	for (var name in this.controls) {
+	    // We assume layout is a list of variables, in order
+	    var control_id = id + '_' + name;
+	    var label = escape(this.controls[name].label || name);
+	    var type=this.controls[name].control_type;
+	    switch(type) {
+	    case "html":
+		addRow(table, null, null, html_code.replace(new RegExp('$'+name+'$','g'),this.controls[name]["default"])
+		       .replace(/\$id\$/g,id));
+		break;
+	    case "checkbox":
+		addRow(table, label, name, '<input type="checkbox" id="'+control_id+'" class="'+id+' checkbox_control" checked="'+this.controls[name]['default']+'">',control_id);
+		break;
+	    case "input_box":
+		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+' '+' input_box__control" value="'+this.controls[name]['default']+'">',control_id);
+		break;
+	    case "input_grid":
+		var default_values = this.controls[name].default;
+		var width = this.controls[name].width;
 		var inner_table = "<table><tbody>";
-		for (var c = 0, j = 0; j < nrows; j ++) {
+		for (var r = 0, r_max = this.controls[name].nrows; r < r_max; r ++) {
 		    inner_table += "<tr>";
-		    for (var k = 0; k < ncols; k ++) {
-			if (c === default_value) {
-			    inner_table += "<td><button type='button' style='border-style:inset;width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + escape(value_labels[c]) + "</button><input type='hidden' class=" + id + " id = '" + id + "_current' name='"+(c+1)+"' value='"+(c+1)+"'/></td>";
-			} else {
-			    inner_table += "<td><button type='button' style='width:"+this.controls[i].width+";' class=" + id + " id='" + id + "_" + i + "_" + j + "_" + k + "' value='" + values[c] + "' onclick='$(\"#"+id+"_current\").val("+(c+1)+");$(\"#"+id+"_current\").change();'>" + escape(value_labels[c]) + "</button></td>";
-			    
-			}
-			c ++;
+		    for (var c = 0, c_max = this.controls[name].ncols; c < c_max; c ++) {
+			inner_table += '<td><input type="text" class="'+id+' input_grid_item" id = "'+control_id+'_'+r+'_'+c+'" title="'+name+'['+r+']['+c+']" value="'+default_values[r][c]+'" size="'+width+'"></td>';
 		    }
 		    inner_table += "</tr>";
 		}
 		inner_table += "</tbody></table>";
-		var html_code = "<div class='interact_select_buttons'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + inner_table + "</td></tr></tbody></table></div>";
-	    } else {
-		var html_selector = "<select class = " + id + " id = " + id + "_" + i + ">";
-		for (var j in this.controls[i].values) {
-		    if (j == this.controls[i]["default"]) {
-			html_selector = html_selector + "<option selected='selected' value='" + this.controls[i].values[j] + "'>" + escape(this.controls[i].value_labels[j]) + "</option>";
-		    } else {
-			html_selector = html_selector + "<option value='" + this.controls[i].values[j] + "'>" + escape(this.controls[i].value_labels[j]) + "</option>";
+		addRow(table, label, name, inner_table, control_id+'_0_0');
+		break;
+	    case "selector":
+		if (this.controls[name].buttons) {
+		    var nrows = this.controls[name].nrows,
+		    ncols = this.controls[name].ncols,
+		    values = this.controls[name].values,
+		    value_labels = this.controls[name].value_labels,
+		    default_index = this.controls[name]["default"];
+		    var inner_table = "<table><tbody>";
+		    for (var r = 0, i = 0; r < nrows; r ++) {
+			inner_table += "<tr>";
+			for (var c = 0; c < ncols; c ++, i ++) {
+			    inner_table += '<td><input type="button" style="width:'+this.controls[name].width+'" class="'+control_id+' selector_button" id="'+control_id+'_'+i+'" value="'+escape(value_labels[i])+'"></td>';
+			    $('#'+control_id+'_'+i).live('click', (function(i,control_id){return function(e) {
+				if(!$(e.target).hasClass('selected_button')) {
+				    $('.'+control_id).filter('.selected_button').removeClass('selected_button');
+				    $(e.target).addClass('selected_button');
+				    $('#'+control_id).val(values[i]).change();
+				    select_labels[control_id].setAttribute('for',e.target.id);
+				}
+			    }}(i,control_id)));
+			}
+			inner_table += "</tr>";
 		    }
+		    inner_table += "</tbody></table>";
+		    var html_code = inner_table + '<input type="hidden" id="'+control_id+'" class="'+id+'" value="'+values[default_index]+'"></div>';
+		    var default_id=control_id+'_'+default_index
+		    addRow(table,label,name,html_code,control_id+'_'+default_index);
+		    $(table).find('#'+default_id).addClass('selected_button');
+		    select_labels[control_id]=$(table).find('label[for="'+default_id+'"]')[0];
+		} else {
+		    var html_code = '<select class="' + id + '" id = "' + control_id + '">';
+		    var values=this.controls[name].values
+		    for (var i=0; i<values.length; i++) {
+			html_code += '<option value="' + values[i] + '">' + escape(this.controls[name].value_labels[i]) + "</option>";
+		    }
+		    html_code = html_code + "</select>";
+		    addRow(table,label,name,html_code,control_id);
 		}
-		html_selector = html_selector + "</select>";
-		var html_code = "<div class='interact_select'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td>" + html_selector + "</td></tr></tbody></table></div>";
+		break;
+	    case "slider":
+		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' slider_control" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"></span>';
+		addRow(table,label,name,html_code,control_id);
+		$(table).find("#" + control_id).slider({
+		    value:this.controls[name]["default"],
+		    min:this.controls[name]["range"][0],
+		    max:this.controls[name]["range"][1],
+		    step:this.controls[name]["step"],
+		    slide:function(event, ui){
+			$("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
+		    }
+		});
+		$(table).find("#"+control_id+"_value").val(this.controls[name]["default"]);
+		break;
 	    }
-	    this.element.append(html_code);
-	    break;
-	case "slider":
-	    var html_code = "<div class='interact_slider'><table><tbody><tr><td class=" + id + " id='" + id + "_" + i + "_label' style='width:5em'>" + this.controls[i].label + "</td><td><div class=" + id + " id='" + id + "_" + i + "' style='width:15.0em;margin-right:1.0em;margin-left:1.0em'></div></td><td><input type='text' class=" + id + " id ='" + id + "_" + i + "_value' value='' style='border:none'></input></td></tr></tbody></table></div>";
-	    this.element.append(html_code);
-	    $("#" + id + "_" + i).slider({
-		value:this.controls[i]["default"],
-		min:this.controls[i]["range"][0],
-		max:this.controls[i]["range"][1],
-		step:this.controls[i]["step"],
-		slide:function(event, ui){
-		    $("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
-		}
-	    });
-	    $("#"+id+"_"+i+"_value").val($("#"+id+"_"+i).slider("value"));
-	    break;
 	}
+	this.element[0].appendChild(table);
     }
-}
+})();
 
 InteractCell.prototype.locateButtonIndex = function(n, ncols) {
     var location = {};
