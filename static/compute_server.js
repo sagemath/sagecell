@@ -68,8 +68,17 @@ function initPage() {
 	$('#sc_form').html('<input type="file" id="file0" name="file" class="file_current"><br><span id="upload_values"></span>');
     });
 
-    $('#singlecell #clear_files').click();
+    $('.selector_button').live('hover',function(e) {
+	$(e.target).toggleClass('ui-state-hover');
+    });
+    $('.selector_button').live('focus',function(e) {
+	$(e.target).addClass('ui-state-focus');
+    });
+    $('.selector_button').live('blur',function(e) {
+	$(e.target).removeClass('ui-state-focus');
+    });
 
+    $('#singlecell #clear_files').click();
     $('#singlecell #eval_button').click(function() {
 	var session = new Session("#output", $("#sage_mode").attr("checked"));
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
@@ -261,9 +270,9 @@ Session.prototype.sendMsg = function() {
     $.post($URL.evaluate, {message: JSON.stringify(msg)}, function(){})
 	.success($.proxy( this, 'send_computation_success' ))
 	.error(function(jqXHR, textStatus, errorThrown) {
-	    console.log(jqXHR); 
-	    console.log(textStatus); 
-	    console.log(errorThrown);
+	    console.warn(jqXHR); 
+	    console.warn(textStatus); 
+	    console.warn(errorThrown);
 	});
 }
 
@@ -302,7 +311,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    }
             if(msg.sequence!==this.sequence) {
                 //TODO: Make a big warning sign
-                console.log('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
+                console.warn('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
             }
             this.sequence+=1;
             // Handle each stream type.  This should probably be separated out into different functions.
@@ -502,13 +511,14 @@ InteractCell.prototype.renderCanvas = (function() {
 	if(labeltext) {
 	    var l_td=document.createElement("td");
 	    var label=document.createElement("label");
-	    label.setAttribute('for',id);
+	    if(id) {
+		label.setAttribute('for',id);
+	    }
 	    label.setAttribute('title',name);
 	    label.appendChild(document.createTextNode(labeltext));
 	    l_td.appendChild(label);
 	    row.appendChild(l_td);
 	} else {
-	    console.log("#3")
 	    c_td.setAttribute("colspan",2);
 	}
 	c_td.innerHTML=controlHTML;
@@ -561,11 +571,11 @@ InteractCell.prototype.renderCanvas = (function() {
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
-			    inner_table += '<td><input type="button" style="width:'+this.controls[name].width+'" class="'+control_id+' selector_button" id="'+control_id+'_'+i+'" value="'+escape(value_labels[i])+'"></td>';
+			    inner_table += '<td><span style="width:'+this.controls[name].width+'" class="'+control_id+' selector_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'" tabindex="0">'+escape(value_labels[i])+'</span></td>';
 			    $('#'+control_id+'_'+i).live('click', (function(i,control_id){return function(e) {
-				if(!$(e.target).hasClass('selected_button')) {
-				    $('.'+control_id).filter('.selected_button').removeClass('selected_button');
-				    $(e.target).addClass('selected_button');
+				if(!$(e.target).hasClass('ui-state-active')) {
+				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
+				    $(e.target).addClass('ui-state-active');
 				    $('#'+control_id).val(values[i]).change();
 				    select_labels[control_id].setAttribute('for',e.target.id);
 				}
@@ -577,8 +587,12 @@ InteractCell.prototype.renderCanvas = (function() {
 		    var html_code = inner_table + '<input type="hidden" id="'+control_id+'" class="'+id+'" value="'+values[default_index]+'"></div>';
 		    var default_id=control_id+'_'+default_index
 		    addRow(table,label,name,html_code,control_id+'_'+default_index);
-		    $(table).find('#'+default_id).addClass('selected_button');
+		    $(table).find('#'+default_id).addClass('ui-state-active');
 		    select_labels[control_id]=$(table).find('label[for="'+default_id+'"]')[0];
+		    $(table).find('label:last').click((function(control_id){return function() {
+			console.log($('.'+control_id+'.ui-state-active'))
+			$('.'+control_id+' .ui-state-active').focus();
+		    }})(control_id))
 		} else {
 		    var html_code = '<select class="' + id + '" id = "' + control_id + '">';
 		    var values=this.controls[name].values
@@ -591,7 +605,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		break;
 	    case "slider":
 		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' slider_control" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"></span>';
-		addRow(table,label,name,html_code,control_id);
+		addRow(table,label,name,html_code,null);
 		$(table).find("#" + control_id).slider({
 		    value:this.controls[name]["default"],
 		    min:this.controls[name]["range"][0],
@@ -601,6 +615,9 @@ InteractCell.prototype.renderCanvas = (function() {
 			$("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
 		    }
 		});
+		$(table).find('label:last').click((function(control_id){return function() {
+		    $('#'+control_id+' .ui-slider-handle').focus();
+		};})(control_id))
 		$(table).find("#"+control_id+"_value").val(this.controls[name]["default"]);
 		break;
 	    }

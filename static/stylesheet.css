@@ -1,7 +1,7 @@
 #completion {height: 36pt; white-space: nowrap; overflow:auto}
 #sc_form {visibility: hidden;}
-.selected_button {border-style: inset}
 .slider_control {display:inline-block;width:15.0em;margin-right:1.0em;margin-left:1.0em}
+.selector_button {padding:0.1em 0.5em;cursor:default}
 .error {color: red}
 .stderr {color: red}
 .CodeMirror {border: 1px solid black; height: 200px}
