@@ -1,9 +1,8 @@
-makeSinglecell=(function() {
+var makeSinglecell=(function() {
     var args = {};
     {%- for arg, value in args -%}
     args["{{- arg -}}"] = {{- value -}};
     {%- endfor -%}
-    console.log(args);
     var scripts=[
 	{%- for script in scripts -%}
 	"{{- url_for('static',filename=script,_external=True) -}}",
@@ -41,13 +40,28 @@ makeSinglecell=(function() {
 		    outputLocation = '#singlecell';
 		}
 		if (args.showMessages === false) {
-		    $(outputLocation+' #messages').remove();
+		    $(outputLocation+' #messages').css("display","none");
+		}
+		if (args.showComputationID === false) {
+		    $('#singlecell #computation_id, #completion').css("display","none");
+		}
+		if (args.showFileUploads === false) {
+		    $('#singlecell #file_input').css("display","none");
 		}
 		initPage();
 	    });
 	}
     },100);
 })();
+
+var moveSingleCellForm = (function(){
+    $(document.body).append("<div id='singlecell_moved' style='display:none'></div>");
+    $('#singlecell').contents().appendTo('#singlecell_moved');
+});
+
+var restoreSingleCellForm = (function(){
+    $('#singlecell_moved').contents().appendTo('#singlecell');
+});
 
 // Make the script root available to jquery
 $URL={'root': {{ request.url_root|tojson|safe }},
