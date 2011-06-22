@@ -1,4 +1,9 @@
 makeSinglecell=(function() {
+    var args = {};
+    {%- for arg, value in args -%}
+    args["{{- arg -}}"] = {{- value -}};
+    {%- endfor -%}
+    console.log(args);
     var scripts=[
 	{%- for script in scripts -%}
 	"{{- url_for('static',filename=script,_external=True) -}}",
@@ -19,15 +24,25 @@ makeSinglecell=(function() {
 	s.setAttribute("href",stylesheets[i]);
 	document.head.appendChild(s);
     }
-    var body={% filter tojson %}{% include 'singlecell.html' %}{% endfilter %};
+    var body = {% filter tojson %}{% include 'singlecell.html' %}{% endfilter %};
     // Wait for jQuery to load before using the $ function
     setTimeout(function() {
-	if(typeof jQuery=="undefined") {
+	if(typeof jQuery === "undefined") {
 	    setTimeout(arguments.callee,100);
 	} else {
 	    $(function(){
+		var outputLocation;
 		$.ajaxSetup({'dataType':'jsonp'});
 		$('#singlecell').html(body);
+		if (args.outputLocation !== undefined) {
+		    outputLocation = '#'+args.outputLocation;
+		    $('#singlecell #output, #messages').appendTo(outputLocation);
+		} else {
+		    outputLocation = '#singlecell';
+		}
+		if (args.showMessages === false) {
+		    $(outputLocation+' #messages').remove();
+		}
 		initPage();
 	    });
 	}
