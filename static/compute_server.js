@@ -87,6 +87,9 @@ function initPage() {
 	    if($URL.root==(location.protocol+'//'+location.host+'/')) {
 		// if the hosts are the same, communication between frames
 		// is allowed
+		// Instead of using a try/except block, we use an if to work 
+		// around a bug in Webkit documented at
+		// http://code.google.com/p/chromium/issues/detail?id=17325
 		var server_response = $("#upload_target_"+session.session_id).contents().find('body').html();
 		if (server_response !== "") {
 		    session.session_output.append(server_response);
