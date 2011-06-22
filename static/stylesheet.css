@@ -1,11 +1,12 @@
 #completion {height: 36pt; white-space: nowrap; overflow:auto}
-#file_input {width: 30%;}
 #messages div {margin-bottom:12pt;}
 #sc_form {visibility: hidden;}
+.slider_control {display:inline-block;width:15.0em;margin-right:1.0em;margin-left:1.0em}
+.selector_button {padding:0.1em 0.5em;cursor:default}
 .error {color: red}
 .stderr {color: red}
 .CodeMirror {border: 1px solid black; height: 200px}
-.codemirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
+.CodeMirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
 .done {color: red}
 .session_output {border: 2px solid black; padding: 5px;}
 .interact_output {border-left: 2px solid blue; padding: 5px;}
