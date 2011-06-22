@@ -103,11 +103,13 @@ def interact(f, controls=[]):
     names=[n for n,_ in controls]
     controls=[automatic_control(c) for _,c in controls]
 
-    from uuid import uuid4
-    from sys import _sage_messages as MESSAGE
+    from sys import _sage_messages as MESSAGE, maxint
+    from random import randrange
+    # UUID would be better, but we can't use it because of a
+    # bug in Python 2.6 on Mac OS X (http://bugs.python.org/issue8621)
     global _INTERACTS
 
-    function_id=uuid4().get_hex()
+    function_id=str(randrange(maxint))
 
     def adapted_f(**kwargs):
         MESSAGE.push_output_id(function_id)
