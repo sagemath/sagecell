@@ -78,7 +78,7 @@ import sys
 sys._sage_messages=MESSAGE
 def _get_interact_function(id):
     import interact_singlecell
-    return interact_singlecell._INTERACTS[id]['function']
+    return interact_singlecell._INTERACTS[id]
 """
 
 user_code_sage="""
@@ -91,6 +91,7 @@ class QueueOut(StringIO.StringIO):
         self.session=session
         self.queue=queue
         self.parent_header=parent_header
+        self.output_block=None
 
     def raw_message(self, msg_type, content):
         """
@@ -106,6 +107,7 @@ class QueueOut(StringIO.StringIO):
                # We don't transmit the session id in the header since
                # it should already be in the parent_header
                'header': {'msg_id':unicode(msg_id)},
+               'output_block': self.output_block,
                'content': content}
         self.queue.put(msg)
         log("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
@@ -152,6 +154,7 @@ class OutputIPython(object):
         self.stdout_queue=ChannelQueue(self.session, self.queue, "stdout", parent_header)
         self.stderr_queue=ChannelQueue(self.session, self.queue, "stderr", parent_header)
         self.message_queue=QueueOutMessage(self.session, self.queue, parent_header)
+        self.out_stack=[]
 
     def set_parent_header(self, parent_header):
         """
@@ -159,6 +162,25 @@ class OutputIPython(object):
         """
         for q in [self.stdout_queue, self.stderr_queue, self.message_queue]:
             q.parent_header=parent_header
+
+    def push_output_id(self, block):
+        """
+        Set the ID of the block to which to print output
+        """
+        self.out_stack.append(block)
+        for q in [self.stdout_queue, self.stderr_queue, self.message_queue]:
+            q.output_block=block
+
+    def pop_output_id(self):
+        """
+        Set the output block back to None
+        """
+        if len(self.out_stack)==0:
+            return
+        self.out_stack.pop()
+        block=self.out_stack[-1] if len(self.out_stack)>0 else None
+        for q in [self.stdout_queue, self.stderr_queue, self.message_queue]:
+            q.output_block=block
     
     def __enter__(self):
         # remap stdout, stderr, set up a pyout display handler.  Also, return the message queue so the user can put messages into the system
@@ -179,7 +201,7 @@ class OutputIPython(object):
 
         sys.displayhook = displayQueue
 
-        return self.message_queue
+        return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout=self.old_stdout
