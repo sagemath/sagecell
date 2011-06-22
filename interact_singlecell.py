@@ -84,6 +84,8 @@ def interact(f, controls=[]):
     In each example, ``name1``, with no associated control,
     will default to a text box.
     """
+    global _INTERACTS
+
     if isinstance(controls,(list,tuple)):
         controls=list(controls)
         for i,name in enumerate(controls):
@@ -105,10 +107,9 @@ def interact(f, controls=[]):
 
     from sys import _sage_messages as MESSAGE, maxint
     from random import randrange
+
     # UUID would be better, but we can't use it because of a
     # bug in Python 2.6 on Mac OS X (http://bugs.python.org/issue8621)
-    global _INTERACTS
-
     function_id=str(randrange(maxint))
 
     def adapted_f(**kwargs):
