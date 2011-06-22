@@ -196,11 +196,12 @@ Session.prototype.init = function (output, sage_mode) {
 
 // Manages querying the webserver for messages
 Session.prototype.setQuery = function() {
-    this.queryID = setInterval($.proxy(this, 'get_output'), this.poll_interval);
+    this.clearQuery();
+    this.queryID = setTimeout($.proxy(this, 'get_output'), this.poll_interval);
 }
 
 Session.prototype.clearQuery = function() {
-    clearInterval(this.queryID);
+    clearTimeout(this.queryID);
 }
 
 Session.prototype.updateQuery = function(new_interval) {
@@ -269,6 +270,8 @@ Session.prototype.get_output = function() {
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
+    this.setQuery();
+    
     var id=this.session_id;
 
     if(data!==undefined && data.content!==undefined) {
