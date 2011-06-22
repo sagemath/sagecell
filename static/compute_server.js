@@ -80,7 +80,7 @@ function initPage() {
 
     $('#singlecell #clear_files').click();
     $('#singlecell #eval_button').click(function() {
-	var session = new Session("#output", $("#sage_mode").attr("checked"));
+	var session = new Session("#singlecell_output", $("#sage_mode").attr("checked"));
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
 	$('#singlecell #session_id').val(session.session_id);
 	$('#singlecell #msg_id').val(uuid4());
@@ -243,7 +243,7 @@ Session.prototype.sendMsg = function() {
 		       //"user_expressions": {}
 		      }
 	  };
-    $('#messages').append(document.createElement('div'))
+    $('#singlecell_messages').append(document.createElement('div'))
 	.children().last().text("*******SEND: "+JSON.stringify(msg));
 
     /* We need to make a proxy object; see
@@ -367,7 +367,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 
 	    // Append the message to the div of messages
 	    // use .text() so that strings are automatically escaped
-	    $('#messages').append(document.createElement('div'))
+	    $('#singlecell_messages').append(document.createElement('div'))
 		.children().last().text(JSON.stringify(msg));
         }
     }

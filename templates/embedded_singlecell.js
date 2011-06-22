@@ -30,23 +30,23 @@ var makeSinglecell=(function() {
 	    setTimeout(arguments.callee,100);
 	} else {
 	    $(function(){
-		var outputLocation;
+		var outputDiv;
 		$.ajaxSetup({'dataType':'jsonp'});
 		$('#singlecell').html(body);
-		if (args.outputLocation !== undefined) {
-		    outputLocation = '#'+args.outputLocation;
-		    $('#singlecell #output, #messages').appendTo(outputLocation);
+		if (args.outputDiv !== undefined) {
+		    outputDiv = '#'+args.outputDiv;
+		    $('#singlecell #singlecell_output, #singlecell_messages').appendTo(outputDiv);
 		} else {
-		    outputLocation = '#singlecell';
+		    outputDiv = '#singlecell';
 		}
 		if (args.showMessages === false) {
-		    $(outputLocation+' #messages').css("display","none");
+		    $(outputDiv+' #singlecell_messages').css("display","none");
 		}
 		if (args.showComputationID === false) {
-		    $('#singlecell #computation_id, #completion').css("display","none");
+		    $('#singlecell #computation_id').css("display","none");
 		}
 		if (args.showFileUploads === false) {
-		    $('#singlecell #file_input').css("display","none");
+		    $('#singlecell #file_input , #completion').css("display","none");
 		}
 		initPage();
 	    });
