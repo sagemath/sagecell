@@ -30,7 +30,12 @@ singlecell.deleteSinglecell = (function(singlecellInfo) {
     $(singlecellInfo.outputDiv).remove();
 });
 
-singlecell.makeSinglecell = (function() {
+singlecell.makeSinglecell = (function(args) {
+    var inputDiv = args.inputDiv,
+    outputDiv = args.outputDiv,
+    files = args.files,
+    messages = args.messages,
+    computationID = args.computationID;
     if (typeof inputDiv === "undefined") {
 	inputDiv = "#singlecell";
     }
@@ -101,8 +106,8 @@ singlecell.initCell = (function(singlecellInfo) {
     var outputDivID = singlecellInfo.outputDiv.replace("\#","");
     var inputDiv = $(singlecellInfo.inputDiv);
     var outputDiv = $(singlecellInfo.outputDiv);
-    
-    var editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands")[0],{
+
+    var editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0),{
 	mode:"python",
 	indentUnit:4,
 	tabMode:"shift",

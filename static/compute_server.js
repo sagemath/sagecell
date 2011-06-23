@@ -170,8 +170,6 @@ Session.prototype.get_output = function() {
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
-    this.setQuery();
-    
     var id=this.session_id;
 
     if(data!==undefined && data.content!==undefined) {
@@ -260,6 +258,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		.children().last().text(JSON.stringify(msg));
         }
     }
+    this.setQuery();
 }
 
 /**************************************************************
