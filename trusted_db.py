@@ -158,11 +158,11 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
                                pgid=msg['content']['pgid'])
             pipe.send(msg['content'])
         elif msg['msg_type']=='add_messages':
-            messages=[json.loads(m) for m,_ in msg['content']['messages']]
-            for i in range(len(messages)):
-                m,d=msg['content']['messages'][i]
-                authenticate(m,d,messages[i]['parent_header']['session'],auth_dict,True)
-            db.add_messages(None,messages)
+            content=[(json.loads(m),d) for m,d in msg['content']['messages']]
+            for i in range(len(content)):
+                m,d=content[i]
+                authenticate(msg['content']['messages'][i][0],d,m['parent_header']['session'],auth_dict,True)
+            db.add_messages(None,[c[0] for c in content])
         elif msg['msg_type'] in db.valid_untrusted_methods:
             to_send=getattr(db,msg['msg_type'])(**msg['content'])
     except AuthenticationException:
@@ -268,7 +268,7 @@ if __name__=='__main__':
     if sysargs.print_cmd:
         print
         for i in (0,1):
-            print "echo -n %s >> %s_copy"%(keys[i],filename%i)
+            print "echo -n %s > %s_copy"%(keys[i],filename%i)
         print cmd
     else:
         for i in (0,1):
