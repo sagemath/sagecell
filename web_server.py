@@ -26,10 +26,10 @@ messages=[]
 sysargs=None
 
 scripts=['codemirror2/lib/codemirror.js',
-         'codemirror2/mode/python/python.js',
          'jquery-1.5.min.js',
          'compute_server.js',
-         'jqueryui/js/jquery-ui-1.8.13.custom.min.js']
+         'jqueryui/js/jquery-ui-1.8.13.custom.min.js',
+         'codemirror2/mode/python/python.js']
 
 stylesheets=['codemirror2/lib/codemirror.css',
              'codemirror2/theme/default.css',
@@ -266,7 +266,6 @@ def config(db, fs):
 @app.route("/embedded_singlecell.js")
 def embedded():
     return Response(render_template("embedded_singlecell.js",
-                                    args=request.args.items(),
                                     scripts=scripts,
                                     stylesheets=stylesheets),
                     content_type='text/javascript')
