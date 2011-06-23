@@ -154,7 +154,6 @@ Session.prototype.output = function(html, block_id) {
 	output_block.empty();
 	this.replace_output=false;
     }
-    console.log("OUTPUT BLOCK: "+output_block);
     return output_block.append(html).children().last();
 }
 

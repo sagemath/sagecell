@@ -72,11 +72,11 @@ singlecell.makeSinglecell = (function() {
 		if (files === false) {
 		    $(inputDiv+" .singlecell_files").css("display","none");
 		}
-		setTimeout(singlecell.initCell(singlecellInfo), 20);
-		return singlecellInfo;
+		singlecell.initCell(singlecellInfo);
 	    });
 	}
     }, 100);
+    return singlecellInfo;
 });
 /*
 function handleEditorKeyEvent(editor,event) {
@@ -180,13 +180,15 @@ singlecell.initCell = (function(singlecellInfo) {
 	}), session);
 	return false;
     });
+    return singlecellInfo;
 });
 
-singlecell.moveForm = (function(singlecellInfo) {
+singlecell.moveInputForm = (function(singlecellInfo) {
     $(document.body).append("<div id='singlecell_moved' style='display:none'></div>");
     $(singlecellInfo.inputDiv).contents().appendTo("#singlecell_moved");
 });
-singlecell.restoreForm = (function(singlecellInfo) {
+
+singlecell.restoreInputForm = (function(singlecellInfo) {
     $("#singlecell_moved").contents().appendTo(singlecellInfo.inputDiv);
     $("#singlecell_moved").remove();
 });
