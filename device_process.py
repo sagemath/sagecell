@@ -258,7 +258,7 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                 while not fs.create_secret(session=session):
                     pass
                 keys[1]=sha1(keys[1]).digest()
-                msg_queue=manager.Queue() # TODO: make this a pipe
+                msg_queue=manager.Queue()
                 args=(session, msg_queue, resource_limits, keys[1])
                 sessions[session]={'messages': msg_queue,
                                    'worker': pool.apply_async(worker,args)}
@@ -303,8 +303,7 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
             del sequence[session]
             del sessions[session]
         if len(new_messages)>0:
-            db.add_messages(messages=new_messages,
-                            hmac=hmacs[session] if session in hmacs else None)
+            db.add_messages(messages=new_messages, hmacs=hmacs)
         for session in finished:
             db.close_session(device=device_id, session=session,hmac=hmacs[session])
             del hmacs[session]

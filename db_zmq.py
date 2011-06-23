@@ -62,13 +62,14 @@ class DB(db.DB):
         self._req.connect(self.address)
         log("ZMQ connecting to %s"%self.address)
 
-    def add_messages(self, messages, hmac=None, id=None):
+    def add_messages(self, messages, hmacs=None, id=None):
         new=[]
         for m in messages:
             s=dumps(m)
-            if hmac is not None:
-                hmac.update(s)
-                d=hmac.hexdigest()
+            session=m['parent_header']['session']
+            if session in hmacs:
+                hmacs[session].update(s)
+                d=hmacs[session].hexdigest()
             else:
                 d=None
             new.append((s,d))
