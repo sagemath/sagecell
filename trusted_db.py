@@ -202,6 +202,10 @@ def signal_handler(signal, frame):
     """
     Clean up device
     """
+    os.kill(db_loop.process.pid, 9)
+    os.wait()
+    os.kill(fs_loop.process.pid, 9)
+    os.wait()
     cleanup_device(device=db_loop.device_id(), pgid=db_loop.pgid())
     
 
