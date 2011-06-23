@@ -1,12 +1,11 @@
 <textarea id="commands" rows="1" cols="1"></textarea><br>
-<fieldset id="file_input" style="width:30%">
-  <legend>File Uploads</legend>
+<fieldset id="file_input" style="width:100%;border:none">
+  <legend>Upload Files:</legend>
   <input type="button" value="Add file" id="add_file">
+  <span style="display:inline-block;width:0.5em"></span>
   <input type="button" value="Clear files" id="clear_files">
   <div id="file_upload"></div>
 </fieldset>
-<input type="hidden" value="" name="session_id" id="session_id">
-<input type="hidden" value="" name="msg_id" id="msg_id">
 <div id="completion"></div>
 <input type="button" value="Evaluate" id="eval_button">
 <span style="display:inline-block;width:3em"></span>

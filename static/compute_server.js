@@ -32,40 +32,28 @@ function initPage() {
 	if(sessionStorage.sage_mode) {
 	    $('#sage_mode').attr('checked',sessionStorage.getItem('sage_mode')=='true');
 	}
+	$('#sage_mode').change(function(e) {
+	    sessionStorage.setItem('sage_mode', $(e.target).attr('checked'));
+	});
     } catch(e) {}
     editor.focus();
     
     var files = 0
 
-    $('#sage_mode').change(function(e) {
-	try {
-	    sessionStorage.setItem('sage_mode',$(e.target).attr('checked'));
-	} catch(e) {};
-    });
-
     $(document.body).append('<form id="sc_form"></form>');
-    $('#sc_form').attr('action',$URL.evaluate);
-    $('#sc_form').attr('enctype','multipart/form-data');
-    $('#sc_form').attr('method','POST');
-    $('#singlecell #add_file').click(function(){$('.file_current').click()});
-    $('.file_current').live('change',function(e) {
+    $('#sc_form').attr({'action': $URL.evaluate,
+			'method': 'POST',
+			'enctype': 'multipart/form-data'});
+
+    $('#singlecell #add_file').click(function(){
+	$('#file_upload').append('<div class="file_input"><a class="remove_file" id="file'+files+'" href="#" style="text-decoration:none" onClick="$(this).parent().remove()">[-]</a>&nbsp;&nbsp;&nbsp;<input type="file" id="file'+files+'" name="file"></div>');
 	files++;
-	var v=e.target.value;
-	if(v) {
-	    $('#file_upload').append(v+'<br>');
-	} else {
-	    $('#file_upload').text(files+' files to be uploaded<br>')
-	}
-	$('#sc_form').append('<input type="file" id="file'+files+' name="file'+files+'>');
-	$('.file_current').removeClass('file_current');
-	$('#file'+files).addClass('file_current');
-    })
+    });
 
     $('#singlecell #clear_files').click(function(){
 	files = 0;
 	$('#sc_form').empty();
 	$('#file_upload').empty();
-	$('#sc_form').html('<input type="file" id="file0" name="file" class="file_current"><br><span id="upload_values"></span>');
     });
 
     $('.selector_button').live('hover',function(e) {
@@ -78,20 +66,19 @@ function initPage() {
 	$(e.target).removeClass('ui-state-focus');
     });
 
-    $('#singlecell #clear_files').click();
     $('#singlecell #eval_button').click(function() {
 	var session = new Session("#output", $("#sage_mode").attr("checked"));
 	$('#computation_id').append('<div>'+session.session_id+'</div>');
-	$('#singlecell #session_id').val(session.session_id);
-	$('#singlecell #msg_id').val(uuid4());
-	$('#sc_form #upload_values').empty()
-	$('#sc_form #upload_values').append('<input type="hidden" name="commands">').children().last().val(editor.getValue());
-	$('#singlecell #session_id,#msg_id,#sage_mode').each(function(i) {
-	    $(this).clone().appendTo($("#sc_form #upload_values"));
-	});
+	$('#sc_form').append('<input type="hidden" name="commands">').children().last().val(editor.getValue());
+	$('#sc_form').append('<input name="session_id" value="'+session.session_id+'">');
+	$('#sc_form').append('<input name="msg_id" value="'+uuid4()+'">');
+	$('#singlecell #sage_mode').clone().appendTo($('#sc_form'));
+	$('#singlecell #file_upload .file_input').appendTo($('#sc_form'));
 	$('#sc_form').attr("target", "upload_target_"+session.session_id);
 	$('#singlecell').append("<iframe style='display:none' name = 'upload_target_"+session.session_id+"' id='upload_target_"+session.session_id+"'></iframe>");
 	$('#sc_form').submit();
+	$('#sc_form .file_input').appendTo('#singlecell #file_upload');
+	$('#sc_form').empty();
 	$("#upload_target_"+session.session_id).load($.proxy(function(event){
 	    if($URL.root==(location.protocol+'//'+location.host+'/')) {
 		// if the hosts are the same, communication between frames
@@ -106,7 +93,6 @@ function initPage() {
 		}
 	    }
 	    $("#upload_target_"+session.session_id).unbind();
-	    $("#singlecell #clear_files").click();	    
 	}),session);
 	return false;
     });
@@ -210,11 +196,12 @@ Session.prototype.init = function (output, sage_mode) {
 
 // Manages querying the webserver for messages
 Session.prototype.setQuery = function() {
-    this.queryID = setInterval($.proxy(this, 'get_output'), this.poll_interval);
+    this.clearQuery();
+    this.queryID = setTimeout($.proxy(this, 'get_output'), this.poll_interval);
 }
 
 Session.prototype.clearQuery = function() {
-    clearInterval(this.queryID);
+    clearTimeout(this.queryID);
 }
 
 Session.prototype.updateQuery = function(new_interval) {
@@ -283,6 +270,8 @@ Session.prototype.get_output = function() {
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
+    this.setQuery();
+    
     var id=this.session_id;
 
     if(data!==undefined && data.content!==undefined) {
@@ -524,7 +513,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+' '+' input_box__control" value="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_grid":
-		var default_values = this.controls[name].default;
+		var default_values = this.controls[name]["default"];
 		var width = this.controls[name].width;
 		var inner_table = "<table><tbody>";
 		for (var r = 0, r_max = this.controls[name].nrows; r < r_max; r ++) {
