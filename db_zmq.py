@@ -73,6 +73,9 @@ class DB(db.DB):
             else:
                 d=None
             new.append((s,d))
+            # Possible TODO: send the HMAC digest of the session after
+            # it is updated with the messages, instead of sending a new
+            # digest for each individual message
         db_method('add_messages',['id','messages'])(self, id=None, messages=new)
 
     new_input_message = db_method('new_input_message', ['msg'])
