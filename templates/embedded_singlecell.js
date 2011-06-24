@@ -57,7 +57,7 @@ singlecell.makeSinglecell = (function(args) {
     var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv};
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
-	// Wait for CodeMirro to load before using the $ function
+	// Wait for CodeMirror to load before using the $ function
 	if (typeof CodeMirror === "undefined") {
 	    setTimeout(arguments.callee, 100);
 	    return false;
@@ -155,8 +155,8 @@ singlecell.initCell = (function(singlecellInfo) {
 	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(editor.getValue());
 	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
 	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
-	inputDiv.find(".singlecell_sageMode").clone().appendTo($(inputDivName+"_form"));
-	inputDiv.find(".singlecell_fileUpload .singlecell_fileInput").appendTo($(inputDivName+"_form"));
+	inputDiv.find(".singlecell_sageMode").clone().appendTo($("#"+inputDivName+"_form"));
+	inputDiv.find(".singlecell_fileInput").appendTo($("#"+inputDivName+"_form"));
 	$("#"+inputDivName+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
 	inputDiv.append("<iframe style='display:none' name='singlecell_serverResponse_"+session.session_id+"' id='singlecell_serverResponse_"+session.session_id+"'></iframe>");
 	$("#"+inputDivName+"_form").submit();
