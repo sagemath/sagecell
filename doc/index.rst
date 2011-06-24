@@ -20,6 +20,7 @@ Contents:
     interact_protocol
     timing
     js
+    embedding
 
 .. automodule:: misc
     :members:

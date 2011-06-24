@@ -25,11 +25,11 @@ xreq=None
 messages=[]
 sysargs=None
 
-scripts=['codemirror2/lib/codemirror.js',
+scripts=['compute_server.js',
+         'codemirror2/lib/codemirror.js',
          'codemirror2/mode/python/python.js',
-         'jquery-1.5.min.js',
-         'compute_server.js',
          'jqueryui/js/jquery-ui-1.8.13.custom.min.js']
+jQuery_current='jquery-1.5.min.js'
 
 stylesheets=['codemirror2/lib/codemirror.css',
              'codemirror2/theme/default.css',
@@ -82,7 +82,7 @@ def jsonify_with_callback(callback, *args, **kwargs):
 
 @app.route("/")
 def root():
-    return render_template('root.html',scripts=scripts,stylesheets=stylesheets)
+    return render_template('root.html');
 
 @app.route("/eval", methods=['GET','POST'])
 @get_db
@@ -265,8 +265,10 @@ def config(db, fs):
 
 @app.route("/embedded_singlecell.js")
 def embedded():
-    return render_template("embedded_singlecell.js",
-                           scripts=scripts, stylesheets=stylesheets)
+    return Response(render_template("embedded_singlecell.js",
+                                    scripts=scripts,
+                                    stylesheets=stylesheets),
+                    content_type='text/javascript')
 
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
