@@ -170,7 +170,9 @@ Session.prototype.get_output = function() {
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
-    var id=this.session_id;
+    this.setQuery();
+
+    var id=this.session_id, session_continue = true;
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
@@ -236,6 +238,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			}
 		    }
 		    this.clearQuery();
+		    session_continue = false;
 		    break;
 		case "interact_prepare":
 		    var interact_id = user_msg.content.interact_id;
@@ -256,9 +259,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    // use .text() so that strings are automatically escaped
 	    this.outputDiv.find(".singlecell_messages").append(document.createElement('div'))
 		.children().last().text(JSON.stringify(msg));
+	    
+	    if (session_continue) {
+		this.setQuery();
+	    }
         }
     }
-    this.setQuery();
 }
 
 /**************************************************************
