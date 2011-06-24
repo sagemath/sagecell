@@ -202,6 +202,12 @@ def signal_handler(signal, frame):
     """
     Clean up device
     """
+    from signal import SIGKILL
+    # TODO: should we be nicer and send a gentler signal first?
+    os.kill(db_loop.process.pid, SIGKILL)
+    os.wait()
+    os.kill(fs_loop.process.pid, SIGKILL)
+    os.wait()
     cleanup_device(device=db_loop.device_id(), pgid=db_loop.pgid())
     
 
