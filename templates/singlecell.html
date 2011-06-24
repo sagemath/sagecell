@@ -1,21 +1,18 @@
-<textarea id="commands" rows="1" cols="1"></textarea><br>
-<fieldset id="file_input" style="width:30%">
-  <legend>File Uploads</legend>
-  <input type="button" value="Add file" id="add_file">
-  <input type="button" value="Clear files" id="clear_files">
-  <div id="file_upload"></div>
+<textarea class="singlecell_commands" rows="1" cols="1"></textarea><br>
+<fieldset style="width:30%; border:none" class="singlecell_files">
+  <legend>Upload Files:</legend>
+  <input type="button" value="Add file" class="singlecell_addFile">
+  <input type="button" value="Clear files" class="singlecell_clearFiles">
+  <div class="singlecell_fileUpload"></div>
 </fieldset>
-<input type="hidden" value="" name="session_id" id="session_id">
-<input type="hidden" value="" name="msg_id" id="msg_id">
-<div id="completion"></div>
-<input type="button" value="Evaluate" id="eval_button">
+<div class="singlecell_completion"></div>
+<input type="button" value="Evaluate" class="singlecell_evalButton">
 <span style="display:inline-block;width:3em"></span>
-<input type="checkbox" checked="checked" id="sage_mode" name="sage_mode" value="True">
-<label for="sage_mode" accesskey="S">Use &ldquo;Sage Mode&rdquo; for code execution</label><br>
-Computation ID:
-<div id="computation_id"></div>
+<input type="checkbox" checked="checked" class="singlecell_sageMode" name="sage_mode" value="True">
+<label for="sage_mode" accesskey="S">Use &ldquo;Sage Mode&rdquo; for code execution</label>
+<div class="singlecell_computationID"><p>Computation ID:</p></span></div>
 <br>
-<div id="output"><br><br></div>
-<hr>
-<div style="font-size:large;font-weight:bold">Messages</div>
-<div id="messages"><br><br></div>
+<div class="singlecell_output"></div>
+<div class="singlecell_messages">
+  <hr><span style="font-size:large;font-weight:bold">Messages</span><br><br>
+</div>

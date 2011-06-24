@@ -5,7 +5,6 @@
 // recommendation to use jsdoc http://groups.google.com/group/sphinx-dev/browse_thread/thread/defa96cdc0dfc584
 // sphinx javascript domain: http://sphinx.pocoo.org/domains.html#the-javascript-domain
 
-
 // TODO from Crockford's book:
 
 //  * Make objects *not* use this, but rather make them an associative
@@ -15,102 +14,6 @@
 //    http://bonsaiden.github.com/JavaScript-Garden/#function.constructors,
 //    which argues that it is more inefficient to make objects out of
 //    closures instead of using the prototype property and "new"
-
-// Set up the editor and evaluate button
-function initPage() {
-    var editor=CodeMirror.fromTextArea($("#commands")[0],{
-	mode:"python",
-	indentUnit:4,
-	tabMode:"shift",
-	lineNumbers:true,
-	matchBrackets:true,
-	onKeyEvent:handleKeyEvent});
-    try {
-	if(sessionStorage.editor_value) {
-	    editor.setValue(sessionStorage.getItem('editor_value'));
-	}
-	if(sessionStorage.sage_mode) {
-	    $('#sage_mode').attr('checked',sessionStorage.getItem('sage_mode')=='true');
-	}
-    } catch(e) {}
-    editor.focus();
-    
-    var files = 0
-
-    $('#sage_mode').change(function(e) {
-	try {
-	    sessionStorage.setItem('sage_mode',$(e.target).attr('checked'));
-	} catch(e) {};
-    });
-
-    $(document.body).append('<form id="sc_form"></form>');
-    $('#sc_form').attr('action',$URL.evaluate);
-    $('#sc_form').attr('enctype','multipart/form-data');
-    $('#sc_form').attr('method','POST');
-    $('#singlecell #add_file').click(function(){$('.file_current').click()});
-    $('.file_current').live('change',function(e) {
-	files++;
-	var v=e.target.value;
-	if(v) {
-	    $('#file_upload').append(v+'<br>');
-	} else {
-	    $('#file_upload').text(files+' files to be uploaded<br>')
-	}
-	$('#sc_form').append('<input type="file" id="file'+files+' name="file'+files+'>');
-	$('.file_current').removeClass('file_current');
-	$('#file'+files).addClass('file_current');
-    })
-
-    $('#singlecell #clear_files').click(function(){
-	files = 0;
-	$('#sc_form').empty();
-	$('#file_upload').empty();
-	$('#sc_form').html('<input type="file" id="file0" name="file" class="file_current"><br><span id="upload_values"></span>');
-    });
-
-    $('.selector_button').live('hover',function(e) {
-	$(e.target).toggleClass('ui-state-hover');
-    });
-    $('.selector_button').live('focus',function(e) {
-	$(e.target).addClass('ui-state-focus');
-    });
-    $('.selector_button').live('blur',function(e) {
-	$(e.target).removeClass('ui-state-focus');
-    });
-
-    $('#singlecell #clear_files').click();
-    $('#singlecell #eval_button').click(function() {
-	var session = new Session("#output", $("#sage_mode").attr("checked"));
-	$('#computation_id').append('<div>'+session.session_id+'</div>');
-	$('#singlecell #session_id').val(session.session_id);
-	$('#singlecell #msg_id').val(uuid4());
-	$('#sc_form #upload_values').empty()
-	$('#sc_form #upload_values').append('<input type="hidden" name="commands">').children().last().val(editor.getValue());
-	$('#singlecell #session_id,#msg_id,#sage_mode').each(function(i) {
-	    $(this).clone().appendTo($("#sc_form #upload_values"));
-	});
-	$('#sc_form').attr("target", "upload_target_"+session.session_id);
-	$('#singlecell').append("<iframe style='display:none' name = 'upload_target_"+session.session_id+"' id='upload_target_"+session.session_id+"'></iframe>");
-	$('#sc_form').submit();
-	$("#upload_target_"+session.session_id).load($.proxy(function(event){
-	    if($URL.root==(location.protocol+'//'+location.host+'/')) {
-		// if the hosts are the same, communication between frames
-		// is allowed
-		// Instead of using a try/except block, we use an if to work 
-		// around a bug in Webkit documented at
-		// http://code.google.com/p/chromium/issues/detail?id=17325
-		var server_response = $("#upload_target_"+session.session_id).contents().find('body').html();
-		if (server_response !== "") {
-		session.output(server_response);
-		    session.clearQuery();
-		}
-	    }
-	    $("#upload_target_"+session.session_id).unbind();
-	    $("#singlecell #clear_files").click();	    
-	}),session);
-	return false;
-    });
-}
 
 // Create UUID4-compliant ID
 // Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
@@ -169,24 +72,6 @@ colorize = (function(){
     }
 })();
 
-function handleKeyEvent(editor, event) {
-    if(event.which==13 && event.shiftKey && event.type=="keypress") {
-	$('#singlecell #eval_button').click()
-	event.stop()
-	return true;
-    }
-    if(window.sessionStorage) {
-	try {
-	    sessionStorage.removeItem('editor_value');
-	    sessionStorage.setItem('editor_value',editor.getValue());
-	} catch (e) {
-	    // if we can't store, we don't do anything
-	    // for example, in chrome if we block cookies, we can't store, it seems.
-	};
-    }
-    return false;
-}
-
 /**************************************************************
 * 
 * Session Class
@@ -194,12 +79,13 @@ function handleKeyEvent(editor, event) {
 **************************************************************/
 
 var Session = makeClass();
-Session.prototype.init = function (output, sage_mode) {
+Session.prototype.init = function (outputDiv, output, sage_mode) {
+    this.outputDiv = outputDiv;
     this.session_id = uuid4();
     this.sage_mode = sage_mode;
     this.sequence = 0;
     this.poll_interval = 400;
-    $(output).append('<div id="session_'+this.session_id+'" class="session_container"><div id="session_'+this.session_id+'_title" class="session_title">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="session_output"></div></div>');
+    this.outputDiv.find(output).append('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div></div>');
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output=false;
     this.lock_output=false;
@@ -210,11 +96,12 @@ Session.prototype.init = function (output, sage_mode) {
 
 // Manages querying the webserver for messages
 Session.prototype.setQuery = function() {
-    this.queryID = setInterval($.proxy(this, 'get_output'), this.poll_interval);
+    this.clearQuery();
+    this.queryID = setTimeout($.proxy(this, 'get_output'), this.poll_interval);
 }
 
 Session.prototype.clearQuery = function() {
-    clearInterval(this.queryID);
+    clearTimeout(this.queryID);
 }
 
 Session.prototype.updateQuery = function(new_interval) {
@@ -243,7 +130,7 @@ Session.prototype.sendMsg = function() {
 		       //"user_expressions": {}
 		      }
 	  };
-    $('#messages').append(document.createElement('div'))
+    this.outputDiv.find('.singlecell_messages').append(document.createElement('div'))
 	.children().last().text("*******SEND: "+JSON.stringify(msg));
 
     /* We need to make a proxy object; see
@@ -283,7 +170,9 @@ Session.prototype.get_output = function() {
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
-    var id=this.session_id;
+    this.setQuery();
+
+    var id=this.session_id, session_continue = true;
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
@@ -300,16 +189,16 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    switch(msg.msg_type) {
 		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
-		this.output("<pre class='"+msg.content.name+"'></pre>",output_block).text(msg.content.data);
+		this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block).text(msg.content.data);
 		break;
 
 	    case 'pyout':
-                this.output("<pre class='pyout'></pre>",output_block).append(msg.content.data['text/plain']);
+                this.output("<pre class='singlecell_pyout'></pre>",output_block).append(msg.content.data['text/plain']);
 		break;
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    this.output('<object id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>',output_block);
+                    this.output('<object class="singlecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</object>',output_block);
                 } else if(msg.content.data['text/html']!==undefined) {
 		    this.output('<div>'+msg.content.data['text/html']+'</div>',output_block);
 		}
@@ -341,7 +230,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.output(html,output_block);
 		    break;
 		case "session_end":
-		    this.output("<div class='done'>Session "+id+ " done</div>",output_block);
+		    this.output("<div class='singlecell_done'>Session "+id+ " done</div>",output_block);
 		    // Unbinds interact change handlers
 		    for (var i in this.eventHandlers) {
 			for (var j in this.eventHandlers[i]) {
@@ -349,11 +238,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			}
 		    }
 		    this.clearQuery();
+		    session_continue = false;
 		    break;
 		case "interact_prepare":
 		    var interact_id = user_msg.content.interact_id;
 		    var div_id = "interact-" + interact_id;
-		    this.output("<div class='interact_container'><div class='interact' id='"+div_id+"'></div><div class='interact_output' id='output_"+interact_id+"'></div></div>",output_block);
+		    this.output("<div class='singlecell_interactContainer'><div class='singlecell_interact' id='"+div_id+"'></div><div class='singlecell_interactOutput' id='output_"+interact_id+"'></div></div>",output_block);
 		    this.interacts[interact_id] = 1;
 		    new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
@@ -367,8 +257,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 
 	    // Append the message to the div of messages
 	    // use .text() so that strings are automatically escaped
-	    $('#messages').append(document.createElement('div'))
+	    this.outputDiv.find(".singlecell_messages").append(document.createElement('div'))
 		.children().last().text(JSON.stringify(msg));
+	    
+	    if (session_continue) {
+		this.setQuery();
+	    }
         }
     }
 }
@@ -524,7 +418,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+' '+' input_box__control" value="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_grid":
-		var default_values = this.controls[name].default;
+		var default_values = this.controls[name]["default"];
 		var width = this.controls[name].width;
 		var inner_table = "<table><tbody>";
 		for (var r = 0, r_max = this.controls[name].nrows; r < r_max; r ++) {
@@ -548,7 +442,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
-			    inner_table += '<td><span style="width:'+this.controls[name].width+'" class="'+control_id+' selector_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'" tabindex="0">'+escape(value_labels[i])+'</span></td>';
+			    inner_table += '<td><span style="width:'+this.controls[name].width+'" class="'+control_id+' singlecell_selectorButton ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'" tabindex="0">'+escape(value_labels[i])+'</span></td>';
 			    $('#'+control_id+'_'+i).live('click', (function(i,control_id){return function(e) {
 				if(!$(e.target).hasClass('ui-state-active')) {
 				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
@@ -581,7 +475,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		}
 		break;
 	    case "slider":
-		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' slider_control" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"></span>';
+		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' singlecell_sliderControl" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"></span>';
 		addRow(table,label,name,html_code,null);
 		$(table).find("#" + control_id).slider({
 		    value:this.controls[name]["default"],
