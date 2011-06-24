@@ -238,7 +238,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    var html="<div>\n";
 		    for(var j = 0, j_max = files.length; j < j_max; j++)
 			//TODO: escape filenames and id
-			html+='<a href="'+$URL['root']+'/files/'+id+'/'+files[j]+'" target="_blank">'+files[j]+'</a><br>\n';
+			html+='<a href="'+$URL['root']+'files/'+id+'/'+files[j]+'" target="_blank">'+files[j]+'</a><br>\n';
 		    html+="</div>";
 		    this.output(html,output_block);
 		    break;
