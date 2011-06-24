@@ -1,41 +1,41 @@
 var singlecell = {};
 
 singlecell.init = (function() {
-    document.head || (document.head = document.getElementsByTagName('head')[0]);
+    var documentHead = document.head || document.getElementsByTagName('head')[0];
+
     var scripts=[
 	{%- for script in scripts -%}
 	"{{- url_for('static',filename=script,_external=True) -}}",
-	{%- endfor -%}];
-    for(var i=0; i<scripts.length; i++) {
-	var s=document.createElement("script");
+	{%- endfor -%}]
+    for(var i = 0; i < scripts.length; i++) {
+	var s = document.createElement("script");
 	s.setAttribute("type","text/javascript");
 	s.setAttribute("src",scripts[i]);
-	document.head.appendChild(s);
+	documentHead.appendChild(s);
     }
+
     var stylesheets=[
 	{%- for stylesheet in stylesheets -%}
 	"{{- url_for('static',filename=stylesheet,_external=True) -}}",
 	{%- endfor -%}];
-    for(var i=0; i<stylesheets.length; i++) {
-	var s=document.createElement("link");
+    for(var i = 0; i < stylesheets.length; i++) {
+	var s = document.createElement("link");
 	s.setAttribute("rel","stylesheet");
 	s.setAttribute("href",stylesheets[i]);
 	document.head.appendChild(s);
     }
-    return true;
-})
-
-singlecell.deleteSinglecell = (function(singlecellInfo) {
-    $(singlecellInfo.inputDiv).remove();
-    $(singlecellInfo.outputDiv).remove();
 });
 
 singlecell.makeSinglecell = (function(args) {
+    if (typeof args === "undefined") {
+	args = {};
+    }
     var inputDiv = args.inputDiv,
     outputDiv = args.outputDiv,
     files = args.files,
     messages = args.messages,
     computationID = args.computationID;
+
     if (typeof inputDiv === "undefined") {
 	inputDiv = "#singlecell";
     }
@@ -57,13 +57,12 @@ singlecell.makeSinglecell = (function(args) {
     var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv};
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
-	// Wait for jQuery to load before using the $ function
-	if (typeof jQuery === "undefined") {
+	// Wait for CodeMirro to load before using the $ function
+	if (typeof CodeMirror === "undefined") {
 	    setTimeout(arguments.callee, 100);
 	    return false;
 	} else {
 	    $(function() {
-		$.ajaxSetup({'dataType':'jsonp'});
 		$(inputDiv).html(body);
 		if (inputDiv !== outputDiv) {
 		    $(inputDiv+" .singlecell_output, .singlecell_messages").appendTo(outputDiv);
@@ -83,27 +82,10 @@ singlecell.makeSinglecell = (function(args) {
     }, 100);
     return singlecellInfo;
 });
-/*
-function handleEditorKeyEvent(editor,event) {
-    if (event.which === 13 && event.shiftKey && event.type === "keypress") {
-	inputDiv.find(".evalButton").click();
-	event.stop();
-	return true;
-    }
-    if (window.sessionStorage) {
-	try {
-	    sessionStorage.removeItem(inputDivID+"_editorValue");
-	    sessionStorage.setItem(inputDivID+"_editorValue", editor.getValue());
-	} catch (e) {
-	    // if we can't store, we don't do anything
-	    // for example, in chrome if we block cookies, we can't store.
-	}
-    }
-}
-*/
+
 singlecell.initCell = (function(singlecellInfo) {
-    var inputDivID = singlecellInfo.inputDiv.replace("\#","");
-    var outputDivID = singlecellInfo.outputDiv.replace("\#","");
+//Strips all special characters
+    var inputDivName = singlecellInfo.inputDiv.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
     var inputDiv = $(singlecellInfo.inputDiv);
     var outputDiv = $(singlecellInfo.outputDiv);
 
@@ -111,37 +93,49 @@ singlecell.initCell = (function(singlecellInfo) {
 	mode:"python",
 	indentUnit:4,
 	tabMode:"shift",
-	lineNumber:true,
+	lineNumbers:true,
 	matchBrackets:true,
-	/*onKeyEvent:handleEditorKeyEvent()*/
+	onKeyEvent: (function(editor, event){
+	    if (event.which === 13 && event.shiftKey && event.type === "keypress") {
+		inputDiv.find(".singlecell_evalButton").click();
+		event.stop();
+		return true;
+	    }
+	    try {
+		sessionStorage.removeItem(inputDivName+"_editorValue");
+		sessionStorage.setItem(inputDivName+"_editorValue", editor.getValue());
+	    } catch (e) {
+		// if we can't store, don't do anything, e.g. if cookies are blocked
+	    }
+	})
     });
     try {
-	if (sessionStorage[inputDivID+"_editorValue"]) {
-	    editor.setValue(sessionStorage.getItem(inputDivID+"_editorValue"));
+	if (sessionStorage[inputDivName+"_editorValue"]) {
+	    editor.setValue(sessionStorage.getItem(inputDivName+"_editorValue"));
 	}
-	if (sessionStorage[inputDivID+"_sageMode"]) {
-	    inputDiv.find(".singlecell_sageMode").attr("checked", sessionStorage.getItem(inputDivID+"_sageMode")=="true");
+	if (sessionStorage[inputDivName+"_sageMode"]) {
+	    inputDiv.find(".singlecell_sageMode").attr("checked", sessionStorage.getItem(inputDivName+"_sageMode")=="true");
 	}
 	inputDiv.find(".singlecell_sageMode").change(function(e) {
-	    sessionStorage.setItem(inputDivID+"_sageMode",$(e.target).attr("checked"));
+	    sessionStorage.setItem(inputDivName+"_sageMode",$(e.target).attr("checked"));
 	});
     } catch(e) {}
     editor.focus();
     
     var files = 0;
     
-    $(document.body).append("<form class='singlecell_form' id='"+inputDivID+"_form'></form>");
-    $("#"+inputDivID+"_form").attr({"action": $URL.evaluate,
+    $(document.body).append("<form class='singlecell_form' id='"+inputDivName+"_form'></form>");
+    $("#"+inputDivName+"_form").attr({"action": $URL.evaluate,
 				"enctype": "multipart/form-data",
 				"method": "POST"
 			       });
     inputDiv.find(".singlecell_addFile").click(function(){
-	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove()'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivID+"file"+files+"' name='file'></div>");
+	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove()'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
 	files++;
     });
     inputDiv.find(".singlecell_clearFiles").click(function() {
 	files = 0;
-	$("#"+inputDivID+"_form").empty();
+	$("#"+inputDivName+"_form").empty();
 	inputDiv.find(".singlecell_fileUpload").empty();
     });
     
@@ -158,16 +152,16 @@ singlecell.initCell = (function(singlecellInfo) {
     inputDiv.find(".singlecell_evalButton").click(function() {
 	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageMode").attr("checked"));
 	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
-	$("#"+inputDivID+"_form").append("<input type='hidden' name='commands'>").children().last().val(editor.getValue());
-	$("#"+inputDivID+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
-	$("#"+inputDivID+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
-	inputDiv.find(".singlecell_sageMode").clone().appendTo($(inputDivID+"_form"));
-	inputDiv.find(".singlecell_fileUpload .singlecell_fileInput").appendTo($(inputDivID+"_form"));
-	$("#"+inputDivID+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
+	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(editor.getValue());
+	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
+	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
+	inputDiv.find(".singlecell_sageMode").clone().appendTo($(inputDivName+"_form"));
+	inputDiv.find(".singlecell_fileUpload .singlecell_fileInput").appendTo($(inputDivName+"_form"));
+	$("#"+inputDivName+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
 	inputDiv.append("<iframe style='display:none' name='singlecell_serverResponse_"+session.session_id+"' id='singlecell_serverResponse_"+session.session_id+"'></iframe>");
-	$("#"+inputDivID+"_form").submit();
-	$("#"+inputDivID+"_form").find(".singlecell_fileInput").appendTo(inputDiv.find(".singlecell_fileUpload"));
-	$("#"+inputDivID+"_form").empty();
+	$("#"+inputDivName+"_form").submit();
+	$("#"+inputDivName+"_form").find(".singlecell_fileInput").appendTo(inputDiv.find(".singlecell_fileUpload"));
+	$("#"+inputDivName+"_form").empty();
 	$("#singlecell_serverResponse_"+session.session_id).load($.proxy(function(event) {
 	    // if the hosts are the same, communication between frames
 	    // is allowed
@@ -186,6 +180,11 @@ singlecell.initCell = (function(singlecellInfo) {
 	return false;
     });
     return singlecellInfo;
+});
+
+singlecell.deleteSinglecell = (function(singlecellInfo) {
+    $(singlecellInfo.inputDiv).remove();
+    $(singlecellInfo.outputDiv).remove();
 });
 
 singlecell.moveInputForm = (function(singlecellInfo) {
