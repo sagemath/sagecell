@@ -209,12 +209,19 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 
 	    case 'display_data':
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    this.output('<embed id="svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
-                } else if(msg.content.data['text/html']!==undefined) {
+                    this.output('<embed  class="singlecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
+		}
+                if(msg.content.data['text/html']!==undefined) {
 		    this.output('<div>'+msg.content.data['text/html']+'</div>',output_block);
-		} else if(msg.content.data['text/filename']!==undefined) {
+		}
+		if(msg.content.data['text/filename']!==undefined) {
 		    this.output('<img src="'+$URL['root']+'files/'+id+'/'+msg.content.data['text/filename']+'" />');
 		}
+		if(msg.content.data['image/png']!==undefined) {
+		    console.log('making png img with data in src');
+		    this.output('<img src="'+msg.content.data['image/png']+'" />');
+		}
+		
 		break;
 
 	    case 'pyerr':
