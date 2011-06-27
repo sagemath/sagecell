@@ -196,8 +196,13 @@ class InputGrid(InteractControl):
         self.nrows = self.kwargs.get('nrows',1)
         self.ncols = self.kwargs.get('ncols',1)
         self.default_value = self.kwargs.get('default',0)
+        self.raw = self.kwargs.get('raw', True);
+
         if not isinstance(self.default_value, list):
-            self.default_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
+            self.default_value = self.default_return_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
+
+        if self.raw:
+            self.default_return_value = [[repr(j) for j in i] for i in self.default_value]
 
     def message(self):
         """
@@ -207,7 +212,7 @@ class InputGrid(InteractControl):
         return {'control_type': 'input_grid',
                 'nrows': int(self.nrows),
                 'ncols': int(self.ncols),
-                'default': self.default_value,
+                'default': self.default_return_value,
                 'width':int(self.kwargs.get('width',0)),
                 'raw': self.kwargs.get('raw', True),
                 'label': self.kwargs.get('label',"")}
