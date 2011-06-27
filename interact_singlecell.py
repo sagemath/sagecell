@@ -165,21 +165,27 @@ class InputBox(InteractControl):
     """
     Defines an input box control.
     """
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self.raw = self.kwargs.get('raw',False);
+        self.default_value = self.default_return_value = self.kwargs.get('default',"")
+        if self.raw:
+            self.default_return_value = repr(self.default_value)
     def message(self):
         """
         :returns: Input box control configuration for an interact_prepare message.
         :rtype: Dict
         """
         return {'control_type':'input_box',
-                'default':self.kwargs.get('default',""),
-                'width':self.kwargs.get('width',""),
+                'default':self.default_return_value,
+                'width':int(self.kwargs.get('width',0)),
                 'raw':self.kwargs.get('raw',False),
                 'label':self.kwargs.get('label',"")}
     def default(self):
         """
         :returns: Default value of control.
         """
-        return self.kwargs.get('default','')
+        return self.default_value
 
 class InputGrid(InteractControl):
     """
