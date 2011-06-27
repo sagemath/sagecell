@@ -199,10 +199,10 @@ class InputGrid(InteractControl):
         :rtype: Dict
         """
         return {'control_type': 'input_grid',
-                'nrows': self.nrows,
-                'ncols': self.ncols,
+                'nrows': int(self.nrows),
+                'ncols': int(self.ncols),
                 'default': self.default_value,
-                'width':self.kwargs.get('width',""),
+                'width':int(self.kwargs.get('width',0)),
                 'raw': self.kwargs.get('raw', True),
                 'label': self.kwargs.get('label',"")}
     def default(self):
@@ -271,7 +271,6 @@ class Selector(InteractControl):
         :returns: Default value of control.
         """
         return self.default_value
-                
     def adapter(self, v):
         return self.values[int(v)]
 
@@ -292,9 +291,9 @@ class ContinuousSlider(InteractControl):
 
         if self.stepsize <= 0:
             if self.steps <= 0:
-                self.stepsize = (self.interval[1] - self.interval[0]) / self.default_steps
+                self.stepsize = float(self.interval[1] - self.interval[0]) / self.default_steps
             else:
-                self.stepsize = (self.interval[1] - self.interval[0]) / self.steps
+                self.stepsize = float(self.interval[1] - self.interval[0]) / self.steps
 
     def message(self):
         """
@@ -303,9 +302,9 @@ class ContinuousSlider(InteractControl):
         """
         return {'control_type':'slider',
                 'subtype':'continuous',
-                'default':self.default_value,
-                'range':self.interval,
-                'step':self.stepsize,
+                'default':float(self.default_value),
+                'range':[float(i) for i in self.interval],
+                'step':float(self.stepsize),
                 'raw':self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
     def default(self):
@@ -320,8 +319,11 @@ class Slider(InteractControl):
     """
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
-        self.values = self.kwargs.get('values',[0])
+        self.values = self.kwargs.get('values',[0,1])
         self.default_value = int(self.kwargs.get('default',0))
+        
+        if len(self.values) < 2:
+            self.values = [0,1]
 
         if self.default_value > len(self.values):
             self.default_value = 0
@@ -334,6 +336,7 @@ class Slider(InteractControl):
         return {'control_type':'slider',
                 'subtype':'value',
                 'default':self.default_value,
+                'range':[0,len(self.values) - 1],
                 'values':[repr(i) for i in self.values],
                 'range':[0, len(self.values) - 1],
                 'step':int(self.kwargs.get('step',1)),
@@ -376,26 +379,26 @@ def automatic_control(control):
             default_value, control = control
 
     if isinstance(control, str):
-        C = input_box(control = control, label = label)
+        C = input_box(default = control, label = label)
     elif isinstance(control, bool):
-        C = checkbox(control = control, label = label, raw = True)
+        C = checkbox(default = control, label = label, raw = True)
     elif isinstance(control, Number):
-        C = input_box(control = control, label = label, raw = True)
+        C = input_box(default = control, label = label, raw = True)
     elif isinstance(control, list):
-        C = selector(buttons = len(control) <= 5, control = default_value, label = label, values = control, raw = False)
+        C = selector(buttons = len(control) <= 5, default = default_value, label = label, values = control, raw = False)
     elif isinstance(control, GeneratorType):
-        C = slider(values = list_of_first_n(control,10000), label = label)
+        C = slider(default = default_value, values = list_of_first_n(control,10000), label = label)
     elif isinstance (control, tuple):
         if len(control) == 2:
-            control = [float(i) for i in control]
-            C = continuous_slider(control = control[0], range = (control[0], control[1]), label = label)
+#            control = [float(i) for i in control]
+            C = continuous_slider(default = default_value, range = (control[0], control[1]), label = label)
         elif len(control) == 3:
-            control = [float(i) for i in control]
-            C = continuous_slider(control = default_value, range = (control[0], control[1]), step = control[2], label = label)
+#            control = [float(i) for i in control]
+            C = continuous_slider(default = default_value, range = (control[0], control[1]), stepsize = control[2], label = label)
         else:
-            C = slider(values = list(control), label = label)
+            C = slider(default = default_value, values = list(control), label = label)
     else:
-        C = input_box(control = control, label=label)
+        C = input_box(default = control, label=label, raw = True)
     
     return C
 

@@ -493,7 +493,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		case "value":
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val(values[default_value]);
-		    $("#"+control_id+"_value").attr("name",default_value);
+		    $(table).find("#"+control_id+"_value").attr("name",default_value);
 		    onSliderChange = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(values[ui.value]);
 			$("#" + ui.handle.offsetParent.id + "_value").attr("name",ui.value);
