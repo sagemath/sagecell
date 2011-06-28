@@ -399,7 +399,7 @@ def automatic_control(control):
         C = selector(buttons = len(control) <= 5, default = default_value, label = label, values = control, raw = False)
     elif isinstance(control, GeneratorType):
         C = slider(default = default_value, values = list_of_first_n(control,10000), label = label)
-    elif isinstance (control, tuple):
+    elif isinstance(control, tuple):
         if len(control) == 2:
 #            control = [float(i) for i in control]
             C = continuous_slider(default = default_value, range = (control[0], control[1]), label = label)
@@ -409,8 +409,18 @@ def automatic_control(control):
         else:
             C = slider(default = default_value, values = list(control), label = label)
     else:
-        C = input_box(default = control, label=label, raw = True)
-    
+        C = input_box(default = control, label = label, raw = True)
+        try:
+            from sagenb.misc.misc import is_Matrix
+            if is_Matrix(control):
+                default_value = control.list()
+                nrows = control.nrows()
+                ncols = control.ncols()
+                default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
+                C = input_grid(nrows = nrows, ncols = ncols, label = label, default = default_value)
+        except:
+            pass
+
     return C
 
 def list_of_first_n(v,n):
