@@ -140,13 +140,6 @@ def evaluate(db,fs):
         db.new_input_message(message)
     return ""
 
-@app.route("/answers")
-@print_exception
-@get_db
-def answers(db,fs):
-    results = db.get_evaluated_cells()
-    return render_template('answers.html', results=results)
-
 @app.route("/output_poll")
 @print_exception
 @get_db
@@ -160,7 +153,7 @@ def output_poll(db,fs):
     callback=request.values['callback'] if 'callback' in request.values else None
     computation_id=request.values['computation_id']
     sequence=int(request.values.get('sequence',0))
-    results = db.get_messages(id=computation_id,sequence=sequence)
+    results = db.get_messages(computation_id,sequence=sequence)
     log("Retrieved messages: %s"%(results,))
     if results is not None and len(results)>0:
         return jsonify_with_callback(callback, content=results)
@@ -280,5 +273,4 @@ if __name__ == "__main__":
     if sysargs.quiet:
         util.LOGGING=False
 
-
-    app.run(port=8080, debug=True)
+    app.run(port=8080)
