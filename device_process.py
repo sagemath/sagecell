@@ -360,20 +360,13 @@ import os
 def execProcess(cell_id, message_queue, output_handler, resource_limits, sysargs, fs_secret):
     """Run the code, outputting into a pipe.
 Meant to be run as a separate process."""
-    # TODO: Have some sort of process limits on CPU time/memory
-
     # we need a new context since we just forked
     fs.new_context()
     import Queue
     global user_code
-    # timeout has to be long enough so we don't miss the first message
-    # and so that we don't miss a command that may come after the first message.
-    # thus, this default timeout should be much longer than the polling interval
-    # for the output queue
+    # Since the user can set a timeout, we safeguard by having a maximum timeout
     MAX_TIMEOUT=60
     timeout=0.1
-    execution_count=1
-    empty_times=0
 
     if resource_limits is None:
         resource_limits=[]
@@ -432,7 +425,6 @@ Meant to be run as a separate process."""
                 # save bandwidth
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          {"status":"ok",
-                                                          #"execution_count":execution_count,
                                                           #"payload":[],
                                                           #"user_expressions":{},
                                                           #"user_variables":{}
@@ -468,10 +460,8 @@ Meant to be run as a separate process."""
                 #evalue!
 
                 err_msg={"ename": etype.__name__, "evalue": error_value,
-                         "traceback": err.text(etype, evalue, etb, context=3)}
-                #output_handler.message_queue.raw_message("pyerr",err_msg)
-                err_msg.update(status="error",
-                               execution_count=execution_count)
+                         "traceback": err.text(etype, evalue, etb, context=3)
+                         "status": "error"}
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          err_msg)
 
@@ -496,7 +486,6 @@ Meant to be run as a separate process."""
         if len(file_list)>0:
             output_handler.message_queue.message('files', {'files': file_list})
 
-        execution_count+=1
         log("Done executing code: %s"%code)
 
 def worker(session, message_queue, resource_limits, fs_secret):
@@ -513,15 +502,12 @@ def worker(session, message_queue, resource_limits, fs_secret):
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     log("Temp files in "+tmp_dir)
-    #TODO: We should have a process that cleans up any children
-    # that may hang around, similar to the sage-cleaner process.
     oldDaemon=current_process().daemon
     # Daemonic processes cannot create children
     current_process().daemon=False
     os.chdir(tmp_dir)
     output_handler=OutputIPython(session, outQueue)
     output_handler.set_parent_header({'session':session})
-    # listen on queue and send send execution requests to execProcess
     args=(session, message_queue, output_handler, resource_limits, sysargs, fs_secret)
     p=Process(target=execProcess, args=args)
     p.start()
