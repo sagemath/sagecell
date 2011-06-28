@@ -374,8 +374,16 @@ InteractCell.prototype.getChanges = function() {
 		$(id + "_" + name).slider("option", "value", input);
 		params[name] = String(input);
 		break;
+	    case "continuous_range":
+		var input = String("["+$(id + "_" + name + "_value").val()+"]");
+		$(id + "_" + name).slider("option","values",JSON.parse(input));
+		params[name] = input;
+		break;
 	    case "value":
 		params[name] = String($(id + "_" + name + "_value").attr("name"));
+		break;
+	    case "value_range":
+		params[name] = String("["+$(id + "_" + name + "_value").attr("name")+"]");
 		break;
 	    }
 	    break;
@@ -499,15 +507,30 @@ InteractCell.prototype.renderCanvas = (function() {
 			$("#" + ui.handle.offsetParent.id + "_value").attr("name",ui.value);
 		    }
 		    break;
+		case "value_range":
+		    var values = this.controls[name].values;
+		    $(table).find("#"+control_id+"_value").val([values[default_value[0]], values[default_value[1]]]);
+		    $(table).find("#"+control_id+"_value").attr("name",default_value);
+		      onSliderChange = function(event,ui) {
+			  $("#" + ui.handle.offsetParent.id + "_value").val([values[ui.values[0]], values[ui.values[1]]]);
+			  $("#" + ui.handle.offsetParent.id + "_value").attr("name", ui.values);
+		      }
+		    break;
 		case "continuous":
 		    $(table).find("#"+control_id+"_value").val(default_value);
 		    onSliderChange = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
 		    }
 		    break;
+		case "continuous_range":
+		    $(table).find("#"+control_id+"_value").val(default_value);
+		    onSliderChange = function(event,ui) {
+			$("#" + ui.handle.offsetParent.id + "_value").val(ui.values);
+		    }
+		    break;
 		}
 		$(table).find("#" + control_id).slider({
-		    value:this.controls[name]["default"],
+		    values:this.controls[name]["default"],
 		    min:this.controls[name]["range"][0],
 		    max:this.controls[name]["range"][1],
 		    step:this.controls[name]["step"],

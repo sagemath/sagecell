@@ -371,20 +371,28 @@ class Slider(InteractControl):
         slider defaults to the 0th index.
     :arg list values: list of values to which the slider position refers.
     :arg int step: step size for the slider, which corresponds to how many index positions the slider advances with each move.
+    :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg str label: the label of the control
     """
 
-    def __init__(self, values=[0,1], default=None, step=1, raw=True, label=""):
-        self.values = values[:]
-        self.default = int(default if default is not None else 0)
-        self.step=int(step)
-        self.label=label
-
-        if len(self.values) < 2:
+    def __init__(self, range_slider=False, values=[0,1], default=None, step=1, raw=True, label=""):
+        self.values = values[:] if len(values) >= 2 else [0,1]
+        if len(values) >= 2:
+            self.values = values
+        else:
             self.values = [0,1]
 
-        if self.default > len(self.values):
-            self.default = 0
+        self.range_slider = range_slider
+        
+        if self.range_slider:
+            self.subtype = "value_range"
+            self.default = self.default_return = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
+        else:
+            self.subtype = "value"
+            self.default = self.default_return = int(default if default is not None and self.default < len(self.values) else 0)
+
+        self.step=int(step)
+        self.label=label
 
     def message(self):
         """
@@ -395,7 +403,7 @@ class Slider(InteractControl):
         :rtype: dict
         """
         return {'control_type':'slider',
-                'subtype':'value',
+                'subtype':self.subtype,
                 'default':self.default,
                 'range':[0, len(self.values)-1],
                 'values':[repr(i) for i in self.values],
@@ -403,7 +411,10 @@ class Slider(InteractControl):
                 'raw':True,
                 'label':self.label}
     def adapter(self,v):
-        return self.values[int(v)]
+        if self.range_slider:
+            return [self.values[int(i)] for i in v]
+        else:
+            return self.values[int(v)]
 
 class ContinuousSlider(InteractControl):
     """
@@ -416,18 +427,29 @@ class ContinuousSlider(InteractControl):
     :arg tuple interval: range of the slider, in the form ``(min, max)``
     :arg int steps: number of steps the slider should have between min and max
     :arg Number stepsize: size of step for the slider. If both step and stepsized are specified, stepsize takes precedence so long as it is valid.
+    :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg str label: the label of the control
     """
 
-    def __init__(self, interval=(0,100), default=None, steps=250, stepsize=0, label=""):
-        self.interval = interval
-        self.default = default if default is not None else interval[0]
+    def __init__(self, range_slider=False, interval=(0,100), default=None, steps=250, stepsize=0, label=""):
+        self.range_slider = range_slider
+        self.interval = [float(i) for i in interval] if interval[0] < interval[1] and len(interval) == 2 else (0,100)
+        
+        if self.range_slider:
+            self.subtype = "continuous_range"
+            self.default = default if default is not None and len(default) == 2 else [self.interval[0], self.interval[1]]
+            for i in range(2):
+                if not (self.default[i] > self.interval[0] and self.default[i] < self.interval[1]):
+                    self.default[i] = self.interval[i]
+            self.default_return = [float(i) for i in self.default]
+        else:
+            self.subtype = "continuous"
+            self.default = default if default is not None and default > self.interval[1] and default < self.interval[0] else self.interval[0]
+            self.default_return = float(self.default)
+
         self.steps = int(steps) if steps > 0 else 250
         self.stepsize = float(stepsize if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0] else (self.interval[1] - self.interval[0]) / self.steps)
         self.label = label
-
-        if self.default > self.interval[1] or self.default < self.interval[0]:
-            self.default = self.interval[0]
 
     def message(self):
         """
@@ -438,8 +460,8 @@ class ContinuousSlider(InteractControl):
         :rtype: dict
         """
         return {'control_type':'slider',
-                'subtype':'continuous',
-                'default':float(self.default),
+                'subtype':self.subtype,
+                'default':self.default_return,
                 'range':[float(i) for i in self.interval],
                 'step':self.stepsize,
                 'raw':True,
