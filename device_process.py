@@ -424,7 +424,6 @@ import tempfile
 import shutil
 import os
 
-<<<<<<< HEAD
 def execProcess(session, message_queue, output_handler, resource_limits, sysargs, fs_secret):
     """
     Run the code, outputting into a pipe.
@@ -439,16 +438,9 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         ``(resource, limit)``, to be passed as arguments to
         :func:`resource.setrlimit`.
     """
-    # TODO: Have some sort of process limits on CPU time/memory
-
-=======
-def execProcess(cell_id, message_queue, output_handler, resource_limits, sysargs, fs_secret):
-    """Run the code, outputting into a pipe.
-Meant to be run as a separate process."""
->>>>>>> Clean up comments and unused variables.
     # we need a new context since we just forked
     fs.new_context()
-    import Queue
+    from Queue import Empty
     global user_code
     # Since the user can set a timeout, we safeguard by having a maximum timeout
     MAX_TIMEOUT=60
@@ -464,7 +456,7 @@ Meant to be run as a separate process."""
     while True:
         try:
             msg=message_queue.get(timeout=timeout)
-        except Queue.Empty:
+        except Empty:
             break
 
         if msg[0]=="exec":
@@ -499,10 +491,22 @@ Meant to be run as a separate process."""
                 with open(filename,'w') as f:
                     fs.copy_file(f,filename=filename, cell_id=session, hmac=fs_hmac)
                 old_files[filename]=-1
+        # start new process to upload files while code is being executed
+        # pass in the hmac.  The user process will have a 
+        # queue in which to pass filenames to upload immediately
+        # After the process executes, we'll send a message in the queue
+        # saying that we are done.  We'll then listen on the pipe for the 
+        # new hmac and list of files that were uploaded (to update
+        # our list of mtimes), and then proceed to clean up files.
+        upload_queue=Queue()
+        file_parent, file_child=Pipe()
+        p=Process(target=upload_files, (upload_queue, file_child))
+        p.start()
         with output_handler as MESSAGE:
             try:
                 locals={'MESSAGE': MESSAGE,
-                        'interact_singlecell': interact_singlecell}
+                        'interact_singlecell': interact_singlecell,
+                        '_file_upload_queue': upload_queue}
                 if enable_sage and sage_mode:
                     locals['sage'] = sage
 
@@ -550,7 +554,13 @@ Meant to be run as a separate process."""
                          "status": "error"}
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          err_msg)
-
+        upload_queue.put(json.dumps({'msg_type': 'end_exec'}))
+        fs_hmac, new_files=file_parent.recv()
+        p.join()
+                         
+        old_files.update(new_files)
+        print 'A'
+        
         # TODO: security implications here calling something that the user had access to.
         timeout=max(0,min(float(interact_singlecell.__single_cell_timeout__), MAX_TIMEOUT))
 
@@ -612,6 +622,30 @@ def worker(session, message_queue, resource_limits, fs_secret):
     current_process().daemon=oldDaemon
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
+
+def upload_files(upload_queue, file_child):
+    """
+    The user can pass in a list of filenames as a json message.  These will get uploaded.
+    When the upload_queue gets an "end_exec" message, it then sends the hmac down the 
+    file_child pipe and exits
+    """
+    fs.new_context()
+    file_list={}
+    while True:
+        msg=json.loads(upload_queue.get())
+        if isinstance(msg, list) and all(isinstance(i,str) for i in msg):
+            # TODO: sanitize pathnames to only upload files below the current directory
+            for filename in msg:
+                file_list['filename']=os.stat(filename).st_mtime
+                try:
+                    with open(filename) as f:
+                        fs.create_file(f, cell_id=cell_id, filename=filename, hmac=fs_hmac)
+                except Exception as e:
+                    sys.stdout.write("An exception occurred: %s\n"%(e,))
+        elif isinstance(msg, dict) and 'msg_type' in msg and msg['msg_type']=='end_exec':
+            file_child.send([fs_hmac, file_list])
+            break
+
 
 def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=None):
     u"""
