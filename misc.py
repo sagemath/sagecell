@@ -1,6 +1,5 @@
 import sys
 
-
 def select_db(sysargs, context=None):
     u"""
     Create connections to the database and filestore given in sysargs.

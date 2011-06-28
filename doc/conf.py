@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.doctest', 'sphinx.ext.intersphinx', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.viewcode']
 
-autodoc_default_flags=['members', 'undoc-members', 'show-inheritance', 'inherited-members']
+autodoc_default_flags=['members']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -219,4 +219,7 @@ man_pages = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ('http://docs.python.org/', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/release/2.6.4/', None),
+                       'ipython': ('http://ipython.org/ipython-doc/dev/', None),
+                       'pymongo': ('http://api.mongodb.org/python/current/', None),
+                       'sage': ('http://www.sagemath.org/doc/reference/', None)}

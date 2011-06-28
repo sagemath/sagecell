@@ -118,7 +118,6 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
     :arg isFS: True if the database is a filestore; False if not
     :type isFS: bool
     """
-
     send_finally=True
     to_send=None
     if isFS:
@@ -162,7 +161,7 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
             for i in range(len(content)):
                 m,d=content[i]
                 authenticate(msg['content']['messages'][i][0],d,m['parent_header']['session'],auth_dict,True)
-            db.add_messages(None,[c[0] for c in content])
+            db.add_messages([c[0] for c in content])
         elif msg['msg_type'] in db.valid_untrusted_methods:
             to_send=getattr(db,msg['msg_type'])(**msg['content'])
     except AuthenticationException:
@@ -200,7 +199,7 @@ def authenticate(msg_str, digest, session, auth_dict, hexdigest=False):
 
 def signal_handler(signal, frame):
     """
-    Clean up device
+    A cleanup function that runs when the user presses Ctrl+C
     """
     from signal import SIGKILL
     # TODO: should we be nicer and send a gentler signal first?
@@ -212,6 +211,12 @@ def signal_handler(signal, frame):
     
 
 def cleanup_device(device, pgid):
+    """
+    Stop a device and all of its subprocesses
+
+    :arg str device: the device ID
+    :arg int pgid: the process group ID associated with the device
+    """
     # TODO: handle the case where ctrl-c is pressed twice better
     # that's what this shutting_down variable is about
     global shutting_down
