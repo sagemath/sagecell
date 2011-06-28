@@ -380,10 +380,10 @@ InteractCell.prototype.getChanges = function() {
 		params[name] = input;
 		break;
 	    case "value":
-		params[name] = String($(id + "_" + name + "_value").attr("name"));
+		params[name] = String($(id + "_" + name + "_index").val());
 		break;
 	    case "value_range":
-		params[name] = String("["+$(id + "_" + name + "_value").attr("name")+"]");
+		params[name] = String("["+$(id + "_" + name + "_index").val()+"]");
 		break;
 	    }
 	    break;
@@ -493,7 +493,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		}
 		break;
 	    case "slider":
-		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' singlecell_sliderControl" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"></span>';
+		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' singlecell_sliderControl" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"><input type="text" class="' + id +'" id ="' + control_id + '_index" style="display:none"></span>';
 		var onSliderChange;
 		var default_value = this.controls[name]["default"];
 		addRow(table,label,name,html_code,null);
@@ -501,20 +501,20 @@ InteractCell.prototype.renderCanvas = (function() {
 		case "value":
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val(values[default_value]);
-		    $(table).find("#"+control_id+"_value").attr("name",default_value);
+		    $(table).find("#"+control_id+"_index").val(default_value);
 		    onSliderChange = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(values[ui.value]);
-			$("#" + ui.handle.offsetParent.id + "_value").attr("name",ui.value);
+			$("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
 		    }
 		    break;
 		case "value_range":
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val([values[default_value[0]], values[default_value[1]]]);
-		    $(table).find("#"+control_id+"_value").attr("name",default_value);
-		      onSliderChange = function(event,ui) {
-			  $("#" + ui.handle.offsetParent.id + "_value").val([values[ui.values[0]], values[ui.values[1]]]);
-			  $("#" + ui.handle.offsetParent.id + "_value").attr("name", ui.values);
-		      }
+		    $(table).find("#"+control_id+"_index").val(default_value);
+		    onSliderChange = function(event,ui) {
+			$("#" + ui.handle.offsetParent.id + "_value").val([values[ui.values[0]], values[ui.values[1]]]);
+			$("#" + ui.handle.offsetParent.id + "_index").val(ui.values);
+		    }
 		    break;
 		case "continuous":
 		    $(table).find("#"+control_id+"_value").val(default_value);
