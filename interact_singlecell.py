@@ -165,21 +165,27 @@ class InputBox(InteractControl):
     """
     Defines an input box control.
     """
+    def __init__(self, *args, **kwargs):
+        self.kwargs = kwargs
+        self.raw = self.kwargs.get('raw',False);
+        self.default_value = self.default_return_value = self.kwargs.get('default',"")
+        if self.raw:
+            self.default_return_value = repr(self.default_value)
     def message(self):
         """
         :returns: Input box control configuration for an interact_prepare message.
         :rtype: Dict
         """
         return {'control_type':'input_box',
-                'default':self.kwargs.get('default',""),
-                'width':self.kwargs.get('width',""),
+                'default':self.default_return_value,
+                'width':int(self.kwargs.get('width',0)),
                 'raw':self.kwargs.get('raw',False),
                 'label':self.kwargs.get('label',"")}
     def default(self):
         """
         :returns: Default value of control.
         """
-        return self.kwargs.get('default','')
+        return self.default_value
 
 class InputGrid(InteractControl):
     """
@@ -190,8 +196,13 @@ class InputGrid(InteractControl):
         self.nrows = self.kwargs.get('nrows',1)
         self.ncols = self.kwargs.get('ncols',1)
         self.default_value = self.kwargs.get('default',0)
+        self.raw = self.kwargs.get('raw', True);
+
         if not isinstance(self.default_value, list):
-            self.default_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
+            self.default_value = self.default_return_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
+
+        if self.raw:
+            self.default_return_value = [[repr(j) for j in i] for i in self.default_value]
 
     def message(self):
         """
@@ -199,10 +210,10 @@ class InputGrid(InteractControl):
         :rtype: Dict
         """
         return {'control_type': 'input_grid',
-                'nrows': self.nrows,
-                'ncols': self.ncols,
-                'default': self.default_value,
-                'width':self.kwargs.get('width',""),
+                'nrows': int(self.nrows),
+                'ncols': int(self.ncols),
+                'default': self.default_return_value,
+                'width':int(self.kwargs.get('width',0)),
                 'raw': self.kwargs.get('raw', True),
                 'label': self.kwargs.get('label',"")}
     def default(self):
@@ -271,9 +282,47 @@ class Selector(InteractControl):
         :returns: Default value of control.
         """
         return self.default_value
-                
     def adapter(self, v):
         return self.values[int(v)]
+
+class ContinuousSlider(InteractControl):
+    """
+    Defines a continues slider interact control.
+    """
+    def __init__(self, *args, **kwargs):
+        self.default_steps = 250
+        self.kwargs = kwargs
+        self.interval = self.kwargs.get('range',(0,100))
+        self.default_value = self.kwargs.get('default',self.interval[0])
+        self.steps = self.kwargs.get('steps',self.default_steps)
+        self.stepsize = self.kwargs.get('stepsize',0)
+        
+        if self.default_value > self.interval[1] or self.default_value < self.interval[0]:
+            self.default_value = self.interval[0]
+
+        if self.stepsize <= 0:
+            if self.steps <= 0:
+                self.stepsize = float(self.interval[1] - self.interval[0]) / self.default_steps
+            else:
+                self.stepsize = float(self.interval[1] - self.interval[0]) / self.steps
+
+    def message(self):
+        """
+        :returns: Continuous slider control configuration for an interact_prepare message.
+        "rtype: Dict
+        """
+        return {'control_type':'slider',
+                'subtype':'continuous',
+                'default':float(self.default_value),
+                'range':[float(i) for i in self.interval],
+                'step':float(self.stepsize),
+                'raw':self.kwargs.get('raw',True),
+                'label':self.kwargs.get('label',"")}
+    def default(self):
+        """
+        :returns: Default value of control
+        """
+        return self.default_value
 
 class Slider(InteractControl):
     """
@@ -281,17 +330,27 @@ class Slider(InteractControl):
     """
     def __init__(self, *args, **kwargs):
         self.kwargs = kwargs
-        self.interval = self.kwargs.get('range',(0,100))
-        self.default_value = self.kwargs.get('default',self.interval[0])
+        self.values = self.kwargs.get('values',[0,1])
+        self.default_value = int(self.kwargs.get('default',0))
+        
+        if len(self.values) < 2:
+            self.values = [0,1]
+
+        if self.default_value > len(self.values):
+            self.default_value = 0
+
     def message(self):
         """
         :returns: Slider control configuration for an interact_prepare message.
         :rtype: Dict
         """
         return {'control_type':'slider',
-                'default':int(self.default_value),
-                'range':[int(i) for i in self.interval],
-                'step':self.kwargs.get('step',1),
+                'subtype':'value',
+                'default':self.default_value,
+                'range':[0,len(self.values) - 1],
+                'values':[repr(i) for i in self.values],
+                'range':[0, len(self.values) - 1],
+                'step':int(self.kwargs.get('step',1)),
                 'raw':self.kwargs.get('raw',True),
                 'label':self.kwargs.get('label',"")}
     def default(self):
@@ -299,6 +358,9 @@ class Slider(InteractControl):
         :returns: Default value of control.
         """
         return self.default_value
+
+    def adapter(self, v):
+        return self.values[int(v)]
 
 def automatic_control(control):
     """
@@ -312,6 +374,7 @@ def automatic_control(control):
     
     """
     from numbers import Number
+    from types import GeneratorType
     label = ""
     default_value = 0
     
@@ -323,28 +386,57 @@ def automatic_control(control):
     for _ in range(2):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
             label, control = control
-        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list)):
+        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
             default_value, control = control
 
     if isinstance(control, str):
-        C = input_box(control = control, label = label)
+        C = input_box(default = control, label = label)
     elif isinstance(control, bool):
-        C = checkbox(control = control, label = label, raw = True)
+        C = checkbox(default = control, label = label, raw = True)
     elif isinstance(control, Number):
-        C = input_box(control = control, label = label, raw = True)
+        C = input_box(default = control, label = label, raw = True)
     elif isinstance(control, list):
-        C = selector(buttons = len(control) <= 5, control = default_value, label = label, values = control, raw = False)
-    elif isinstance (control, tuple):
+        C = selector(buttons = len(control) <= 5, default = default_value, label = label, values = control, raw = False)
+    elif isinstance(control, GeneratorType):
+        C = slider(default = default_value, values = list_of_first_n(control,10000), label = label)
+    elif isinstance(control, tuple):
         if len(control) == 2:
-            C = slider(control = control[0], range = (control[0], control[1]), label = label)
+#            control = [float(i) for i in control]
+            C = continuous_slider(default = default_value, range = (control[0], control[1]), label = label)
         elif len(control) == 3:
-            C = slider(control = default_value, range = (control[0], control[1]), step = control[2], label = label)
+#            control = [float(i) for i in control]
+            C = continuous_slider(default = default_value, range = (control[0], control[1]), stepsize = control[2], label = label)
         else:
-            C = slider(list(control), control = default_value, label = label)
+            C = slider(default = default_value, values = list(control), label = label)
     else:
-        C = input_box(control = control, label=label)
-    
+        C = input_box(default = control, label = label, raw = True)
+        try:
+            from sagenb.misc.misc import is_Matrix
+            if is_Matrix(control):
+                default_value = control.list()
+                nrows = control.nrows()
+                ncols = control.ncols()
+                default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
+                C = input_grid(nrows = nrows, ncols = ncols, label = label, default = default_value)
+        except:
+            pass
+
     return C
+
+def list_of_first_n(v,n):
+    """
+    Given an iterator v, return the first n elements it produces as a list.
+    """
+    if not hasattr(v, "next"):
+        v = v.__iter__()
+    w = []
+    while n > 0:
+        try:
+            w.append(v.next())
+        except StopIteration:
+            return w
+        n -= 1
+    return w
 
 
 # Aliases for backwards compatibility
@@ -353,3 +445,4 @@ selector=Selector
 input_box=InputBox
 input_grid=InputGrid
 checkbox=Checkbox
+continuous_slider=ContinuousSlider
