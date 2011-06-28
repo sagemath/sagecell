@@ -1,15 +1,3 @@
-"""
-The MongoDB database has the following structure:
-
-  - code table
-     - device -- the device id for the process.  This is -1 if no device has been assigned yet.
-     - input -- the code to execute.
-  - messages: a series of messages in ipython format
-  - ipython: a table to keep track of ipython ports for tab completion.  Usable when there is a single long-running ipython dedicated session for each computation.
-  - sessions: a table listing, for each session, which device is assigned to the session
-
-"""
-
 import db
 import zmq
 from uuid import uuid4
@@ -18,7 +6,21 @@ from sys import maxint
 from util import log
 from json import dumps
 
-def db_method(method_name, kwarg_keys):
+def db_method(method_name, kwarg_keys, isFS=False):
+    """
+    Create a member function for :class:`db_zmq.DB` or
+    :class:`filestore.FileStoreZMQ` that runs a given function
+    from a trusted database adaptor.
+
+    :arg str method_name: name of the method to call in the
+        trusted database adaptor
+    :arg list kwarg_keys: the list of keyword arguments to use
+        when calling the method
+    :arg bool isFS: True if the method is a FileStore method
+        (for documentation purposes)
+    :returns: the created method
+    :rtype: function
+    """
     def f(self, hmac=None, **kwargs):
         msg={'header': {'msg_id': str(randrange(maxint))},
              'msg_type': method_name,
@@ -32,14 +34,32 @@ def db_method(method_name, kwarg_keys):
         # wait for output back
         output=self.socket.recv_pyobj()
         return output
+    f.__doc__="""
+        Created with :func:`~db_zmq.db_method`.
+
+        See :meth:`%s.%s`
+
+        :arg hmac: If not ``None``, this object will be updated using
+            the string of the message, and the resulting digest will
+            be sent to the trusted device along with the message.
+        :type hmac: :mod:`hmac` object
+        """%("FileStore" if isFS else "db.DB", method_name)
     return f
 
 class DB(db.DB):
-    def __init__(self, *args, **kwargs):
-        """
-        ``address`` is a kwarg, which should be the address the database should connect with
-        """
-        self.address=kwargs['address']
+    u"""
+    A database adaptor that uses \xd8MQ to access the methods of a
+    DB adaptor running on a trusted account. The trusted DB adaptor
+    has access to the database itself, but this adaptor can only use
+    the subset of the database methods that are safe for untrusted
+    access.
+
+    :arg str address: the URL (with port number) to which to connect
+        a \xd8MQ REQ socket; the REP socket on the other end should be
+        bound by a trusted process.
+    """
+    def __init__(self, address):
+        self.address=address
         self._req=None
     
     @property
@@ -48,7 +68,7 @@ class DB(db.DB):
         The ``socket`` property is automatically initialized the first
         time it is called. We do this since we shouldn't create a
         context in a parent process. Instead, we'll wait until we
-        actually start using the db api to create a context. If you
+        actually start using the DB API to create a context. If you
         use the same class in a child process, you should first call
         the :meth:`new_context` method.
         """
@@ -57,12 +77,19 @@ class DB(db.DB):
         return self._req
 
     def new_context(self):
+        """
+        Reconnect to the database. This function should be
+        called before the first database access in each new process.
+        """
         self._context=zmq.Context()
         self._req=self._context.socket(zmq.REQ)
         self._req.connect(self.address)
         log("ZMQ connecting to %s"%self.address)
 
     def add_messages(self, messages, hmacs=None, id=None):
+        """
+        See :meth:`db.DB.add_messages`
+        """
         new=[]
         for m in messages:
             s=dumps(m)
@@ -76,7 +103,7 @@ class DB(db.DB):
             # Possible TODO: send the HMAC digest of the session after
             # it is updated with the messages, instead of sending a new
             # digest for each individual message
-        db_method('add_messages',['id','messages'])(self, id=None, messages=new)
+        db_method('add_messages',['messages'])(self, messages=new)
 
     new_input_message = db_method('new_input_message', ['msg'])
     get_input_messages = db_method('get_input_messages', ['device', 'limit'])

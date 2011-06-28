@@ -1,13 +1,19 @@
 """
-The MongoDB database has the following structure:
+The MongoDB database has the following collections:
 
-  - code table
-     - device -- the device id for the process.  This is -1 if no device has been assigned yet.
-     - input -- the code to execute.
-  - messages: a series of messages in ipython format
-  - ipython: a table to keep track of ipython ports for tab completion.  Usable when there is a single long-running ipython dedicated session for each computation.
-  - sessions: a table listing, for each session, which device is assigned to the session
+    - ``device``: information on each device process
+    - ``input_messages``: the code to execute
 
+        - ``evaluated``: whether or not a message has been evaluated
+        - ``device``: the ID of the device to which this message has
+          been assigned; ``None`` if it has not yet been assigned
+          to a device
+
+    - ``messages``: a series of messages in IPython format
+    - ``ipython``: a table to keep track of IPython ports for tab
+      completion (usable when there is a single long-running dedicated
+      IPython session for each computation.)
+    - ``sessions``: a table listing which device is assigned to each session
 """
 
 import db
@@ -18,8 +24,15 @@ from singlecell_config import mongo_config
 from util import log
 
 class DB(db.DB):
-    def __init__(self, *args, **kwds):
-        db.DB.__init__(self, *args, **kwds)
+    """
+    MongoDB database adaptor
+
+    :arg pymongo.Connection c: the PyMongo Connection object
+        for the database
+    """
+
+    def __init__(self, c):
+        self.c=c
         self.new_context()
         self.database.sessions.ensure_index([('session', ASCENDING)])
         self.database.input_messages.ensure_index([('device', ASCENDING)])
@@ -40,18 +53,8 @@ class DB(db.DB):
     
     def get_input_messages(self, device, limit=None):
         """
-        Find the computations that haven't been started yet
-        Mark them as in-progress with the device id and return the cells
-        The `limit` keyword can give an upper limit on the number of unassigned sessions returned
-
-        The database also stores a list of sessions for each device.
-        Currently, we rely on each message having a device attribute
-        that is set, if possible, when the message is created. Another
-        possibility is to just have the device query the sessions table to
-        return the sessions that are currently active. I'm not sure which is
-        faster.
+        See :meth:`db.DB.get_input_messages`
         """
-        
         # find the sessions for this device
         device_messages=list(self.database.input_messages.find({'device':device, 'evaluated':False }))
         if len(device_messages)>0:
@@ -84,36 +87,32 @@ class DB(db.DB):
         return device_messages+unassigned_messages
 
     def close_session(self, device, session):
-        u"""
-        Delete a session\u2194device mapping.
+        """
+        See :meth:`db.DB.close_session`
         """
         self.database.sessions.remove({'session':session, 'device':device})    
 
-    def get_messages(self, id, sequence=0):
-        "Get the messages since the message with sequence number ``sequence``"
-        messages=list(self.database.messages.find({'parent_header.session':id,
+    def get_messages(self, session, sequence=0):
+        """
+        See :meth:`db.DB.get_messages`
+        """
+        messages=list(self.database.messages.find({'parent_header.session':session,
                                             'sequence':{'$gte':sequence}}))
         #TODO: just get the fields we want instead of deleting the ones we don't want
         for m in messages:
             del m['_id']
         return messages
 
-    def add_messages(self, id, messages):
-        "Add messages to the database"
-        #TODO: doesn't use the id parameter; delete?
+    def add_messages(self, messages):
+        """
+        See :meth:`db.DB.add_messages`
+        """
         self.database.messages.insert(messages)
         log("INSERTED: %s"%('\n'.join(str(m) for m in messages),))
-    
 
     def register_device(self, device, account, workers, pgid):
         """
-        Register a device with the database
-
-        We store the pgid so that we can later kill the device and all
-        subprocesses by sshing into the account (if set) and doing::
-
-            import os, signal
-            os.kill(pgid, signal.SIGKILL) #or signal.SIGTERM to be nicer about it
+        See :meth:`db.DB.register_device`
         """
         doc={"device":device, "account":account, "workers": workers, "pgid":pgid}
         self.database.device.insert(doc)
@@ -121,25 +120,34 @@ class DB(db.DB):
 
     def delete_device(self, device):
         """
-        Delete a device record from the database
-
+        See :meth:`db.DB.delete_device`
         """
         self.database.device.remove({'device': device})
 
     def get_devices(self):
         """
-        Return a list of currently registered devices.
+        See :meth:`db.DB.get_devices`
         """
         return list(self.database.device.find())
 
     def set_ipython_ports(self, kernel):
+        """
+        See :meth:`db.DB.set_ipython_ports`
+        """
         self.database.ipython.remove()
         self.database.ipython.insert({"pid":kernel[0].pid, "xreq":kernel[1], "sub":kernel[2], "rep":kernel[3]})
     
     def get_ipython_port(self, channel):
+        """
+        See :meth:`db.DB.get_ipython_port`
+        """
         return self.database.ipython.find().next()[channel]
 
     def new_context(self):
+        """
+        Reconnect to the database. This function should be
+        called before the first database access in each new process.
+        """
         self.database=pymongo.database.Database(self.c, mongo_config['mongo_db'])
         uri=mongo_config['mongo_uri']
         if '@' in uri:
@@ -148,6 +156,6 @@ class DB(db.DB):
                 uri=uri[len('mongodb://'):]
             result=self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
             if result==0:
-                raise UserError("Authentication problem")
+                raise Exception("MongoDB authentication problem")
 
     valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')

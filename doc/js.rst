@@ -1,3 +1,5 @@
+.. _js:
+
 Compute Server Javascript
 =========================
 
