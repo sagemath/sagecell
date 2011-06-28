@@ -22,7 +22,7 @@ class DB(db.DB):
         self.c.commit()
         return str(cur.lastrowid)
         
-    def get_unevaluated_cells(self, device_id, limit=None):
+    def get_input_messages(self, device_id, limit=None):
         """
         Get cells which still have yet to be evaluated.
         """
@@ -36,28 +36,6 @@ class DB(db.DB):
         self.c.commit()
         return results
         
-    def get_evaluated_cells(self, id=None):
-        """
-        Get inputs and outputs which have been evaluated
-        """
-        import json
-        cur = self.c.cursor()
-        if id is None:
-            cur.execute("""select ROWID, input, output from cells
-                           where output is not null ORDER BY ROWID DESC;""")
-            results = [dict(_id=u, input=v, output=w) for u,v,w in cur.fetchall()]
-            return results
-        else:
-            cur.execute("""select ROWID, input, output from
-                           cells where output is not null and ROWID = ? ORDER BY ROWID DESC;""",(id,))
-            result=cur.fetchone()
-            if result:
-                results=dict(zip(["_id", "input", "output"], result))
-                results['output']=json.loads(results['output'])
-                return results
-            else:
-                return None
-
     def set_output(self, id, output):
         """
         """

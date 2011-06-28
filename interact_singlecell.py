@@ -83,6 +83,11 @@ def interact(f, controls=[]):
 
     In each example, ``name1``, with no associated control,
     will default to a text box.
+
+    :arg function f: the function to make into an interact
+    :arg list controls: a list of tuples of the form ``("name",control)``
+    :returns: the original function
+    :rtype: function
     """
     global _INTERACTS
 
@@ -128,7 +133,7 @@ def interact(f, controls=[]):
                                    'layout':names})
     global __single_cell_timeout__
     __single_cell_timeout__=60
-    adapted_f(**dict(zip(names,[c.default() for c in controls])))
+    adapted_f(**dict(zip(names,[c.default for c in controls])))
     return f
 
 class InteractControl:
@@ -140,101 +145,172 @@ class InteractControl:
         self.kwargs=kwargs
 
     def adapter(self, v):
+        """
+        Get the value of the interact in a form that can be passed to
+        the inner function
+
+        :arg v: a value as passed from the client
+        :returns: the interpretation of that value in the context of
+            this control (by default, the value is not changed)
+        """
         return v
+
+    def message(self):
+        """
+        Get a control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
+        raise NotImplementedError
 
 class Checkbox(InteractControl):
     """
-    Defines a checkbox control.
+    A checkbox control
+
+    :arg bool default: ``True`` if the checkbox is checked by default
+    :arg bool raw: ``True`` if the value should be treated as "unquoted"
+        (raw), so it can be used in control structures. There are few
+        conceivable situations in which raw should be set to ``False``,
+        but it is available.
+    :arg str label: the label of the control
     """
+
+    def __init__(self, default=True, raw=True, label=""):
+        self.default=default
+        self.raw=raw
+        self.label=label
+
     def message(self):
         """
-        :returns: Checkbox control configuration for an interact_prepare message.
+        Get a checkbox control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
         """
         return {'control_type':'checkbox',
-                'default':self.kwargs.get('default',True),
-                'raw':self.kwargs.get('raw',True),
-                'label':self.kwargs.get('label',"")}
-    def default(self):
-        """
-        :returns: Default value of control.
-        :rtype: Dict
-        """
-        return self.kwargs.get('default',True)
+                'default':self.default,
+                'raw':self.raw,
+                'label':self.label}
 
 class InputBox(InteractControl):
     """
-    Defines an input box control.
+    An input box control
+
+    :arg default: default value of the input box
+    :arg int width: character width of the input box
+    :arg bool raw: ``True`` if the value should be treated as "unquoted"
+        (raw), so it can be used in control structures; ``False`` if the
+        value should be treated as a string
+    :arg str label: the label of the control
     """
+
+    def __init__(self, default="", width="", raw=False, label=""):
+        self.default=default
+        self.width=width
+        self.raw=raw
+        self.label=label
+
     def message(self):
         """
-        :returns: Input box control configuration for an interact_prepare message.
-        :rtype: Dict
+        Get an input box control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
         """
         return {'control_type':'input_box',
-                'default':self.kwargs.get('default',""),
-                'width':self.kwargs.get('width',""),
-                'raw':self.kwargs.get('raw',False),
-                'label':self.kwargs.get('label',"")}
-    def default(self):
-        """
-        :returns: Default value of control.
-        """
-        return self.kwargs.get('default','')
+                'default':self.default,
+                'width':self.width,
+                'raw':self.raw,
+                'label':self.label}
 
 class InputGrid(InteractControl):
     """
-    Defines an interact grid control.
+    An input grid control
+
+    :arg int nrows: number of rows in the grid
+    :arg int ncols: number of columns in the grid
+    :arg int width: character width of each input box
+    :arg default: default values of the control. A multi-dimensional
+        list specifies the values of individual inputs; a single value
+        sets the same value to all inputs
+    :arg bool raw: ``True`` if the value should be treated as "unquoted"
+        (raw), so it can be used in control structures; ``False`` if the
+        value should be treated as a string
+    :arg str label: the label of the control
     """
-    def __init__(self, *args, **kwargs):
-        self.kwargs = kwargs
-        self.nrows = self.kwargs.get('nrows',1)
-        self.ncols = self.kwargs.get('ncols',1)
-        self.default_value = self.kwargs.get('default',0)
-        if not isinstance(self.default_value, list):
-            self.default_value = [[self.default_value for _ in range(self.ncols)] for _ in range(self.nrows)]
+
+    def __init__(self, nrows=1, ncols=1, width="", default=0, raw=True, label=""):
+        self.nrows = nrows
+        self.ncols = ncols
+        self.width = width
+        if not isinstance(default, list):
+            self.default = [[default for _ in range(self.ncols)] for _ in range(self.nrows)]
+        else:
+            self.default = default
+        self.raw = raw
+        self.label = label
 
     def message(self):
         """
-        :returns: Input grid control configuration for an interact_prepare message.
-        :rtype: Dict
+        Get an input box control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
         """
         return {'control_type': 'input_grid',
                 'nrows': self.nrows,
                 'ncols': self.ncols,
-                'default': self.default_value,
-                'width':self.kwargs.get('width',""),
-                'raw': self.kwargs.get('raw', True),
-                'label': self.kwargs.get('label',"")}
-    def default(self):
-        """
-        :returns: Default value of control.
-        """
-        return self.default_value
+                'default': self.default,
+                'width':self.width,
+                'raw': self.raw,
+                'label': self.label}
 
 class Selector(InteractControl):
     """
-    Defines a selector interact control.
+    A selector interact control
+
+    :arg int default: initially selected index of the list of values
+    :arg list values: list of values (string, number, and/or boolean) from
+        which the user can select. A value can also be represented as a tuple
+        of the form ``(value, label)``, where the value is the name of the
+        variable and the label is the text displayed to the user.
+    :arg bool buttons: ``True`` if the control should be rendered as a grid
+        of buttons; ``False`` for a dropdown list. If ``False``, ``ncols``,
+        ``nrows``, and ``width`` will be ignored.
+    :arg int ncols: number of columns of buttons
+    :arg int nrows: number of rows of buttons
+    :arg str width: CSS width of buttons
+    :arg bool raw: ``True`` if the selected value should be treated as
+        "unquoted" (raw); ``False`` if the value should be treated as a string.
+        Note that this applies to the values of the selector, not the labels.
+    :arg str label: the label of the control
     """
-    def __init__(self, *args, **kwargs):
-        self.kwargs = kwargs
-        self.values = self.kwargs.get('values',[0])
-        self.default_value = self.kwargs.get('default',0)
-        self.ncols = self.kwargs.get('ncols',None)
-        self.nrows = self.kwargs.get('nrows',None)
-        self.buttons = self.kwargs.get('buttons',False)
+
+    def __init__(self, default=0, values=[0], buttons=False, nrows=None, ncols=None, width="", raw=False, label=""):
+        self.default=default
+        self.values=values[:]
+        self.buttons=buttons
+        self.nrows=nrows
+        self.ncols=ncols
+        self.width=width
+        self.raw=raw
+        self.label=label
         
         # Assign selector labels and values.
-        if len(self.values) > 0 and isinstance(self.values[0], tuple) and len(self.values[0]) == 2:
-            self.value_labels = [str(z[1]) if z[1] is not None else str(z[0]) for z in self.values]
-            self.values = [z[0] for z in self.values]
-        else:
-            self.value_labels = [str(z) for z in self.values]
+        self.value_labels=[str(v[1]) if isinstance(v,tuple) and
+                           len(v)==2 else str(v) for v in values]
         
         # Ensure that default index is always in the correct range.
-        if self.default_value < 0 or self.default_value >= len(self.values):
-            self.default_value = 0
+        if default < 0 or default >= len(values):
+            self.default = 0
 
-        # If using buttons rather than dropdown, check/set rows and columns for layout.
+        # If using buttons rather than dropdown,
+        # check/set rows and columns for layout.
         if self.buttons:
             if self.nrows is None:
                 if self.ncols is not None:
@@ -253,52 +329,61 @@ class Selector(InteractControl):
 
     def message(self):
         """
-        :returns: Selector control configuration for an interact_prepare message.
-        :rtype: Dict
+        Get a selector control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
         """
         return {'control_type': 'selector',
                 'values': range(len(self.values)),
                 'value_labels': self.value_labels,
-                'default': self.default_value,
+                'default': self.default,
                 'buttons': self.buttons,
                 'nrows': self.nrows,
                 'ncols': self.ncols,
-                'width': self.kwargs.get('width',""),
-                'raw': self.kwargs.get('raw',True),
-                'label':self.kwargs.get('label',"")}
-    def default(self):
-        """
-        :returns: Default value of control.
-        """
-        return self.default_value
+                'width': self.width,
+                'raw': self.raw,
+                'label':self.label}
                 
     def adapter(self, v):
         return self.values[int(v)]
 
 class Slider(InteractControl):
     """
-    Defines a slider interact control.
+    A slider interact control
+
+    :arg int default: initial value of the slider; if ``None``, the
+        slider defaults to its minimum
+    :arg tuple interval: range of the slider, in the form ``(min, max)``
+    :arg int step: step size for the slider
+    :arg bool raw: ``True`` if the value should be treated as "unquoted"
+        (raw), so it can be used in control structures; ``False`` if the
+        value should be treated as a string
+    :arg str label: the label of the control
     """
-    def __init__(self, *args, **kwargs):
-        self.kwargs = kwargs
-        self.interval = self.kwargs.get('range',(0,100))
-        self.default_value = self.kwargs.get('default',self.interval[0])
+
+    def __init__(self, default=None, interval=(0,100), step=1, raw=True, label=""):
+        self.default = int(default if default is not None else interval[0])
+        self.interval = [int(i) for i in interval]
+        self.step=step
+        self.raw=raw
+        self.label=label
+
     def message(self):
         """
-        :returns: Slider control configuration for an interact_prepare message.
-        :rtype: Dict
+        Get a slider control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
         """
         return {'control_type':'slider',
-                'default':int(self.default_value),
-                'range':[int(i) for i in self.interval],
-                'step':self.kwargs.get('step',1),
-                'raw':self.kwargs.get('raw',True),
-                'label':self.kwargs.get('label',"")}
-    def default(self):
-        """
-        :returns: Default value of control.
-        """
-        return self.default_value
+                'default':self.default,
+                'range':self.interval,
+                'step':self.step,
+                'raw':self.raw,
+                'label':self.label}
 
 def automatic_control(control):
     """
@@ -327,22 +412,22 @@ def automatic_control(control):
             default_value, control = control
 
     if isinstance(control, str):
-        C = input_box(control = control, label = label)
+        C = input_box(default = control, label = label)
     elif isinstance(control, bool):
-        C = checkbox(control = control, label = label, raw = True)
+        C = checkbox(default = control, label = label, raw = True)
     elif isinstance(control, Number):
-        C = input_box(control = control, label = label, raw = True)
+        C = input_box(default = control, label = label, raw = True)
     elif isinstance(control, list):
-        C = selector(buttons = len(control) <= 5, control = default_value, label = label, values = control, raw = False)
+        C = selector(buttons = len(control) <= 5, default = default_value, label = label, values = control, raw = False)
     elif isinstance (control, tuple):
         if len(control) == 2:
-            C = slider(control = control[0], range = (control[0], control[1]), label = label)
+            C = slider(default = control[0], interval = (control[0], control[1]), label = label)
         elif len(control) == 3:
-            C = slider(control = default_value, range = (control[0], control[1]), step = control[2], label = label)
+            C = slider(default = default_value, interval = (control[0], control[1]), step = control[2], label = label)
         else:
-            C = slider(list(control), control = default_value, label = label)
+            C = slider(list(control), default = default_value, label = label)
     else:
-        C = input_box(control = control, label=label)
+        C = input_box(default = control, label=label)
     
     return C
 

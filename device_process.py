@@ -1,61 +1,39 @@
 r"""
 The DEVICE process continuously polls the database for new cells and
-evaluations on current sessions.  It also pulls messages from the
-output queues and puts them into the database.
+evaluations on current sessions. Each time a new session is required
+for a computation, the DEVICE starts up a DEVICE_WORKER process by
+executing it in a :class:`multiprocessing.pool.multiprocessing.Pool`.
+This pool has a limited number of workers, so there is a maximum
+number of simultaneous active sessions.
 
-When the DEVICE starts up, it starts a queue manager and does a
-serve_forever in order to get messages from the EXEC processes.  It
-also sets up a shared secret for the EXEC output messages
+The DEVICE_WORKER creates a temporary directory for the executed code
+to use for any files it creates. It then starts an EXEC process that
+executes the code.
 
-.. note:: The EXEC processes all have the same shared secret for
-   output messages.  This may lead to security problems if the
-   EXEC_WORKER is compromised by the user code in the EXEC process.
+The EXEC process receives execution requests (both the initial message
+and updates to interacts in the session) through a queue created by the
+DEVICE_WORKER. Messages to the EXEC_WORKER process have the form
+``('command', dict_of_options)``.
 
-Each time a new session is required for a computation, the DEVICE
-starts up a DEVICE_WORKER process using a
-:class:`multiprocessing.Pool`.  
+When the EXEC process receives an execution request, it runs it
+in a minimal namespace. Any messages to stdout or stderr are
+redirected into a global output queue. The EXEC process is also
+responsible for sending back ``execute_reply`` messages through
+the global queue.
 
-The DEVICE_WORKER process creates a Listener object to communicate
-with the EXEC process and starts the listener.  It then creates an SSH
-connection to an unprivileged user and does something like::
+If the code contains an :doc:`interact </interact_protocol>`, it will
+increase the time limit on the EXEC process so that, when the user
+updates the interact, the update will be sent to that process.
+Whenever an interact's internal code is executed, all output messages
+from that execution will include a field containing the interact's ID
+number, which tells the user's browser to place that output in a
+location associated with the interact (probably below the interact
+control).
 
-    python
-    import worker
-    worker.exec_worker(MESSAGE_QUEUE, OUTPUT_QUEUE)
-
-where ``MESSAGE_QUEUE`` and ``OUTPUT_QUEUE`` are both triples
-``(address, port, password)`` (where address and password are strings and
-port is an integer).
-
-The EXEC_WORKER process creates a managed queue that hooks up to the
-``OUTPUT_QUEUE`` manager and also creates a Client object that connects
-to the Listener ``MESSAGE_QUEUE``.
-
-Messages to the EXEC_WORKER process have the form ``('command',
-dict_of_options)`` or ``('user', execute_request_JSON_message)``.
-
-The EXEC_WORKER process sets up a temporary directory, sets up the output
-object (which points the passed queue), and starts an EXEC process
-
-The EXEC process listens for messages indicating either
-``timeout_change`` commands or commands to execute in the user
-namespace.  The EXEC process is responsible for sending back
-``execute_reply`` messages through the global queue back to the DEVICE
-process.  The EXEC process handles any errors that occur in the user
-code by forming an error status message back.
-
-.. todo::
-
-  Untrusted:
-  * Create an untrusted DB class which establishes a connection to the trusted DB server
-  * set rlimits when we fork a DEVICE_WORKER process
-
-  Trusted:
-  * Create a trusted DB server class
-  * Start up device and give a password for DB authentication
-
+The DEVICE process polls the global output queue for messages. When it
+receives a message, it inserts it into the database for the web server
+to read.
 """
-
 
 import sys, time, traceback, StringIO, contextlib, random, uuid
 import util
@@ -85,6 +63,21 @@ from sage.all import *
 """+user_code
 
 class QueueOut(StringIO.StringIO):
+    """
+    A class for sending messages to a global message queue,
+    later to be transfered to the database.
+
+    The message protocol is the same as IPython's protocol
+    (see :ref:`ipython:messaging`), but with an additional
+    ``extension`` message type, whose contents are
+    customizable (usually another IPython-style message with a
+    custom message type).
+
+    :arg str session: the session ID to include in a message's header
+    :arg multiprocessing.Queue queue: a global message queue
+    :arg dict parent_header: the header of the message to which
+        messages from this object are the reply
+    """
     def __init__(self, session, queue, parent_header=None):
         StringIO.StringIO.__init__(self)
         self.session=session
@@ -94,7 +87,11 @@ class QueueOut(StringIO.StringIO):
 
     def raw_message(self, msg_type, content):
         """
-        Send a message where you can change the outer IPython msg_type and completely specify the content.
+        Send a message where you can change the outer
+        IPython ``msg_type`` and completely specify the content.
+
+        :arg str msg_type: the message type
+        :arg dict content: the ``content`` field of the IPython message
         """
         # We don't use uuid4() for the msg_id since there is a bug in
         # older python versions (fixed in 2.6.6, I think) on OSX
@@ -112,21 +109,47 @@ class QueueOut(StringIO.StringIO):
         log("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
 
 class ChannelQueue(QueueOut):
+    """
+    A sub-class of :class:`QueueOut` which, when written to as an
+    :class:`StringIO.StringIO` object, adds an IPython-style
+    stream message to the queue.
+
+    :arg str session: the session ID to include in a message's header
+    :arg multiprocessing.Queue queue: a global message queue
+    :arg str channel: the name of the channel (such as ``"stdout"``)
+    :arg dict parent_header: the header of the message to which
+        messages from this object are the reply
+    """
     def __init__(self, session, queue, channel, parent_header=None):
         QueueOut.__init__(self, session=session, queue=queue, parent_header=parent_header)
         self.channel=channel
 
     def write(self, output):
+        """
+        Write some data to the output stream.
+
+        :arg str output: the string to add to the stream
+        """
         self.raw_message(msg_type='stream',
                          content={'data': output, 'name':self.channel})
 
 class QueueOutMessage(QueueOut):
+    """
+    A class that will send IPython messages with custom types,
+    inside another message with the ``extension`` message type.
+
+    :arg str session: the session ID to include in a message's header
+    :arg multiprocessing.Queue queue: a global message queue
+    :arg dict parent_header: the header of the message to which
+        messages from this object are the reply
+    """
+
     def __init__(self, session, queue, parent_header=None):
         QueueOut.__init__(self, session=session, queue=queue)
 
     def message(self, msg_type, content):
         """
-        Send a user message with a specific type.  This will be wrapped in an IPython 'extension' message and sent to the client.
+        Send a user message with a specific type.  This will be wrapped in an IPython ``extension`` message and added to the queue.
 
         :arg msg_type: custom message type
         :type msg_type: str
@@ -138,15 +161,24 @@ class QueueOutMessage(QueueOut):
 
     def display(self, data):
         """
-        Send a display_data message.
+        Send a ``display_data`` message.
 
-        :arg data: a dict of MIME types and data
-        :type data: dict
+        :arg dict data: a dict of MIME types and data
         """
         self.raw_message(msg_type='display_data',
                          content={'data':data})
 
 class OutputIPython(object):
+    """
+    A context wrapper that causes any messages written to stdout to
+    be redirected into the queue as IPython-style messages, to be
+    written to the client.
+
+    :arg str session: the session ID to include in a message's header
+    :arg multiprocessing.Queue queue: a global message queue
+    :arg dict parent_header: the header of the message to which
+        messages from this object are the reply
+    """
     def __init__(self, session, queue, parent_header=None):
         self.session=session
         self.queue=queue
@@ -158,13 +190,25 @@ class OutputIPython(object):
     def set_parent_header(self, parent_header):
         """
         Set the parent header on all output queues
+
+        :arg dict parent_header: the new parent header
         """
         for q in [self.stdout_queue, self.stderr_queue, self.message_queue]:
             q.parent_header=parent_header
 
     def push_output_id(self, block):
         """
-        Set the ID of the block to which to print output
+        Add an output block ID to the output stack. When a message is sent
+        with one or more IDs in the stack, it will send the ID at the top
+        of the stack as the ``output_block`` field of the message. This
+        tells the client where to place the output (for example, in the
+        case of an interact whose output is always directly below the
+        interact controls). If a message is sent with the output stack
+        empty (the default state), the ``output_block`` field is set to
+        ``None`` and the message is assumed to go to the client's stdout.
+
+        :arg str block: the ID of the output block (in the case of an
+            interact, the interact ID)
         """
         self.out_stack.append(block)
         for q in [self.stdout_queue, self.stderr_queue, self.message_queue]:
@@ -172,7 +216,8 @@ class OutputIPython(object):
 
     def pop_output_id(self):
         """
-        Set the output block back to None
+        Pop one item off of the output stack and restore output to the
+        previous block (or stdout if the stack is empty).
         """
         if len(self.out_stack)==0:
             return
@@ -213,7 +258,6 @@ class OutputIPython(object):
         return False
 
 from multiprocessing import Pool, TimeoutError, Process, Queue, current_process, Manager
-
 import uuid
 
 def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_limits=None):
@@ -221,13 +265,27 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
     This function is the main function. Its responsibility is to
     query the database for more work to do and put messages back into the
     database. We do this so that we can batch the communication with the
-    database, which may be running on a different server or sharded among
+    database, which may be running on a different server or shared among
     several servers.  Another option is to the worker processes doing
     the database communication once a session is set up.  We don't
     know which is better for a highly scalable system.
 
     This function also creates the worker pool for doing the actual
     computations.
+
+    :arg db_zmq.DB db: the untrusted database adaptor
+    :arg filestore.FileStoreZMQ fs: the untrusted filestore adaptor
+    :arg int workers: the number of worker processes to start
+        in the pool
+    :arg int interact_timeout: the timeout (in seconds) for a session
+        containing an interact
+    :arg tuple keys: a tuple of two strings to use to generate the
+        shared secrets for the database and filestore
+    :arg float poll_interval: the time between each iteration of polling
+        the database and queue
+    :arg list resource_limits: list of tuples of the form
+        ``(resource, limit)``, to be passed as arguments to
+        :func:`resource.setrlimit` in each EXEC process
     """
     device_id=unicode(uuid.uuid4())
     log("Starting device loop for device %s..."%device_id, device_id)
@@ -310,7 +368,12 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
 
 
 def unicode_str(obj, encoding='utf-8'):
-    """Takes an object and returns a unicode human-readable representation."""
+    """
+    Takes an object and returns a Unicode human-readable representation.
+
+    :arg obj: the object to encode into Unicode
+    :arg str encoding: the encoding to use
+    """
     if isinstance(obj, str):
         return obj.decode(encoding, 'ignore')
     elif isinstance(obj, unicode):
@@ -318,8 +381,13 @@ def unicode_str(obj, encoding='utf-8'):
     return unicode(obj)
 
 def displayhook_hack(string):
-    """Modified version of string so that ``exec``'ing it results in
+    u"""
+    Modified version of string so that ``exec``\u2019ing it results in
     displayhook possibly being called.
+
+    :arg str string: the code string to modify
+    :returns: the modified code
+    :rtype: str
     """
     # This function is all so the last line (or single lines) will
     # implicitly print as they should, unless they are an assignment.
@@ -356,9 +424,20 @@ import tempfile
 import shutil
 import os
 
-def execProcess(cell_id, message_queue, output_handler, resource_limits, sysargs, fs_secret):
-    """Run the code, outputting into a pipe.
-Meant to be run as a separate process."""
+def execProcess(session, message_queue, output_handler, resource_limits, sysargs, fs_secret):
+    """
+    Run the code, outputting into a pipe.
+    Meant to be run as a separate process.
+
+    :arg str session: the ID of the session running the code
+    :arg multiprocessing.Queue message_queue: a queue through which
+        this process will be passed input messages
+    :arg device_process.OutputIPython output_handler: the context wrapper in which
+        to execute the code
+    :arg list resource_limits: list of tuples of the form
+        ``(resource, limit)``, to be passed as arguments to
+        :func:`resource.setrlimit`.
+    """
     # we need a new context since we just forked
     fs.new_context()
     from Queue import Empty
@@ -410,7 +489,7 @@ Meant to be run as a separate process."""
         if 'files' in msg['content']:
             for filename in msg['content']['files']:
                 with open(filename,'w') as f:
-                    fs.copy_file(f,filename=filename, cell_id=cell_id, hmac=fs_hmac)
+                    fs.copy_file(f,filename=filename, cell_id=session, hmac=fs_hmac)
                 old_files[filename]=-1
         # start new process to upload files while code is being executed
         # pass in the hmac.  The user process will have a 
@@ -497,7 +576,7 @@ Meant to be run as a separate process."""
                 file_list.append(filename)
                 try:
                     with open(filename) as f:
-                        fs.create_file(f, cell_id=cell_id, filename=filename, hmac=fs_hmac)
+                        fs.create_file(f, cell_id=session, filename=filename, hmac=fs_hmac)
                 except Exception as e:
                     sys.stdout.write("An exception occurred: %s\n"%(e,))
         if len(file_list)>0:
@@ -506,15 +585,26 @@ Meant to be run as a separate process."""
         log("Done executing code: %s"%code)
 
 def worker(session, message_queue, resource_limits, fs_secret):
-    """
+    u"""
     This function is executed by a worker process. It executes the
     given code in a separate process. This function may start a
     process on another computer, even, and communicate with that
-    process over ssh.
+    process over SSH.
 
     The result of this function is a list of messages in the global
     device queue.  These messages represent the output and results of
     executing the code.
+
+    :arg str session: the ID of the session running the code
+    :arg multiprocessing.Queue message_queue: a queue through which
+        this process will be passed input messages
+    :arg list resource_limits: list of tuples of the form
+        ``(resource, limit)``, to be passed as arguments to
+        :func:`resource.setrlimit`.
+    :arg str fs_secret: a string to serve as the initial secret message
+        with which to call :func:`hmac.new` and communicate with the
+        trusted filestore object over \xd8MQ. The trusted filestore
+        must be given the same secret.
     """
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
@@ -557,10 +647,20 @@ def upload_files(upload_queue, file_child):
             file_child.send([fs_hmac, file_list])
             break
 
-
 def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=None):
-    """
+    u"""
     Set up things and call the main device process
+
+    :arg str db_address: the URL (including port number) that the untrusted
+        database adaptor can use to communicate over \xd8MQ with the trusted
+        database adaptor
+    :arg str fs_address: the URL for the filestore's \xd8MQ connection
+    :arg int workers: the number of workers allow to run simultaneously
+    :arg int interact_timeout: the timeout (in seconds) for a session
+        containing an interact
+    :arg list resource_limits: list of tuples of the form
+        ``(resource, limit)``, to be passed as arguments to
+        :func:`resource.setrlimit` in each EXEC process
     """
     import db_zmq, filestore
     import zmq
