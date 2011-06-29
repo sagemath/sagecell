@@ -1,17 +1,12 @@
 var singlecell = {};
 
 singlecell.init = (function() {
-    var documentHead = document.head || document.getElementsByTagName('head')[0];
-
     var scripts=[
 	{%- for script in scripts -%}
 	"{{- url_for('static',filename=script,_external=True) -}}",
 	{%- endfor -%}]
     for(var i = 0; i < scripts.length; i++) {
-	var s = document.createElement("script");
-	s.setAttribute("type","text/javascript");
-	s.setAttribute("src",scripts[i]);
-	documentHead.appendChild(s);
+	$("head").append("<script type='text/javascript' src='"+scripts[i]+"'></script>");
     }
 
     var stylesheets=[
@@ -19,10 +14,7 @@ singlecell.init = (function() {
 	"{{- url_for('static',filename=stylesheet,_external=True) -}}",
 	{%- endfor -%}];
     for(var i = 0; i < stylesheets.length; i++) {
-	var s = document.createElement("link");
-	s.setAttribute("rel","stylesheet");
-	s.setAttribute("href",stylesheets[i]);
-	document.head.appendChild(s);
+	$("head").append("<link rel='stylesheet' href='"+stylesheets[i]+"'></script>");
     }
 });
 
