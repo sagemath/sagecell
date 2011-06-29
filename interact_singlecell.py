@@ -386,10 +386,10 @@ class Slider(InteractControl):
         
         if self.range_slider:
             self.subtype = "value_range"
-            self.default = self.default_return = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
+            self.default = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
         else:
             self.subtype = "value"
-            self.default = self.default_return = int(default if default is not None and self.default < len(self.values) else 0)
+            self.default = int(default if default is not None and default < len(self.values) else 0)
 
         self.step=int(step)
         self.label=label
@@ -433,7 +433,7 @@ class ContinuousSlider(InteractControl):
 
     def __init__(self, range_slider=False, interval=(0,100), default=None, steps=250, stepsize=0, label=""):
         self.range_slider = range_slider
-        self.interval = [float(i) for i in interval] if interval[0] < interval[1] and len(interval) == 2 else (0,100)
+        self.interval = interval if interval[0] < interval[1] and len(interval) == 2 else (0,100)
         
         if self.range_slider:
             self.subtype = "continuous_range"
@@ -444,7 +444,7 @@ class ContinuousSlider(InteractControl):
             self.default_return = [float(i) for i in self.default]
         else:
             self.subtype = "continuous"
-            self.default = default if default is not None and default > self.interval[1] and default < self.interval[0] else self.interval[0]
+            self.default = default if default is not None and default < self.interval[1] and default > self.interval[0] else self.interval[0]
             self.default_return = float(self.default)
 
         self.steps = int(steps) if steps > 0 else 250

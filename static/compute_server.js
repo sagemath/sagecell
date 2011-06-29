@@ -497,6 +497,11 @@ InteractCell.prototype.renderCanvas = (function() {
 		var onSliderChange;
 		var default_value = this.controls[name]["default"];
 		addRow(table,label,name,html_code,null);
+		$(table).find("#" + control_id).slider({
+		    min:this.controls[name]["range"][0],
+		    max:this.controls[name]["range"][1],
+		    step:this.controls[name]["step"]
+		});
 		switch(subtype) {
 		case "value":
 		    var values = this.controls[name].values;
@@ -506,6 +511,7 @@ InteractCell.prototype.renderCanvas = (function() {
 			$("#" + ui.handle.offsetParent.id + "_value").val(values[ui.value]);
 			$("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
 		    }
+		    $(table).find("#" + control_id).slider("value", this.controls[name]["default"]);
 		    break;
 		case "value_range":
 		    var values = this.controls[name].values;
@@ -515,27 +521,25 @@ InteractCell.prototype.renderCanvas = (function() {
 			$("#" + ui.handle.offsetParent.id + "_value").val([values[ui.values[0]], values[ui.values[1]]]);
 			$("#" + ui.handle.offsetParent.id + "_index").val(ui.values);
 		    }
+		    $(table).find("#" + control_id).slider("values", this.controls[name]["default"]);
 		    break;
 		case "continuous":
 		    $(table).find("#"+control_id+"_value").val(default_value);
 		    onSliderChange = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
 		    }
+		    $(table).find("#" + control_id).slider("value", this.controls[name]["default"]);
 		    break;
 		case "continuous_range":
 		    $(table).find("#"+control_id+"_value").val(default_value);
 		    onSliderChange = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(ui.values);
 		    }
+		    $(table).find("#" + control_id).slider("values", this.controls[name]["default"]);
 		    break;
 		}
-		$(table).find("#" + control_id).slider({
-		    values:this.controls[name]["default"],
-		    min:this.controls[name]["range"][0],
-		    max:this.controls[name]["range"][1],
-		    step:this.controls[name]["step"],
-		    slide: onSliderChange
-		});
+		$(table).find("#" + control_id).bind("slide", onSliderChange);
+
 		$(table).find('label:last').click((function(control_id){return function() {
 		    $('#'+control_id+' .ui-slider-handle').focus();
 		};})(control_id))
