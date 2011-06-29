@@ -276,6 +276,7 @@ if __name__=='__main__':
     signal.signal(signal.SIGINT, signal_handler)
 
     cwd=os.getcwd()
+    # TODO: make this a temporary file using python's (or the shell's) tempfile stuff
     filename="/tmp/sage_shared_key%i"
     options=dict(cwd=cwd, workers=sysargs.workers, db_port=db_loop.port, fs_port=fs_loop.port,
                  quiet='-q' if sysargs.quiet or util.LOGGING is False else '',
