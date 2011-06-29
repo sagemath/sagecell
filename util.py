@@ -8,7 +8,7 @@ except ImportError:
 
 def log(message, key=' '):
     if LOGGING:
-        sys.__stdout__.write("%s\t: %s\n"%(key, message))
+        sys.__stderr__.write("%s\t: %s\n"%(key, message))
 
 import os
 DEFAULT_DIR=''

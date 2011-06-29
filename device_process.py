@@ -39,7 +39,9 @@ import sys, time, traceback, StringIO, contextlib, random, uuid
 import util
 import hmac
 from util import log
-from json import dumps
+# TODO: be smart about importing json
+import json
+from json import dumps, loads
 from hashlib import sha1
 import interact_singlecell
 
@@ -53,6 +55,7 @@ except ImportError as e:
 user_code="""
 import sys
 sys._sage_messages=MESSAGE
+sys._sage_upload_file_pipe=_file_upload_send
 def _get_interact_function(id):
     import interact_singlecell
     return interact_singlecell._INTERACTS[id]
@@ -257,7 +260,7 @@ class OutputIPython(object):
         # supress the exception
         return False
 
-from multiprocessing import Pool, TimeoutError, Process, Queue, current_process, Manager
+from multiprocessing import Pool, TimeoutError, Process, Queue, current_process, Manager, Pipe
 import uuid
 
 def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_limits=None):
@@ -309,11 +312,14 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                 # session has not been set up yet
                 log("evaluating '%s'"%X['content']['code'], device_id+' '+session)
                 while not db.create_secret(session=session):
-                    pass
+                    time.sleep(0.1)
+
                 keys[0]=sha1(keys[0]).digest()
                 hmacs[session]=hmac.new(keys[0],digestmod=sha1)
                 while not fs.create_secret(session=session):
-                    pass
+                    time.sleep(0.1)
+                while not fs.create_secret(session=session+'upload'):
+                    time.sleep(0.1)
                 keys[1]=sha1(keys[1]).digest()
                 msg_queue=manager.Queue()
                 args=(session, msg_queue, resource_limits, keys[1])
@@ -438,32 +444,31 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         ``(resource, limit)``, to be passed as arguments to
         :func:`resource.setrlimit`.
     """
-    # TODO: Have some sort of process limits on CPU time/memory
-
     # we need a new context since we just forked
+    global fs
     fs.new_context()
-    import Queue
+    from Queue import Empty
     global user_code
-    # timeout has to be long enough so we don't miss the first message
-    # and so that we don't miss a command that may come after the first message.
-    # thus, this default timeout should be much longer than the polling interval
-    # for the output queue
+    # Since the user can set a timeout, we safeguard by having a maximum timeout
     MAX_TIMEOUT=60
     timeout=0.1
-    execution_count=1
-    empty_times=0
 
+    upload_recv, upload_send=Pipe()
+    file_parent, file_child=Pipe()
+    file_upload_process=Process(target=upload_files, args=(upload_recv, file_child, session, fs_secret))
+    file_upload_process.start()
+
+    fs_hmac=hmac.new(fs_secret, digestmod=sha1)
+    del fs_secret
     if resource_limits is None:
         resource_limits=[]
     from resource import setrlimit
     for r,l in resource_limits:
         setrlimit(r, l)
-    fs_hmac=hmac.new(fs_secret, digestmod=sha1)
-    del(fs_secret)
     while True:
         try:
             msg=message_queue.get(timeout=timeout)
-        except Queue.Empty:
+        except Empty:
             break
 
         if msg[0]=="exec":
@@ -498,10 +503,12 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                 with open(filename,'w') as f:
                     fs.copy_file(f,filename=filename, cell_id=session, hmac=fs_hmac)
                 old_files[filename]=-1
+        file_parent.send(True)
         with output_handler as MESSAGE:
             try:
                 locals={'MESSAGE': MESSAGE,
-                        'interact_singlecell': interact_singlecell}
+                        'interact_singlecell': interact_singlecell,
+                        '_file_upload_send': upload_send}
                 if enable_sage and sage_mode:
                     locals['sage'] = sage
 
@@ -510,7 +517,6 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                 # save bandwidth
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          {"status":"ok",
-                                                          #"execution_count":execution_count,
                                                           #"payload":[],
                                                           #"user_expressions":{},
                                                           #"user_variables":{}
@@ -546,15 +552,22 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                 #evalue!
 
                 err_msg={"ename": etype.__name__, "evalue": error_value,
-                         "traceback": err.text(etype, evalue, etb, context=3)}
-                #output_handler.message_queue.raw_message("pyerr",err_msg)
-                err_msg.update(status="error",
-                               execution_count=execution_count)
+                         "traceback": err.text(etype, evalue, etb, context=3),
+                         "status": "error"}
                 output_handler.message_queue.raw_message("execute_reply", 
                                                          err_msg)
-
+        upload_send.send_bytes(json.dumps({'msg_type': 'end_exec'}))
+        new_files=file_parent.recv()
+        old_files.update(new_files)
         # TODO: security implications here calling something that the user had access to.
         timeout=max(0,min(float(interact_singlecell.__single_cell_timeout__), MAX_TIMEOUT))
+
+        # TODO: if we wait until here to upload files, then we might have sent references to these files
+        # like img URLs, but the files won't actually be available until after the computation is done.  
+        # In the current notebook, since things happen on the same filesystem, when a user requests a file,
+        # a symbolic link is instantly made to the temporary directory file, and then later the file is copied
+        # over.  it seems like we need to upload a file immediately (from the parent process??), and then upload
+        # any remaining files after the computation is over.
         file_list=[]
         for filename in os.listdir(os.getcwd()):
             if filename not in old_files or old_files[filename]!=os.stat(filename).st_mtime:
@@ -567,8 +580,9 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         if len(file_list)>0:
             output_handler.message_queue.message('files', {'files': file_list})
 
-        execution_count+=1
         log("Done executing code: %s"%code)
+    upload_send.send_bytes(json.dumps({'msg_type': 'end_session'}))
+    file_upload_process.join()
 
 def worker(session, message_queue, resource_limits, fs_secret):
     u"""
@@ -595,15 +609,12 @@ def worker(session, message_queue, resource_limits, fs_secret):
     curr_dir=os.getcwd()
     tmp_dir=tempfile.mkdtemp()
     log("Temp files in "+tmp_dir)
-    #TODO: We should have a process that cleans up any children
-    # that may hang around, similar to the sage-cleaner process.
     oldDaemon=current_process().daemon
     # Daemonic processes cannot create children
     current_process().daemon=False
     os.chdir(tmp_dir)
     output_handler=OutputIPython(session, outQueue)
     output_handler.set_parent_header({'session':session})
-    # listen on queue and send send execution requests to execProcess
     args=(session, message_queue, output_handler, resource_limits, sysargs, fs_secret)
     p=Process(target=execProcess, args=args)
     p.start()
@@ -611,6 +622,44 @@ def worker(session, message_queue, resource_limits, fs_secret):
     current_process().daemon=oldDaemon
     os.chdir(curr_dir)
     shutil.rmtree(tmp_dir)
+
+def upload_files(upload_recv, file_child, session, fs_secret):
+    """
+    The user can pass in a list of filenames as a json message.  These will get uploaded.
+    When the upload_queue gets an "end_exec" message, it then sends the hmac down the 
+    file_child pipe and exits
+    """
+    # for some reason, doing fs.new_context hangs on the statement when fs._xreq is assigned
+    from filestore import FileStoreZMQ
+    global fs
+    fs=FileStoreZMQ(fs.address)
+
+    fs_hmac=hmac.new(fs_secret, digestmod=sha1)
+    del fs_secret
+
+    file_list={}
+    while True:
+        # The problem with using a Pipe is that if the user is writing file messages from several
+        # threads, there can be a problem.  Maybe we should use normal sockets or a special file?
+        msg=json.loads(upload_recv.recv_bytes())
+        # note: check for basestring since json stuff comes back as unicode strings
+        if isinstance(msg, list) and all(isinstance(i,basestring) for i in msg):
+            # TODO: sanitize pathnames to only upload files below the current directory
+            for filename in msg:
+                file_list[filename]=os.stat(filename).st_mtime
+                try:
+                    with open(filename) as f:
+                        fs.create_file(f, cell_id=session, session_auth_channel='upload', filename=filename, hmac=fs_hmac)
+                except Exception as e:
+                    log("An exception occurred: %s\n"%(e,))
+            upload_recv.send_bytes("done")
+        elif isinstance(msg, dict) and 'msg_type' in msg and msg['msg_type']=='end_exec':
+            file_child.send(file_list)
+            # we recv just to make sure that we are synchronized with the execing process
+            file_child.recv()
+        elif isinstance(msg, dict) and 'msg_type' in msg and msg['msg_type']=='end_session':
+            break
+
 
 def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=None):
     u"""
