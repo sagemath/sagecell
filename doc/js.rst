@@ -45,6 +45,14 @@ Session Class
 Session Functions
 _________________
 
+.. _Session.appendMsg:
+.. function:: Session.appendMsg(msg, string)
+
+    :param JSON msg: JSONify-able message to be appended.
+    :param String string: Text (Send, Receive, etc.) to preface the message.
+    
+    Appends response message to the messages div.
+
 .. _Session.clearQuery:
 .. function:: Session.clearQuery()
 
