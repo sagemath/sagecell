@@ -85,6 +85,8 @@ Session.prototype.init = function (outputDiv, output, sage_mode) {
     this.sage_mode = sage_mode;
     this.sequence = 0;
     this.poll_interval = 400;
+    this.lastMessage = null;
+    this.sessionContinue = true;
     this.outputDiv.find(output).append('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div></div>');
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output=false;
@@ -130,9 +132,8 @@ Session.prototype.sendMsg = function() {
 		       //"user_expressions": {}
 		      }
 	  };
-    this.outputDiv.find('.singlecell_messages').append(document.createElement('div'))
-	.children().last().text("*******SEND: "+JSON.stringify(msg));
-
+    this.lastMessage = msg_id;
+    this.appendMsg(msg, "*******SEND: ");
     /* We need to make a proxy object; see
        http://api.jquery.com/bind/#comment-74776862 or
        http://bitstructures.com/2007/11/javascript-method-callbacks
@@ -146,6 +147,12 @@ Session.prototype.sendMsg = function() {
 	    console.warn(textStatus); 
 	    console.warn(errorThrown);
 	});
+}
+
+Session.prototype.appendMsg = function(msg, text) {
+    // Append the message to the div of messages
+    // Use $.text() so that strings are automatically escaped
+    this.outputDiv.find(".singlecell_messages").append(document.createElement('div')).children().last().text(text+JSON.stringify(msg));
 }
 
 Session.prototype.output = function(html, block_id) {
@@ -170,9 +177,7 @@ Session.prototype.get_output = function() {
 }
 
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
-    this.setQuery();
-
-    var id=this.session_id, session_continue = true;
+    var id=this.session_id;
 
     if(data!==undefined && data.content!==undefined) {
         var content = data.content;
@@ -185,6 +190,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
                 console.warn('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
             }
             this.sequence+=1;
+	    if (parent_id !== undefined && parent_id !== this.lastMessage && this.lastMessage !== null) {
+		// If another message has been sent to the server since the parent of this one, don't format it for output but log that it was received.
+		// This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
+		this.appendMsg(msg, "Rejected: ");
+		continue;
+	    }
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
@@ -247,7 +258,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			}
 		    }
 		    this.clearQuery();
-		    session_continue = false;
+		    this.sessionContinue = false;
 		    break;
 		case "interact_prepare":
 		    var interact_id = user_msg.content.interact_id;
@@ -263,16 +274,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		}
 		break;
 	    }
-
-	    // Append the message to the div of messages
-	    // use .text() so that strings are automatically escaped
-	    this.outputDiv.find(".singlecell_messages").append(document.createElement('div'))
-		.children().last().text(JSON.stringify(msg));
 	    
-	    if (session_continue) {
-		this.setQuery();
-	    }
+	    this.appendMsg(msg, "Accepted: ");
         }
+    }
+    if (this.sessionContinue) {
+	this.setQuery();
     }
 }
 
