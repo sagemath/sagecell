@@ -1,6 +1,6 @@
 mongo_config={
     'mongo_uri': 'mongodb://localhost',
-    'mongo_db': 'demo'
+    'mongo_db': 'singlecelldb'
     }
 
 web_server_config={
