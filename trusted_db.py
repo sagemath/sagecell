@@ -136,11 +136,14 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
         # Basically, we need to make sure the keys
         # are *not* unicode strings.
         msg['content']=dict((str(k),v) for k,v in msg['content'].items())
-        if msg['msg_type'] not in ['create_secret','set_device_pgid','add_messages'] and 'session' in msg['content']:
-            authenticate(msg_str, msgs[1].bytes, msg['content']['session'], auth_dict)
+        if 'session' in msg['content']:
+            auth_session=msg['content']['session']+msg['content'].get('session_auth_channel','')
+        if (msg['msg_type'] not in ['create_secret','set_device_pgid','add_messages'] 
+            and 'session' in msg['content']):
+            authenticate(msg_str, msgs[1].bytes, auth_session, auth_dict)
         if msg['msg_type']=='create_secret':
             key[0]=sha1(key[0]).digest()
-            auth_dict[msg['content']['session']]=hmac.new(key[0],digestmod=sha1)
+            auth_dict[auth_session]=hmac.new(key[0],digestmod=sha1)
             to_send=True
         elif isFS:
             if msg['msg_type']=='create_file':
@@ -160,6 +163,7 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
             content=[(json.loads(m),d) for m,d in msg['content']['messages']]
             for i in range(len(content)):
                 m,d=content[i]
+                # we don't need the session_auth_channel field for messages, only for files
                 authenticate(msg['content']['messages'][i][0],d,m['parent_header']['session'],auth_dict,True)
             db.add_messages([c[0] for c in content])
         elif msg['msg_type'] in db.valid_untrusted_methods:
