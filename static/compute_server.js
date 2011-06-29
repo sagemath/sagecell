@@ -433,7 +433,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		addRow(table, label, name, '<input type="checkbox" id="'+control_id+'" class="'+id+' checkbox_control" checked="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_box":
-		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+' '+' input_box__control" value="'+this.controls[name]['default']+'">',control_id);
+		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+' '+' input_box__control" size='+this.controls[name]["width"]+' value="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_grid":
 		var default_values = this.controls[name]["default"];
