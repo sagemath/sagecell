@@ -503,7 +503,7 @@ def automatic_control(control):
     elif isinstance(control, list):
         C = selector(buttons = len(control) <= 5, default = default_value, label = label, values = control, raw = False)
     elif isinstance(control, GeneratorType):
-        C = slider(default = default_value, values = list_of_first_n(control,10000), label = label)
+        C = slider(default = default_value, values = take(10000,control), label = label)
     elif isinstance (control, tuple):
         if len(control) == 2:
             C = continuous_slider(default = default_value, interval = (control[0], control[1]), label = label)
@@ -526,27 +526,19 @@ def automatic_control(control):
     
     return C
 
-def list_of_first_n(v,n):
+def take(n, iterable):
     """
-    Given an iterator v, return the first n elements it produces as a list.
+    Return the first n elements of an iterator as a list.
 
-    :arg v: An iterator.
     :arg int n: Number of elements through which v should be iterated.
+    :arg iterable: An iterator.
 
-    :returns: First n elements of v.
+    :returns: First n elements of iterable.
     :rtype: List
     """
 
-    if not hasattr(v, "next"):
-        v = v.__iter__()
-    w = []
-    while n > 0:
-        try:
-            w.append(v.next())
-        except StopIteration:
-            return w
-        n -= 1
-    return w
+    from itertools import islice
+    return list(islice(iterable, n))
 
 
 # Aliases for backwards compatibility
