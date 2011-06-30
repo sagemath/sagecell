@@ -469,6 +469,21 @@ class ContinuousSlider(InteractControl):
                 'label':self.label}
 
 class MultiSlider(InteractControl):
+    """
+    A multiple-slider interact control.
+
+    Defines a bank of vertical sliders (either value or continuous sliders, but not both in the same control).
+
+    :arg bool value_slider: toggles whether the sliders are value sliders (True) or continuous sliders (default = False)
+    :arg int sliders: Number of sliders to generate
+    :arg list default: Default value (continuous sliders) or index position (continuous sliders) of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
+    :arg list values: Values for each value slider in a multi-dimensional list for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1, .. ,slider_n_val_n]]. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to iterate through the same values, the list only needs to contain that one list of values.
+    :arg list interval: Intervals for each continuous slider in a list of tuples of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot be set if value sliders are specified. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to have the same interval, the list only needs to contain that one tuple.
+    :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
+    :arg list steps: List of numbers representing the number of steps for each continuous slider. Note that (as in the case of the regular continuous slider), specifying a valid stepsize will always take precedence over any specification of number of steps, valid or not. The length of this list should be equivalent to the number of sliders, but if all sliders are to have the same number of steps, the list only neesd to contain that one value.
+    :arg str label: the label of the control
+    """
+
     def __init__(self, value_slider=False, sliders=1, default=[0], interval=[(0,1)], values=[[0,1]], stepsize=[0], steps=[250], label=""):
         from types import GeneratorType
 
@@ -538,6 +553,13 @@ class MultiSlider(InteractControl):
         self.label = label
 
     def message(self):
+        """
+        Get a multi_list control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
         return_message = {'control_type':'multi_slider',
                         'subtype':self.subtype,
                         'sliders':self.sliders,
