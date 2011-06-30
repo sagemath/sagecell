@@ -1,3 +1,5 @@
+.. _trusted:
+
 Trusted database
 ================
 

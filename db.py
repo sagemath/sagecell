@@ -106,6 +106,16 @@ class DB(object):
         """
         raise NotImplementedError
 
+    def create_secret(self, session):
+        """
+        Generate a new :mod:`hmac` object and associate it
+        with the session. Used only with "untrusted" database
+        adaptors. (See :ref:`trusted`.)
+
+        :arg str session: the ID of the new session
+        """
+        raise NotImplementedError
+
     def set_ipython_ports(self, kernel):
         """
         Set the ports with which an IPython kernel can communicate

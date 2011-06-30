@@ -58,6 +58,16 @@ class FileStore(object):
         :arg file file_handle: a file handle open for writing
         :arg \*\*kwargs: labels to identify the file to copy
         """
+
+    def create_secret(self, session):
+        """
+        Generate a new :mod:`hmac` object and associate it
+        with the session. Used only with "untrusted" database
+        adaptors. (See :ref:`trusted`.)
+
+        :arg str session: the ID of the new session
+        """
+        raise NotImplementedError
     
 from gridfs import GridFS
 import pymongo
