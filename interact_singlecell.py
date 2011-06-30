@@ -370,12 +370,11 @@ class Slider(InteractControl):
     :arg int default: initial value (index) of the slider; if ``None``, the
         slider defaults to the 0th index.
     :arg list values: list of values to which the slider position refers.
-    :arg int step: step size for the slider, which corresponds to how many index positions the slider advances with each move.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg str label: the label of the control
     """
 
-    def __init__(self, range_slider=False, values=[0,1], default=None, step=1, label=""):
+    def __init__(self, range_slider=False, values=[0,1], default=None, label=""):
         from types import GeneratorType
 
         if isinstance(values, GeneratorType):
@@ -392,9 +391,8 @@ class Slider(InteractControl):
             self.default = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
         else:
             self.subtype = "value"
-            self.default = int(default if default is not None and default < len(self.values) else 0)
+            self.default = int(default if default is not None and default < len(self.values) and default > 0 else 0)
 
-        self.step=int(step)
         self.label=label
 
     def message(self):
@@ -410,7 +408,7 @@ class Slider(InteractControl):
                 'default':self.default,
                 'range':[0, len(self.values)-1],
                 'values':[repr(i) for i in self.values],
-                'step':self.step,
+                'step':1,
                 'raw':True,
                 'label':self.label}
     def adapter(self,v):
@@ -480,8 +478,12 @@ class MultiSlider(InteractControl):
         
         if self.value_slider:
             self.subtype = "value"
+            self.stepsize = 1
+
             if len(values) == self.sliders:
                 self.values = values[:]
+            elif len(values) == 1 and len(values[0]) >= 2:
+                self.values = [values[0]] * self.sliders
             else:
                 self.values = [[0,1]] * self.sliders
 
@@ -491,19 +493,18 @@ class MultiSlider(InteractControl):
 
             if len(default) == self.sliders:
                 self.default = [default[i] if i >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
+            elif len(default) == 1:
+                self.default = [default if default[0] >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
             else:
                 self.default = [0] * self.sliders
-
-            if len(stepsize) == self.sliders:
-                self.stepsize = [int(i) if i > 0 else 1 for i in stepsize]
-            else:
-                self.stepsize = [1] * self.sliders
 
         else:
             self.subtype = "continuous"
 
             if len(interval) == self.sliders:
                 self.interval = interval[:]
+            elif len(interval) == 1 and len(interval[0]) == 2:
+                self.interval = [interval[0]] * self.sliders
             else:
                 self.interval = [(0,1) for i in self.slider_range]
 
@@ -515,15 +516,22 @@ class MultiSlider(InteractControl):
 
             if len(default) == self.sliders:
                 self.default = [default[i] if default[i] > self.interval[i][0] and default[i] < self.interval[i][1] else self.interval[i][0] for i in self.slider_range]
+            elif len(default) == 1:
+                self.default = [default[0] if default[0] > self.interval[i][0] and default[0] < self.interval[i][1] else self.interval[i][0] for i in self.slider_range]
             else:
                 self.default = [self.interval[i][0] for i in self.slider_range]
 
             self.default_return = [float(i) for i in self.default]
 
-            self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.sliders else [250 for i in self.slider_range]
+            if len(steps) == 1:
+                self.steps = [steps * self.sliders] if steps[0] > 0 else [250] * self.sliders
+            else:
+                self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.sliders else [250 for i in self.slider_range]
 
             if len(stepsize) == self.sliders:
                 self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.slider_range]
+            elif len(stepsize) == 1:
+                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.slider_range]
             else:
                 self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.slider_range]
 
