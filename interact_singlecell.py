@@ -539,7 +539,7 @@ class MultiSlider(InteractControl):
             self.default_return = [float(i) for i in self.default]
 
             if len(steps) == 1:
-                self.steps = [steps * self.sliders] if steps[0] > 0 else [250] * self.sliders
+                self.steps = [steps[0]] * self.sliders if steps[0] > 0 else [250] * self.sliders
             else:
                 self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.sliders else [250 for i in self.slider_range]
 
