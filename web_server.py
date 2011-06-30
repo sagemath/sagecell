@@ -28,13 +28,15 @@ sysargs=None
 scripts=['compute_server.js',
          'codemirror2/lib/codemirror.js',
          'codemirror2/mode/python/python.js',
-         'jqueryui/js/jquery-ui-1.8.13.custom.min.js']
+         'jqueryui/js/jquery-ui-1.8.13.custom.min.js',
+         'colorpicker/js/colorpicker.js']
 jQuery_current='jquery-1.5.min.js'
 
 stylesheets=['codemirror2/lib/codemirror.css',
              'codemirror2/theme/default.css',
              'stylesheet.css',
-             'jqueryui/css/sage/jquery-ui-1.8.13.custom.css']
+             'jqueryui/css/sage/jquery-ui-1.8.13.custom.css',
+             'colorpicker/css/colorpicker.css']
 
 def print_exception(f):
     """

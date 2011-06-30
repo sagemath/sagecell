@@ -338,6 +338,8 @@ InteractCell.prototype.bindChange = function(interact) {
 		events["change"] = null;
 		break;
 	    }
+	case "color":
+	    events["change"] = null;
 	    break;
 	}
     }
@@ -436,6 +438,9 @@ InteractCell.prototype.getChanges = function() {
 		break;
 	    }
 	    break;
+	case "color":
+	    params[name] = $(id + "_" + name).val();
+	    break;
 	}
     }
     return params;
@@ -482,7 +487,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		addRow(table, label, name, '<input type="checkbox" id="'+control_id+'" class="'+id+' checkbox_control" checked="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_box":
-		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+' '+' input_box__control" size='+this.controls[name]["width"]+' value="'+this.controls[name]['default']+'">',control_id);
+		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+'" size='+this.controls[name]["width"]+' value="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_grid":
 		var default_values = this.controls[name]["default"];
@@ -656,6 +661,21 @@ InteractCell.prototype.renderCanvas = (function() {
 		$(table).find('label:last').click((function(control_id){return function() {
 		    $('#'+control_id+' .ui-slider-handle').focus();
 		};})(control_id))
+		break;
+	    case "color":
+		var default_value = this.controls[name]["default"];
+		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+'" size='+this.controls[name]["width"]+' value='+this.controls[name]["default"]+'>',control_id);
+		$(table).find("#"+control_id).ColorPicker({
+		    onSubmit: function(hsb, hex, rgb, el) {
+			$(el).val("#"+hex);
+			$(el).ColorPickerHide();
+			$("#"+control_id).trigger("change");
+		    },
+		    onBeforeShow: function() {
+			console.log(control_id);
+			$("#"+control_id).ColorPickerSetColor(default_value);
+		    }
+		});
 		break;
 	    }
 	}
