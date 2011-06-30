@@ -561,12 +561,13 @@ class MultiSlider(InteractControl):
         :rtype: dict
         """
         return_message = {'control_type':'multi_slider',
-                        'subtype':self.subtype,
-                        'sliders':self.sliders,
-                        'label':self.label,
-                        'range':self.interval,
-                        'step':self.stepsize,
-                        'raw':True}
+                          'subtype':self.subtype,
+                          'sliders':self.sliders,
+                          'label':self.label,
+                          'range':self.interval,
+                          'step':self.stepsize,
+                          'raw':True,
+                          'label':self.label}
         if self.value_slider:
             return_message["values"] = [[repr(j) for j in self.values[i]] for i in self.slider_range]
             return_message["default"] = self.default
@@ -577,6 +578,48 @@ class MultiSlider(InteractControl):
     def adapter(self,v):
         if self.value_slider:
             return [self.values[i][v[i]] for i in self.slider_range]
+        else:
+            return v
+
+class ColorSelector(InteractControl):
+    def __init__(self, default="#000000", sage_color=True, width=0, label=""):
+        self.sage_color = sage_color
+
+        try:
+            from sagenb.misc.misc import Color
+            self.sage_mode = True
+        except:
+            self.sage_mode = False
+            self.sage_color = False
+
+        if self.sage_mode and self.sage_color:
+            if isinstance(default, Color):
+                self.default = default
+            elif isinstance(default, str):
+                self.default = Color(default)
+            else:
+                Color("#000000")
+        else:
+            self.default = default if isinstance(default,str) else "#000000"
+
+        self.width = int(width)
+        self.label = label
+
+    def message(self):
+        self.return_value =  {'control_type':'color',
+                         'width':self.width,
+                         'raw':False,
+                         'label':self.label}
+        if self.sage_mode and self.sage_color:
+            self.return_value["default"] = self.default.html_color()
+        else:
+            self.return_value["default"] = self.default
+        return self.return_value
+
+    def adapter(self, v):
+        if self.sage_mode and self.sage_color:
+            from sagenb.misc.misc import Color
+            return Color(v)
         else:
             return v
 
@@ -628,13 +671,15 @@ def automatic_control(control):
     else:
         C = input_box(default = control, label=label, raw = True)
         try:
-            from sagenb.misc.misc import is_Matrix
+            from sagenb.misc.misc import is_Matrix, Color
             if is_Matrix(control):
                 default_value = control.list()
                 nrows = control.nrows()
                 ncols = control.ncols()
                 default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
                 C = input_grid(nrows = nrows, ncols = ncols, label = label, default = default_value)
+            elif isinstance(control, Color):
+                C = color(default = Control, label = label)
         except:
             pass
     
@@ -663,3 +708,4 @@ input_grid=InputGrid
 checkbox=Checkbox
 continuous_slider=ContinuousSlider
 multi_slider=MultiSlider
+color_selector=ColorSelector
