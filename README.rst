@@ -1,6 +1,6 @@
 .. highlight:: bash
 
-This is a very simple demo of a 3-component Python compute service,
+This is a demo of a 3-component Python compute service,
 using MongoDB.
 
 Installation
@@ -287,3 +287,11 @@ arbitrary user code).
    automatically clean up the worker processes.
 
 6. Go to ``http://localhost:<SERVER_PORT>`` to use the single-cell server.
+
+
+License
+=======
+
+See the file "LICENSE.txt" for terms & conditions for usage and a
+DISCLAIMER OF ALL WARRANTIES.
+
