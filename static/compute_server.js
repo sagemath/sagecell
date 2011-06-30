@@ -313,6 +313,10 @@ InteractCell.prototype.bindChange = function(interact) {
 	case "selector":
 	    events["change"] = null;
 	    break;
+	case "multi_slider":
+	    events["slidestop"] = null;
+	    events["change"];
+	    break;
 	case "slider":
 	    events["slidestop"] = null;
 	    events["change"] = null;
@@ -373,6 +377,24 @@ InteractCell.prototype.getChanges = function() {
 	    break;
 	case "selector":
 	    params[name] = String($(id + "_" + name).val());
+	    break;
+	case "multi_slider":
+	    var sliders = this.controls[name]["sliders"];
+	    var slider_values = "";
+	    switch(subtype) {
+	    case "continuous":
+		for (i = 0; i < sliders; i ++) {
+		    slider_values = slider_values + $(id + "_" + name + "_" + i + "_value").val()+",";
+		}
+		params[name] = "["+ slider_values +"]";
+		break;
+	    case "value":
+		for (i = 0; i < sliders; i ++) {
+		    slider_values = slider_values + $(id + "_" + name + "_" + i + "_index").val()+",";
+		}
+		params[name] = "["+ slider_values +"]";
+		break;
+	    }
 	    break;
 	case "slider":
 	    switch(subtype) {
@@ -499,6 +521,58 @@ InteractCell.prototype.renderCanvas = (function() {
 		    addRow(table,label,name,html_code,control_id);
 		}
 		break;
+	    case "multi_slider":
+		var sliders = this.controls[name]["sliders"];
+		var slider_values = this.controls[name]["values"];
+		var onSlideChange;
+
+		var html_code = '<div class="' + id + ' singlecell_multiSliderContainer"><span style="whitespace:nowrap">';
+
+		for (var i = 0; i < sliders; i++) {
+		    html_code = html_code +
+			'<span class="singlecell_multiSliderControl" id = "' + control_id + '_' + i +'"></span>'+
+			'<input type="text" class="' + control_id + '_value' + '" id ="' + control_id + '_' + i + '_value" style="border:none;" size="4">'+
+			'<input class="' + control_id + '_index' + '" id ="' + control_id + '_' + i + '_index" style="display:none"></input>';
+		}
+		html_code = html_code + '</span></div>';
+		addRow(table,label,name,html_code,null);
+
+		for (var i = 0; i < sliders; i ++) {
+		    $(table).find("#" + control_id + "_" + i).slider({
+			value:this.controls[name]["default"][i],
+			min:this.controls[name]["range"][i][0],
+			max:this.controls[name]["range"][i][1],
+			step:this.controls[name]["step"][i],
+			orientation:"vertical"});
+		}
+
+		switch(subtype) {
+		case "continuous":
+		    onSlideChange = function(event,ui) {
+			$(table).find("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
+		    }
+		    for (var i = 0; i < sliders; i++) {
+			$(table).find("#" + control_id + "_" + i + "_value").val(this.controls[name]["default"][i]);
+			$(table).find("#" + control_id + "_" + i).bind("slide",onSlideChange);
+		    }
+		    break;
+
+		case "value":
+		    for (var i = 0; i < sliders; i++) {
+			var i_temp = i;
+			$(table).find("#" + control_id + "_" + i + "_value").val(slider_values[i][this.controls[name]["default"][i]]);
+			$(table).find("#" + control_id + "_" + i + "_index").val(this.controls[name]["default"][i]);
+
+			onSlideChange = function(event,ui) {
+			    $(table).find("#" + ui.handle.offsetParent.id + "_value").val(slider_values[i_temp][ui.value]);
+			    $(table).find("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
+			}
+			$(table).find("#" + control_id + "_" + i).bind("slide",onSlideChange);
+		    }
+		    break;
+		}
+		
+	    	break;
 	    case "slider":
 		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' singlecell_sliderControl" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"><input type="text" class="' + id +'" id ="' + control_id + '_index" style="display:none"></span>';
 		var onSliderChange;
@@ -515,6 +589,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		    $(table).find("#"+control_id+"_value").val(values[default_value]);
 		    $(table).find("#"+control_id+"_index").val(default_value);
 		    onSliderChange = function(event,ui) {
+			console.log(values);
 			$("#" + ui.handle.offsetParent.id + "_value").val(values[ui.value]);
 			$("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
 		    }
