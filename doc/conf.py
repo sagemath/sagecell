@@ -222,4 +222,5 @@ man_pages = [
 intersphinx_mapping = {'python': ('http://docs.python.org/release/2.6.4/', None),
                        'ipython': ('http://ipython.org/ipython-doc/dev/', None),
                        'pymongo': ('http://api.mongodb.org/python/current/', None),
+                       'pyzmq': ('http://zeromq.github.com/pyzmq/', None),
                        'sage': ('http://www.sagemath.org/doc/reference/', None)}

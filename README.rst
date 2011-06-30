@@ -287,15 +287,3 @@ arbitrary user code).
    automatically clean up the worker processes.
 
 6. Go to ``http://localhost:<SERVER_PORT>`` to use the single-cell server.
-
-Embedded Single-Cell
-^^^^^^^^^^^^^^^^^^^^
-
-To embed the single-cell on a webpage hosted on another server (or locally),
-insert the following code into an HTML file, replacing ``<HOST_SERVER>``
-with the server and port number of the main server.
-
-.. code-block:: html
-
-    <script type="text/javascript" src="http://<HOST_SERVER>/embedded_singlecell.js"></script>
-    <div id="singlecell"></div>
