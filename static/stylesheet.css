@@ -2,6 +2,8 @@
 .singlecell_messages div {margin-bottom:12pt;}
 .singlecell_form {visibility: hidden;}
 .singlecell_sliderControl {display:inline-block;width:15.0em;margin-right:1.0em;margin-left:1.0em}
+.singlecell_multiSliderContainer {margin-left:1.0em}
+.singlecell_multiSliderControl {display:inline-block;margin-right:0.5em;margin-left:0.5em;margin-top:1.25em}
 .singlecell_selectorButton {padding:0.1em 0.5em;cursor:default}
 .error {color: red}
 .stderr {color: red}
@@ -9,4 +11,5 @@
 .CodeMirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
 .singlecell_done {color: red}
 .singlecell_sessionOutput {border: 2px solid black; padding: 5px;}
+.singlecell_interactContainer {padding: 15px 5px 5px 5px}
 .singlecell_interactOutput {border-left: 2px solid blue; padding: 5px;}
