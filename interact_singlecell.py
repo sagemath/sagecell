@@ -449,7 +449,7 @@ class ContinuousSlider(InteractControl):
             self.default_return = float(self.default)
 
         self.steps = int(steps) if steps > 0 else 250
-        self.stepsize = float(stepsize if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0] else (self.interval[1] - self.interval[0]) / self.steps)
+        self.stepsize = float(stepsize if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0] else float(self.interval[1] - self.interval[0]) / self.steps)
         self.label = label
 
     def message(self):
