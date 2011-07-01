@@ -11,30 +11,29 @@ Supported / Partially Supported Interact Controls:
 
 [X] Input Box
 
-[A] Input Grid
-
-* No matrix or iterator support
+[X] Input Grid
 
 [A] Selector (Dropdown and Button)
 
-* No iterator support
 * No multiple select (only single-item select)
 
-[A] Slider
+[X] Slider
 
-* Adds numerical input box which updates slider / interact (click on the displayed slider value)
-* No iterator support
+* Both continuous (range) sliders and sliders which iterate through values or objects in a list
+* Range sliders have a numerical input box which updates the slider / interact (to use, click on displayed slider value)
 
-Unsupported Interact Controls:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[ ] Color Picker
+[X] Multi-Slider (New Interact Control)
+
+* Renders a set of either continuous or value sliders, each of which can take their own parameters. The value of the control is returned as a one-dimensional list with entries of the values of each slider.
+
+[X] Color Picker
+
+* Currently only uses colorpicker (one of the Sage options).
 
 Unsupported Interact Features:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [ ] Layouts
-
-[ ] Colors
 
 [ ] Non-auto update
 
@@ -112,6 +111,24 @@ Controls
 
 .. autoclass:: interact_singlecell.slider
 
+.. autoclass:: interact_singlecell.ContinuousSlider
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: interact_singlecell.continuous_slider
+
+.. autoclass:: interact_singlecell.MultiSlider
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: interact_singlecell.multi_slider
+
+.. autoclass:: interact_singlecell.ColorSelector
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: interact_singlecell.color_selector
+
 Note that for each control, not all parameters must be given; the device 
 will automatically assign default parameters as needed.
 
@@ -138,8 +155,7 @@ This is equivalent to::
     def f(n = interact_singlecell.input_box(label = "Label", default = 15, raw = True)):
         print 2 * n
 
-Note that this feature is limited, and some of the common sage features
-(particularly iterators) are not supported.
+The interact autoguessing present in Sage is supported with the exception of a Color selector.
 
 Interact Protocol
 -----------------
@@ -267,13 +283,13 @@ terminated if they are idle for 10 seconds, say.
 
 [A] Select Box control
 
-[A] JqueryUI slider control
+[X] JqueryUI slider control
 
 [X] Get current Sage interact theme
 
 [ ] Use sent layout parameters and css / tables to output interacts.
 
-[A] Other interact controls (checkbox, matrix/grid, buttons, etc.)
+[X] Other interact controls (checkbox, matrix/grid, buttons, etc.)
 
 
 Interact Backend

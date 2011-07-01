@@ -308,7 +308,9 @@ InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
     var events = {};
     for (var i in this.controls) {
-	switch(this.controls[i].control_type) {
+	var control_type = this.controls[i].control_type;
+	var subtype = this.controls[i].subtype;
+	switch(control_type) {
 	case "html":
 	    break;
 	case "checkbox":
@@ -322,8 +324,21 @@ InteractCell.prototype.bindChange = function(interact) {
 	case "selector":
 	    events["change"] = null;
 	    break;
+	case "multi_slider":
+	    events["slidestop"] = null;
+	    if (subtype === "continuous") {
+		events["change"] = null;
+	    }
+	    break;
 	case "slider":
 	    events["slidestop"] = null;
+	    switch (subtype) {
+	    case "continuous": // Fall-through here by design
+	    case "continuous_range":
+		events["change"] = null;
+		break;
+	    }
+	case "color_selector":
 	    events["change"] = null;
 	    break;
 	}
@@ -343,7 +358,8 @@ InteractCell.prototype.bindChange = function(interact) {
             }
             code = code + ")";
 	    interact.session.sendMsg(code, interact.msg_id);
-	    interact.session.replace_output=true
+	    interact.session.replace_output=true;
+	    return false;
 	});
     }
 }
@@ -383,6 +399,25 @@ InteractCell.prototype.getChanges = function() {
 	case "selector":
 	    params[name] = String($(id + "_" + name).val());
 	    break;
+	case "multi_slider":
+	    var sliders = this.controls[name]["sliders"];
+	    var slider_values = [];
+	    switch(subtype) {
+	    case "continuous":
+		for (i = 0; i < sliders; i ++) {
+		    var input = $(id + "_" + name + "_" + i + "_value").val();
+		    $(id + "_" + name + "_" + i).slider("option", "value", input);
+		    slider_values.push(input);
+		}
+		break;
+	    case "value":
+		for (i = 0; i < sliders; i ++) {
+		    slider_values.push($(id + "_" + name + "_" + i + "_index").val());
+		}
+		break;
+	    }
+	    params[name] = "["+ String(slider_values) +"]";
+	    break;
 	case "slider":
 	    switch(subtype) {
 	    case "continuous":
@@ -402,6 +437,9 @@ InteractCell.prototype.getChanges = function() {
 		params[name] = String("["+$(id + "_" + name + "_index").val()+"]");
 		break;
 	    }
+	    break;
+	case "color_selector":
+	    params[name] = $(id + "_" + name + "_value").val();
 	    break;
 	}
     }
@@ -449,7 +487,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		addRow(table, label, name, '<input type="checkbox" id="'+control_id+'" class="'+id+' checkbox_control" checked="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_box":
-		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+' '+' input_box__control" size='+this.controls[name]["width"]+' value="'+this.controls[name]['default']+'">',control_id);
+		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+'" size='+this.controls[name]["width"]+' value="'+this.controls[name]['default']+'">',control_id);
 		break;
 	    case "input_grid":
 		var default_values = this.controls[name]["default"];
@@ -495,7 +533,6 @@ InteractCell.prototype.renderCanvas = (function() {
 		    $(table).find('#'+default_id).addClass('ui-state-active');
 		    select_labels[control_id]=$(table).find('label[for="'+default_id+'"]')[0];
 		    $(table).find('label:last').click((function(control_id){return function() {
-			console.log($('.'+control_id+'.ui-state-active'))
 			$('.'+control_id+' .ui-state-active').focus();
 		    }})(control_id))
 		} else {
@@ -508,57 +545,139 @@ InteractCell.prototype.renderCanvas = (function() {
 		    addRow(table,label,name,html_code,control_id);
 		}
 		break;
+	    case "multi_slider":
+		var sliders = this.controls[name]["sliders"];
+		var slider_values = this.controls[name]["values"];
+		var slider_config = {};
+
+		var html_code = '<div class="' + id + ' singlecell_multiSliderContainer"><span style="whitespace:nowrap">';
+
+		for (var i = 0; i < sliders; i++) {
+		    html_code = html_code +
+			'<span class="singlecell_multiSliderControl" id = "' + control_id + '_' + i +'"></span>'+
+			'<input type="text" class="' + control_id + '_value' + '" id ="' + control_id + '_' + i + '_value" style="border:none;" size="4">'+
+			'<input class="' + control_id + '_index' + '" id ="' + control_id + '_' + i + '_index" style="display:none"></input>';
+		}
+		html_code = html_code + '</span></div>';
+		addRow(table,label,name,html_code,null);
+
+		switch(subtype) {
+		case "continuous":
+		    for (var i = 0; i < sliders; i ++) {
+			$(table).find("#" + control_id + "_" + i + "_value").val(this.controls[name]["default"][i]);
+			$(table).find("#" + control_id + "_" + i + "_value").addClass(id);
+			slider_config = {
+			    orientation:"vertical",
+			    value: this.controls[name]["default"][i],
+			    min: this.controls[name]["range"][i][0],
+			    max: this.controls[name]["range"][i][1],
+			    step: this.controls[name]["step"][i],
+			    slide: function(event,ui) {
+				$(table).find("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
+			    }
+			};
+
+			$(table).find("#" + control_id + "_" + i).slider(slider_config);
+		    }
+		    break;
+
+		case "value":
+		    for (var i = 0; i < sliders; i++) {
+			var i_temp = i;
+			$(table).find("#" + control_id + "_" + i + "_value").val(slider_values[i][this.controls[name]["default"][i]]);
+			$(table).find("#" + control_id + "_" + i + "_index").val(this.controls[name]["default"][i]);
+			slider_config = {
+			    orientation:"vertical",
+			    value: this.controls[name]["default"][i],
+			    min: this.controls[name]["range"][i][0],
+			    max: this.controls[name]["range"][i][1],
+			    step: this.controls[name]["step"][i],
+			    slide: function(event,ui) {
+				$(table).find("#" + ui.handle.offsetParent.id + "_value").val(slider_values[i_temp][ui.value]);
+				$(table).find("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
+			    }
+			};
+			$(table).find("#" + control_id + "_" + i).slider(slider_config);
+		    }
+		    break;
+		}
+		
+	    	break;
 	    case "slider":
 		var html_code = '<span style="whitespace:nowrap"><span class="' + id + ' singlecell_sliderControl" id="' + control_id + '"></span><input type="text" class="' + id + '" id ="' + control_id + '_value" style="border:none"><input type="text" class="' + id +'" id ="' + control_id + '_index" style="display:none"></span>';
-		var onSliderChange;
-		var default_value = this.controls[name]["default"];
-		addRow(table,label,name,html_code,null);
-		$(table).find("#" + control_id).slider({
+		var slider_config = {
 		    min:this.controls[name]["range"][0],
 		    max:this.controls[name]["range"][1],
 		    step:this.controls[name]["step"]
-		});
+		}
+		var default_value = this.controls[name]["default"]
+
+		addRow(table,label,name,html_code,null);
 		switch(subtype) {
 		case "value":
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val(values[default_value]);
 		    $(table).find("#"+control_id+"_index").val(default_value);
-		    onSliderChange = function(event,ui) {
+
+		    slider_config["slide"] = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(values[ui.value]);
 			$("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
 		    }
-		    $(table).find("#" + control_id).slider("value", this.controls[name]["default"]);
+		    slider_config["value"] = default_value;
 		    break;
 		case "value_range":
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val([values[default_value[0]], values[default_value[1]]]);
 		    $(table).find("#"+control_id+"_index").val(default_value);
-		    onSliderChange = function(event,ui) {
+
+		    slider_config["range"] = true;
+		    slider_config["slide"] = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val([values[ui.values[0]], values[ui.values[1]]]);
 			$("#" + ui.handle.offsetParent.id + "_index").val(ui.values);
 		    }
-		    $(table).find("#" + control_id).slider("values", this.controls[name]["default"]);
+		    slider_config["values"] = default_value;
 		    break;
 		case "continuous":
 		    $(table).find("#"+control_id+"_value").val(default_value);
-		    onSliderChange = function(event,ui) {
+
+		    slider_config["slide"] = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
 		    }
-		    $(table).find("#" + control_id).slider("value", this.controls[name]["default"]);
+		    slider_config["value"] = default_value;
 		    break;
 		case "continuous_range":
 		    $(table).find("#"+control_id+"_value").val(default_value);
-		    onSliderChange = function(event,ui) {
+
+		    slider_config["range"] = true;
+		    slider_config["slide"] = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(ui.values);
 		    }
-		    $(table).find("#" + control_id).slider("values", this.controls[name]["default"]);
+		    slider_config["values"] = default_value;
 		    break;
 		}
-		$(table).find("#" + control_id).bind("slide", onSliderChange);
+
+		$(table).find("#" + control_id).slider(slider_config);
 
 		$(table).find('label:last').click((function(control_id){return function() {
 		    $('#'+control_id+' .ui-slider-handle').focus();
 		};})(control_id))
+		break;
+	    case "color_selector":
+		var default_value = this.controls[name]["default"];
+		addRow(table, label, name, '<input type="text" class="singlecell_colorSelector" id='+control_id+'><input type="text" id="'+control_id+'_value" style="border:none" class="'+id+'" value='+this.controls[name]["default"]+'>',control_id);
+		$(table).find("#"+control_id).css({"backgroundColor": default_value});
+		$(table).find("#"+control_id).ColorPicker({
+		    color: default_value,
+		    onSubmit: function(hsb, hex, rgb, el) {
+			$("#"+control_id+"_value").val("#"+hex);
+			$(el).ColorPickerHide();
+			$("#"+control_id+"_value").trigger("change");
+		    },
+		    onChange: function(hsb, hex, rgb, el) {
+			$("#"+control_id).css({"backgroundColor": "#"+hex, "color": "#"+hex});
+			$("#"+control_id+"_value").val("#"+hex);
+		    }
+		});
 		break;
 	    }
 	}
