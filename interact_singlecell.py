@@ -486,15 +486,15 @@ class MultiSlider(InteractControl):
     :arg str label: the label of the control
     """
 
-    def __init__(self, value_slider=False, sliders=1, default=[0], interval=[(0,1)], values=[[0,1]], stepsize=[0], steps=[250], label=""):
+    def __init__(self, slider_type="continuous", sliders=1, default=[0], interval=[(0,1)], values=[[0,1]], stepsize=[0], steps=[250], label=""):
         from types import GeneratorType
 
-        self.value_slider = value_slider
+        self.slider_type = slider_type
+
         self.sliders = int(sliders) if sliders > 0 else 1
         self.slider_range = range(self.sliders)
         
-        if self.value_slider:
-            self.subtype = "value"
+        if self.slider_type == "value":
             self.stepsize = 1
 
             if len(values) == self.sliders:
@@ -511,12 +511,12 @@ class MultiSlider(InteractControl):
             if len(default) == self.sliders:
                 self.default = [default[i] if i >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
             elif len(default) == 1:
-                self.default = [default if default[0] >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
+                self.default = [default[0] if default[0] >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in self.slider_range]
             else:
                 self.default = [0] * self.sliders
 
         else:
-            self.subtype = "continuous"
+            self.slider_type = "continuous"
 
             if len(interval) == self.sliders:
                 self.interval = interval[:]
@@ -563,14 +563,14 @@ class MultiSlider(InteractControl):
         :rtype: dict
         """
         return_message = {'control_type':'multi_slider',
-                          'subtype':self.subtype,
+                          'subtype':self.slider_type,
                           'sliders':self.sliders,
                           'label':self.label,
                           'range':self.interval,
                           'step':self.stepsize,
                           'raw':True,
                           'label':self.label}
-        if self.value_slider:
+        if self.slider_type == "value":
             return_message["values"] = [[repr(j) for j in self.values[i]] for i in self.slider_range]
             return_message["default"] = self.default
         else:
@@ -578,7 +578,7 @@ class MultiSlider(InteractControl):
         return return_message
 
     def adapter(self,v):
-        if self.value_slider:
+        if self.slider_type == "value":
             return [self.values[i][v[i]] for i in self.slider_range]
         else:
             return v
