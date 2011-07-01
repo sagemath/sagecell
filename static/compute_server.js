@@ -410,7 +410,7 @@ InteractCell.prototype.getChanges = function() {
 		    slider_values.push(input);
 		}
 		break;
-	    case "value":
+	    case "discrete":
 		for (i = 0; i < sliders; i ++) {
 		    slider_values.push($(id + "_" + name + "_" + i + "_index").val());
 		}
@@ -430,10 +430,10 @@ InteractCell.prototype.getChanges = function() {
 		$(id + "_" + name).slider("option","values",JSON.parse(input));
 		params[name] = input;
 		break;
-	    case "value":
+	    case "discrete":
 		params[name] = String($(id + "_" + name + "_index").val());
 		break;
-	    case "value_range":
+	    case "discrete_range":
 		params[name] = String("["+$(id + "_" + name + "_index").val()+"]");
 		break;
 	    }
@@ -581,7 +581,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		    }
 		    break;
 
-		case "value":
+		case "discrete":
 		    $(table).find("."+control_id+"_value").attr("readonly","readonly");
 		    for (var i = 0; i < sliders; i++) {
 			var i_temp = i;
@@ -616,7 +616,7 @@ InteractCell.prototype.renderCanvas = (function() {
 
 		addRow(table,label,name,html_code,null);
 		switch(subtype) {
-		case "value":
+		case "discrete":
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val(values[default_value]);
 		    $(table).find("#"+control_id+"_index").val(default_value);
@@ -629,7 +629,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		    }
 		    slider_config["value"] = default_value;
 		    break;
-		case "value_range":
+		case "discrete_range":
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val([values[default_value[0]], values[default_value[1]]]);
 		    $(table).find("#"+control_id+"_index").val(default_value);

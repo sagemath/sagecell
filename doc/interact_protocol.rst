@@ -4,8 +4,8 @@ Interacts
 Supported Interacts
 -------------------
 
-Supported / Partially Supported Interact Controls:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Supported / Partially Supported Interact Controls and Features:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [X] Checkbox
 
@@ -19,16 +19,18 @@ Supported / Partially Supported Interact Controls:
 
 [X] Slider
 
-* Both continuous (range) sliders and sliders which iterate through values or objects in a list
-* Range sliders have a numerical input box which updates the slider / interact (to use, click on displayed slider value)
+* Both continuous sliders and discrete sliders which iterate through values or objects in a list
+* Continuous sliders have a numerical input box which updates the slider / interact (to use, click on displayed slider value)
 
 [X] Multi-Slider (New Interact Control)
 
-* Renders a set of either continuous or value sliders, each of which can take their own parameters. The value of the control is returned as a one-dimensional list with entries of the values of each slider.
+* Renders a set of either continuous or discrete sliders, each of which can take their own parameters. The value of the control is returned as a one-dimensional list with entries of the values of each slider.
 
 [X] Color Picker
 
 * Currently only uses colorpicker (one of the Sage options).
+
+[X] Autoguessing Syntax
 
 Unsupported Interact Features:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -65,14 +67,21 @@ of subclasses of :class:`~interact_singlecell.InteractControl` (see
 :ref:`controls`) or objects using the
 :ref:`Autoguessing Syntax <autoguessing-syntax>`.
 
-The following code will generate two sliders with default configurations
-and print the sum of their values::
-
-    from interact_singlecell import *
+The following code (if run in Sage Mode) will generate two sliders with
+default configurations and print the sum of their values::
 
     @interact
     def f(a = slider(), b = slider()):
         print a + b
+
+If Sage Mode is not enabled or if Sage libraries cannot be imported, the
+previous code must be prefaced with
+``from interact_singlecell import *`` to run. Sage already reserves
+part of the user namespace (such as the decorator @interact), so the
+singlecell replaces the Sage decorator with its own version. In contrast,
+since the singlecell can also run and interpret stock python code, the
+goal is to avoid cluttering the user namespace, so the prefacing import
+statement must be explicit.
 
 .. _controls:
 
@@ -105,11 +114,11 @@ Controls
 
 .. autoclass:: interact_singlecell.selector
 
-.. autoclass:: interact_singlecell.Slider
+.. autoclass:: interact_singlecell.DiscreteSlider
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.slider
+.. autoclass:: interact_singlecell.discrete_slider
 
 .. autoclass:: interact_singlecell.ContinuousSlider
     :show-inheritance:
@@ -145,17 +154,17 @@ for more details. For instance, to create an input box with a label 'Label'
 and an initial value of 15 that prints twice its (numerical) input, one 
 could submit::
 
-    @interact_singlecell.interact
+    @interact
     def f(n = ("Label", 15)):
         print 2 * n
 
 This is equivalent to::
 
-    @interact_singlecell.interact
-    def f(n = interact_singlecell.input_box(label = "Label", default = 15, raw = True)):
+    @interact
+    def f(n = input_box(label = "Label", default = 15, raw = True)):
         print 2 * n
 
-The interact autoguessing present in Sage is supported with the exception of a Color selector.
+The interact autoguessing present in Sage is fully supported.
 
 Interact Protocol
 -----------------
@@ -164,8 +173,8 @@ Here we give a rough definition of what happens to get an interact working.
 
 USER types into SINGLE-CELL::
 
-    @interact_singlecell.interact
-    def f(n = interact_singlecell.slider(range = (1,20), step = 1)):
+    @interact
+    def f(n = continuous_slider(interval = (1,20), stepsize = 1)):
         print n
 
 and presses "Submit".
