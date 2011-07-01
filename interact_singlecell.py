@@ -363,11 +363,11 @@ class Selector(InteractControl):
     def adapter(self, v):
         return self.values[int(v)]
 
-class Slider(InteractControl):
+class DiscreteSlider(InteractControl):
     """
-    A value slider interact control.
+    A discrete slider interact control.
 
-    The slider value correlates with the index of an array of values. 
+    The slider value correlates with the index of an array of values.
 
     :arg int default: initial value (index) of the slider; if ``None``, the
         slider defaults to the 0th index.
@@ -389,17 +389,17 @@ class Slider(InteractControl):
         self.range_slider = range_slider
         
         if self.range_slider:
-            self.subtype = "value_range"
+            self.subtype = "discrete_range"
             self.default = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
         else:
-            self.subtype = "value"
+            self.subtype = "discrete"
             self.default = int(default if default is not None and default < len(self.values) and default > 0 else 0)
 
         self.label=label
 
     def message(self):
         """
-        Get a value slider control configuration message for an
+        Get a discrete slider control configuration message for an
         ``interact_prepare`` message
 
         :returns: configuration message
@@ -432,6 +432,8 @@ class ContinuousSlider(InteractControl):
     :arg Number stepsize: size of step for the slider. If both step and stepsized are specified, stepsize takes precedence so long as it is valid.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg str label: the label of the control
+    
+    Note that while "number of steps" and/or "stepsize" can be specified for the slider, this is to enable snapping, rather than a restriction on the slider's values. The only restrictions placed on the values of the slider are the endpoints of its range.
     """
 
     def __init__(self, range_slider=False, interval=(0,100), default=None, steps=250, stepsize=0, label=""):
@@ -474,9 +476,9 @@ class MultiSlider(InteractControl):
     """
     A multiple-slider interact control.
 
-    Defines a bank of vertical sliders (either value or continuous sliders, but not both in the same control).
+    Defines a bank of vertical sliders (either discrete or continuous sliders, but not both in the same control).
 
-    :arg bool value_slider: toggles whether the sliders are value sliders (True) or continuous sliders (default = False)
+    :arg string slider_type: type of sliders to generate. Currently, only "continuous" and "discrete" are valid, and other input defaults to "continuous."
     :arg int sliders: Number of sliders to generate
     :arg list default: Default value (continuous sliders) or index position (continuous sliders) of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
     :arg list values: Values for each value slider in a multi-dimensional list for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1, .. ,slider_n_val_n]]. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to iterate through the same values, the list only needs to contain that one list of values.
@@ -494,7 +496,7 @@ class MultiSlider(InteractControl):
         self.sliders = int(sliders) if sliders > 0 else 1
         self.slider_range = range(self.sliders)
         
-        if self.slider_type == "value":
+        if self.slider_type == "discrete":
             self.stepsize = 1
 
             if len(values) == self.sliders:
@@ -570,7 +572,7 @@ class MultiSlider(InteractControl):
                           'step':self.stepsize,
                           'raw':True,
                           'label':self.label}
-        if self.slider_type == "value":
+        if self.slider_type == "discrete":
             return_message["values"] = [[repr(j) for j in self.values[i]] for i in self.slider_range]
             return_message["default"] = self.default
         else:
@@ -578,7 +580,7 @@ class MultiSlider(InteractControl):
         return return_message
 
     def adapter(self,v):
-        if self.slider_type == "value":
+        if self.slider_type == "discrete":
             return [self.values[i][v[i]] for i in self.slider_range]
         else:
             return v
@@ -673,14 +675,14 @@ def automatic_control(control):
     elif isinstance(control, list):
         C = selector(buttons = len(control) <= 5, default = default_value, label = label, values = control, raw = False)
     elif isinstance(control, GeneratorType):
-        C = slider(default = default_value, values = take(10000,control), label = label)
+        C = discrete_slider(default = default_value, values = take(10000,control), label = label)
     elif isinstance (control, tuple):
         if len(control) == 2:
             C = continuous_slider(default = default_value, interval = (control[0], control[1]), label = label)
         elif len(control) == 3:
             C = continuous_slider(default = default_value, interval = (control[0], control[1]), stepsize = control[2], label = label)
         else:
-            C = slider(default = default_value, values = list(control), label = label)
+            C = discrete_slider(default = default_value, values = list(control), label = label)
     else:
         C = input_box(default = control, label=label, raw = True)
 
@@ -713,11 +715,11 @@ def take(n, iterable):
 
 
 # Aliases for backwards compatibility
-slider=Slider
 selector=Selector
 input_box=InputBox
 input_grid=InputGrid
 checkbox=Checkbox
 continuous_slider=ContinuousSlider
+discrete_slider=DiscreteSlider
 multi_slider=MultiSlider
 color_selector=ColorSelector
