@@ -370,17 +370,19 @@ class Slider(InteractControl):
     :arg int default: initial value (index) of the slider; if ``None``, the
         slider defaults to the 0th index.
     :arg list values: list of values to which the slider position refers.
-    :arg int step: step size for the slider, which corresponds to how many index positions the slider advances with each move.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg str label: the label of the control
     """
 
-    def __init__(self, range_slider=False, values=[0,1], default=None, step=1, raw=True, label=""):
-        self.values = values[:] if len(values) >= 2 else [0,1]
-        if len(values) >= 2:
-            self.values = values
+    def __init__(self, range_slider=False, values=[0,1], default=None, label=""):
+        from types import GeneratorType
+
+        if isinstance(values, GeneratorType):
+            self.values = take(10000, values)
         else:
-            self.values = [0,1]
+            self.values = values[:]
+
+        self.values = [0,1] if len(self.values) < 2 else self.values
 
         self.range_slider = range_slider
         
@@ -389,9 +391,8 @@ class Slider(InteractControl):
             self.default = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
         else:
             self.subtype = "value"
-            self.default = int(default if default is not None and default < len(self.values) else 0)
+            self.default = int(default if default is not None and default < len(self.values) and default > 0 else 0)
 
-        self.step=int(step)
         self.label=label
 
     def message(self):
@@ -407,7 +408,7 @@ class Slider(InteractControl):
                 'default':self.default,
                 'range':[0, len(self.values)-1],
                 'values':[repr(i) for i in self.values],
-                'step':self.step,
+                'step':1,
                 'raw':True,
                 'label':self.label}
     def adapter(self,v):
@@ -448,7 +449,7 @@ class ContinuousSlider(InteractControl):
             self.default_return = float(self.default)
 
         self.steps = int(steps) if steps > 0 else 250
-        self.stepsize = float(stepsize if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0] else (self.interval[1] - self.interval[0]) / self.steps)
+        self.stepsize = float(stepsize if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0] else float(self.interval[1] - self.interval[0]) / self.steps)
         self.label = label
 
     def message(self):
@@ -467,6 +468,119 @@ class ContinuousSlider(InteractControl):
                 'raw':True,
                 'label':self.label}
 
+class MultiSlider(InteractControl):
+    """
+    A multiple-slider interact control.
+
+    Defines a bank of vertical sliders (either value or continuous sliders, but not both in the same control).
+
+    :arg bool value_slider: toggles whether the sliders are value sliders (True) or continuous sliders (default = False)
+    :arg int sliders: Number of sliders to generate
+    :arg list default: Default value (continuous sliders) or index position (continuous sliders) of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
+    :arg list values: Values for each value slider in a multi-dimensional list for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1, .. ,slider_n_val_n]]. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to iterate through the same values, the list only needs to contain that one list of values.
+    :arg list interval: Intervals for each continuous slider in a list of tuples of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot be set if value sliders are specified. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to have the same interval, the list only needs to contain that one tuple.
+    :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
+    :arg list steps: List of numbers representing the number of steps for each continuous slider. Note that (as in the case of the regular continuous slider), specifying a valid stepsize will always take precedence over any specification of number of steps, valid or not. The length of this list should be equivalent to the number of sliders, but if all sliders are to have the same number of steps, the list only neesd to contain that one value.
+    :arg str label: the label of the control
+    """
+
+    def __init__(self, value_slider=False, sliders=1, default=[0], interval=[(0,1)], values=[[0,1]], stepsize=[0], steps=[250], label=""):
+        from types import GeneratorType
+
+        self.value_slider = value_slider
+        self.sliders = int(sliders) if sliders > 0 else 1
+        self.slider_range = range(self.sliders)
+        
+        if self.value_slider:
+            self.subtype = "value"
+            self.stepsize = 1
+
+            if len(values) == self.sliders:
+                self.values = values[:]
+            elif len(values) == 1 and len(values[0]) >= 2:
+                self.values = [values[0]] * self.sliders
+            else:
+                self.values = [[0,1]] * self.sliders
+
+            self.values = [i if not isinstance(i, GeneratorType) else take(10000, i) for i in self.values]
+
+            self.interval = [(0, len(self.values[i])-1) for i in self.slider_range]
+
+            if len(default) == self.sliders:
+                self.default = [default[i] if i >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
+            elif len(default) == 1:
+                self.default = [default if default[0] >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
+            else:
+                self.default = [0] * self.sliders
+
+        else:
+            self.subtype = "continuous"
+
+            if len(interval) == self.sliders:
+                self.interval = interval[:]
+            elif len(interval) == 1 and len(interval[0]) == 2:
+                self.interval = [interval[0]] * self.sliders
+            else:
+                self.interval = [(0,1) for i in self.slider_range]
+
+            for i in self.slider_range:
+                if not len(self.interval[i]) == 2 or self.interval[i][0] > self.interval[i]:
+                    self.interval[i] = (0,1)
+                else:
+                    self.interval[i] = [float(j) for j in self.interval[i]]
+
+            if len(default) == self.sliders:
+                self.default = [default[i] if default[i] > self.interval[i][0] and default[i] < self.interval[i][1] else self.interval[i][0] for i in self.slider_range]
+            elif len(default) == 1:
+                self.default = [default[0] if default[0] > self.interval[i][0] and default[0] < self.interval[i][1] else self.interval[i][0] for i in self.slider_range]
+            else:
+                self.default = [self.interval[i][0] for i in self.slider_range]
+
+            self.default_return = [float(i) for i in self.default]
+
+            if len(steps) == 1:
+                self.steps = [steps[0]] * self.sliders if steps[0] > 0 else [250] * self.sliders
+            else:
+                self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.sliders else [250 for i in self.slider_range]
+
+            if len(stepsize) == self.sliders:
+                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.slider_range]
+            elif len(stepsize) == 1:
+                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.slider_range]
+            else:
+                self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.slider_range]
+
+        self.label = label
+
+    def message(self):
+        """
+        Get a multi_list control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
+        return_message = {'control_type':'multi_slider',
+                        'subtype':self.subtype,
+                        'sliders':self.sliders,
+                        'label':self.label,
+                        'range':self.interval,
+                        'step':self.stepsize,
+                        'raw':True}
+        if self.value_slider:
+            return_message["values"] = [[repr(j) for j in self.values[i]] for i in self.slider_range]
+            return_message["default"] = self.default
+        else:
+            return_message["default"] = self.default_return
+        return return_message
+
+    def adapter(self,v):
+        if self.value_slider:
+            return [self.values[i][v[i]] for i in self.slider_range]
+        else:
+            return v
+
+            
 def automatic_control(control):
     """
     Guesses the desired interact control from the syntax of the parameter.
@@ -548,3 +662,4 @@ input_box=InputBox
 input_grid=InputGrid
 checkbox=Checkbox
 continuous_slider=ContinuousSlider
+multi_slider=MultiSlider
