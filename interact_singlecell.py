@@ -297,10 +297,16 @@ class Selector(InteractControl):
     :arg bool raw: ``True`` if the selected value should be treated as
         "unquoted" (raw); ``False`` if the value should be treated as a string.
         Note that this applies to the values of the selector, not the labels.
+    :arg str selector_type: type of selector to generate if buttons are to be
+        used. Current options are "click" and "select" with a default of "click"
+        for anything else. "click" updates the control every time any button is
+        clicked, so the same button can be clicked multiple times, while "select"
+        updates the control whenever a different button is selected.
+    :arg default_button: default value that will be used in the initial function call. This **must** be specified if selector_type = "click"
     :arg str label: the label of the control
     """
 
-    def __init__(self, default=0, values=[0], buttons=False, nrows=None, ncols=None, width="", raw=False, label=""):
+    def __init__(self, default=0, values=[0], buttons=False, nrows=None, ncols=None, width="", raw=False, selector_type="click", default_button=True, label=""):
         self.default=default
         self.values=values[:]
         self.buttons=buttons
@@ -309,16 +315,22 @@ class Selector(InteractControl):
         self.width=width
         self.raw=raw
         self.label=label
-        
+        self.selector_type=selector_type
+
         # Assign selector labels and values.
         self.value_labels=[str(v[1]) if isinstance(v,tuple) and
                            len(v)==2 else str(v) for v in values]
         self.values = [v[0] if isinstance(v,tuple) and
                        len(v)==2 else v for v in values]
 
-        # Ensure that default index is always in the correct range.
-        if default < 0 or default >= len(values):
-            self.default = 0
+        
+        if selector_type != "click":
+            self.selector_type = "select"
+            # Ensure that default index is always in the correct range.
+            self.default = 0 if self.default < 0 or self.default >= len(values) else int(self.default)
+        else:
+            self.default = None
+            self.default_button = default_button
 
         # If using buttons rather than dropdown,
         # check/set rows and columns for layout.
@@ -349,18 +361,25 @@ class Selector(InteractControl):
         :returns: configuration message
         :rtype: dict
         """
-        return {'control_type': 'selector',
-                'values': range(len(self.values)),
-                'value_labels': self.value_labels,
-                'default': self.default,
-                'buttons': self.buttons,
-                'nrows': int(self.nrows),
-                'ncols': int(self.ncols),
-                'width': self.width,
-                'raw': self.raw,
-                'label':self.label}
+        return_value = {'control_type': 'selector',
+                        'subtype': self.selector_type,
+                        'values':range(len(self.values)),
+                        'value_labels': self.value_labels,
+                        'buttons': self.buttons,
+                        'nrows': int(self.nrows),
+                        'ncols': int(self.ncols),
+                        'width': self.width,
+                        'raw': self.raw,
+                        'label':self.label}
+        if self.selector_type == "click":
+            return_value["default"] = 0
+        else:
+            return_value["default"] = self.default
+        return return_value
                 
     def adapter(self, v):
+        if v is None:
+            return self.default_button
         return self.values[int(v)]
 
 class DiscreteSlider(InteractControl):

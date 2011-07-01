@@ -15,6 +15,9 @@ Supported / Partially Supported Interact Controls and Features:
 
 [A] Selector (Dropdown and Button)
 
+* Supports buttons and dropdown selectors
+* Button selectors can either be true selectors or act as push buttons.
+
 * No multiple select (only single-item select)
 
 [X] Slider
