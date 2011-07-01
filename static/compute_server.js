@@ -582,10 +582,12 @@ InteractCell.prototype.renderCanvas = (function() {
 		    break;
 
 		case "value":
+		    $(table).find("."+control_id+"_value").attr("readonly","readonly");
 		    for (var i = 0; i < sliders; i++) {
 			var i_temp = i;
 			$(table).find("#" + control_id + "_" + i + "_value").val(slider_values[i][this.controls[name]["default"][i]]);
 			$(table).find("#" + control_id + "_" + i + "_index").val(this.controls[name]["default"][i]);
+
 			slider_config = {
 			    orientation:"vertical",
 			    value: this.controls[name]["default"][i],
@@ -619,6 +621,8 @@ InteractCell.prototype.renderCanvas = (function() {
 		    $(table).find("#"+control_id+"_value").val(values[default_value]);
 		    $(table).find("#"+control_id+"_index").val(default_value);
 
+		    $(table).find("#"+control_id+"_value").attr("readonly", "readonly");
+
 		    slider_config["slide"] = function(event,ui) {
 			$("#" + ui.handle.offsetParent.id + "_value").val(values[ui.value]);
 			$("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
@@ -629,6 +633,8 @@ InteractCell.prototype.renderCanvas = (function() {
 		    var values = this.controls[name].values;
 		    $(table).find("#"+control_id+"_value").val([values[default_value[0]], values[default_value[1]]]);
 		    $(table).find("#"+control_id+"_index").val(default_value);
+
+		    $(table).find("#"+control_id+"_value").attr("readonly", "readonly");
 
 		    slider_config["range"] = true;
 		    slider_config["slide"] = function(event,ui) {
