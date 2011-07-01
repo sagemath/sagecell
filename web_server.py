@@ -29,7 +29,7 @@ scripts=['compute_server.js',
          'codemirror2/lib/codemirror.js',
          'codemirror2/mode/python/python.js',
          'jqueryui/js/jquery-ui-1.8.13.custom.min.js',
-         'colorpicker/js/colorpicker.js']
+         'colorpicker/js/colorpicker.min.js']
 jQuery_current='jquery-1.5.min.js'
 
 stylesheets=['codemirror2/lib/codemirror.css',

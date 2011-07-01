@@ -329,7 +329,7 @@ InteractCell.prototype.bindChange = function(interact) {
 		events["change"] = null;
 		break;
 	    }
-	case "color":
+	case "color_selector":
 	    events["change"] = null;
 	    break;
 	}
@@ -429,8 +429,8 @@ InteractCell.prototype.getChanges = function() {
 		break;
 	    }
 	    break;
-	case "color":
-	    params[name] = $(id + "_" + name).val();
+	case "color_selector":
+	    params[name] = $(id + "_" + name + "_value").val();
 	    break;
 	}
     }
@@ -653,18 +653,20 @@ InteractCell.prototype.renderCanvas = (function() {
 		    $('#'+control_id+' .ui-slider-handle').focus();
 		};})(control_id))
 		break;
-	    case "color":
+	    case "color_selector":
 		var default_value = this.controls[name]["default"];
-		addRow(table, label, name, '<input type="text" id="'+control_id+'" class="'+id+'" size='+this.controls[name]["width"]+' value='+this.controls[name]["default"]+'>',control_id);
+		addRow(table, label, name, '<input type="text" class="singlecell_colorSelector" id='+control_id+'><input type="text" id="'+control_id+'_value" style="border:none" class="'+id+'" value='+this.controls[name]["default"]+'>',control_id);
+		$(table).find("#"+control_id).css({"backgroundColor": default_value});
 		$(table).find("#"+control_id).ColorPicker({
+		    color: default_value,
 		    onSubmit: function(hsb, hex, rgb, el) {
-			$(el).val("#"+hex);
+			$("#"+control_id+"_value").val("#"+hex);
 			$(el).ColorPickerHide();
-			$("#"+control_id).trigger("change");
+			$("#"+control_id+"_value").trigger("change");
 		    },
-		    onBeforeShow: function() {
-			console.log(control_id);
-			$("#"+control_id).ColorPickerSetColor(default_value);
+		    onChange: function(hsb, hex, rgb, el) {
+			$("#"+control_id).css({"backgroundColor": "#"+hex, "color": "#"+hex});
+			$("#"+control_id+"_value").val("#"+hex);
 		    }
 		});
 		break;
