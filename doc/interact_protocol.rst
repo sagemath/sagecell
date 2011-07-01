@@ -26,16 +26,14 @@ Supported / Partially Supported Interact Controls:
 
 * Renders a set of either continuous or value sliders, each of which can take their own parameters. The value of the control is returned as a one-dimensional list with entries of the values of each slider.
 
-Unsupported Interact Controls:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-[ ] Color Picker
+[X] Color Picker
+
+* Currently only uses colorpicker (one of the Sage options).
 
 Unsupported Interact Features:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [ ] Layouts
-
-[ ] Colors
 
 [ ] Non-auto update
 
@@ -124,6 +122,12 @@ Controls
     :no-members:
 
 .. autoclass:: interact_singlecell.multi_slider
+
+.. autoclass:: interact_singlecell.ColorSelector
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: interact_singlecell.color_selector
 
 Note that for each control, not all parameters must be given; the device 
 will automatically assign default parameters as needed.
@@ -285,7 +289,7 @@ terminated if they are idle for 10 seconds, say.
 
 [ ] Use sent layout parameters and css / tables to output interacts.
 
-[A] Other interact controls (checkbox, matrix/grid, buttons, etc.)
+[X] Other interact controls (checkbox, matrix/grid, buttons, etc.)
 
 
 Interact Backend

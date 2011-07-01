@@ -8,6 +8,7 @@
 .singlecell_colorSelector {width:2em;border:none;padding:10px;}
 .error {color: red}
 .stderr {color: red}
+.colorpicker {z-index: 10} /* So that sliders, etc. don't appear on top of it */
 .CodeMirror {border: 1px solid black; height: 200px}
 .CodeMirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
 .singlecell_done {color: red}
