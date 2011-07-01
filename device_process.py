@@ -44,13 +44,14 @@ import json
 from json import dumps, loads
 from hashlib import sha1
 import interact_singlecell
+import singlecell_exec_config as CONFIG
 
 try:
     import sage
     import sage.all
-    enable_sage = True
+    CONFIG.EMBEDDED_MODE["enable_sage"] = enable_sage = True
 except ImportError as e:
-    enable_sage = False
+    CONFIG.EMBEDDED_MODE["enable_sage"] = enable_sage = False
 
 user_code="""
 import sys
@@ -484,7 +485,8 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         # "from __future__ import ..." statements, which *must* occur at the top of the code block
         # alternatively, we could move any such statements above our statements
         code=""
-        sage_mode = msg['content']['sage_mode']
+
+        CONFIG.EMBEDDED_MODE["sage_mode"] =  sage_mode = msg['content']['sage_mode']
         if enable_sage and sage_mode:
             code = user_code_sage + "\n" + sage.all.preparse(msg['content']['code'])
         elif sage_mode:

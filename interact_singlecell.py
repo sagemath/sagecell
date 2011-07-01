@@ -1,3 +1,5 @@
+import singlecell_exec_config as CONFIG
+
 _INTERACTS={}
 
 __single_cell_timeout__=0
@@ -554,7 +556,7 @@ class MultiSlider(InteractControl):
 
     def message(self):
         """
-        Get a multi_list control configuration message for an
+        Get a multi_slider control configuration message for an
         ``interact_prepare`` message
 
         :returns: configuration message
@@ -582,17 +584,22 @@ class MultiSlider(InteractControl):
             return v
 
 class ColorSelector(InteractControl):
-    def __init__(self, default="#000000", sage_color=True, width=0, label=""):
+    """
+    A color selector interact control
+
+    :arg default: initial color (either as an html hex string or a Sage Color object, if sage is installed.
+    :arg bool sage_color: Toggles whether the return value should be a Sage Color object (True) or html hex string (False). If Sage is unavailable or if the user has deselected "sage mode" for the computation, this value will always end up False, regardless of whether the user specified otherwise in the interact.
+    :arg str label: the label of the control
+    """
+
+    def __init__(self, default="#000000", sage_color=True, label=""):
         self.sage_color = sage_color
 
-        try:
-            from sagenb.misc.misc import Color
-            self.sage_mode = True
-        except:
-            self.sage_mode = False
-            self.sage_color = False
+        self.sage_mode = CONFIG.EMBEDDED_MODE["sage_mode"]
+        self.enable_sage = CONFIG.EMBEDDED_MODE["enable_sage"]
 
-        if self.sage_mode and self.sage_color:
+        if self.sage_mode and self.enable_sage and self.sage_color:
+            from sagenb.misc.misc import Color
             if isinstance(default, Color):
                 self.default = default
             elif isinstance(default, str):
@@ -602,22 +609,28 @@ class ColorSelector(InteractControl):
         else:
             self.default = default if isinstance(default,str) else "#000000"
 
-        self.width = int(width)
         self.label = label
 
     def message(self):
-        self.return_value =  {'control_type':'color',
-                         'width':self.width,
+        """
+        Get a color selector control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
+        self.return_value =  {'control_type':'color_selector',
                          'raw':False,
                          'label':self.label}
-        if self.sage_mode and self.sage_color:
+
+        if self.sage_mode and self.enable_sage and self.sage_color:
             self.return_value["default"] = self.default.html_color()
         else:
             self.return_value["default"] = self.default
         return self.return_value
 
     def adapter(self, v):
-        if self.sage_mode and self.sage_color:
+        if self.sage_mode and self.enable_sage and self.sage_color:
             from sagenb.misc.misc import Color
             return Color(v)
         else:
@@ -670,7 +683,8 @@ def automatic_control(control):
             C = slider(default = default_value, values = list(control), label = label)
     else:
         C = input_box(default = control, label=label, raw = True)
-        try:
+
+        if CONFIG.EMBEDDED_MODE["sage_mode"] and CONFIG.EMBEDDED_MODE["enable_sage"]:
             from sagenb.misc.misc import is_Matrix, Color
             if is_Matrix(control):
                 default_value = control.list()
@@ -679,9 +693,7 @@ def automatic_control(control):
                 default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
                 C = input_grid(nrows = nrows, ncols = ncols, label = label, default = default_value)
             elif isinstance(control, Color):
-                C = color(default = Control, label = label)
-        except:
-            pass
+                C = color_selector(default = control, label = label)
     
     return C
 
