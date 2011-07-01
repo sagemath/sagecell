@@ -19,7 +19,7 @@ Supported / Partially Supported Interact Controls and Features:
 
 [X] Slider
 
-* Both continuous (range) sliders and discrete sliders which iterate through values or objects in a list
+* Both continuous sliders and discrete sliders which iterate through values or objects in a list
 * Continuous sliders have a numerical input box which updates the slider / interact (to use, click on displayed slider value)
 
 [X] Multi-Slider (New Interact Control)
