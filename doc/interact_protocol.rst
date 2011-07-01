@@ -67,14 +67,21 @@ of subclasses of :class:`~interact_singlecell.InteractControl` (see
 :ref:`controls`) or objects using the
 :ref:`Autoguessing Syntax <autoguessing-syntax>`.
 
-The following code will generate two sliders with default configurations
-and print the sum of their values::
-
-    from interact_singlecell import *
+The following code (if run in Sage Mode) will generate two sliders with
+default configurations and print the sum of their values::
 
     @interact
     def f(a = slider(), b = slider()):
         print a + b
+
+If Sage Mode is not enabled or if Sage libraries cannot be imported, the
+previous code must be prefaced with
+``from interact_singlecell import *`` to run. Sage already reserves
+part of the user namespace (such as the decorator @interact), so the
+singlecell replaces the Sage decorator with its own version. In contrast,
+since the singlecell can also run and interpret stock python code, the
+goal is to avoid cluttering the user namespace, so the prefacing import
+statement must be explicit.
 
 .. _controls:
 
@@ -147,14 +154,14 @@ for more details. For instance, to create an input box with a label 'Label'
 and an initial value of 15 that prints twice its (numerical) input, one 
 could submit::
 
-    @interact_singlecell.interact
+    @interact
     def f(n = ("Label", 15)):
         print 2 * n
 
 This is equivalent to::
 
-    @interact_singlecell.interact
-    def f(n = interact_singlecell.input_box(label = "Label", default = 15, raw = True)):
+    @interact
+    def f(n = input_box(label = "Label", default = 15, raw = True)):
         print 2 * n
 
 The interact autoguessing present in Sage is fully supported.
@@ -166,8 +173,8 @@ Here we give a rough definition of what happens to get an interact working.
 
 USER types into SINGLE-CELL::
 
-    @interact_singlecell.interact
-    def f(n = interact_singlecell.slider(range = (1,20), step = 1)):
+    @interact
+    def f(n = continuous_slider(interval = (1,20), stepsize = 1)):
         print n
 
 and presses "Submit".
