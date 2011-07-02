@@ -539,16 +539,26 @@ InteractCell.prototype.renderCanvas = (function() {
 		    addRow(table,label,name,html_code,control_id);
 		    break;
 		case "radio":
-		    var inner_table = "<table><tbody>";
+		    var default_id = control_id+"_"+default_index,
+		    inner_table = "<table><tbody>",
+		    html_code;
+
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
 			    inner_table += '<td><input class="'+control_id+'" id="'+control_id+'_'+i+'" type="radio" name="'+control_id+'" value='+i+' />'+escape(value_labels[i])+'</td>';
+			    $("#"+control_id+"_"+i).live("mousedown", (function(i,control_id){return function(e) {
+				if (!$(e.target).attr("checked")) {
+				    $("#"+control_id).val(values[i]).change();
+				}
+			    }}(i,control_id)));
 			}
 			inner_table += "</tr>";
 		    }
 		    inner_table += "</tbody></table>";
-		    addRow(table,label,name,inner_table,control_id);
+		    html_code = inner_table + '<input type="hidden" id ="'+control_id+'" class="'+id+'" value="'+values[default_index]+'"></div';
+		    addRow(table,label,name,html_code,control_id);
+		    $(table).find("#"+default_id).attr("checked","checked");
 		break;
 		case "buttons":
 		    var inner_table = "<table><tbody>";

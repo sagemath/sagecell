@@ -301,7 +301,7 @@ class Selector(InteractControl):
     """
 
     def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", raw=False, label=""):
-        self.default=default
+        self.default=int(default)
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
