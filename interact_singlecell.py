@@ -301,7 +301,9 @@ class Selector(InteractControl):
         to 1 and ``ncols`` will be set to the number of objects. If both
         ``ncols`` and ``nrows`` are given, ``nrows * ncols`` must equal the
         number of objects, else ``nrows`` will be set to 1 and ``ncols`` will
-        be set to the number of objects.
+        be set to the number of objects.:
+    :arg string width: CSS width of each button. This should be specified in
+        px or em.
     :arg bool raw: ``True`` if the selected value should be treated as
         "unquoted" (raw); ``False`` if the value should be treated as a string.
         Note that this applies to the values of the selector, not the labels.
@@ -315,6 +317,7 @@ class Selector(InteractControl):
         self.nrows=nrows
         self.ncols=ncols
         self.raw=raw
+        self.width=str(width)
         self.label=label
 
         if self.selector_type != "button" and self.selector_type != "radio":
@@ -375,6 +378,7 @@ class Selector(InteractControl):
                 'nrows': self.nrows,
                 'ncols': self.ncols,
                 'raw': self.raw,
+                'width': self.width,
                 'label':self.label}
                 
     def adapter(self, v):

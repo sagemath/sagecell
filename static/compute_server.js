@@ -565,15 +565,16 @@ InteractCell.prototype.renderCanvas = (function() {
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
-			    inner_table += '<td><span class="'+control_id+' singlecell_selectorButton ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'" tabindex="0">'+escape(value_labels[i])+'</span></td>';
-			    $('#'+control_id+'_'+i).live('click', (function(i,control_id){return function(e) {
-				if(!$(e.target).hasClass('ui-state-active')) {
+			    inner_table += '<td><button class="'+control_id+' ui-button ui-widget ui-state-default ui-corner-all singlecell_selectorButton" id="'+control_id+'_'+i+'"><span class="singlecell_selectorButtonText">'+escape(value_labels[i])+'</span></button></td>';
+			    $('#'+control_id+'_'+i).live('click', (function(i,control_id) {return function(e) {
+				if(!$('#'+control_id+'_'+i).hasClass('ui-state-active')) {
 				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
-				    $(e.target).addClass('ui-state-active');
+				    $('#'+control_id+'_'+i).addClass('ui-state-active');
 				    $('#'+control_id).val(values[i]).change();
 				    select_labels[control_id].setAttribute('for',e.target.id);
 				}
 			    }}(i,control_id)));
+				
 			}
 			inner_table += "</tr>";
 		    }
@@ -581,6 +582,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		    var html_code = inner_table + '<input type="hidden" id="'+control_id+'" class="'+id+'" value="'+values[default_index]+'"></div>';
 		    var default_id=control_id+'_'+default_index
 		    addRow(table,label,name,html_code,control_id+'_'+default_index);
+		    $(table).find("."+control_id).css("width",this.controls[name].width);
 		    $(table).find('#'+default_id).addClass('ui-state-active');
 		    select_labels[control_id]=$(table).find('label[for="'+default_id+'"]')[0];
 		    $(table).find('label:last').click((function(control_id){return function() {
