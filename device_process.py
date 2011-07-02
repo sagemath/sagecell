@@ -33,6 +33,9 @@ control).
 The DEVICE process polls the global output queue for messages. When it
 receives a message, it inserts it into the database for the web server
 to read.
+
+.. warning::
+  You can specify resource limits, but please note that the memory limit is *not* enforced on OSX, as RLIMIT_AS is a suggestion, not a hard cap.
 """
 
 import sys, time, traceback, StringIO, contextlib, random, uuid
