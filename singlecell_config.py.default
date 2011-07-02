@@ -16,7 +16,9 @@ device_config={
     'quiet': '',
     'python': python,
     'untrusted-account': 'localhost',
-    'untrusted-python': python
+    'untrusted-python': python,
+    'untrusted-cpu': -1, # seconds
+    'untrusted-mem': -1, # megabytes
     }
 
 flask_config={

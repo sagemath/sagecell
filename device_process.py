@@ -724,7 +724,11 @@ if __name__ == "__main__":
         resource_limits.append((resource.RLIMIT_CPU, (sysargs.cpu_limit, sysargs.cpu_limit)))
     if sysargs.memory_limit>=0:
         mem_bytes=sysargs.memory_limit*(2**20)
+        # on OSX 10.7, RLIMIT_AS is an alias for RLIMIT_RSS, which is just a *suggestion* 
+        # about how much memory to use.
         resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
+        #resource_limits.append((resource.RLIMIT_DATA, (mem_bytes, mem_bytes)))
+        #resource_limits.append((resource.RLIMIT_STACK, (mem_bytes, mem_bytes)))
 
     outQueue=Queue()
 

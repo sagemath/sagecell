@@ -246,6 +246,12 @@ if __name__=='__main__':
     parser.add_option("--untrusted-python", dest="untrusted_python",
                       default=singlecell_config.device_config['untrusted-python'], 
                       help="the path to the Python the untrusted user should use")
+    parser.add_option("--untrusted-cpu", dest="untrusted_cpu", type=float,
+                      default=singlecell_config.device_config.get('untrusted-cpu',-1), 
+                      help="CPU time (seconds) allotted to each session")
+    parser.add_option("--untrusted-mem", dest="untrusted_mem", type=float,
+                      default=singlecell_config.device_config.get('untrusted-mem',-1), 
+                      help="Memory (MB) allotted to each session")
     parser.add_option("-q", "--quiet", action="store_true", dest="quiet", help="Turn off most logging")
 
     (sysargs,args)=parser.parse_args()
@@ -267,9 +273,11 @@ if __name__=='__main__':
     filename="/tmp/sage_shared_key%i"
     options=dict(cwd=cwd, workers=sysargs.workers, db_port=db_loop.port, fs_port=fs_loop.port,
                  quiet='-q' if sysargs.quiet or util.LOGGING is False else '',
-                 untrusted_python=sysargs.untrusted_python)
+                 untrusted_python=sysargs.untrusted_python,
+                 untrusted_cpu=sysargs.untrusted_cpu,
+                 untrusted_mem=sysargs.untrusted_mem)
     cmd="""cd %(cwd)s
-%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i %(quiet)s\n"""%options
+%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --cpu %(untrusted_cpu)f --mem %(untrusted_mem)f --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i %(quiet)s\n"""%options
     if sysargs.print_cmd:
         print
         for i in (0,1):
