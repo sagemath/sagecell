@@ -344,22 +344,35 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
         # TODO: but should also have a max timeout for the message loop
         # TODO: or maybe just a max number of messages we can handle in one loop
         while not outQueue.empty():
+            # TODO: don't use Queue, which unpickles the message.  Instead, use some sort of Pipe which just extracts bytes.
             msg=outQueue.get()
-            session = msg['parent_header']['session']
-            last_msg=last_message.get(session)
-            # Consolidate session messages of stderr or stdout
-            # channels
-            if (last_msg is not None
-                and msg['msg_type'] == 'stream' and last_msg['msg_type']=='stream'
-                and msg['content']['name'] in ('stdout', 'stderr')
-                and msg['content']['name']==last_msg['content']['name']):
+            try:
+                # make sure we can encode the message
+                json.dumps(msg)
+            except:
+                # ignore the message
+                # TODO: send a message to the user; can we extract a session identifier?
+                continue
+            try:
+                session = msg['parent_header']['session']
+                last_msg=last_message.get(session)
+                # Consolidate session messages of stderr or stdout
+                # channels
+                if (last_msg is not None
+                    and msg['msg_type'] == 'stream' and last_msg['msg_type']=='stream'
+                    and msg['content']['name'] in ('stdout', 'stderr')
+                    and msg['content']['name']==last_msg['content']['name']):
 
-                last_msg['content']['data']+=msg['content']['data']
-            else:
-                msg['sequence']=sequence[session]
-                sequence[session]+=1
-                new_messages.append(msg)
-                last_message[session]=msg
+                    last_msg['content']['data']+=msg['content']['data']
+                else:
+                    msg['sequence']=sequence[session]
+                    sequence[session]+=1
+                    new_messages.append(msg)
+                    last_message[session]=msg
+            except KeyError:
+                # something was formatted wrongly in msg, or some other problem happened with formatting the message
+                # TODO: send an error back to the user
+                continue
          # delete the output that I'm finished with
         for session in finished:
             # this message should be sent at the end of an execution
