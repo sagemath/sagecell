@@ -300,15 +300,18 @@ class Selector(InteractControl):
     :arg str label: the label of the control
     """
 
-    def __init__(self, default=0, values=[0], buttons=False, nrows=None, ncols=None, width="", raw=False, label=""):
+    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", raw=False, label=""):
         self.default=default
         self.values=values[:]
-        self.buttons=buttons
+        self.selector_type=selector_type
         self.nrows=nrows
         self.ncols=ncols
         self.width=width
         self.raw=raw
         self.label=label
+
+        if self.selector_type != "buttons" and self.selector_type != "radio":
+            self.selector_type = "list"
         
         # Assign selector labels and values.
         self.value_labels=[str(v[1]) if isinstance(v,tuple) and
@@ -320,9 +323,9 @@ class Selector(InteractControl):
         if default < 0 or default >= len(values):
             self.default = 0
 
-        # If using buttons rather than dropdown,
+        # If not using a dropdown list,
         # check/set rows and columns for layout.
-        if self.buttons:
+        if self.selector_type != "list":
             if self.nrows is None:
                 if self.ncols is not None:
                     self.nrows = len(self.values) / self.ncols
@@ -350,10 +353,10 @@ class Selector(InteractControl):
         :rtype: dict
         """
         return {'control_type': 'selector',
+                'subtype': self.selector_type,
                 'values': range(len(self.values)),
                 'value_labels': self.value_labels,
                 'default': self.default,
-                'buttons': self.buttons,
                 'nrows': int(self.nrows),
                 'ncols': int(self.ncols),
                 'width': self.width,

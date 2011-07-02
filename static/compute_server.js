@@ -523,12 +523,34 @@ InteractCell.prototype.renderCanvas = (function() {
 		addRow(table, label, name, inner_table, control_id+'_0_0');
 		break;
 	    case "selector":
-		if (this.controls[name].buttons) {
-		    var nrows = this.controls[name].nrows,
-		    ncols = this.controls[name].ncols,
-		    values = this.controls[name].values,
-		    value_labels = this.controls[name].value_labels,
-		    default_index = this.controls[name]["default"];
+		var nrows = this.controls[name].nrows,
+		ncols = this.controls[name].ncols,
+		values = this.controls[name].values,
+		value_labels = this.controls[name].value_labels,
+		default_index = this.controls[name]["default"];
+
+		switch(subtype) {
+		case "list":
+		    var html_code = '<select class="' + id + '" id = "' + control_id + '">';
+		    for (var i=0; i<values.length; i++) {
+			html_code += '<option value="' + values[i] + '">' + escape(value_labels[i]) + "</option>";
+		    }
+		    html_code = html_code + "</select>";
+		    addRow(table,label,name,html_code,control_id);
+		    break;
+		case "radio":
+		    var inner_table = "<table><tbody>";
+		    for (var r = 0, i = 0; r < nrows; r ++) {
+			inner_table += "<tr>";
+			for (var c = 0; c < ncols; c ++, i ++) {
+			    inner_table += '<td><input class="'+control_id+'" id="'+control_id+'_'+i+'" type="radio" name="'+control_id+'" value='+i+' />'+escape(value_labels[i])+'</td>';
+			}
+			inner_table += "</tr>";
+		    }
+		    inner_table += "</tbody></table>";
+		    addRow(table,label,name,inner_table,control_id);
+		break;
+		case "buttons":
 		    var inner_table = "<table><tbody>";
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
@@ -554,15 +576,13 @@ InteractCell.prototype.renderCanvas = (function() {
 		    $(table).find('label:last').click((function(control_id){return function() {
 			$('.'+control_id+' .ui-state-active').focus();
 		    }})(control_id))
-		} else {
-		    var html_code = '<select class="' + id + '" id = "' + control_id + '">';
-		    var values=this.controls[name].values
-		    for (var i=0; i<values.length; i++) {
-			html_code += '<option value="' + values[i] + '">' + escape(this.controls[name].value_labels[i]) + "</option>";
-		    }
-		    html_code = html_code + "</select>";
-		    addRow(table,label,name,html_code,control_id);
+
+		    break;
+		case "radio":
+		    
+		    break;
 		}
+
 		break;
 	    case "multi_slider":
 		var sliders = this.controls[name]["sliders"];
