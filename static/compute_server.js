@@ -38,6 +38,14 @@ function makeClass(){
 }
 
 
+
+// Initialize jmol
+// TODO: move to a better place
+jmolInitialize('/static/jmol');
+// TODO: setting the menu doesn't appear to work
+//jmolSetCallback("menuFile","/static/jmol/appletweb/SageMenu.mnu");
+
+
 /**************************************************************
 * 
 * Colorize Tracebacks
@@ -164,6 +172,10 @@ Session.prototype.output = function(html, block_id) {
     return output_block.append(html).children().last();
 }
 
+Session.prototype.write = function(html) {
+    this.output(html);
+}
+
 Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
     if (data.computation_id!==this.session_id) {
 	alert("Session id returned and session id sent don't match up");
@@ -208,6 +220,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		break;
 
 	    case 'display_data':
+		var filepath=$URL['root']+'files/'+id+'/';
                 if(msg.content.data['image/svg+xml']!==undefined) {
                     this.output('<embed  class="singlecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
 		}
@@ -215,11 +228,17 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.output('<div>'+msg.content.data['text/html']+'</div>',output_block);
 		}
 		if(msg.content.data['text/filename']!==undefined) {
-		    this.output('<img src="'+$URL['root']+'files/'+id+'/'+msg.content.data['text/filename']+'" />');
+		    this.output('<img src="'+filepath+msg.content.data['text/filename']+'" />');
 		}
 		if(msg.content.data['image/png']!==undefined) {
 		    console.log('making png img with data in src');
 		    this.output('<img src="'+msg.content.data['image/png']+'" />');
+		}
+		if(msg.content.data['application/x-jmol']!==undefined) {
+		    console.log('making jmol applet');
+		    console.log(this);
+		    jmolSetDocument(this);
+		    jmolApplet(500, 'set defaultdirectory "'+filepath+msg.content.data['application/x-jmol']+'";\n script SCRIPT;\n');
 		}
 		
 		break;
