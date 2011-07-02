@@ -1,0 +1,175 @@
+# HG changeset patch
+# User Jason Grout <jason.grout@drake.edu>
+# Date 1309568393 18000
+# Node ID 351960b1f790fe45598e4cddfd48a9230ff18cc3
+# Parent  4897dc1aa08855a8fa8672e4c831e05d35af0dc7
+[mq]: show.patch
+
+diff --git a/sage/plot/plot.py b/sage/plot/plot.py
+--- a/sage/plot/plot.py
++++ b/sage/plot/plot.py
+@@ -318,10 +318,10 @@
+ ALLOWED_EXTENSIONS = ['.eps', '.pdf', '.png', '.ps', '.sobj', '.svg']
+ DEFAULT_FIGSIZE=(6, 3.70820393249937)
+ DEFAULT_DPI = 100
+-from sage.misc.misc import EMBEDDED_MODE
+-DOCTEST_MODE = False
++import sage.misc.misc as misc
+ import sage.misc.misc
+ from sage.misc.misc import srange
++DOCTEST_MODE = False
+ DOCTEST_MODE_FILE = os.path.join(sage.misc.misc.SAGE_TMP, 'test.png')
+ SHOW_DEFAULT = True
+ 
+@@ -1717,17 +1717,27 @@
+ 
+         # This option should not be passed on to save().
+         linkmode = kwds.pop('linkmode', False)
++        import sys
+ 
+         if DOCTEST_MODE:
+             kwds.pop('filename', None)
+             self.save(DOCTEST_MODE_FILE, **kwds)
+-        elif EMBEDDED_MODE:
++        elif misc.EMBEDDED_MODE:
+             kwds.setdefault('filename', sage.misc.misc.graphics_filename()) 
++            filename=kwds['filename']
+             self.save(**kwds)
+-            if linkmode == True:
+-                return "<img src='cell://%s'>" % kwds['filename']
+-            else:
+-                html("<img src='cell://%s'>" % kwds['filename'])
++            if misc.EMBEDDED_MODE['frontend']=='notebook':
++                if linkmode == True:
++                    return "<img src='cell://%s'>"%filename
++                else:
++                    html("<img src='cell://%s'>"%filename)
++            elif misc.EMBEDDED_MODE['frontend']=='singlecell':
++                msg={}
++                import json #TODO: be smart about which json
++                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
++                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
++                msg['text/filename']=filename
++                sys._sage_messages.message_queue.display(msg)
+         else:
+             kwds.setdefault('filename', sage.misc.misc.tmp_filename() + '.png')
+             self.save(**kwds)
+@@ -2437,29 +2447,34 @@
+         options.update(kwds)
+         dpi = options.pop('dpi')
+         transparent = options.pop('transparent')
++        format = options.pop('format', None)
+         
+         if filename is None:
+             filename = options.pop('filename')
+         if filename is None:
+             filename = sage.misc.misc.graphics_filename()
+-        ext = os.path.splitext(filename)[1].lower()
+-        
+-        if ext not in ALLOWED_EXTENSIONS:
+-            raise ValueError("allowed file extensions for images are '"
+-                             + "', '".join(ALLOWED_EXTENSIONS) + "'!")
+-        elif ext in ['', '.sobj']:
+-            SageObject.save(self, filename)
+-        else:
+-            figure = self.matplotlib(**options)
+-            # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension. 
+-            # matplotlib looks at the file extension to see what the renderer should be.
+-            # The default is FigureCanvasAgg for PNG's because this is by far the most
+-            # common type of files rendered, like in the notebook, for example.
+-            # if the file extension is not '.png', then matplotlib will handle it.
+-            from matplotlib.backends.backend_agg import FigureCanvasAgg
+-            figure.set_canvas(FigureCanvasAgg(figure))
+-            figure.savefig(filename, dpi=dpi, bbox_inches='tight',
+-                           transparent=transparent)
++        if isinstance(filename, str):
++            ext = os.path.splitext(filename)[1].lower()
++            
++            if format is None:
++                # guess the format from the extension
++                if ext not in ALLOWED_EXTENSIONS:
++                    raise ValueError("allowed file extensions for images are '"
++                                     + "', '".join(ALLOWED_EXTENSIONS) + "'!")
++                elif ext in ('', '.sobj'):
++                    SageObject.save(self, filename)
++                    return
++
++        figure = self.matplotlib(**options)
++        # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension. 
++        # matplotlib looks at the file extension to see what the renderer should be.
++        # The default is FigureCanvasAgg for PNG's because this is by far the most
++        # common type of files rendered, like in the notebook, for example.
++        # if the file extension is not '.png', then matplotlib will handle it.
++        from matplotlib.backends.backend_agg import FigureCanvasAgg
++        figure.set_canvas(FigureCanvasAgg(figure))
++        figure.savefig(filename, dpi=dpi, bbox_inches='tight',
++                       transparent=transparent, format=format)
+ 
+ 
+ _SelectiveFormatterClass = None
+@@ -3705,7 +3720,7 @@
+             self.save(DOCTEST_MODE_FILE,
+                       dpi=dpi, figsize=self._figsize, axes = axes, **args)
+             return
+-        if EMBEDDED_MODE:
++        if misc.EMBEDDED_MODE:
+             self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
+             return
+         if filename is None:
+diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
+--- a/sage/plot/plot3d/base.pyx
++++ b/sage/plot/plot3d/base.pyx
+@@ -1068,6 +1068,7 @@
+ 
+         from sage.plot.plot import DOCTEST_MODE
+         from sage.misc.misc import EMBEDDED_MODE
++        import sys
+         ext = None
+ 
+         # Tachyon resolution options
+@@ -1081,9 +1082,18 @@
+             opts = '-res %s %s'%(figsize[0]*100, figsize[1]*100)
+ 
+         if DOCTEST_MODE or viewer=='tachyon' or (viewer=='java3d' and EMBEDDED_MODE):
++            ext = "png"
++            filename_full=filename+'.'+ext
+             T = self._prepare_for_tachyon(frame, axes, frame_aspect_ratio, aspect_ratio, zoom)
+-            tachyon_rt(T.tachyon(), filename+".png", verbosity, True, opts)
+-            ext = "png"
++            tachyon_rt(T.tachyon(), filename_full, verbosity, True, opts)
++            if EMBEDDED_MODE['frontend']=='singlecell':
++                msg={}
++                import json #TODO: be smart about which json
++                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename_full]))
++                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
++                msg['text/filename']=filename_full
++                sys._sage_messages.message_queue.display(msg)
++
+             import sage.misc.viewer
+             viewer_app = sage.misc.viewer.browser()
+ 
+@@ -1116,11 +1126,19 @@
+             T.export_jmol(archive_name, force_reload=EMBEDDED_MODE, zoom=zoom*100, **kwds)
+             viewer_app = os.path.join(sage.misc.misc.SAGE_LOCAL, "bin/jmol")
+ 
+-            # We need a script to load the file
+-            f = open(filename + '.jmol', 'w')
+-            f.write('set defaultdirectory "%s"\n' % archive_name)
+-            f.write('script SCRIPT\n')
+-            f.close()
++            if EMBEDDED_MODE['frontend']=='singlecell':
++                msg={}
++                import json #TODO: be smart about which json
++                sys._sage_upload_file_pipe.send_bytes(json.dumps([archive_name]))
++                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
++                msg['application/x-jmol']=archive_name
++                sys._sage_messages.message_queue.display(msg)
++            else:
++                # We need a script to load the file
++                f = open(filename + '.jmol', 'w')
++                f.write('set defaultdirectory "%s"\n' % archive_name)
++                f.write('script SCRIPT\n')
++                f.close()
+ 
+         if viewer == 'canvas3d':
+             T = self._prepare_for_tachyon(frame, axes, frame_aspect_ratio, aspect_ratio, zoom)

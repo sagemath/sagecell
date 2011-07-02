@@ -133,6 +133,28 @@ Download the appropriate version of MongoDB from
 `here <http://www.mongodb.org/downloads>`_ and extract the
 contents to the ``$SERVER`` directory.
 
+
+Sage
+^^^^
+
+Several patches enable Sage to take advantage of the enhanced protocol
+for communicating graphical displays.  In order to patch Sage, apply
+the patches to your Sage installation found in the ``sage-patches``
+directory.  Apply them in numeric order.  I suggest using Mercurial
+Queues so that it is easy to back out the patches if needed.  After
+applying the patches, rebuild Sage with ``sage -b``.
+
+Jmol
+^^^^
+In sage mode, Sage can output 3d graphs in Jmol format.  The Jmol java
+applet must be installed in order to see these.  It is sufficient to
+make a symbolic link from the ``/static`` directory over to the
+appropriate Jmol directory in the Sage notebook::
+
+    cd $SERVER/static
+    ln -s $SAGE_ROOT/sage/devel/sagenb/sagenb/data/jmol .
+
+
 Configuration and Running
 -------------------------
 
