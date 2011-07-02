@@ -584,12 +584,6 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         # TODO: security implications here calling something that the user had access to.
         timeout=max(0,min(float(interact_singlecell.__single_cell_timeout__), MAX_TIMEOUT))
 
-        # TODO: if we wait until here to upload files, then we might have sent references to these files
-        # like img URLs, but the files won't actually be available until after the computation is done.  
-        # In the current notebook, since things happen on the same filesystem, when a user requests a file,
-        # a symbolic link is instantly made to the temporary directory file, and then later the file is copied
-        # over.  it seems like we need to upload a file immediately (from the parent process??), and then upload
-        # any remaining files after the computation is over.
         file_list=[]
         for filename in os.listdir(os.getcwd()):
             if filename not in old_files or old_files[filename]!=os.stat(filename).st_mtime:
