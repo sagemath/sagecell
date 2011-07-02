@@ -288,29 +288,36 @@ class Selector(InteractControl):
         which the user can select. A value can also be represented as a tuple
         of the form ``(value, label)``, where the value is the name of the
         variable and the label is the text displayed to the user.
-    :arg bool buttons: ``True`` if the control should be rendered as a grid
-        of buttons; ``False`` for a dropdown list. If ``False``, ``ncols``,
-        ``nrows``, and ``width`` will be ignored.
-    :arg int ncols: number of columns of buttons
-    :arg int nrows: number of rows of buttons
-    :arg str width: CSS width of buttons
+    :arg string selector_type: Type of selector. Currently supported options
+        are "button" (Buttons), "radio" (Radio buttons), and "list"
+        (Dropdown list), with "list" being the default. If "list" is used,
+        ``ncols`` and ``nrows`` will be ignored. If "radio" is used, ``width``
+        will be ignored.
+    :arg int ncols: number of columns of selectable objects. If this is given,
+        it must cleanly divide the number of objects, else this value will be
+        set to the number of objects and ``nrows`` will be set to 1.
+    :arg int nrows: number of rows of selectable objects. If this is given, it
+        must cleanly divide the number of objects, else this value will be set
+        to 1 and ``ncols`` will be set to the number of objects. If both
+        ``ncols`` and ``nrows`` are given, ``nrows * ncols`` must equal the
+        number of objects, else ``nrows`` will be set to 1 and ``ncols`` will
+        be set to the number of objects.
     :arg bool raw: ``True`` if the selected value should be treated as
         "unquoted" (raw); ``False`` if the value should be treated as a string.
         Note that this applies to the values of the selector, not the labels.
     :arg str label: the label of the control
     """
 
-    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", raw=False, label=""):
+    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, raw=False, width="", label=""):
         self.default=int(default)
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
         self.ncols=ncols
-        self.width=width
         self.raw=raw
         self.label=label
 
-        if self.selector_type != "buttons" and self.selector_type != "radio":
+        if self.selector_type != "button" and self.selector_type != "radio":
             self.selector_type = "list"
         
         # Assign selector labels and values.
@@ -326,23 +333,31 @@ class Selector(InteractControl):
         # If not using a dropdown list,
         # check/set rows and columns for layout.
         if self.selector_type != "list":
-            if self.nrows is None:
-                if self.ncols is not None:
-                    self.nrows = len(self.values) / self.ncols
-                    if self.ncols * self.nrows < len(self.values):
-                        self.nrows += 1
-                else:
-                    self.nrows = 1
-            elif self.nrows <= 0:
-                    self.nrows = 1
-
-            if self.ncols is None:
-                self.ncols = len(self.values) / self.nrows
+            if self.nrows is None and self.ncols is None:
+                self.nrows = 1
+                self.ncols = len(self.values)
+            elif self.nrows is None:
+                self.ncols = int(self.ncols)
+                if self.ncols <= 0:
+                    self.ncols = len(values)
+                self.nrows = int(len(self.values) / self.ncols)
                 if self.ncols * self.nrows < len(self.values):
-                    self.ncols += 1
-        else:
-            self.nrows = 0
-            self.ncols = 0
+                    self.nrows = 1
+                    self.ncols = len(self.values)
+            elif self.ncols is None:
+                self.nrows = int(self.nrows)
+                if self.nrows <= 0:
+                    self.nrows = 1
+                self.ncols = int(len(self.values) / self.nrows)
+                if self.ncols * self.nrows < len(self.values):
+                    self.nrows = 1
+                    self.ncols = len(self.values)
+            else:
+                self.ncols = int(self.ncols)
+                self.nrows = int(self.nrows)
+                if self.ncols * self.nrows != len(self.values):
+                    self.nrows = 1
+                    self.ncols = len(self.values)
 
     def message(self):
         """
@@ -357,9 +372,8 @@ class Selector(InteractControl):
                 'values': range(len(self.values)),
                 'value_labels': self.value_labels,
                 'default': self.default,
-                'nrows': int(self.nrows),
-                'ncols': int(self.ncols),
-                'width': self.width,
+                'nrows': self.nrows,
+                'ncols': self.ncols,
                 'raw': self.raw,
                 'label':self.label}
                 

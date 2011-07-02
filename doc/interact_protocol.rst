@@ -13,7 +13,7 @@ Supported / Partially Supported Interact Controls and Features:
 
 [X] Input Grid
 
-[A] Selector (Dropdown and Button)
+[A] Selector (Dropdown List, Button, Radio Button)
 
 * No multiple select (only single-item select)
 

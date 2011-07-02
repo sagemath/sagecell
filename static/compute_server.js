@@ -560,12 +560,12 @@ InteractCell.prototype.renderCanvas = (function() {
 		    addRow(table,label,name,html_code,control_id);
 		    $(table).find("#"+default_id).attr("checked","checked");
 		break;
-		case "buttons":
+		case "button":
 		    var inner_table = "<table><tbody>";
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
-			    inner_table += '<td><span style="width:'+this.controls[name].width+'" class="'+control_id+' singlecell_selectorButton ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'" tabindex="0">'+escape(value_labels[i])+'</span></td>';
+			    inner_table += '<td><span class="'+control_id+' singlecell_selectorButton ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'" tabindex="0">'+escape(value_labels[i])+'</span></td>';
 			    $('#'+control_id+'_'+i).live('click', (function(i,control_id){return function(e) {
 				if(!$(e.target).hasClass('ui-state-active')) {
 				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
