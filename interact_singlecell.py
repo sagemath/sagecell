@@ -659,7 +659,27 @@ class ColorSelector(InteractControl):
         else:
             return v
 
-            
+class Button(InteractControl):
+    def __init__(self, text="", value = "", default="", raw = True, label=""):
+        self.text = text
+        self.value = value
+        self.default = False
+        self.default_value = default
+        self.raw = raw
+        self.label = label
+
+    def message(self):
+        return {'control_type':'button',
+                'text':self.text,
+                'raw': self.raw,
+                'label': self.label}
+
+    def adapter(self, v):
+        if v:
+            return self.value
+        else:
+            return self.default_value
+
 def automatic_control(control):
     """
     Guesses the desired interact control from the syntax of the parameter.
@@ -744,3 +764,4 @@ continuous_slider=ContinuousSlider
 discrete_slider=DiscreteSlider
 multi_slider=MultiSlider
 color_selector=ColorSelector
+button=Button

@@ -6,6 +6,7 @@
 .singlecell_multiSliderControl {display:inline-block;margin-right:0.5em;margin-left:0.5em;margin-top:1.25em}
 .singlecell_selectorButton {cursor:default;}
 .singlecell_selectorButtonText {padding:0.1em 0.5em;}
+.singlecell_button {padding:0.1em 0.5em; cursor:default;}
 .singlecell_colorSelector {width:2em;border:none;padding:10px;}
 .error {color: red}
 .stderr {color: red}

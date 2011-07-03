@@ -360,6 +360,9 @@ InteractCell.prototype.bindChange = function(interact) {
 	case "color_selector":
 	    events["change"] = null;
 	    break;
+	case "button":
+	    events["change"] = null;
+	    break;
 	}
     }
     this.session.eventHandlers[id] = [];
@@ -459,6 +462,10 @@ InteractCell.prototype.getChanges = function() {
 	    break;
 	case "color_selector":
 	    params[name] = $(id + "_" + name + "_value").val();
+	    break;
+	case "button":
+	    params[name] = $(id + "_" + name + "_value").val();
+	    $(id + "_" + name + "_value").val("false");
 	    break;
 	}
     }
@@ -735,6 +742,24 @@ InteractCell.prototype.renderCanvas = (function() {
 			$("#"+control_id+"_value").val("#"+hex);
 		    }
 		});
+		break;
+	    case "button":
+		html_code = '<span class="singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_button">'+this.controls[name]["text"]+'</span><input type="hidden" id="'+control_id+'_value" class="'+id+'" value="false">';
+		addRow(table, label, name, html_code, control_id);
+
+		$("#"+control_id+"_button").live("mouseenter", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").addClass("ui-state-hover");
+		}}(control_id)));
+		$("#"+control_id+"_button").live("mouseleave", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").removeClass("ui-state-hover");
+		}}(control_id)));
+		$("#"+control_id+"_button").live("mousedown", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").addClass("ui-state-active");
+		}}(control_id)));
+		$("#"+control_id+"_button").live("mouseup", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").removeClass("ui-state-active");
+		    $("#"+control_id+"_value").val("true").change();
+		}}(control_id)));
 		break;
 	    }
 	}
