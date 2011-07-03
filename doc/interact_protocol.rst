@@ -338,3 +338,8 @@ Interact Frontend
 -----------------
 
 See the :ref:`js` Documentation.
+
+Interact Module
+---------------
+
+.. automodule:: interact_singlecell

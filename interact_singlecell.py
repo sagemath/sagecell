@@ -1,3 +1,84 @@
+"""
+Interacts
+
+
+Examples
+--------
+
+
+Radio button example::
+
+    @interact
+    def f(n = Selector(values=["Option1","Option2"], selector_type="radio", label=" ")):
+        print n
+
+
+Push button example::
+
+    result = 0
+    @interact
+    def f(n = Button(text="Increment", default=0, value=1, width="10em", label=" ")):
+        global result
+        result = result + n
+        print "Result: ", result
+
+
+Button bar example::
+
+    result = 0
+    @interact
+    def f(n = ButtonBar(values=[(1,"Increment"),(-1,"Decrement")], default=0, width="10em", label=" ")):
+        global result
+        result = result + n
+        print "Result: ", result
+
+Multislider example::
+
+    from interact_singlecell import *
+    sliders = 5
+    interval = [(0,10)]*sliders
+    default = [3]*sliders
+    @interact
+    def f(n = MultiSlider(sliders = sliders, interval = interval, default = default), c = (1,100)):
+        print "Sum of cn for all n: %s"%float(sum(c * i for i in n))
+
+Nested interacts::
+
+    from interact_singlecell import *
+    @interact
+    def f(n=(0,10)):
+        print n
+        @interact
+        def transformation(c=(0,n)):
+            print c
+
+
+Nested interacts where the number of controls is changed::
+
+    from interact_singlecell import *
+    @interact
+    def f(n=(0,10)):
+        @interact(controls=[('x%d'%i, (0,10)) for i in range(n)])
+        def s(multiplier=2, **kwargs):
+            print sum(kwargs.items())*multiplier
+
+
+Recursively nested interact::
+
+
+    from interact_singlecell import *
+    c=1
+    @interact
+    def f(n=(0,10)):
+        global c
+        c+=1
+        print 'f evaluated %d times'%c
+        for i in range(n):
+            interact(f)
+
+
+"""
+
 import singlecell_exec_config as CONFIG
 
 _INTERACTS={}
