@@ -14,24 +14,35 @@ from timing_util import timing, json, json_request
 
 from singlecell import Session
 
+code="""
+print 'beginning...'
+with open('test.txt','r+') as f:
+    s=f.read()
+    f.seek(0)
+    f.write(s.replace('test','finished'))
+print 'ending...'
+"""
+
+FILE_CONTENTS='This is a test file'
+FILE_RESULT_CONTENTS=FILE_CONTENTS.replace('test','finished')
+
 class Transaction(object):
     def __init__(self, **kwargs):
         self.custom_timers={}
-        self.MAXRAND=kwargs.get('maxrand', 2**30)
         self.BASE_URL=kwargs.get('base_url', 'http://localhost:8080/')
         self.POLL_INTERVAL=kwargs.get('poll_interval', 0.1)
-        
+        with open('test.txt', 'w') as f:
+            f.write(FILE_CONTENTS)
+
     def run(self):
         """
-        Ask for the sum of two random numbers and check the result
+        Upload a file, change it, and then download it again
         """
         computation_times=[]
         response_times=[]
-        a=int(random()*self.MAXRAND)
-        b=int(random()*self.MAXRAND)
-        code='print %d+%d'%(a,b)
+
         s=Session(self.BASE_URL)
-        request=s.prepare_execution_request(code)
+        request=s.prepare_execution_request(code,files=['test.txt'])
         sequence=0
         with timing(computation_times):
             with timing(response_times):
@@ -46,15 +57,20 @@ class Transaction(object):
                     continue
                 for m in r['content']:
                     sequence+=1
-                    if (m['msg_type']=="stream"
-                        and m['content']['name']=="stdout"):
-                        ans=int(m['content']['data'])
-                        if ans!=a+b:
-                            print "COMPUTATION NOT CORRECT"
-                            raise ValueError("Computation not correct: %s+%s!=%s, off by %s "%(a,b,ans, ans-a-b))
-                        else:
-                            done=True
-                            break
+                    if (m['msg_type']=="extension"
+                        and m['content']['msg_type']=="files"):
+                        returned_file=m['content']['content']['files'][0]
+                        if returned_file!='test.txt':
+                            print "RETURNED FILENAME NOT CORRECT"
+                            raise ValueError("Returned filename not correct: %s"%returned_file)
+                        with timing(response_times):
+                            f=s.get_file(returned_file)
+                        if f!=FILE_RESULT_CONTENTS:
+                            print "RETURNED FILE CONTENTS NOT CORRECT"
+                            raise ValueError("Returned file contents not correct: %s"%f)
+                        # if we've made it this far, we're done
+                        done=True
+                        break
 
         self.custom_timers['Computation']=computation_times
         self.custom_timers['Response']=response_times
