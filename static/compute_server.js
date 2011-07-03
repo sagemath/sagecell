@@ -360,6 +360,11 @@ InteractCell.prototype.bindChange = function(interact) {
 	case "color_selector":
 	    events["change"] = null;
 	    break;
+	case "button":
+	    events["change"] = null;
+	    break;
+	case "button_bar":
+	    events["change"] = null;
 	}
     }
     this.session.eventHandlers[id] = [];
@@ -460,6 +465,14 @@ InteractCell.prototype.getChanges = function() {
 	case "color_selector":
 	    params[name] = $(id + "_" + name + "_value").val();
 	    break;
+	case "button":
+	    params[name] = $(id + "_" + name + "_value").val();
+	    $(id + "_" + name + "_value").val("false");
+	    break;
+	case "button_bar":
+	    params[name] = $(id + "_" + name + "_value").val();
+	    $(id + "_" + name + "_value").val("None");
+	    break;
 	}
     }
     return params;
@@ -523,46 +536,84 @@ InteractCell.prototype.renderCanvas = (function() {
 		addRow(table, label, name, inner_table, control_id+'_0_0');
 		break;
 	    case "selector":
-		if (this.controls[name].buttons) {
-		    var nrows = this.controls[name].nrows,
-		    ncols = this.controls[name].ncols,
-		    values = this.controls[name].values,
-		    value_labels = this.controls[name].value_labels,
-		    default_index = this.controls[name]["default"];
-		    var inner_table = "<table><tbody>";
+		var nrows = this.controls[name].nrows,
+		ncols = this.controls[name].ncols,
+		values = this.controls[name].values,
+		value_labels = this.controls[name].value_labels,
+		default_index = this.controls[name]["default"];
+
+		switch(subtype) {
+		case "list":
+		    var html_code = '<select class="' + id + '" id = "' + control_id + '">';
+		    for (var i=0; i<values.length; i++) {
+			html_code += '<option value="' + values[i] + '">' + escape(value_labels[i]) + "</option>";
+		    }
+		    html_code = html_code + "</select>";
+		    addRow(table,label,name,html_code,control_id);
+		    break;
+		case "radio":
+		    var default_id = control_id+"_"+default_index,
+		    inner_table = "<table><tbody>",
+		    html_code;
+
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
-			    inner_table += '<td><span style="width:'+this.controls[name].width+'" class="'+control_id+' singlecell_selectorButton ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'" tabindex="0">'+escape(value_labels[i])+'</span></td>';
-			    $('#'+control_id+'_'+i).live('click', (function(i,control_id){return function(e) {
-				if(!$(e.target).hasClass('ui-state-active')) {
-				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
-				    $(e.target).addClass('ui-state-active');
-				    $('#'+control_id).val(values[i]).change();
-				    select_labels[control_id].setAttribute('for',e.target.id);
+			    inner_table += '<td><input class="'+control_id+'" id="'+control_id+'_'+i+'" type="radio" name="'+control_id+'" value='+i+' />'+escape(value_labels[i])+'</td>';
+			    $("#"+control_id+"_"+i).live("mousedown", (function(i,control_id){return function(e) {
+				if (!$(e.target).attr("checked")) {
+				    $("#"+control_id).val(values[i]).change();
 				}
 			    }}(i,control_id)));
 			}
 			inner_table += "</tr>";
 		    }
 		    inner_table += "</tbody></table>";
-		    var html_code = inner_table + '<input type="hidden" id="'+control_id+'" class="'+id+'" value="'+values[default_index]+'"></div>';
+		    html_code = inner_table + '<input type="hidden" id ="'+control_id+'" class="'+id+'" value="'+values[default_index]+'"></div';
+		    addRow(table,label,name,html_code,control_id);
+		    $(table).find("#"+default_id).attr("checked","checked");
+		break;
+		case "button":
+		    var inner_table = "<table><tbody>";
+		    for (var r = 0, i = 0; r < nrows; r ++) {
+			inner_table += "<tr>";
+			for (var c = 0; c < ncols; c ++, i ++) {
+			    inner_table += '<td><button class="'+control_id+' singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'"><span>'+escape(value_labels[i])+'</span></button></td>';
+			    $('#'+control_id+'_'+i).live('mouseenter', (function(i,control_id) {return function(e) {
+				$('#'+control_id+'_'+i).addClass('ui-state-hover');
+			    }}(i,control_id)));
+			    $('#'+control_id+'_'+i).live('mouseleave', (function(i,control_id) {return function(e) {
+				$('#'+control_id+'_'+i).removeClass('ui-state-hover');
+			    }}(i,control_id)));
+			    $('#'+control_id+'_'+i).live('click', (function(i,control_id) {return function(e) {
+				if(!$('#'+control_id+'_'+i).hasClass('ui-state-active')) {
+				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
+				    $('#'+control_id+'_'+i).addClass('ui-state-active');
+				    $('#'+control_id+'_value').val(values[i]).change();
+				    select_labels[control_id].setAttribute('for',e.target.id);
+				}
+			    }}(i,control_id)));
+				
+			}
+			inner_table += "</tr>";
+		    }
+		    inner_table += "</tbody></table>";
+		    var html_code = inner_table + '<input type="hidden" id="'+control_id+'_value" class="'+id+'" value="'+values[default_index]+'"></div>';
 		    var default_id=control_id+'_'+default_index
 		    addRow(table,label,name,html_code,control_id+'_'+default_index);
+		    $(table).find("."+control_id).css("width",this.controls[name].width);
 		    $(table).find('#'+default_id).addClass('ui-state-active');
 		    select_labels[control_id]=$(table).find('label[for="'+default_id+'"]')[0];
 		    $(table).find('label:last').click((function(control_id){return function() {
 			$('.'+control_id+' .ui-state-active').focus();
 		    }})(control_id))
-		} else {
-		    var html_code = '<select class="' + id + '" id = "' + control_id + '">';
-		    var values=this.controls[name].values
-		    for (var i=0; i<values.length; i++) {
-			html_code += '<option value="' + values[i] + '">' + escape(this.controls[name].value_labels[i]) + "</option>";
-		    }
-		    html_code = html_code + "</select>";
-		    addRow(table,label,name,html_code,control_id);
+
+		    break;
+		case "radio":
+		    
+		    break;
 		}
+
 		break;
 	    case "multi_slider":
 		var sliders = this.controls[name]["sliders"];
@@ -703,6 +754,60 @@ InteractCell.prototype.renderCanvas = (function() {
 			$("#"+control_id+"_value").val("#"+hex);
 		    }
 		});
+		break;
+	    case "button":
+		html_code = '<button class="singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_button"><span>'+this.controls[name]["text"]+'</span></button><input type="hidden" id="'+control_id+'_value" class="'+id+'" value="false">';
+		addRow(table, label, name, html_code, control_id);
+
+		$(table).find("#"+control_id+"_button").css("width",this.controls[name].width);
+
+		$("#"+control_id+"_button").live("mouseenter", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").addClass("ui-state-hover");
+		}}(control_id)));
+		$("#"+control_id+"_button").live("mouseleave", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").removeClass("ui-state-hover");
+		}}(control_id)));
+		$("#"+control_id+"_button").live("mousedown", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").addClass("ui-state-active");
+		}}(control_id)));
+		$("#"+control_id+"_button").live("mouseup", (function(control_id) {return function(e) {
+		    $("#"+control_id+"_button").removeClass("ui-state-active");
+		    $("#"+control_id+"_value").val("true").change();
+		}}(control_id)));
+		break;
+	    case "button_bar":
+		var nrows = this.controls[name].nrows,
+		ncols = this.controls[name].ncols,
+		value_labels = this.controls[name].value_labels,
+		values = this.controls[name].values;
+
+		var inner_table = "<table><tbody>";
+		for (var r = 0, i = 0; r < nrows; r++) {
+		    inner_table += "<tr>";
+		    for (var c = 0; c < ncols; c ++, i++) {
+			inner_table += '<td><button class="'+control_id+' singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'"<span>'+escape(value_labels[i])+'</span></button></td>';
+			$("#"+control_id+"_"+i).live("mouseenter", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).addClass("ui-state-hover");
+			}}(i,control_id)));
+			$("#"+control_id+"_"+i).live("mouseleave", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).removeClass("ui-state-hover");
+			}}(i,control_id)));
+			$("#"+control_id+"_"+i).live("mousedown", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).addClass("ui-state-active");
+			}}(i,control_id)));
+			$("#"+control_id+"_"+i).live("mouseup", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).removeClass("ui-state-active");
+			    $("#"+control_id+"_value").val(values[i]).change();
+			}}(i,control_id)));
+		    }
+		    inner_table += "</tr>";
+		}
+		inner_table +="</tbody></table>";
+		var html_code = inner_table + "<input type='hidden' id='"+control_id+"_value' class='"+id+"' value='None'>";
+		addRow(table, label, name, html_code, control_id);
+
+		$(table).find("."+control_id).css("width",this.controls[name].width);
+
 		break;
 	    }
 	}
