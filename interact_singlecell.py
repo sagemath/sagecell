@@ -682,6 +682,66 @@ class Button(InteractControl):
         else:
             return self.default_value
 
+class ButtonBar(InteractControl):
+    def __init__(self, values=[0], default="", nrows=None, ncols=None, raw=True, width="", label=""):
+        self.default = None
+        self.default_value = default
+        self.values = values[:]
+        self.nrows = nrows
+        self.ncols = ncols
+        self.raw = raw
+        self.width = str(width)
+        self.label = label
+
+        # Assign button labels and values.
+        self.value_labels=[str(v[1]) if isinstance(v,tuple) and
+                           len(v)==2 else str(v) for v in values]
+        self.values = [v[0] if isinstance(v,tuple) and
+                       len(v)==2 else v for v in values]
+
+        # Check/set rows and columns for layout
+        if self.nrows is None and self.ncols is None:
+            self.nrows = 1
+            self.ncols = len(self.values)
+        elif self.nrows is None:
+            self.ncols = int(self.ncols)
+            if self.ncols <= 0:
+                self.ncols = len(values)
+            self.nrows = int(len(self.values) / self.ncols)
+            if self.ncols * self.nrows < len(self.values):
+                self.nrows = 1
+                self.ncols = len(self.values)
+        elif self.ncols is None:
+            self.nrows = int(self.nrows)
+            if self.nrows <= 0:
+                self.nrows = 1
+            self.ncols = int(len(self.values) / self.nrows)
+            if self.ncols * self.nrows < len(self.values):
+                self.nrows = 1
+                self.ncols = len(self.values)
+        else:
+            self.ncols = int(self.ncols)
+            self.nrows = int(self.nrows)
+            if self.ncols * self.nrows != len(self.values):
+                self.nrows = 1
+                self.ncols = len(self.values)
+
+    def message(self):
+        return {'control_type': 'button_bar',
+                'values': range(len(self.values)),
+                'value_labels': self.value_labels,
+                'nrows': self.nrows,
+                'ncols': self.ncols,
+                'raw': self.raw,
+                'width': self.width,
+                'label': self.label}
+
+    def adapter(self,v):
+        if v is None:
+            return self.default_value
+        else:
+            return self.values[int(v)]
+
 def automatic_control(control):
     """
     Guesses the desired interact control from the syntax of the parameter.
@@ -767,3 +827,4 @@ discrete_slider=DiscreteSlider
 multi_slider=MultiSlider
 color_selector=ColorSelector
 button=Button
+button_bar=ButtonBar

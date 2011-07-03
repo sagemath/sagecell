@@ -363,6 +363,8 @@ InteractCell.prototype.bindChange = function(interact) {
 	case "button":
 	    events["change"] = null;
 	    break;
+	case "button_bar":
+	    events["change"] = null;
 	}
     }
     this.session.eventHandlers[id] = [];
@@ -466,6 +468,10 @@ InteractCell.prototype.getChanges = function() {
 	case "button":
 	    params[name] = $(id + "_" + name + "_value").val();
 	    $(id + "_" + name + "_value").val("false");
+	    break;
+	case "button_bar":
+	    params[name] = $(id + "_" + name + "_value").val();
+	    $(id + "_" + name + "_value").val("None");
 	    break;
 	}
     }
@@ -572,7 +578,7 @@ InteractCell.prototype.renderCanvas = (function() {
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
-			    inner_table += '<td><button class="'+control_id+' singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'"><span class="singlecell_selectorButtonText">'+escape(value_labels[i])+'</span></button></td>';
+			    inner_table += '<td><button class="'+control_id+' singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'"><span>'+escape(value_labels[i])+'</span></button></td>';
 			    $('#'+control_id+'_'+i).live('mouseenter', (function(i,control_id) {return function(e) {
 				$('#'+control_id+'_'+i).addClass('ui-state-hover');
 			    }}(i,control_id)));
@@ -583,7 +589,7 @@ InteractCell.prototype.renderCanvas = (function() {
 				if(!$('#'+control_id+'_'+i).hasClass('ui-state-active')) {
 				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
 				    $('#'+control_id+'_'+i).addClass('ui-state-active');
-				    $('#'+control_id).val(values[i]).change();
+				    $('#'+control_id+'_value').val(values[i]).change();
 				    select_labels[control_id].setAttribute('for',e.target.id);
 				}
 			    }}(i,control_id)));
@@ -592,7 +598,7 @@ InteractCell.prototype.renderCanvas = (function() {
 			inner_table += "</tr>";
 		    }
 		    inner_table += "</tbody></table>";
-		    var html_code = inner_table + '<input type="hidden" id="'+control_id+'" class="'+id+'" value="'+values[default_index]+'"></div>';
+		    var html_code = inner_table + '<input type="hidden" id="'+control_id+'_value" class="'+id+'" value="'+values[default_index]+'"></div>';
 		    var default_id=control_id+'_'+default_index
 		    addRow(table,label,name,html_code,control_id+'_'+default_index);
 		    $(table).find("."+control_id).css("width",this.controls[name].width);
@@ -768,6 +774,40 @@ InteractCell.prototype.renderCanvas = (function() {
 		    $("#"+control_id+"_button").removeClass("ui-state-active");
 		    $("#"+control_id+"_value").val("true").change();
 		}}(control_id)));
+		break;
+	    case "button_bar":
+		var nrows = this.controls[name].nrows,
+		ncols = this.controls[name].ncols,
+		value_labels = this.controls[name].value_labels,
+		values = this.controls[name].values;
+
+		var inner_table = "<table><tbody>";
+		for (var r = 0, i = 0; r < nrows; r++) {
+		    inner_table += "<tr>";
+		    for (var c = 0; c < ncols; c ++, i++) {
+			inner_table += '<td><button class="'+control_id+' singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'"<span>'+escape(value_labels[i])+'</span></button></td>';
+			$("#"+control_id+"_"+i).live("mouseenter", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).addClass("ui-state-hover");
+			}}(i,control_id)));
+			$("#"+control_id+"_"+i).live("mouseleave", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).removeClass("ui-state-hover");
+			}}(i,control_id)));
+			$("#"+control_id+"_"+i).live("mousedown", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).addClass("ui-state-active");
+			}}(i,control_id)));
+			$("#"+control_id+"_"+i).live("mouseup", (function(i,control_id) {return function(e) {
+			    $("#"+control_id+"_"+i).removeClass("ui-state-active");
+			    $("#"+control_id+"_value").val(values[i]).change();
+			}}(i,control_id)));
+		    }
+		    inner_table += "</tr>";
+		}
+		inner_table +="</tbody></table>";
+		var html_code = inner_table + "<input type='hidden' id='"+control_id+"_value' class='"+id+"' value='None'>";
+		addRow(table, label, name, html_code, control_id);
+
+		$(table).find("."+control_id).css("width",this.controls[name].width);
+
 		break;
 	    }
 	}
