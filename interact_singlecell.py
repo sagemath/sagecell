@@ -284,10 +284,10 @@ class Selector(InteractControl):
     A selector interact control
 
     :arg int default: initially selected index of the list of values
-    :arg list values: list of values (string, number, and/or boolean) from
-        which the user can select. A value can also be represented as a tuple
-        of the form ``(value, label)``, where the value is the name of the
-        variable and the label is the text displayed to the user.
+    :arg list values: list of values from which the user can select. A value can
+        also be represented as a tuple of the form ``(value, label)``, where the
+        value is the name of the variable and the label is the text displayed to
+        the user.
     :arg string selector_type: Type of selector. Currently supported options
         are "button" (Buttons), "radio" (Radio buttons), and "list"
         (Dropdown list), with "list" being the default. If "list" is used,
@@ -301,22 +301,18 @@ class Selector(InteractControl):
         to 1 and ``ncols`` will be set to the number of objects. If both
         ``ncols`` and ``nrows`` are given, ``nrows * ncols`` must equal the
         number of objects, else ``nrows`` will be set to 1 and ``ncols`` will
-        be set to the number of objects.:
+        be set to the number of objects.
     :arg string width: CSS width of each button. This should be specified in
         px or em.
-    :arg bool raw: ``True`` if the selected value should be treated as
-        "unquoted" (raw); ``False`` if the value should be treated as a string.
-        Note that this applies to the values of the selector, not the labels.
     :arg str label: the label of the control
     """
 
-    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, raw=False, width="", label=""):
+    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=""):
         self.default=int(default)
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
         self.ncols=ncols
-        self.raw=raw
         self.width=str(width)
         self.label=label
 
@@ -377,7 +373,7 @@ class Selector(InteractControl):
                 'default': self.default,
                 'nrows': self.nrows,
                 'ncols': self.ncols,
-                'raw': self.raw,
+                'raw': True,
                 'width': self.width,
                 'label':self.label}
                 
@@ -660,20 +656,30 @@ class ColorSelector(InteractControl):
             return v
 
 class Button(InteractControl):
-    def __init__(self, text="", value = "", default="", raw = True, width="", label=""):
+    """
+    A button interact control
+    
+    :arg string text: button text
+    :arg value: value of the button, when pressed.
+    :arg default: default value that should be used if the button is not
+        pushed. This **must** be specified.
+    :arg string width: CSS width of the button. This should be specified in
+        px or em.
+    :arg str label: the label of the control
+    """
+    def __init__(self, text="Button", value = "", default="", width="", label=""):
         self.text = text
         self.width = width
         self.value = value
         self.default = False
         self.default_value = default
-        self.raw = raw
         self.label = label
 
     def message(self):
         return {'control_type':'button',
                 'width':self.width,
                 'text':self.text,
-                'raw': self.raw,
+                'raw': True,
                 'label': self.label}
 
     def adapter(self, v):
@@ -683,13 +689,34 @@ class Button(InteractControl):
             return self.default_value
 
 class ButtonBar(InteractControl):
-    def __init__(self, values=[0], default="", nrows=None, ncols=None, raw=True, width="", label=""):
+    """
+    A button bar interact control
+    
+    :arg list values: list of values from which the user can select. A value can
+        also be represented as a tuple of the form ``(value, label)``, where the
+        value is the name of the variable and the label is the text displayed to
+        the user.
+    :arg default: default value that should be used if no button is pushed.
+        This **must** be specified.
+    :arg int ncols: number of columns of selectable buttons. If this is given,
+        it must cleanly divide the number of buttons, else this value will be
+        set to the number of buttons and ``nrows`` will be set to 1.
+    :arg int nrows: number of rows of buttons. If this is given, it must cleanly
+        divide the total number of objects, else this value will be set to 1 and
+        ``ncols`` will be set to the number of buttosn. If both ``ncols`` and
+        ``nrows`` are given, ``nrows * ncols`` must equal the number of buttons,
+        else ``nrows`` will be set to 1 and ``ncols`` will be set to the number
+        of objects.
+    :arg string width: CSS width of each button. This should be specified in
+        px or em.
+    :arg str label: the label of the control
+    """
+    def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=""):
         self.default = None
         self.default_value = default
         self.values = values[:]
         self.nrows = nrows
         self.ncols = ncols
-        self.raw = raw
         self.width = str(width)
         self.label = label
 
@@ -727,12 +754,19 @@ class ButtonBar(InteractControl):
                 self.ncols = len(self.values)
 
     def message(self):
+        """
+        Get a button bar control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
         return {'control_type': 'button_bar',
                 'values': range(len(self.values)),
                 'value_labels': self.value_labels,
                 'nrows': self.nrows,
                 'ncols': self.ncols,
-                'raw': self.raw,
+                'raw': True,
                 'width': self.width,
                 'label': self.label}
 
