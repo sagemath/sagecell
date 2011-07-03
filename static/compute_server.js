@@ -572,7 +572,13 @@ InteractCell.prototype.renderCanvas = (function() {
 		    for (var r = 0, i = 0; r < nrows; r ++) {
 			inner_table += "<tr>";
 			for (var c = 0; c < ncols; c ++, i ++) {
-			    inner_table += '<td><button class="'+control_id+' ui-button ui-widget ui-state-default ui-corner-all singlecell_selectorButton" id="'+control_id+'_'+i+'"><span class="singlecell_selectorButtonText">'+escape(value_labels[i])+'</span></button></td>';
+			    inner_table += '<td><button class="'+control_id+' singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_'+i+'"><span class="singlecell_selectorButtonText">'+escape(value_labels[i])+'</span></button></td>';
+			    $('#'+control_id+'_'+i).live('mouseenter', (function(i,control_id) {return function(e) {
+				$('#'+control_id+'_'+i).addClass('ui-state-hover');
+			    }}(i,control_id)));
+			    $('#'+control_id+'_'+i).live('mouseleave', (function(i,control_id) {return function(e) {
+				$('#'+control_id+'_'+i).removeClass('ui-state-hover');
+			    }}(i,control_id)));
 			    $('#'+control_id+'_'+i).live('click', (function(i,control_id) {return function(e) {
 				if(!$('#'+control_id+'_'+i).hasClass('ui-state-active')) {
 				    $('.'+control_id).filter('.ui-state-active').removeClass('ui-state-active');
@@ -744,8 +750,10 @@ InteractCell.prototype.renderCanvas = (function() {
 		});
 		break;
 	    case "button":
-		html_code = '<span class="singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_button">'+this.controls[name]["text"]+'</span><input type="hidden" id="'+control_id+'_value" class="'+id+'" value="false">';
+		html_code = '<button class="singlecell_button ui-widget ui-state-default ui-corner-all" id="'+control_id+'_button"><span>'+this.controls[name]["text"]+'</span></button><input type="hidden" id="'+control_id+'_value" class="'+id+'" value="false">';
 		addRow(table, label, name, html_code, control_id);
+
+		$(table).find("#"+control_id+"_button").css("width",this.controls[name].width);
 
 		$("#"+control_id+"_button").live("mouseenter", (function(control_id) {return function(e) {
 		    $("#"+control_id+"_button").addClass("ui-state-hover");

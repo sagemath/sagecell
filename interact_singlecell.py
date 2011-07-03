@@ -660,8 +660,9 @@ class ColorSelector(InteractControl):
             return v
 
 class Button(InteractControl):
-    def __init__(self, text="", value = "", default="", raw = True, label=""):
+    def __init__(self, text="", value = "", default="", raw = True, width="", label=""):
         self.text = text
+        self.width = width
         self.value = value
         self.default = False
         self.default_value = default
@@ -670,6 +671,7 @@ class Button(InteractControl):
 
     def message(self):
         return {'control_type':'button',
+                'width':self.width,
                 'text':self.text,
                 'raw': self.raw,
                 'label': self.label}
