@@ -284,31 +284,40 @@ class Selector(InteractControl):
     A selector interact control
 
     :arg int default: initially selected index of the list of values
-    :arg list values: list of values (string, number, and/or boolean) from
-        which the user can select. A value can also be represented as a tuple
-        of the form ``(value, label)``, where the value is the name of the
-        variable and the label is the text displayed to the user.
-    :arg bool buttons: ``True`` if the control should be rendered as a grid
-        of buttons; ``False`` for a dropdown list. If ``False``, ``ncols``,
-        ``nrows``, and ``width`` will be ignored.
-    :arg int ncols: number of columns of buttons
-    :arg int nrows: number of rows of buttons
-    :arg str width: CSS width of buttons
-    :arg bool raw: ``True`` if the selected value should be treated as
-        "unquoted" (raw); ``False`` if the value should be treated as a string.
-        Note that this applies to the values of the selector, not the labels.
+    :arg list values: list of values from which the user can select. A value can
+        also be represented as a tuple of the form ``(value, label)``, where the
+        value is the name of the variable and the label is the text displayed to
+        the user.
+    :arg string selector_type: Type of selector. Currently supported options
+        are "button" (Buttons), "radio" (Radio buttons), and "list"
+        (Dropdown list), with "list" being the default. If "list" is used,
+        ``ncols`` and ``nrows`` will be ignored. If "radio" is used, ``width``
+        will be ignored.
+    :arg int ncols: number of columns of selectable objects. If this is given,
+        it must cleanly divide the number of objects, else this value will be
+        set to the number of objects and ``nrows`` will be set to 1.
+    :arg int nrows: number of rows of selectable objects. If this is given, it
+        must cleanly divide the number of objects, else this value will be set
+        to 1 and ``ncols`` will be set to the number of objects. If both
+        ``ncols`` and ``nrows`` are given, ``nrows * ncols`` must equal the
+        number of objects, else ``nrows`` will be set to 1 and ``ncols`` will
+        be set to the number of objects.
+    :arg string width: CSS width of each button. This should be specified in
+        px or em.
     :arg str label: the label of the control
     """
 
-    def __init__(self, default=0, values=[0], buttons=False, nrows=None, ncols=None, width="", raw=False, label=""):
-        self.default=default
+    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=""):
+        self.default=int(default)
         self.values=values[:]
-        self.buttons=buttons
+        self.selector_type=selector_type
         self.nrows=nrows
         self.ncols=ncols
-        self.width=width
-        self.raw=raw
+        self.width=str(width)
         self.label=label
+
+        if self.selector_type != "button" and self.selector_type != "radio":
+            self.selector_type = "list"
         
         # Assign selector labels and values.
         self.value_labels=[str(v[1]) if isinstance(v,tuple) and
@@ -320,26 +329,34 @@ class Selector(InteractControl):
         if default < 0 or default >= len(values):
             self.default = 0
 
-        # If using buttons rather than dropdown,
+        # If not using a dropdown list,
         # check/set rows and columns for layout.
-        if self.buttons:
-            if self.nrows is None:
-                if self.ncols is not None:
-                    self.nrows = len(self.values) / self.ncols
-                    if self.ncols * self.nrows < len(self.values):
-                        self.nrows += 1
-                else:
-                    self.nrows = 1
-            elif self.nrows <= 0:
-                    self.nrows = 1
-
-            if self.ncols is None:
-                self.ncols = len(self.values) / self.nrows
+        if self.selector_type != "list":
+            if self.nrows is None and self.ncols is None:
+                self.nrows = 1
+                self.ncols = len(self.values)
+            elif self.nrows is None:
+                self.ncols = int(self.ncols)
+                if self.ncols <= 0:
+                    self.ncols = len(values)
+                self.nrows = int(len(self.values) / self.ncols)
                 if self.ncols * self.nrows < len(self.values):
-                    self.ncols += 1
-        else:
-            self.nrows = 0
-            self.ncols = 0
+                    self.nrows = 1
+                    self.ncols = len(self.values)
+            elif self.ncols is None:
+                self.nrows = int(self.nrows)
+                if self.nrows <= 0:
+                    self.nrows = 1
+                self.ncols = int(len(self.values) / self.nrows)
+                if self.ncols * self.nrows < len(self.values):
+                    self.nrows = 1
+                    self.ncols = len(self.values)
+            else:
+                self.ncols = int(self.ncols)
+                self.nrows = int(self.nrows)
+                if self.ncols * self.nrows != len(self.values):
+                    self.nrows = 1
+                    self.ncols = len(self.values)
 
     def message(self):
         """
@@ -350,14 +367,14 @@ class Selector(InteractControl):
         :rtype: dict
         """
         return {'control_type': 'selector',
+                'subtype': self.selector_type,
                 'values': range(len(self.values)),
                 'value_labels': self.value_labels,
                 'default': self.default,
-                'buttons': self.buttons,
-                'nrows': int(self.nrows),
-                'ncols': int(self.ncols),
+                'nrows': self.nrows,
+                'ncols': self.ncols,
+                'raw': True,
                 'width': self.width,
-                'raw': self.raw,
                 'label':self.label}
                 
     def adapter(self, v):
@@ -638,7 +655,127 @@ class ColorSelector(InteractControl):
         else:
             return v
 
-            
+class Button(InteractControl):
+    """
+    A button interact control
+    
+    :arg string text: button text
+    :arg value: value of the button, when pressed.
+    :arg default: default value that should be used if the button is not
+        pushed. This **must** be specified.
+    :arg string width: CSS width of the button. This should be specified in
+        px or em.
+    :arg str label: the label of the control
+    """
+    def __init__(self, text="Button", value = "", default="", width="", label=""):
+        self.text = text
+        self.width = width
+        self.value = value
+        self.default = False
+        self.default_value = default
+        self.label = label
+
+    def message(self):
+        return {'control_type':'button',
+                'width':self.width,
+                'text':self.text,
+                'raw': True,
+                'label': self.label}
+
+    def adapter(self, v):
+        if v:
+            return self.value
+        else:
+            return self.default_value
+
+class ButtonBar(InteractControl):
+    """
+    A button bar interact control
+    
+    :arg list values: list of values from which the user can select. A value can
+        also be represented as a tuple of the form ``(value, label)``, where the
+        value is the name of the variable and the label is the text displayed to
+        the user.
+    :arg default: default value that should be used if no button is pushed.
+        This **must** be specified.
+    :arg int ncols: number of columns of selectable buttons. If this is given,
+        it must cleanly divide the number of buttons, else this value will be
+        set to the number of buttons and ``nrows`` will be set to 1.
+    :arg int nrows: number of rows of buttons. If this is given, it must cleanly
+        divide the total number of objects, else this value will be set to 1 and
+        ``ncols`` will be set to the number of buttosn. If both ``ncols`` and
+        ``nrows`` are given, ``nrows * ncols`` must equal the number of buttons,
+        else ``nrows`` will be set to 1 and ``ncols`` will be set to the number
+        of objects.
+    :arg string width: CSS width of each button. This should be specified in
+        px or em.
+    :arg str label: the label of the control
+    """
+    def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=""):
+        self.default = None
+        self.default_value = default
+        self.values = values[:]
+        self.nrows = nrows
+        self.ncols = ncols
+        self.width = str(width)
+        self.label = label
+
+        # Assign button labels and values.
+        self.value_labels=[str(v[1]) if isinstance(v,tuple) and
+                           len(v)==2 else str(v) for v in values]
+        self.values = [v[0] if isinstance(v,tuple) and
+                       len(v)==2 else v for v in values]
+
+        # Check/set rows and columns for layout
+        if self.nrows is None and self.ncols is None:
+            self.nrows = 1
+            self.ncols = len(self.values)
+        elif self.nrows is None:
+            self.ncols = int(self.ncols)
+            if self.ncols <= 0:
+                self.ncols = len(values)
+            self.nrows = int(len(self.values) / self.ncols)
+            if self.ncols * self.nrows < len(self.values):
+                self.nrows = 1
+                self.ncols = len(self.values)
+        elif self.ncols is None:
+            self.nrows = int(self.nrows)
+            if self.nrows <= 0:
+                self.nrows = 1
+            self.ncols = int(len(self.values) / self.nrows)
+            if self.ncols * self.nrows < len(self.values):
+                self.nrows = 1
+                self.ncols = len(self.values)
+        else:
+            self.ncols = int(self.ncols)
+            self.nrows = int(self.nrows)
+            if self.ncols * self.nrows != len(self.values):
+                self.nrows = 1
+                self.ncols = len(self.values)
+
+    def message(self):
+        """
+        Get a button bar control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
+        return {'control_type': 'button_bar',
+                'values': range(len(self.values)),
+                'value_labels': self.value_labels,
+                'nrows': self.nrows,
+                'ncols': self.ncols,
+                'raw': True,
+                'width': self.width,
+                'label': self.label}
+
+    def adapter(self,v):
+        if v is None:
+            return self.default_value
+        else:
+            return self.values[int(v)]
+
 def automatic_control(control):
     """
     Guesses the desired interact control from the syntax of the parameter.
@@ -723,3 +860,5 @@ continuous_slider=ContinuousSlider
 discrete_slider=DiscreteSlider
 multi_slider=MultiSlider
 color_selector=ColorSelector
+button=Button
+button_bar=ButtonBar

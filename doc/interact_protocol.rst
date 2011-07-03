@@ -4,8 +4,8 @@ Interacts
 Supported Interacts
 -------------------
 
-Supported / Partially Supported Interact Controls and Features:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Supported / Partially Supported Interact Controls and Features
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [X] Checkbox
 
@@ -13,9 +13,18 @@ Supported / Partially Supported Interact Controls and Features:
 
 [X] Input Grid
 
-[A] Selector (Dropdown and Button)
+[A] Selector (Dropdown List, Button, Radio Button)
 
 * No multiple select (only single-item select)
+
+[X] Button (New Interact Control)
+
+* Unlike the button selector, allows for a button to be pressed multiple times.
+* Unlike the button selector, user choice is not remembered, but is instead applied only once.
+
+[X] Button Bar (New Interact Control)
+
+* Multiple grouped instances of the Button control
 
 [X] Slider
 
@@ -32,8 +41,8 @@ Supported / Partially Supported Interact Controls and Features:
 
 [X] Autoguessing Syntax
 
-Unsupported Interact Features:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Unsupported Interact Features
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [ ] Layouts
 
@@ -137,6 +146,18 @@ Controls
     :no-members:
 
 .. autoclass:: interact_singlecell.color_selector
+
+.. autoclass:: interact_singlecell.Button
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: interact_singlecell.button
+
+.. autoclass: interact_singlecell.ButtonBar
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: interact_singlecell.button_bar
 
 Note that for each control, not all parameters must be given; the device 
 will automatically assign default parameters as needed.
