@@ -68,6 +68,7 @@ def _get_interact_function(id):
 user_code_sage="""
 from sage.all import *
 from interact_singlecell import * # override the interact functionality
+from interact_compatibility import * # override the interact functionality
 import sage.misc.misc as misc
 import singlecell_exec_config
 misc.EMBEDDED_MODE=singlecell_exec_config.EMBEDDED_MODE
