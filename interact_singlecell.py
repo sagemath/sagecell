@@ -943,6 +943,221 @@ multi_slider=MultiSlider
 color_selector=ColorSelector
 button=Button
 button_bar=ButtonBar
+
+import math
+def __old_make_values_list(vmin, vmax, step_size):
+    """
+    This code is from slider_generic.__init__.
+
+    This code requires sage mode to be checked.
+    """
+    from sagenb.misc.misc import srange
+    if isinstance(vmin, list):
+        vals=vmin
+    else:
+        if vmax is None:
+            vmax=vmin
+            vmin=0
+        #Compute step size; vmin and vmax are both defined here
+        #500 is the length of the slider (in px)
+        if step_size is None:
+            step_size = (vmax-vmin)/499.0
+        elif step_size <= 0:
+            raise ValueError, "invalid negative step size -- step size must be positive"
+
+        #Compute list of values
+        num_steps = int(math.ceil((vmax-vmin)/float(step_size)))
+        if num_steps <= 2:
+            vals = [vmin, vmax]
+        else:
+            vals = srange(vmin, vmax, step_size, include_endpoint=True)
+            if vals[-1] != vmax:
+                try:
+                    if vals[-1] > vmax:
+                        vals[-1] = vmax
+                    else:
+                        vals.append(vmax)
+                except (ValueError, TypeError):
+                    pass
+                
+        #Is the list of values is small (len<=50), use the whole list.
+        #Otherwise, use part of the list.
+        if len(vals) == 0:
+            return_values = [0]   
+        elif(len(vals)<=500):
+            return_values = vals
+        else:
+            vlen = (len(vals)-1)/499.0
+            return_values = [vals[(int)(i*vlen)] for i in range(500)]
+
+        return return_values
+
+def _old_determine_default_index(values, default):
+    """
+    From sage notebook's interact.py file
+    """
+    # determine the best choice of index into the list of values
+    # for the user-selected default. 
+    if default is None:
+        index = 0
+    else:
+        try:
+            i = values.index(default)
+        except ValueError:
+            # here no index matches -- which is best?
+            try:
+                v = [(abs(default - values[j]), j) for j in range(len(values))]
+                m = min(v)
+                i = m[1]
+            except TypeError: # abs not defined on everything, so give up
+                i = 0
+        index = i
+    return index
+
+
+def slider(vmin, vmax=None,step_size=None, default=None, label=None,
+           display_value=True):
+    r"""
+    An interactive slider control, which can be used in conjunction
+    with the :func:`interact` command.
+
+    INPUT:
+
+    - ``vmin`` - an object
+
+    - ``vmax`` - an object (default: None); if None then ``vmin``
+      must be a list, and the slider then varies over elements of
+      the list.
+
+    - ``step_size`` - an integer (default: 1)
+
+    - ``default`` - an object (default: None); default value is
+      "closest" in ``vmin`` or range to this default.
+
+    - ``label`` - a string
+
+    - ``display_value`` - a bool, whether to display the current
+      value to the right of the slider
+
+    EXAMPLES:
+
+    We specify both ``vmin`` and ``vmax``.  We make the default
+    `3`, but since `3` isn't one of `3/17`-th spaced values
+    between `2` and `5`, `52/17` is instead chosen as the
+    default (it is closest)::
+
+        sage: slider(2, 5, 3/17, 3, 'alpha')
+        Slider: alpha [2--|52/17|---5]
+
+    Here we give a list::
+
+        sage: slider([1..10], None, None, 3, 'alpha')
+        Slider: alpha [1--|3|---10]
+
+    The elements of the list can be anything::
+
+        sage: slider([1, 'x', 'abc', 2/3], None, None, 'x', 'alpha')
+        Slider: alpha [1--|x|---2/3]            
+        """        r"""
+    An interactive slider control, which can be used in conjunction
+    with the :func:`interact` command.
+
+    INPUT:
+
+    - ``vmin`` - an object
+
+    - ``vmax`` - an object (default: None); if None then ``vmin``
+      must be a list, and the slider then varies over elements of
+      the list.
+
+    - ``step_size`` - an integer (default: 1)
+
+    - ``default`` - an object (default: None); default value is
+      "closest" in ``vmin`` or range to this default.
+
+    - ``label`` - a string
+
+    - ``display_value`` - a bool, whether to display the current
+      value to the right of the slider
+
+    EXAMPLES:
+
+    We specify both ``vmin`` and ``vmax``.  We make the default
+    `3`, but since `3` isn't one of `3/17`-th spaced values
+    between `2` and `5`, `52/17` is instead chosen as the
+    default (it is closest)::
+
+        sage: slider(2, 5, 3/17, 3, 'alpha')
+        Slider: alpha [2--|52/17|---5]
+
+    Here we give a list::
+
+        sage: slider([1..10], None, None, 3, 'alpha')
+        Slider: alpha [1--|3|---10]
+
+    The elements of the list can be anything::
+
+        sage: slider([1, 'x', 'abc', 2/3], None, None, 'x', 'alpha')
+        Slider: alpha [1--|x|---2/3]            
+    """
+    values=__old_make_values_list(vmin, vmax, step_size)
+    if label is None:
+        label = ""
+    return DiscreteSlider(range_slider=False, values=values, 
+                          default=default, label=label)
+
+
+def range_slider(vmin, vmax=None, step_size=None, default=None, label=None, display_value=True):
+    r"""
+    An interactive range slider control, which can be used in conjunction
+    with the :func:`interact` command.
+
+    INPUT:
+
+    - ``vmin`` - an object
+
+    - ``vmax`` - object or None; if None then ``vmin`` must be a
+      list, and the slider then varies over elements of the list.
+
+    - ``step_size`` - integer (default: 1)
+
+    - ``default`` - a 2-tuple of objects (default: None); default
+      range is "closest" in ``vmin`` or range to this default.
+
+    - ``label`` - a string
+
+    - ``display_value`` - a bool, whether to display the current
+      value below the slider
+
+    EXAMPLES:
+
+    We specify both ``vmin`` and ``vmax``.  We make the default
+    `(3,4)` but since neither is one of `3/17`-th spaced
+    values between `2` and `5`, the closest values: `52/17`
+    and `67/17`, are instead chosen as the default::
+
+        sage: range_slider(2, 5, 3/17, (3,4), 'alpha')
+        Range Slider: alpha [2--|52/17==67/17|---5]
+
+    Here we give a list::
+
+        sage: range_slider([1..10], None, None, (3,7), 'alpha')
+        Range Slider: alpha [1--|3==7|---10]
+    """
+    values=__old_make_values_list(vmin, vmax, step_size)
+    if label is None:
+        label = ""
+    return DiscreteSlider(range_slider=True, values=values, 
+                          default=default, label=label)
+
+
+# TODO: make a text control
+# TODO: make a range_slider
+
+# TODO: make each of the aliases support exactly the interfaces from before.  In order to encourage people to move to newer interface,
+# make the newer features only available from the camelcase versions.
+
+
 """
 text: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.text_control
 slider: 
