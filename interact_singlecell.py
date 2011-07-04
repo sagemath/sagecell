@@ -939,10 +939,7 @@ input_grid=InputGrid
 checkbox=Checkbox
 continuous_slider=ContinuousSlider
 discrete_slider=DiscreteSlider
-multi_slider=MultiSlider
 color_selector=ColorSelector
-button=Button
-button_bar=ButtonBar
 
 import math
 def __old_make_values_list(vmin, vmax, step_size):
