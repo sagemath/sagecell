@@ -943,3 +943,22 @@ multi_slider=MultiSlider
 color_selector=ColorSelector
 button=Button
 button_bar=ButtonBar
+"""
+text: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.text_control
+slider: 
+
+ *
+ http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.slider
+ * display_value doesn't work
+ * default value appears to be set correctly, but when the slider is
+ moved, it shows that the slider was not in the right place and also
+ appears that the default value wasn't even in the list of values.
+
+range_slider: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.range_slider
+
+selector: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.selector
+input_grid: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.input_grid
+input_box: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.input_box
+color_selector: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.color_selector
+checkbox: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.checkbox
+"""
