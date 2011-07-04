@@ -34,7 +34,6 @@ Button bar example::
 
 Multislider example::
 
-    from interact_singlecell import *
     sliders = 5
     interval = [(0,10)]*sliders
     default = [3]*sliders
@@ -44,9 +43,8 @@ Multislider example::
 
 Nested interacts::
 
-    from interact_singlecell import *
     @interact
-    def f(n=(0,10)):
+    def f(n=(0,10,1)):
         print n
         @interact
         def transformation(c=(0,n)):
@@ -55,18 +53,15 @@ Nested interacts::
 
 Nested interacts where the number of controls is changed::
 
-    from interact_singlecell import *
     @interact
     def f(n=(0,10)):
         @interact(controls=[('x%d'%i, (0,10)) for i in range(n)])
         def s(multiplier=2, **kwargs):
-            print sum(kwargs.items())*multiplier
+            print sum(kwargs.values())*multiplier
 
 
 Recursively nested interact::
 
-
-    from interact_singlecell import *
     c=1
     @interact
     def f(n=(0,10)):
