@@ -449,7 +449,7 @@ class Selector(InteractControl):
         """
         return {'control_type': 'selector',
                 'subtype': self.selector_type,
-                'values': range(len(self.values)),
+                'values': len(self.values),
                 'value_labels': self.value_labels,
                 'default': self.default,
                 'nrows': self.nrows,
@@ -843,7 +843,7 @@ class ButtonBar(InteractControl):
         :rtype: dict
         """
         return {'control_type': 'button_bar',
-                'values': range(len(self.values)),
+                'values': len(self.values),
                 'value_labels': self.value_labels,
                 'nrows': self.nrows,
                 'ncols': self.ncols,
