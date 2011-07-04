@@ -387,7 +387,7 @@ def selector(values, label=None, default=None,
     else:
         selector_type='list'
         
-    return Selector(default=default, label=label, selector_type=selector_type
+    return Selector(default=default, label=label, selector_type=selector_type,
                     nrows=nrows, ncols=ncols, width=width)
 
 def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, width=4):
@@ -441,7 +441,7 @@ def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, wid
         label = ""
     
     # TODO: implement to_value (which is very simlar to the input_box `type`)
-    return InputGrid(nrows=nrows, ncols=ncols, width=width
+    return InputGrid(nrows=nrows, ncols=ncols, width=width,
                      default=default, label=label)    
 
 def checkbox(default=True, label=None):
