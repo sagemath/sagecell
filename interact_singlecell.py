@@ -259,7 +259,6 @@ class Checkbox(InteractControl):
         but it is available.
     :arg str label: the label of the control
     """
-
     def __init__(self, default=True, raw=True, label=""):
         self.default=default
         self.raw=raw
@@ -943,15 +942,9 @@ def take(n, iterable):
     from itertools import islice
     return list(islice(iterable, n))
 
-
+#############################################################################
 # Aliases for backwards compatibility
-selector=Selector
-input_box=InputBox
-input_grid=InputGrid
-checkbox=Checkbox
-continuous_slider=ContinuousSlider
-discrete_slider=DiscreteSlider
-color_selector=ColorSelector
+#############################################################################
 
 import math
 def __old_make_values_list(vmin, vmax, step_size):
@@ -1160,25 +1153,301 @@ def range_slider(vmin, vmax=None, step_size=None, default=None, label=None, disp
                           default=default, label=label)
 
 
-# TODO: make a text control
-# TODO: make a range_slider
+def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs):
+    r"""
+    An input box interactive control.  Use this in conjunction
+    with the :func:`interact` command.
 
-# TODO: make each of the aliases support exactly the interfaces from before.  In order to encourage people to move to newer interface,
-# make the newer features only available from the camelcase versions.
+    INPUT:
 
+    - ``default`` - an object; the default put in this input box
+
+    - ``label`` - a string; the label rendered to the left of the
+      box.
+
+    - ``type`` - a type; coerce inputs to this; this doesn't
+      have to be an actual type, since anything callable will do.
+
+    - ``height`` - an integer (default: 1); the number of rows.  
+      If greater than 1 a value won't be returned until something
+      outside the textarea is clicked.
+
+    - ``width`` - an integer; width of text box in characters
+
+    - ``kwargs`` - a dictionary; additional keyword options
+
+    EXAMPLES::
+
+        sage: input_box("2+2", 'expression')
+        Interact input box labeled 'expression' with default value '2+2'
+        sage: input_box('sage', label="Enter your name", type=str)
+        Interact input box labeled 'Enter your name' with default value 'sage'   
+        sage: input_box('Multiline\nInput',label='Click to change value',type=str,height=5)
+        Interact input box labeled 'Click to change value' with default value 'Multiline\nInput'
+    """
+    if label is None:
+        label = ""
+
+    # TODO: make input_box take a height and type
+    if type is Color:
+        # kwargs are only used if the type is Color.  
+        widget=kwargs.get('widget', None)
+        hide_box=kwargs.get('hide_box', False)
+        return color_selector(default=default, label=label, 
+                              widget=widget, hide_box=hide_box)
+    
+    return InputBox(default=default, width=width, 
+                    label=label, value_type=type, height=height)
+
+def color_selector(default=(0,0,1), label=None,
+                 widget='colorpicker', hide_box=False):
+    r"""
+    A color selector (also called a color chooser, picker, or
+    tool) interactive control.  Use this with the :func:`interact`
+    command.
+
+    INPUT:
+
+    - ``default`` - an instance of or valid constructor argument
+      to :class:`Color` (default: (0,0,1)); the selector's default
+      color; a string argument must be a valid color name (e.g.,
+      'red') or HTML hex color (e.g., '#abcdef')
+
+    - ``label`` - a string (default: None); the label rendered to
+      the left of the selector.
+
+    - ``widget`` - a string (default: 'jpicker'); the color
+      selector widget to use; choices are 'colorpicker', 'jpicker'
+      and 'farbtastic'
+
+    - ``hide_box`` - a boolean (default: False); whether to hide
+      the input box associated with the color selector widget
+
+    EXAMPLES::
+
+        sage: color_selector()
+        Interact color selector labeled None, with default RGB color (0.0, 0.0, 1.0), widget 'jpicker', and visible input box
+        sage: color_selector((0.5, 0.5, 1.0), widget='jpicker')
+        Interact color selector labeled None, with default RGB color (0.5, 0.5, 1.0), widget 'jpicker', and visible input box
+        sage: color_selector(default = Color(0, 0.5, 0.25))
+        Interact color selector labeled None, with default RGB color (0.0, 0.5, 0.25), widget 'jpicker', and visible input box
+        sage: color_selector('purple', widget = 'colorpicker')
+        Interact color selector labeled None, with default RGB color (0.50..., 0.0, 0.50...), widget 'colorpicker', and visible input box
+        sage: color_selector('crayon', widget = 'colorpicker')
+        Traceback (most recent call last):
+        ...
+        ValueError: unknown color 'crayon'
+        sage: color_selector('#abcdef', label='height', widget='jpicker')
+        Interact color selector labeled 'height', with default RGB color (0.6..., 0.8..., 0.9...), widget 'jpicker', and visible input box
+        sage: color_selector('abcdef', label='height', widget='jpicker')
+        Traceback (most recent call last):
+        ...
+        ValueError: unknown color 'abcdef'
+    """
+    # TODO: look at various other widgets we used to support
+        #'widget': 'jpicker, 'colorpicker', 'farbtastic' 
+        #    -- we don't need to support each one right now
+    if label is None:
+        label=""
+    if widget!='colorpicker':
+        print "ColorSelector: Only widget='colorpicker' is supported; changing color widget"
+    # TODO: make 'hide_box': True/False (whether to hide the input box for the color widget)
+    return ColorSelector(default=default, label=label)
+
+def selector(values, label=None, default=None,
+                 nrows=None, ncols=None, width=None, buttons=False):
+    r"""
+    A drop down menu or a button bar that when pressed sets a
+    variable to a given value.  Use this in conjunction with the
+    :func:`interact` command.
+
+    We use the same command to create either a drop down menu or
+    selector bar of buttons, since conceptually the two controls
+    do exactly the same thing - they only look different.  If
+    either ``nrows`` or ``ncols`` is given, then you get a buttons
+    instead of a drop down menu.
+
+    INPUT:
+
+    - ``values`` - [val0, val1, val2, ...] or [(val0, lbl0),
+      (val1,lbl1), ...] where all labels must be given or given as
+      None.
+
+    - ``label`` - a string (default: None); if given, this label
+      is placed to the left of the entire button group
+
+    - ``default`` - an object (default: 0); default value in values
+      list
+
+    - ``nrows`` - an integer (default: None); if given determines
+      the number of rows of buttons; if given buttons option below
+      is set to True
+
+    - ``ncols`` - an integer (default: None); if given determines
+      the number of columns of buttons; if given buttons option
+      below is set to True
+
+    - ``width`` - an integer (default: None); if given, all
+      buttons are the same width, equal to this in HTML ex
+      units's.
+
+    - ``buttons`` - a bool (default: False); if True, use buttons
+
+    EXAMPLES::
+
+        sage: selector([1..5])    
+        Drop down menu with 5 options
+        sage: selector([1,2,7], default=2)
+        Drop down menu with 3 options
+        sage: selector([1,2,7], nrows=2)
+        Button bar with 3 buttons
+        sage: selector([1,2,7], ncols=2)
+        Button bar with 3 buttons
+        sage: selector([1,2,7], width=10)
+        Drop down menu with 3 options
+        sage: selector([1,2,7], buttons=True)
+        Button bar with 3 buttons
+
+    We create an :func:`interact` that involves computing charpolys of
+    matrices over various rings::
+
+        sage: @interact 
+        ... def _(R=selector([ZZ,QQ,GF(17),RDF,RR]), n=(1..10)):
+        ...      M = random_matrix(R, n)
+        ...      show(M)
+        ...      show(matrix_plot(M,cmap='Oranges'))
+        ...      f = M.charpoly()
+        ...      print f
+        <html>...
+
+    Here we create a drop-down::
+
+        sage: @interact
+        ... def _(a=selector([(2,'second'), (3,'third')])):
+        ...       print a
+        <html>...
+    """
+    if label is None:
+        label=""
+
+    if buttons:
+        selector_type='buttons'
+    else:
+        selector_type='list'
+        
+    return Selector(default=default, label=label, selector_type=selector_type
+                    nrows=nrows, ncols=ncols, width=width)
+
+def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, width=4):
+    r"""
+    An input grid interactive control.  Use this in conjunction
+    with the :func:`interact` command.
+
+    INPUT:
+
+    - ``nrows`` - an integer
+
+    - ``ncols`` - an integer
+
+    - ``default`` - an object; the default put in this input box
+
+    - ``label`` - a string; the label rendered to the left of the
+      box.
+
+    - ``to_value`` - a list; the grid output (list of rows) is
+      sent through this function.  This may reformat the data or
+      coerce the type.
+
+    - ``width`` - an integer; size of each input box in characters
+
+    NOTEBOOK EXAMPLE::
+
+        @interact
+        def _(m = input_grid(2,2, default = [[1,7],[3,4]],
+                             label='M=', to_value=matrix), 
+              v = input_grid(2,1, default=[1,2],
+                             label='v=', to_value=matrix)):
+            try:
+                x = m\v
+                html('$$%s %s = %s$$'%(latex(m), latex(x), latex(v)))
+            except:
+                html('There is no solution to $$%s x=%s$$'%(latex(m), latex(v)))
+
+    EXAMPLES::
+
+        sage: input_grid(2,2, default = 0, label='M')
+        Interact 2 x 2 input grid control labeled M with default value 0
+        sage: input_grid(2,2, default = [[1,2],[3,4]], label='M')
+        Interact 2 x 2 input grid control labeled M with default value [[1, 2], [3, 4]]
+        sage: input_grid(2,2, default = [[1,2],[3,4]], label='M', to_value=MatrixSpace(ZZ,2,2))
+        Interact 2 x 2 input grid control labeled M with default value [[1, 2], [3, 4]]
+        sage: input_grid(1, 3, default=[[1,2,3]], to_value=lambda x: vector(flatten(x)))
+        Interact 1 x 3 input grid control labeled None with default value [[1, 2, 3]]
+
+    """
+    if label is None:
+        label = ""
+    
+    # TODO: implement to_value (which is very simlar to the input_box `type`)
+    return InputGrid(nrows=nrows, ncols=ncols, width=width
+                     default=default, label=label)    
+
+def checkbox(default=True, label=None):
+    """
+    A checkbox interactive control.  Use this in conjunction with
+    the :func:`interact` command.
+
+    INPUT:
+
+    - ``default`` - a bool (default: True); whether box should be
+      checked or not
+
+    - ``label`` - a string (default: None) text label rendered to
+      the left of the box
+
+    EXAMPLES::
+
+        sage: checkbox(False, "Points")
+        Interact checkbox labeled 'Points' with default value False
+        sage: checkbox(True, "Points")
+        Interact checkbox labeled 'Points' with default value True
+        sage: checkbox(True)
+        Interact checkbox labeled None with default value True
+        sage: checkbox()
+        Interact checkbox labeled None with default value True
+    """
+    if label is None:
+        label=""
+    return Checkbox(default=default, label=label)
+
+def text_control(value=""):
+    """
+    Text that can be inserted among other :func:`interact` controls.
+
+    INPUT:
+
+    - ``value`` - HTML for the control
+
+    EXAMPLES::
+
+        sage: text_control('something')
+        Text field: something
+    """
+    raise NotImplementedError
 
 """
 text: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.text_control
 slider: 
 
- *
- http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.slider
+http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.slider
  * display_value doesn't work
  * default value appears to be set correctly, but when the slider is
  moved, it shows that the slider was not in the right place and also
  appears that the default value wasn't even in the list of values.
 
 range_slider: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.range_slider
+
+
 
 selector: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.selector
 input_grid: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.input_grid
