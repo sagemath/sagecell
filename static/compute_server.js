@@ -672,9 +672,17 @@ InteractData.InputBox.prototype.changes = function() {
 }
 
 InteractData.InputBox.prototype.html = function() {
-    return "<input type='text' class='"+this.control_class+"' id='"+
-	this.control_id+"' size="+this.control["width"]+" value='"+
-	this.control["default"]+"'>";
+    var subtype = this.control["subtype"];
+
+    if (subtype === "textarea") {
+	return "<textarea class='"+this.control_class+"' id='"+this.control_id+
+	    "' rows='"+this.control["height"]+"' cols='"+this.control["width"]+
+	    "'>"+this.control["default"]+"</textarea>";
+    } else if (subtype === "input") {
+	return "<input type='text' class='"+this.control_class+"' id='"+
+	    this.control_id+"' size="+this.control["width"]+" value='"+
+	    this.control["default"]+"'>";
+    }
 }
 
 InteractData.InputBox.prototype.finishRender = function(location) {
