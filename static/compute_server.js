@@ -425,7 +425,7 @@ InteractCell.prototype.renderCanvas = (function() {
 	var id = "urn_uuid_" + this.interact_id;
 	var table = document.createElement("table");
 	for (var name in this.controls) {
-	    var label = escape(this.controls[name]["control"].label || name);
+	    var label = this.controls[name]["control"].label || name;
 	    var control_id = id + '_' + name;
 	    addRow(table, label, name, this.controls[name].html(), control_id);
 	    this.controls[name].finishRender(table);
@@ -618,12 +618,22 @@ InteractData.ColorSelector.prototype.html = function() {
 
 InteractData.ColorSelector.prototype.finishRender = function(location) {
     this.location = location;
-    var default_value = this.control["default"];
+    var default_value = this.control["default"],
+    control_out = $(this.location);
+
+    if (this.control["hide_input"]) {
+	control_out.find("#"+this.control_id+"_value").css("display", "none");
+    }
 
     $(this.location).find("#"+this.control_id)
 	.css("backgroundColor", default_value)
 	.ColorPicker({
 	    color: default_value,
+	    onHide: (function(location, control_id) {
+		return function(hsb, hex, rgb, el) {
+		    $(location).find("#"+control_id+"_value").change();
+		}
+	    }(location = this.location, control_id = this.control_id)),
 	    onSubmit: (function(location, control_id) {
 		return function(hsb, hex, rgb, el) {
 		    $(el).ColorPickerHide();
@@ -658,7 +668,7 @@ InteractData.InputBox.prototype.changeHandlers = function() {
 }
 
 InteractData.InputBox.prototype.changes = function() {
-    return $(location).find("#"+control_id).val()
+    return $(this.location).find("#"+this.control_id).val();
 }
 
 InteractData.InputBox.prototype.html = function() {
@@ -745,21 +755,21 @@ InteractData.MultiSlider.prototype.changeHandlers = function() {
 
 InteractData.MultiSlider.prototype.changes = function() {
     var sliders = this.control["sliders"],
-    control_out = $(location),
+    control_out = $(this.location),
     input, slider_values = [];
 
-    if (control["subtype"] === "continuous") {
+    if (this.control["subtype"] === "continuous") {
 	for (i = 0; i < sliders; i ++) {
-	    input = control_out.find(id + "_" + name + "_" + i + "_value")
+	    input = control_out.find("#"+this.control_id + "_" + i + "_value")
 		.val();
-	    control_out.find(id + "_" + name + "_" + i)
+	    control_out.find("#" + this.control_id + "_" + name + "_" + i)
 		.slider("option", "value", input);
 	    slider_values.push(input);
 	}
     } else {
 	for (i = 0; i < sliders; i ++) {
 	    slider_values.push(
-		control_out.find(id + "_" + name + "_" + i + "_index").val()
+		control_out.find("#" + this.control_id + "_" + i + "_index").val()
 	    );
 	}
     }
@@ -788,7 +798,7 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
     var sliders = this.control["sliders"],
     slider_values = this.control["values"],
     slider_config = {},
-    control_out = $(location);
+    control_out = $(this.location);
     
     if (this.control["subtype"] === "continuous") {
 	for (var i = 0; i < sliders; i ++) {
@@ -847,7 +857,7 @@ InteractData.Selector.prototype.changeHandlers = function() {
 }
 
 InteractData.Selector.prototype.changes = function() {
-    return String($(this.location).find(this.control_id).val());
+    return String($(this.location).find("#"+this.control_id).val());
 }
 
 InteractData.Selector.prototype.html = function() {

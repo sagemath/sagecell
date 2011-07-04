@@ -692,7 +692,7 @@ class ColorSelector(InteractControl):
     :arg str label: the label of the control
     """
 
-    def __init__(self, default="#000000", sage_color=True, label=""):
+    def __init__(self, default="#000000", hide_input=False, sage_color=True, label=""):
         self.sage_color = sage_color
 
         self.sage_mode = CONFIG.EMBEDDED_MODE["sage_mode"]
@@ -709,6 +709,7 @@ class ColorSelector(InteractControl):
         else:
             self.default = default if isinstance(default,str) else "#000000"
 
+        self.hide_input = hide_input
         self.label = label
 
     def message(self):
@@ -720,8 +721,9 @@ class ColorSelector(InteractControl):
         :rtype: dict
         """
         self.return_value =  {'control_type':'color_selector',
-                         'raw':False,
-                         'label':self.label}
+                              'hide_input': self.hide_input,
+                              'raw':False,
+                              'label':self.label}
 
         if self.sage_mode and self.enable_sage and self.sage_color:
             self.return_value["default"] = self.default.html_color()
