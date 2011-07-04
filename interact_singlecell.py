@@ -468,9 +468,11 @@ class DiscreteSlider(InteractControl):
     The slider value correlates with the index of an array of values.
 
     :arg int default: initial value (index) of the slider; if ``None``, the
-        slider defaults to the 0th index.
+        slider defaults to the 0th index.  The default will be the
+        closest values to this parameter.
     :arg list values: list of values to which the slider position refers.
-    :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
+    :arg bool range_slider: toggles whether the slider should select
+        one value (False, default) or a range of values (True).
     :arg str label: the label of the control
     """
 
@@ -482,16 +484,26 @@ class DiscreteSlider(InteractControl):
         else:
             self.values = values[:]
 
-        self.values = [0,1] if len(self.values) < 2 else self.values
+        if len(self.values) < 2:
+            self.values = [0,1]
 
         self.range_slider = range_slider
         
+        # self.default is an *index* or tuple of indices.
         if self.range_slider:
             self.subtype = "discrete_range"
-            self.default = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
+            if default is None:
+                self.default = (0,len(values))
+            elif not isinstance(default, tuple) or len(default)!=2:
+                raise TypeError("default value must be None or a 2-tuple.")
+            else:
+                self.default=tuple(_old_determine_default_index(values,
+                                                                 d)
+                                   for d in default)
         else:
             self.subtype = "discrete"
-            self.default = int(default if default is not None and default < len(self.values) and default > 0 else 0)
+            self.default = _old_determine_default_index(self.values,
+                                                        default)
 
         self.label=label
 
