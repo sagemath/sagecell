@@ -672,18 +672,23 @@ def upload_files(upload_recv, file_child, session, fs_secret):
     while True:
         # The problem with using a Pipe is that if the user is writing file messages from several
         # threads, there can be a problem.  Maybe we should use normal sockets or a special file?
-        msg=json.loads(upload_recv.recv_bytes())
+        try:
+            msg=json.loads(upload_recv.recv_bytes())
+        except Exception as e:
+            log("An exception occurred in receiving file message: %s\n"%(e,))
+            upload_recv.send_bytes("error")
+            continue
         # note: check for basestring since json stuff comes back as unicode strings
         if isinstance(msg, list) and all(isinstance(i,basestring) for i in msg):
             # TODO: sanitize pathnames to only upload files below the current directory
             for filename in msg:
-                file_list[filename]=os.stat(filename).st_mtime
                 try:
+                    file_list[filename]=os.stat(filename).st_mtime
                     with open(filename) as f:
                         fs.create_file(f, cell_id=session, session_auth_channel='upload', filename=filename, hmac=fs_hmac)
                 except Exception as e:
-                    log("An exception occurred: %s\n"%(e,))
-            upload_recv.send_bytes("done")
+                    log("An exception occurred in uploading files: %s\n"%(e,))
+            upload_recv.send_bytes("success")
         elif isinstance(msg, dict) and 'msg_type' in msg and msg['msg_type']=='end_exec':
             file_child.send(file_list)
             # we recv just to make sure that we are synchronized with the execing process
