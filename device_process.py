@@ -116,8 +116,9 @@ class QueueOut(StringIO.StringIO):
                'header': {'msg_id':unicode(msg_id)},
                'output_block': self.output_block,
                'content': content}
+        msg=dumps(msg)
         self.queue.put(msg)
-        log("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
+        log("USER MESSAGE PUT IN QUEUE: %r\n"%(msg))
 
 class ChannelQueue(QueueOut):
     """
@@ -269,6 +270,7 @@ class OutputIPython(object):
         return False
 
 from multiprocessing import Pool, TimeoutError, Process, Queue, current_process, Manager, Pipe
+from raw_queue import RawQueue
 import uuid
 
 def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_limits=None):
@@ -345,13 +347,13 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
         # TODO: or maybe just a max number of messages we can handle in one loop
         while not outQueue.empty():
             # TODO: don't use Queue, which unpickles the message.  Instead, use some sort of Pipe which just extracts bytes.
-            msg=outQueue.get()
             try:
-                # make sure we can encode the message
-                json.dumps(msg)
-            except:
+                # make sure we can decode the message
+                msg=loads(outQueue.get())
+            except Exception as e:
                 # ignore the message
                 # TODO: send a message to the user; can we extract a session identifier?
+                log("Exception occurred while reading message: %s"%(msg,))
                 continue
             try:
                 session = msg['parent_header']['session']
@@ -740,7 +742,7 @@ if __name__ == "__main__":
         #resource_limits.append((resource.RLIMIT_DATA, (mem_bytes, mem_bytes)))
         #resource_limits.append((resource.RLIMIT_STACK, (mem_bytes, mem_bytes)))
 
-    outQueue=Queue()
+    outQueue=RawQueue()
 
     filename="/tmp/sage_shared_key%i_copy"
     keys=[None,None]
