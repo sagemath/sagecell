@@ -227,7 +227,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
                     this.output('<embed  class="singlecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
 		}
                 if(msg.content.data['text/html']!==undefined) {
-		    html = msg.content.data['text/html'].replace('/cell:\/\//gi', filepath);
+		    html = msg.content.data['text/html'].replace(/cell:\/\//gi, filepath);
 		    this.output('<div>'+html+'</div>',output_block);
 		}
 		if(msg.content.data['text/filename']!==undefined) {
