@@ -228,7 +228,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.output('<div>'+msg.content.data['text/html']+'</div>',output_block);
 		}
 		if(msg.content.data['text/filename']!==undefined) {
-		    this.output('<img src="'+filepath+msg.content.data['text/filename']+'" />');
+		    this.output('<img src="'+filepath+msg.content.data['text/filename']+'" />',output_block);
 		}
 		if(msg.content.data['image/png']!==undefined) {
 		    console.log('making png img with data in src');
@@ -668,7 +668,14 @@ InteractData.InputBox.prototype.changeHandlers = function() {
 }
 
 InteractData.InputBox.prototype.changes = function() {
-    return JSON.stringify($(this.location).find("#"+this.control_id).val());
+    var value = $(this.location).find("#"+this.control_id).val(),
+    subtype = this.control["subtype"];
+
+    if (subtype === "textarea") {
+	return JSON.stringify(value);
+    } else {
+	return value;
+    }
 }
 
 InteractData.InputBox.prototype.html = function() {
