@@ -302,11 +302,11 @@ class InputBox(InteractControl):
 
         if self.height > 0:
             self.subtype = "textarea"
+            self.raw = True
         else:
             self.subtype = "input"
-    
-        if self.raw:
-            self.default_return = repr(self.default)
+            if self.raw:
+                self.default_return = repr(self.default)
 
     def message(self):
         """
