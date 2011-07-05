@@ -283,18 +283,27 @@ class InputBox(InteractControl):
     An input box control
 
     :arg default: default value of the input box
-    :arg int width: character width of the input box
+    :arg int width: character width of the input box.
+    :arg int height: character height of the input box. If this is specified,
+        an HTML textarea will be rendered, while if this is omitted, an input
+        box form element will be rendered.
     :arg bool raw: ``True`` if the value should be treated as "unquoted"
         (raw), so it can be used in control structures; ``False`` if the
         value should be treated as a string
     :arg str label: the label of the control
     """
 
-    def __init__(self, default="", width=0, raw=False, label=""):
+    def __init__(self, default="", width=0, height=0, raw=False, label=""):
         self.default=self.default_return=default
         self.width=int(width)
+        self.height=int(height)
         self.raw=raw
         self.label=label
+
+        if self.height > 0:
+            self.subtype = "textarea"
+        else:
+            self.subtype = "input"
     
         if self.raw:
             self.default_return = repr(self.default)
@@ -308,8 +317,10 @@ class InputBox(InteractControl):
         :rtype: dict
         """
         return {'control_type':'input_box',
+                'subtype':self.subtype,
                 'default':self.default_return,
                 'width':self.width,
+                'height':self.height,
                 'raw':self.raw,
                 'label':self.label}
 
@@ -449,7 +460,7 @@ class Selector(InteractControl):
         """
         return {'control_type': 'selector',
                 'subtype': self.selector_type,
-                'values': range(len(self.values)),
+                'values': len(self.values),
                 'value_labels': self.value_labels,
                 'default': self.default,
                 'nrows': self.nrows,
@@ -687,12 +698,19 @@ class ColorSelector(InteractControl):
     """
     A color selector interact control
 
-    :arg default: initial color (either as an html hex string or a Sage Color object, if sage is installed.
-    :arg bool sage_color: Toggles whether the return value should be a Sage Color object (True) or html hex string (False). If Sage is unavailable or if the user has deselected "sage mode" for the computation, this value will always end up False, regardless of whether the user specified otherwise in the interact.
+    :arg default: initial color (either as an html hex string or a Sage Color
+        object, if sage is installed.
+    :arg bool hide_input: Toggles whether the hex value of the color picker
+        should be displayed in an input box beside the control.
+    :arg bool sage_color: Toggles whether the return value should be a Sage
+        Color object (True) or html hex string (False). If Sage is unavailable
+        or if the user has deselected "sage mode" for the computation, this
+        value will always end up False, regardless of whether the user specified
+        otherwise in the interact.
     :arg str label: the label of the control
     """
 
-    def __init__(self, default="#000000", sage_color=True, label=""):
+    def __init__(self, default="#000000", hide_input=False, sage_color=True, label=""):
         self.sage_color = sage_color
 
         self.sage_mode = CONFIG.EMBEDDED_MODE["sage_mode"]
@@ -709,6 +727,7 @@ class ColorSelector(InteractControl):
         else:
             self.default = default if isinstance(default,str) else "#000000"
 
+        self.hide_input = hide_input
         self.label = label
 
     def message(self):
@@ -720,8 +739,9 @@ class ColorSelector(InteractControl):
         :rtype: dict
         """
         self.return_value =  {'control_type':'color_selector',
-                         'raw':False,
-                         'label':self.label}
+                              'hide_input': self.hide_input,
+                              'raw':False,
+                              'label':self.label}
 
         if self.sage_mode and self.enable_sage and self.sage_color:
             self.return_value["default"] = self.default.html_color()
@@ -843,7 +863,7 @@ class ButtonBar(InteractControl):
         :rtype: dict
         """
         return {'control_type': 'button_bar',
-                'values': range(len(self.values)),
+                'values': len(self.values),
                 'value_labels': self.value_labels,
                 'nrows': self.nrows,
                 'ncols': self.ncols,
