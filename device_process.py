@@ -67,11 +67,24 @@ def _get_interact_function(id):
 
 user_code_sage="""
 from sage.all import *
+from sage.calculus.predefined import x
+from sage.misc.html import html
+from sage.server.support import help
+from sagenb.misc.support import automatic_names
+sage.misc.session.init()
+
+#try:
+#    attach(os.path.join(os.environ['DOT_SAGE'], 'init.sage'))
+#except (KeyError, IOError):
+#    pass
+
+
+# singlecell specific code:
 from interact_singlecell import * # override the interact functionality
 from interact_compatibility import * # override the interact functionality
-import sage.misc.misc as misc
+import sage.misc.misc
 import singlecell_exec_config
-misc.EMBEDDED_MODE=singlecell_exec_config.EMBEDDED_MODE
+sage.misc.misc.EMBEDDED_MODE=singlecell_exec_config.EMBEDDED_MODE
 """+user_code
 
 class QueueOut(StringIO.StringIO):
@@ -117,8 +130,9 @@ class QueueOut(StringIO.StringIO):
                'header': {'msg_id':unicode(msg_id)},
                'output_block': self.output_block,
                'content': content}
+        msg=dumps(msg)
         self.queue.put(msg)
-        log("USER MESSAGE PUT IN QUEUE: %s\n"%(msg))
+        log("USER MESSAGE PUT IN QUEUE: %r\n"%(msg))
 
 class ChannelQueue(QueueOut):
     """
@@ -270,6 +284,7 @@ class OutputIPython(object):
         return False
 
 from multiprocessing import Pool, TimeoutError, Process, Queue, current_process, Manager, Pipe
+from raw_queue import RawQueue
 import uuid
 
 def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_limits=None):
@@ -346,13 +361,13 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
         # TODO: or maybe just a max number of messages we can handle in one loop
         while not outQueue.empty():
             # TODO: don't use Queue, which unpickles the message.  Instead, use some sort of Pipe which just extracts bytes.
-            msg=outQueue.get()
             try:
-                # make sure we can encode the message
-                json.dumps(msg)
-            except:
+                # make sure we can decode the message
+                msg=loads(outQueue.get())
+            except Exception as e:
                 # ignore the message
                 # TODO: send a message to the user; can we extract a session identifier?
+                log("Exception occurred while reading message: %s"%(msg,))
                 continue
             try:
                 session = msg['parent_header']['session']
@@ -658,18 +673,23 @@ def upload_files(upload_recv, file_child, session, fs_secret):
     while True:
         # The problem with using a Pipe is that if the user is writing file messages from several
         # threads, there can be a problem.  Maybe we should use normal sockets or a special file?
-        msg=json.loads(upload_recv.recv_bytes())
+        try:
+            msg=json.loads(upload_recv.recv_bytes())
+        except Exception as e:
+            log("An exception occurred in receiving file message: %s\n"%(e,))
+            upload_recv.send_bytes("error")
+            continue
         # note: check for basestring since json stuff comes back as unicode strings
         if isinstance(msg, list) and all(isinstance(i,basestring) for i in msg):
             # TODO: sanitize pathnames to only upload files below the current directory
             for filename in msg:
-                file_list[filename]=os.stat(filename).st_mtime
                 try:
+                    file_list[filename]=os.stat(filename).st_mtime
                     with open(filename) as f:
                         fs.create_file(f, cell_id=session, session_auth_channel='upload', filename=filename, hmac=fs_hmac)
                 except Exception as e:
-                    log("An exception occurred: %s\n"%(e,))
-            upload_recv.send_bytes("done")
+                    log("An exception occurred in uploading files: %s\n"%(e,))
+            upload_recv.send_bytes("success")
         elif isinstance(msg, dict) and 'msg_type' in msg and msg['msg_type']=='end_exec':
             file_child.send(file_list)
             # we recv just to make sure that we are synchronized with the execing process
@@ -741,7 +761,7 @@ if __name__ == "__main__":
         #resource_limits.append((resource.RLIMIT_DATA, (mem_bytes, mem_bytes)))
         #resource_limits.append((resource.RLIMIT_STACK, (mem_bytes, mem_bytes)))
 
-    outQueue=Queue()
+    outQueue=RawQueue()
 
     filename="/tmp/sage_shared_key%i_copy"
     keys=[None,None]
