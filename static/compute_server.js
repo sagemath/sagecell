@@ -95,10 +95,11 @@ Session.prototype.init = function (outputDiv, output, sage_mode) {
     this.poll_interval = 400;
     this.lastMessage = null;
     this.sessionContinue = true;
-    this.outputDiv.find(output).append('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div></div>');
+    this.outputDiv.find(output).append('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div><div id="session_'+this.session_id+'_files" class="singlecell_sessionFilesTitle">Session Files:</div><div id="output_files_'+this.session_id+'" class="singlecell_sessionFiles"></div></div>');
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output=false;
     this.lock_output=false;
+    this.files = {};
     this.eventHandlers = {};
     this.interacts = {};
     this.setQuery();
@@ -260,13 +261,24 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		var user_msg=msg.content;
 		switch(user_msg.msg_type) {
 		case "files":
+		    this.replace_output = true;
+		    output_block = "files_"+this.session_id;
 		    var files = user_msg.content.files;
 		    var html="<div>\n";
-		    for(var j = 0, j_max = files.length; j < j_max; j++)
+		    for(var j = 0, j_max = files.length; j < j_max; j++) {
+			if (this.files[files[j]] !== undefined) {
+			    this.files[files[j]]++;
+			} else {
+			    this.files[files[j]] = 0;
+			}
+		    }
+		    for (j in this.files) {
 			//TODO: escape filenames and id
-			html+='<a href="'+$URL['root']+'files/'+id+'/'+files[j]+'" target="_blank">'+files[j]+'</a><br>\n';
+			html+='<a href="'+$URL['root']+'files/'+id+'/'+j+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
+		    }
 		    html+="</div>";
-		    this.output(html,output_block);
+		    this.output(html,output_block).effect("pulsate", {times:1}, 500);
+		    this.replace_output = false;
 		    break;
 		case "session_end":
 		    this.output("<div class='singlecell_done'>Session "+id+ " done</div>",output_block);
