@@ -284,29 +284,30 @@ class InputBox(InteractControl):
 
     :arg default: default value of the input box
     :arg int width: character width of the input box.
-    :arg int height: character height of the input box. If this is specified,
-        an HTML textarea will be rendered, while if this is omitted, an input
-        box form element will be rendered.
+    :arg int height: character height of the input box. If this is greater than
+        one, an HTML textarea will be rendered, while if it is less than one,
+        an input box form element will be rendered.
     :arg bool raw: ``True`` if the value should be treated as "unquoted"
         (raw), so it can be used in control structures; ``False`` if the
-        value should be treated as a string
+        value should be treated as a string. The value of a textarea (``height``
+        greater than one) will always be treated as a string.
     :arg str label: the label of the control
     """
 
-    def __init__(self, default="", width=0, height=0, raw=False, label=""):
+    def __init__(self, default="", width=0, height=1, raw=False, label=""):
         self.default=self.default_return=default
         self.width=int(width)
         self.height=int(height)
         self.raw=raw
         self.label=label
 
-        if self.height > 0:
+        if self.height > 1:
             self.subtype = "textarea"
+            self.raw = True
         else:
             self.subtype = "input"
-    
-        if self.raw:
-            self.default_return = repr(self.default)
+            if self.raw:
+                self.default_return = repr(self.default)
 
     def message(self):
         """

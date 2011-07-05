@@ -668,7 +668,7 @@ InteractData.InputBox.prototype.changeHandlers = function() {
 }
 
 InteractData.InputBox.prototype.changes = function() {
-    return $(this.location).find("#"+this.control_id).val();
+    return JSON.stringify($(this.location).find("#"+this.control_id).val());
 }
 
 InteractData.InputBox.prototype.html = function() {
