@@ -220,12 +220,15 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		break;
 
 	    case 'display_data':
-		var filepath=$URL['root']+'files/'+id+'/';
+		var filepath=$URL['root']+'files/'+id+'/',
+		html;
+
                 if(msg.content.data['image/svg+xml']!==undefined) {
                     this.output('<embed  class="singlecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
 		}
                 if(msg.content.data['text/html']!==undefined) {
-		    this.output('<div>'+msg.content.data['text/html']+'</div>',output_block);
+		    html = msg.content.data['text/html'].replace('cell://', $URL['root']+'files/'+id+'/');
+		    this.output('<div>'+html+'</div>',output_block);
 		}
 		if(msg.content.data['text/filename']!==undefined) {
 		    this.output('<img src="'+filepath+msg.content.data['text/filename']+'" />');
