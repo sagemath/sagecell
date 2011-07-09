@@ -878,6 +878,28 @@ class ButtonBar(InteractControl):
         else:
             return self.values[int(v)]
 
+class HtmlBox(InteractControl):
+    """
+    An html box interact control
+    
+    :arg string value: Html code to be inserted. This should be given in quotes.
+    :arg str label: the label of the control. Default is no label.
+    """
+    def __init__(self, value="", label=" "):
+        self.value = self.default = value;
+        self.label = label;
+    def message(self):
+        """
+        Get an html box control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
+        return {'control_type': 'html_box',
+                'value': self.value,
+                'label': self.label}
+
 def automatic_control(control):
     """
     Guesses the desired interact control from the syntax of the parameter.
