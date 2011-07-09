@@ -13,5 +13,7 @@
 .CodeMirror-scroll {height: 200px} /*Updated for CodeMirror 2.1 */
 .singlecell_done {color: red}
 .singlecell_sessionOutput {border: 2px solid black; padding: 5px;}
+.singlecell_sessionFiles {padding-bottom: 1.0em;}
 .singlecell_interactContainer {padding: 15px 5px 5px 5px}
 .singlecell_interactOutput {border-left: 2px solid blue; padding: 5px;}
+.singlecell_interactValueBox {font-family: monospace} /* Required since dynamic input box size is determined by monospaced fonts */
