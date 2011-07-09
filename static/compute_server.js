@@ -883,10 +883,12 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
     if (this.control["subtype"] === "continuous") {
 	for (var i = 0; i < sliders; i ++) {
 	    var default_value = this.control["default"][i];
+
 	    control_out.find("#"+this.control_id+"_"+i+"_value")
 		.val(default_value)
 		.addClass(this.control_class)
-		.attr("size", String(default_value).length);
+		.attr("size", String(default_value).length)
+		.css("display", (this.control["display_value"] ? "" : "none"));
 
 	    slider_config = {
 		orientation: "vertical",
@@ -904,12 +906,13 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 	    control_out.find("#"+this.control_id+"_"+i).slider(slider_config);
 	}
     } else {
-	control_out.find("."+control_id+"_value").attr("readonly","readonly");
+	control_out.find("."+this.control_id+"_value").attr("readonly","readonly");
 	for (var i = 0; i < sliders; i ++) {
 	    default_value = slider_values[i][this.control["default"][i]];
 	    control_out.find("#"+this.control_id+"_"+i+"_value")
 		.val(default_value)
-		.attr("size", String(default_value).length);
+		.attr("size", String(default_value).length)
+		.css("display", (this.control["display_value"] ? "" : "none"));
 	    control_out.find("#"+this.control_id+"_"+i+"_index").val(this.control["default"][i]);
 
 	    slider_config = {
@@ -920,7 +923,7 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 		step: this.control["step"][i],
 		slide: (function(control_out, i) {
 		    return function(event,ui) {
-			var value_box = control_out.find("#"+ui.handle.offstParent.id+"_value");
+			var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
 			var value = slider_values[i][ui.value];
 			value_box.attr("size", String(value).length)
 			    .val(slider_values[i][ui.value]);
@@ -929,7 +932,7 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 		}(control_out, i))
 	    }
 
-	    control_out.find("#"+control_id+"_"+i).slider(slider_config);
+	    control_out.find("#"+this.control_id+"_"+i).slider(slider_config);
 	}
     }
 }
@@ -1110,6 +1113,10 @@ InteractData.Slider.prototype.finishRender = function(location) {
     default_value = this.control["default"],
     subtype = this.control["subtype"],
     control_out = $(this.location);
+
+    if (!this.control["display_value"]) {
+	control_out.find("#"+this.control_id+"_value").css("display","none");
+    }
     
     if (subtype === "continuous") {
 	control_out.find("#"+this.control_id+"_value")

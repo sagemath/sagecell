@@ -483,10 +483,11 @@ class DiscreteSlider(InteractControl):
         slider defaults to the 0th index.
     :arg list values: list of values to which the slider position refers.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
+    :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
     :arg str label: the label of the control
     """
 
-    def __init__(self, range_slider=False, values=[0,1], default=None, label=""):
+    def __init__(self, range_slider=False, display_value=True, values=[0,1], default=None, label=""):
         from types import GeneratorType
 
         if isinstance(values, GeneratorType):
@@ -497,6 +498,7 @@ class DiscreteSlider(InteractControl):
         self.values = [0,1] if len(self.values) < 2 else self.values
 
         self.range_slider = range_slider
+        self.display_value = display_value
         
         if self.range_slider:
             self.subtype = "discrete_range"
@@ -517,6 +519,7 @@ class DiscreteSlider(InteractControl):
         """
         return {'control_type':'slider',
                 'subtype':self.subtype,
+                'display_value':self.display_value,
                 'default':self.default,
                 'range':[0, len(self.values)-1],
                 'values':[repr(i) for i in self.values],
@@ -541,13 +544,15 @@ class ContinuousSlider(InteractControl):
     :arg int steps: number of steps the slider should have between min and max
     :arg Number stepsize: size of step for the slider. If both step and stepsized are specified, stepsize takes precedence so long as it is valid.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
+    :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
     :arg str label: the label of the control
     
     Note that while "number of steps" and/or "stepsize" can be specified for the slider, this is to enable snapping, rather than a restriction on the slider's values. The only restrictions placed on the values of the slider are the endpoints of its range.
     """
 
-    def __init__(self, range_slider=False, interval=(0,100), default=None, steps=250, stepsize=0, label=""):
+    def __init__(self, range_slider=False, display_value=True, interval=(0,100), default=None, steps=250, stepsize=0, label=""):
         self.range_slider = range_slider
+        self.display_value = display_value
         self.interval = interval if interval[0] < interval[1] and len(interval) == 2 else (0,100)
         
         if self.range_slider:
@@ -576,6 +581,7 @@ class ContinuousSlider(InteractControl):
         """
         return {'control_type':'slider',
                 'subtype':self.subtype,
+                'display_value':self.display_value,
                 'default':self.default_return,
                 'range':[float(i) for i in self.interval],
                 'step':self.stepsize,
@@ -595,13 +601,15 @@ class MultiSlider(InteractControl):
     :arg list interval: Intervals for each continuous slider in a list of tuples of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot be set if value sliders are specified. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to have the same interval, the list only needs to contain that one tuple.
     :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
     :arg list steps: List of numbers representing the number of steps for each continuous slider. Note that (as in the case of the regular continuous slider), specifying a valid stepsize will always take precedence over any specification of number of steps, valid or not. The length of this list should be equivalent to the number of sliders, but if all sliders are to have the same number of steps, the list only neesd to contain that one value.
+    :arg bool display_values: toggles whether the slider values sould be displayed (default = True)
     :arg str label: the label of the control
     """
 
-    def __init__(self, slider_type="continuous", sliders=1, default=[0], interval=[(0,1)], values=[[0,1]], stepsize=[0], steps=[250], label=""):
+    def __init__(self, slider_type="continuous", sliders=1, default=[0], interval=[(0,1)], values=[[0,1]], stepsize=[0], steps=[250], display_values=True, label=""):
         from types import GeneratorType
 
         self.slider_type = slider_type
+        self.display_values = display_values
 
         self.sliders = int(sliders) if sliders > 0 else 1
         self.slider_range = range(self.sliders)
@@ -676,6 +684,7 @@ class MultiSlider(InteractControl):
         """
         return_message = {'control_type':'multi_slider',
                           'subtype':self.slider_type,
+                          'display_values':self.display_values,
                           'sliders':self.sliders,
                           'label':self.label,
                           'range':self.interval,
