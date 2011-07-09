@@ -637,7 +637,7 @@ InteractData.ColorSelector.prototype.changes = function() {
 InteractData.ColorSelector.prototype.html = function() {
     return "<input type='text' class='singlecell_colorSelector' id='"+
 	this.control_id+"'><input type='text' class='"+this.control_class+
-	"' id='"+this.control_id+"_value' style='border:none' value='"+
+	" singlecell_interactValueBox' id='"+this.control_id+"_value' style='border:none' value='"+
 	this.control["default"]+"'>";
 }
 
@@ -863,7 +863,7 @@ InteractData.MultiSlider.prototype.html = function() {
     for (var i = 0; i < sliders; i ++) {
 	html_code = html_code +
 	    "<span class='singlecell_multiSliderControl' id='"+this.control_id+"_"+i+"'></span>"+
-	    "<input type='text' class='"+this.control_id+"' id='"+this.control_id+"_"+i+"_value' style='border:none' size='4'>"+
+	    "<input type='text' class='"+this.control_id+" singlecell_interactValueBox' id='"+this.control_id+"_"+i+"_value' style='border:none'>"+
 	    "<input type='text' class='"+this.control_id+"' id='"+this.control_id+"_"+i+"_index' style='display:none'>";
     }
     html_code = html_code + "</span></div>";
@@ -877,11 +877,16 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
     var sliders = this.control["sliders"],
     slider_values = this.control["values"],
     slider_config = {},
-    control_out = $(this.location);
+    control_out = $(this.location),
+    default_value;
     
     if (this.control["subtype"] === "continuous") {
 	for (var i = 0; i < sliders; i ++) {
-	    control_out.find("#"+this.control_id+"_"+i+"_value").val(this.control["default"][i]).addClass(this.control_class);
+	    var default_value = this.control["default"][i];
+	    control_out.find("#"+this.control_id+"_"+i+"_value")
+		.val(default_value)
+		.addClass(this.control_class)
+		.attr("size", String(default_value).length);
 
 	    slider_config = {
 		orientation: "vertical",
@@ -891,13 +896,8 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 		step: this.control["step"][i],
 		slide: function(event,ui) {
 		    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-		    var min_size = String(ui.value).length;
-		    if (min_size > value_box.attr("size")) {
-			value_box.attr("size", min_size);
-		    }
-		    value_box.val(ui.value);
-//		    control_out.find("#"+ui.handle.offsetParent.id+"_value").val(ui.value);
-
+		    value_box.attr("size", String(ui.value).length)
+			.val(ui.value);
 		}
 	    };
 
@@ -906,7 +906,10 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
     } else {
 	control_out.find("."+control_id+"_value").attr("readonly","readonly");
 	for (var i = 0; i < sliders; i ++) {
-	    control_out.find("#"+this.control_id+"_"+i+"_value").val(slider_values[i][this.control["default"][i]]);
+	    default_value = slider_values[i][this.control["default"][i]];
+	    control_out.find("#"+this.control_id+"_"+i+"_value")
+		.val(default_value)
+		.attr("size", String(default_value).length);
 	    control_out.find("#"+this.control_id+"_"+i+"_index").val(this.control["default"][i]);
 
 	    slider_config = {
@@ -917,7 +920,10 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 		step: this.control["step"][i],
 		slide: (function(control_out, i) {
 		    return function(event,ui) {
-			control_out.find("#"+ui.handle.offstParent.id+"_value").val(slider_values[i][ui.value]);
+			var value_box = control_out.find("#"+ui.handle.offstParent.id+"_value");
+			var value = slider_values[i][ui.value];
+			value_box.attr("size", String(value).length)
+			    .val(slider_values[i][ui.value]);
 			control_out.find("#"+ui.handle.offsetParent.id+"_index").val(ui.value);
 		    }
 		}(control_out, i))
@@ -1089,7 +1095,7 @@ InteractData.Slider.prototype.changes = function() {
 InteractData.Slider.prototype.html = function() {
     return "<span style='whitespace:nowrap'>"+
 	"<span class='" + this.control_class + " singlecell_sliderControl' id='" + this.control_id + "'></span>"+
-	"<input type='text' class='" + this.control_class + "' id='" + this.control_id + "_value' style='border:none'>"+
+	"<input type='text' class='" + this.control_class + " singlecell_interactValueBox' id='" + this.control_id + "_value' style='border:none'>"+
 	"<input type='text' class='" + this.control_class +"' id='" + this.control_id + "_index' style='display:none'></span>";
 }
 
@@ -1106,60 +1112,53 @@ InteractData.Slider.prototype.finishRender = function(location) {
     control_out = $(this.location);
     
     if (subtype === "continuous") {
-	control_out.find("#"+this.control_id+"_value").val(default_value);
+	control_out.find("#"+this.control_id+"_value")
+	    .val(default_value)
+	    .attr("size", String(default_value).length);
 	slider_config["slide"] = function(event, ui) {
 	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-	    var min_size = String(ui.value).length;
-	    if (min_size > value_box.attr("size")) {
-		value_box.attr("size", min_size);
-	    }
-	    value_box.val(ui.value);
-	    //$("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
+	    value_box.attr("size", String(ui.value).length)
+		.val(ui.value);
 	}
 	slider_config["value"] = default_value;
     } else if (subtype === "continuous_range") {
-	control_out.find("#"+this.control_id+"_value").val(default_value);
+	control_out.find("#"+this.control_id+"_value")
+	    .val(default_value)
+	    .attr("size", String(default_value).length);
 	slider_config["range"] = true;
 	slider_config["slide"] = function(event, ui) {
 	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-	    var min_size = String(ui.values).length;
-	    if (min_xize > value_box.attr("size")) {
-		value_box.attr("size", min_size);
-	    }
-	    value_box.val(ui.values);
-//	    $("#" + ui.handle.offsetParent.id + "_value").val(ui.values);
+	    value_box.attr("size", String(ui.values).length)
+		.val(ui.values);
 	}
 	slider_config["values"] = default_value;
     } else if (subtype === "discrete") {
 	var values = this.control["values"];
 	control_out.find("#"+this.control_id+"_value")
-	    .attr("readonly","readonly")
+	    .attr({"readonly": "readonly",
+		   "size": String(values[default_value]).size})
 	    .val(values[default_value]);
 	control_out.find("#"+this.control_id+"_index").val(default_value);
 	slider_config["slide"] = function(event,ui) {
 	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-	    var min_size = String(values[ui.value]).length;
-	    if (min_size > value_box.attr("size")) {
-		value_box.attr("size", min_size);
-	    }
-	    value_box.val(values[ui.value]);
+	    value_box.attr("size", String(values[ui.value]).length)
+		.val(values[ui.value]);
 	    control_out.find("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
 	}
 	slider_config["value"] = default_value;
     } else if (subtype === "discrete_range") {
 	var values = this.control["values"];
 	control_out.find("#"+this.control_id+"_value")
-	    .attr("readonly","readonly")
+	    .attr({"readonly": "readonly",
+		   "size": String([values[default_value[0]],
+				   values[default_value[1]]]).length})
 	    .val([values[default_value[0]], values[default_value[1]]]);
 	control_out.find("#"+this.control_id+"_index").val(default_value);
 	slider_config["range"] = true;
 	slider_config["slide"] = function(event,ui) {
 	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-	    var min_size = String([values[ui.values[0]],values[ui.values[1]]]).length;
-	    if (min_size > value_box.attr("size")) {
-		value_box.attr("size", min_size);
-	    }
-	    value_box.val([values[ui.values[0]], values[ui.values[1]]]);
+	    value_box.attr("size", String([values[ui.values[0]],values[ui.values[1]]]).length)
+		.val([values[ui.values[0]], values[ui.values[1]]]);
 	    control_out.find("#" + ui.handle.offsetParent.id + "_index").val(ui.values);
 	}
 	slider_config["values"] = default_value;
