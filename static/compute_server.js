@@ -329,44 +329,43 @@ InteractCell.prototype.init = function (selector, data) {
     this.interact_id = data.interact_id
     this.function_code = data.function_code;
     this.controls = {};
-
-    var controls = data.controls,
-    control, control_type;
-
-    for (i in controls) {
-	control = controls[i],
-	control_type = control["control_type"];
-
-	if (control_type === "button") {
-	    this.controls[i] = new InteractData.Button(
-		control, i, this.interact_id);
-	} else if (control_type === "button_bar") {
-	    this.controls[i] = new InteractData.ButtonBar(
-		control, i, this.interact_id);
-	} else if (control_type === "color_selector") {
-	    this.controls[i] = new InteractData.ColorSelector(
-		control, i, this.interact_id);
-	} else if (control_type === "input_box") {
-	    this.controls[i] = new InteractData.InputBox(
-		control, i, this.interact_id);
-	} else if (control_type === "input_grid") {
-	    this.controls[i] = new InteractData.InputGrid(
-		control, i, this.interact_id);
-	} else if (control_type === "multi_slider") {
-	    this.controls[i] = new InteractData.MultiSlider(
-		control, i, this.interact_id);
-	} else if (control_type === "selector") {
-	    this.controls[i] = new InteractData.Selector(
-		control, i, this.interact_id);
-	} else if (control_type === "slider") {
-	    this.controls[i] = new InteractData.Slider(
-		control, i, this.interact_id);
-	}
-    }
-
     this.layout = data.layout;
     this.session = data.session;
     this.msg_id = data.msg_id;
+
+    var controls = data.controls;
+    var args = {
+	"control": "",
+	"interact_id": this.interact_id,
+	"name": "",
+	"session_id": this.session.session_id
+    };
+
+    for (i in controls) {
+	args["control"] = controls[i];
+	args["name"] = i;
+	control_type = controls[i]["control_type"];
+
+	if (control_type === "button") {
+	    this.controls[i] = new InteractData.Button(args);
+	} else if (control_type === "button_bar") {
+	    this.controls[i] = new InteractData.ButtonBar(args);
+	} else if (control_type === "color_selector") {
+	    this.controls[i] = new InteractData.ColorSelector(args);
+	} else if (control_type === "html_box") {
+	    this.controls[i] = new InteractData.HtmlBox(args);
+	} else if (control_type === "input_box") {
+	    this.controls[i] = new InteractData.InputBox(args);
+	} else if (control_type === "input_grid") {
+	    this.controls[i] = new InteractData.InputGrid(args);
+	} else if (control_type === "multi_slider") {
+	    this.controls[i] = new InteractData.MultiSlider(args);
+	} else if (control_type === "selector") {
+	    this.controls[i] = new InteractData.Selector(args);
+	} else if (control_type === "slider") {
+	    this.controls[i] = new InteractData.Slider(args);
+	}
+    }
 
     this.renderCanvas();
     this.bindChange(this);
@@ -452,11 +451,14 @@ InteractCell.prototype.renderCanvas = (function() {
 var InteractData = {};
 
 InteractData.Button = makeClass();
-InteractData.Button.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.Button.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -501,11 +503,14 @@ InteractData.Button.prototype.finishRender = function(location) {
 
 
 InteractData.ButtonBar = makeClass();
-InteractData.ButtonBar.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.ButtonBar.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -575,11 +580,14 @@ InteractData.ButtonBar.prototype.finishRender = function(location) {
 
 
 InteractData.Checkbox = makeClass();
-InteractData.Checkbox.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.Checkbox.prototype.init = function() {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -607,11 +615,14 @@ InteractData.Checkbox.prototype.finishRender = function(location) {
 
 
 InteractData.ColorSelector = makeClass();
-InteractData.ColorSelector.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.ColorSelector.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -626,7 +637,7 @@ InteractData.ColorSelector.prototype.changes = function() {
 InteractData.ColorSelector.prototype.html = function() {
     return "<input type='text' class='singlecell_colorSelector' id='"+
 	this.control_id+"'><input type='text' class='"+this.control_class+
-	"' id='"+this.control_id+"_value' style='border:none' value='"+
+	" singlecell_interactValueBox' id='"+this.control_id+"_value' style='border:none' value='"+
 	this.control["default"]+"'>";
 }
 
@@ -668,12 +679,45 @@ InteractData.ColorSelector.prototype.finishRender = function(location) {
 }
 
 
-InteractData.InputBox = makeClass();
-InteractData.InputBox.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.HtmlBox = makeClass();
+InteractData.HtmlBox.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
+    this.control_id = this.control_class + "_" + this.name;
+}
+
+InteractData.HtmlBox.prototype.changeHandlers = function() {
+    return [];
+}
+
+InteractData.HtmlBox.prototype.changes = function() {
+    return $(this.location).find("#"+this.control_id).html();
+}
+
+InteractData.HtmlBox.prototype.html = function() {
+    var html = this.control["value"].replace(/cell:\/\//gi, $URL["root"]+"files/"+this.session_id+'/');
+    return "<div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div>";
+}
+
+InteractData.HtmlBox.prototype.finishRender = function(location) {
+    this.location = location;
+}
+
+
+InteractData.InputBox = makeClass();
+InteractData.InputBox.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
+    this.location = "*";
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -712,11 +756,14 @@ InteractData.InputBox.prototype.finishRender = function(location) {
 
 
 InteractData.InputGrid = makeClass();
-InteractData.InputGrid.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.InputGrid.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -766,11 +813,14 @@ InteractData.InputGrid.prototype.finishRender = function(location) {
 
 
 InteractData.MultiSlider = makeClass();
-InteractData.MultiSlider.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.MultiSlider.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -791,7 +841,7 @@ InteractData.MultiSlider.prototype.changes = function() {
 	for (i = 0; i < sliders; i ++) {
 	    input = control_out.find("#"+this.control_id + "_" + i + "_value")
 		.val();
-	    control_out.find("#" + this.control_id + "_" + name + "_" + i)
+	    control_out.find("#" + this.control_id + "_" + i)
 		.slider("option", "value", input);
 	    slider_values.push(input);
 	}
@@ -813,7 +863,7 @@ InteractData.MultiSlider.prototype.html = function() {
     for (var i = 0; i < sliders; i ++) {
 	html_code = html_code +
 	    "<span class='singlecell_multiSliderControl' id='"+this.control_id+"_"+i+"'></span>"+
-	    "<input type='text' class='"+this.control_id+"' id='"+this.control_id+"_"+i+"_value' style='border:none' size='4'>"+
+	    "<input type='text' class='"+this.control_id+" singlecell_interactValueBox' id='"+this.control_id+"_"+i+"_value' style='border:none'>"+
 	    "<input type='text' class='"+this.control_id+"' id='"+this.control_id+"_"+i+"_index' style='display:none'>";
     }
     html_code = html_code + "</span></div>";
@@ -827,11 +877,18 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
     var sliders = this.control["sliders"],
     slider_values = this.control["values"],
     slider_config = {},
-    control_out = $(this.location);
+    control_out = $(this.location),
+    default_value;
     
     if (this.control["subtype"] === "continuous") {
 	for (var i = 0; i < sliders; i ++) {
-	    control_out.find("#"+this.control_id+"_"+i+"_value").val(this.control["default"][i]).addClass(this.control_class);
+	    var default_value = this.control["default"][i];
+
+	    control_out.find("#"+this.control_id+"_"+i+"_value")
+		.val(default_value)
+		.addClass(this.control_class)
+		.attr("size", String(default_value).length)
+		.css("display", (this.control["display_value"] ? "" : "none"));
 
 	    slider_config = {
 		orientation: "vertical",
@@ -840,16 +897,22 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 		max: this.control["range"][i][1],
 		step: this.control["step"][i],
 		slide: function(event,ui) {
-		    control_out.find("#"+ui.handle.offsetParent.id+"_value").val(ui.value);
+		    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
+		    value_box.attr("size", String(ui.value).length)
+			.val(ui.value);
 		}
 	    };
 
 	    control_out.find("#"+this.control_id+"_"+i).slider(slider_config);
 	}
     } else {
-	control_out.find("."+control_id+"_value").attr("readonly","readonly");
+	control_out.find("."+this.control_id+"_value").attr("readonly","readonly");
 	for (var i = 0; i < sliders; i ++) {
-	    control_out.find("#"+this.control_id+"_"+i+"_value").val(slider_values[i][this.control["default"][i]]);
+	    default_value = slider_values[i][this.control["default"][i]];
+	    control_out.find("#"+this.control_id+"_"+i+"_value")
+		.val(default_value)
+		.attr("size", String(default_value).length)
+		.css("display", (this.control["display_value"] ? "" : "none"));
 	    control_out.find("#"+this.control_id+"_"+i+"_index").val(this.control["default"][i]);
 
 	    slider_config = {
@@ -860,24 +923,30 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 		step: this.control["step"][i],
 		slide: (function(control_out, i) {
 		    return function(event,ui) {
-			control_out.find("#"+ui.handle.offstParent.id+"_value").val(slider_values[i][ui.value]);
+			var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
+			var value = slider_values[i][ui.value];
+			value_box.attr("size", String(value).length)
+			    .val(slider_values[i][ui.value]);
 			control_out.find("#"+ui.handle.offsetParent.id+"_index").val(ui.value);
 		    }
 		}(control_out, i))
 	    }
 
-	    control_out.find("#"+control_id+"_"+i).slider(slider_config);
+	    control_out.find("#"+this.control_id+"_"+i).slider(slider_config);
 	}
     }
 }
 
 
 InteractData.Selector = makeClass();
-InteractData.Selector.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.Selector.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -987,11 +1056,14 @@ InteractData.Selector.prototype.finishRender = function(location) {
 
 
 InteractData.Slider = makeClass();
-InteractData.Slider.prototype.init = function(control, name, interact_id) {
-    this.control = control;
+InteractData.Slider.prototype.init = function(args) {
+    this.control = args["control"];
+    this.interact_id = args["interact_id"];
     this.location = "*";
-    this.name = name;
-    this.control_class = "urn_uuid_"+interact_id;
+    this.name = args["name"];
+    this.session_id = args["session_id"];
+    
+    this.control_class = "urn_uuid_"+this.interact_id;
     this.control_id = this.control_class + "_" + this.name;
 }
 
@@ -1026,7 +1098,7 @@ InteractData.Slider.prototype.changes = function() {
 InteractData.Slider.prototype.html = function() {
     return "<span style='whitespace:nowrap'>"+
 	"<span class='" + this.control_class + " singlecell_sliderControl' id='" + this.control_id + "'></span>"+
-	"<input type='text' class='" + this.control_class + "' id='" + this.control_id + "_value' style='border:none'>"+
+	"<input type='text' class='" + this.control_class + " singlecell_interactValueBox' id='" + this.control_id + "_value' style='border:none'>"+
 	"<input type='text' class='" + this.control_class +"' id='" + this.control_id + "_index' style='display:none'></span>";
 }
 
@@ -1041,41 +1113,60 @@ InteractData.Slider.prototype.finishRender = function(location) {
     default_value = this.control["default"],
     subtype = this.control["subtype"],
     control_out = $(this.location);
+
+    if (!this.control["display_value"]) {
+	control_out.find("#"+this.control_id+"_value").css("display","none");
+    }
     
     if (subtype === "continuous") {
-	control_out.find("#"+this.control_id+"_value").val(default_value);
+	control_out.find("#"+this.control_id+"_value")
+	    .val(default_value)
+	    .attr("size", String(default_value).length);
 	slider_config["slide"] = function(event, ui) {
-	    $("#" + ui.handle.offsetParent.id + "_value").val(ui.value);
+	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
+	    value_box.attr("size", String(ui.value).length)
+		.val(ui.value);
 	}
 	slider_config["value"] = default_value;
     } else if (subtype === "continuous_range") {
-	control_out.find("#"+this.control_id+"_value").val(default_value);
+	control_out.find("#"+this.control_id+"_value")
+	    .val(default_value)
+	    .attr("size", String(default_value).length);
 	slider_config["range"] = true;
 	slider_config["slide"] = function(event, ui) {
-	    $("#" + ui.handle.offsetParent.id + "_value").val(ui.values);
+	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
+	    value_box.attr("size", String(ui.values).length)
+		.val(ui.values);
 	}
 	slider_config["values"] = default_value;
     } else if (subtype === "discrete") {
 	var values = this.control["values"];
 	control_out.find("#"+this.control_id+"_value")
-	    .attr("readonly","readonly")
+	    .attr({"readonly": "readonly",
+		   "size": String(values[default_value]).size})
 	    .val(values[default_value]);
 	control_out.find("#"+this.control_id+"_index").val(default_value);
 	slider_config["slide"] = function(event,ui) {
-	    $("#" + ui.handle.offsetParent.id + "_value").val(values[ui.value]);
-	    $("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
+	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
+	    value_box.attr("size", String(values[ui.value]).length)
+		.val(values[ui.value]);
+	    control_out.find("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
 	}
 	slider_config["value"] = default_value;
     } else if (subtype === "discrete_range") {
 	var values = this.control["values"];
 	control_out.find("#"+this.control_id+"_value")
-	    .attr("readonly","readonly")
+	    .attr({"readonly": "readonly",
+		   "size": String([values[default_value[0]],
+				   values[default_value[1]]]).length})
 	    .val([values[default_value[0]], values[default_value[1]]]);
 	control_out.find("#"+this.control_id+"_index").val(default_value);
 	slider_config["range"] = true;
 	slider_config["slide"] = function(event,ui) {
-	    $("#" + ui.handle.offsetParent.id + "_value").val([values[ui.values[0]], values[ui.values[1]]]);
-	    $("#" + ui.handle.offsetParent.id + "_index").val(ui.values);
+	    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
+	    value_box.attr("size", String([values[ui.values[0]],values[ui.values[1]]]).length)
+		.val([values[ui.values[0]], values[ui.values[1]]]);
+	    control_out.find("#" + ui.handle.offsetParent.id + "_index").val(ui.values);
 	}
 	slider_config["values"] = default_value;
     }
