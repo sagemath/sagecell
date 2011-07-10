@@ -5,9 +5,6 @@ This module defines a backwards-compatible API for interact controls from the fi
 
 from interact_singlecell import *
 
-
-
-
 """
 text_control: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.text_control
 slider: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.slider
@@ -158,7 +155,7 @@ def slider(vmin, vmax=None,step_size=None, default=None, label=None,
     if label is None:
         label = ""
     return DiscreteSlider(range_slider=False, values=values, 
-                          default=default, label=label)
+                          default=default, label=label, display_value=display_value)
 
 
 def range_slider(vmin, vmax=None, step_size=None, default=None, label=None, display_value=True):
@@ -202,7 +199,7 @@ def range_slider(vmin, vmax=None, step_size=None, default=None, label=None, disp
     if label is None:
         label = ""
     return DiscreteSlider(range_slider=True, values=values, 
-                          default=default, label=label)
+                          default=default, label=label, display_value=display_value)
 
 
 def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs):
@@ -485,4 +482,4 @@ def text_control(value=""):
         sage: text_control('something')
         Text field: something
     """
-    raise NotImplementedError
+    return HtmlBox(value=value)
