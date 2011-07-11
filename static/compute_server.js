@@ -350,6 +350,8 @@ InteractCell.prototype.init = function (selector, data) {
 	    this.controls[i] = new InteractData.Button(args);
 	} else if (control_type === "button_bar") {
 	    this.controls[i] = new InteractData.ButtonBar(args);
+	} else if (control_type === "checkbox") {
+	    this.controls[i] = new InteractData.Checkbox(args);
 	} else if (control_type === "color_selector") {
 	    this.controls[i] = new InteractData.ColorSelector(args);
 	} else if (control_type === "html_box") {
@@ -586,7 +588,7 @@ InteractData.ButtonBar.prototype.finishRender = function(location) {
 
 
 InteractData.Checkbox = makeClass();
-InteractData.Checkbox.prototype.init = function() {
+InteractData.Checkbox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -1090,7 +1092,7 @@ InteractData.Slider.prototype.changes = function() {
 	input = control_out.find("#"+this.control_id+"_value").val();
 	control_out.find("#"+this.control_id).slider("option","value",input);
 	return String(input);
-    } else if (subtype === "continous_range") {
+    } else if (subtype === "continuous_range") {
 	input = String("["+control_out.find("#"+this.control_id+"_value").val()+"]");
 	control_out.find("#"+this.control_id).slider("option","values",JSON.parse(input));
 	return input;
