@@ -963,7 +963,7 @@ class UpdateButton(InteractControl):
         px or em.
     :arg str label: the label of the control
     """
-    def __init__(self, update=["*"], text="Update", value="", default="", width="", label=None):
+    def __init__(self, update=["*"], text="Update", value="", default="", width="", label=False):
         self.vars = update
         self.text = text
         self.width = width
