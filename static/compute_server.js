@@ -302,6 +302,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
 			'controls': user_msg.content.controls,
+			'update': user_msg.content.update,
 			'session': this});
 		    break;
 		}
@@ -329,6 +330,7 @@ InteractCell.prototype.init = function (selector, data) {
     this.interact_id = data.interact_id
     this.function_code = data.function_code;
     this.controls = {};
+    this.update = data.update;
     this.layout = data.layout;
     this.session = data.session;
     this.msg_id = data.msg_id;
@@ -376,7 +378,7 @@ InteractCell.prototype.init = function (selector, data) {
 InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
     var events = {};
-    for (var i in this.controls) {
+    for (var i in this.update) {
 	var handlers = this.controls[i].changeHandlers();
 	for (var j = 0, j_max = handlers.length; j < j_max; j ++) {
 	    if (events[handlers[j]] === undefined) {
@@ -393,28 +395,31 @@ InteractCell.prototype.bindChange = function(interact) {
 	$(id).live(i, function(e){
 	    var changedControl = e.target.id.replace(
 		"urn_uuid_"+interact.interact_id+"_","");
-	    var change = interact.controls[changedControl].changes();
-	    var code = "_update_interact('"+interact.interact_id+"',"+
-		changedControl + "=";
+	    if ($.inArray(changedControl, interact.session.eventHandlers[id][e.type]) !== -1) {
+		var changes = interact.getChanges(interact.update[changedControl]);
+		var code = "_update_interact('"+interact.interact_id+"',";
 
-	    if (interact.controls[changedControl]["control"]["raw"]) {
-		code += change + ")";
-	    } else {
-		code += "'" + change.replace(/['"]/g, "\\'") + "')";
+		for (j in changes) {
+		    if (interact.controls[j]["control"]["raw"]) {
+			code += j + "=" +  changes[j] + ",";
+		    } else {
+			code += j + "='" + changes[j].replace(/['"]/g, "\\'") + "',";
+		    }
+		}
+		code += ")";
+
+		interact.session.sendMsg(code, interact.msg_id);
+		interact.session.replace_output=true;
 	    }
-
-	    interact.session.sendMsg(code, interact.msg_id);
-	    interact.session.replace_output=true;
 	    return false;
 	});
     }
 }
 
-InteractCell.prototype.getChanges = function() {
-    var id = "#urn_uuid_" + this.interact_id;
+InteractCell.prototype.getChanges = function(controls) {
     var params = {};
-    for (var name in this.controls){
-	params[name] = this.controls[name].changes();
+    for (var i = 0, i_max = controls.length; i < i_max; i++) {
+	params[controls[i]] = this.controls[controls[i]].changes();
     }
     return params;
 }

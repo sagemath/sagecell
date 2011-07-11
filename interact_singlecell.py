@@ -139,7 +139,7 @@ def decorator_defaults(func):
     return my_wrap
 
 @decorator_defaults
-def interact(f, controls=[]):
+def interact(f, controls=[], update={}):
     """
     A decorator that creates an interact.
 
@@ -193,6 +193,34 @@ def interact(f, controls=[]):
     names=[n for n,_ in controls]
     controls=[automatic_control(c) for _,c in controls]
 
+    if isinstance(update,dict):
+        if update:
+            for change in update:
+                try:
+                    # Test if the updating variable is defined
+                    names.index(change)
+                except ValueError:
+                    raise RuntimeError("%s is not an interacted variable."%change)
+                for i in update[change]:
+                    if i is "*":
+                        # Test if the updating variable should update everything
+                        update[change] = names
+                    else:
+                        try:
+                            # Test if the variables to be updated are defined
+                            names.index(i)
+                        except ValueError:
+                            raise RuntimeError("%s is not an interacted variable."%i)
+                        try:
+                            # Make sure that there aren't any repeate updates
+                            update[change].index(change)
+                        except:
+                            update[change].append(change)
+        else:
+            update = "auto"
+    else:
+        raise ValueError("Incorrect interact update parameters specified.")
+
     from sys import _sage_messages as MESSAGE, maxint
     from random import randrange
 
@@ -216,6 +244,7 @@ def interact(f, controls=[]):
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),
+                                   'update':update,
                                    'layout':names})
     global __single_cell_timeout__
     __single_cell_timeout__=60
