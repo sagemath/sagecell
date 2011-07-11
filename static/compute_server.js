@@ -377,8 +377,15 @@ InteractCell.prototype.init = function (selector, data) {
 
 InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
-    var events = {};
-    for (var i in this.update) {
+    var elements, events = {};
+
+    if (this.update === "auto") {
+	elements = this.controls;
+    } else {
+	elements = this.update;
+    }
+
+    for (var i in elements) {
 	var handlers = this.controls[i].changeHandlers();
 	for (var j = 0, j_max = handlers.length; j < j_max; j ++) {
 	    if (events[handlers[j]] === undefined) {
@@ -396,7 +403,7 @@ InteractCell.prototype.bindChange = function(interact) {
 	    var changedControl = e.target.id.replace(
 		"urn_uuid_"+interact.interact_id+"_","");
 	    if ($.inArray(changedControl, interact.session.eventHandlers[id][e.type]) !== -1) {
-		var changes = interact.getChanges(interact.update[changedControl]);
+		var changes = interact.getChanges(interact.update, changedControl);
 		var code = "_update_interact('"+interact.interact_id+"',";
 
 		for (j in changes) {
@@ -416,11 +423,18 @@ InteractCell.prototype.bindChange = function(interact) {
     }
 }
 
-InteractCell.prototype.getChanges = function(controls) {
+InteractCell.prototype.getChanges = function(interact_update, changed_control) {
     var params = {};
-    for (var i = 0, i_max = controls.length; i < i_max; i++) {
-	params[controls[i]] = this.controls[controls[i]].changes();
+
+    if (interact_update === "auto") {
+	params[changed_control] = this.controls[changed_control].changes();
+    } else {
+	var controls = interact_update[changed_control];
+	for (var i = 0, i_max = controls.length; i < i_max; i++) {
+	    params[controls[i]] = this.controls[controls[i]].changes();
+	}
     }
+
     return params;
 }
 
