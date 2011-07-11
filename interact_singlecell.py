@@ -257,7 +257,7 @@ class Checkbox(InteractControl):
         (raw), so it can be used in control structures. There are few
         conceivable situations in which raw should be set to ``False``,
         but it is available.
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
 
@@ -292,7 +292,7 @@ class InputBox(InteractControl):
         (raw), so it can be used in control structures; ``False`` if the
         value should be treated as a string. The value of a textarea (``height``
         greater than one) will always be treated as a string.
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
 
@@ -340,7 +340,7 @@ class InputGrid(InteractControl):
     :arg bool raw: ``True`` if the value should be treated as "unquoted"
         (raw), so it can be used in control structures; ``False`` if the
         value should be treated as a string
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
 
@@ -400,7 +400,7 @@ class Selector(InteractControl):
         be set to the number of objects.
     :arg string width: CSS width of each button. This should be specified in
         px or em.
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
 
@@ -488,7 +488,7 @@ class DiscreteSlider(InteractControl):
     :arg list values: list of values to which the slider position refers.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
 
@@ -550,7 +550,7 @@ class ContinuousSlider(InteractControl):
     :arg Number stepsize: size of step for the slider. If both step and stepsized are specified, stepsize takes precedence so long as it is valid.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     
     Note that while "number of steps" and/or "stepsize" can be specified for the slider, this is to enable snapping, rather than a restriction on the slider's values. The only restrictions placed on the values of the slider are the endpoints of its range.
@@ -608,7 +608,7 @@ class MultiSlider(InteractControl):
     :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
     :arg list steps: List of numbers representing the number of steps for each continuous slider. Note that (as in the case of the regular continuous slider), specifying a valid stepsize will always take precedence over any specification of number of steps, valid or not. The length of this list should be equivalent to the number of sliders, but if all sliders are to have the same number of steps, the list only neesd to contain that one value.
     :arg bool display_values: toggles whether the slider values sould be displayed (default = True)
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
 
@@ -724,7 +724,7 @@ class ColorSelector(InteractControl):
         or if the user has deselected "sage mode" for the computation, this
         value will always end up False, regardless of whether the user specified
         otherwise in the interact.
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
 
@@ -784,7 +784,7 @@ class Button(InteractControl):
         pushed. This **must** be specified.
     :arg string width: CSS width of the button. This should be specified in
         px or em.
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
     def __init__(self, text="Button", value = "", default="", width="", label=""):
@@ -829,7 +829,7 @@ class ButtonBar(InteractControl):
         of objects.
     :arg string width: CSS width of each button. This should be specified in
         px or em.
-    :arg str label: the label of the control, ``None`` for no label, and
+    :arg str label: the label of the control, ``False`` for no label, and
         a default value (label not specified) of the control's variable.
     """
     def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=""):
@@ -903,10 +903,10 @@ class HtmlBox(InteractControl):
     
     :arg string value: Html code to be inserted. This should be given in quotes.
     :arg str label: the label of the control, ``""`` (empty string) for a label
-        of the control's variable, and a default value of None (label not
+        of the control's variable, and a default value of False (label not
         specified) for no label.
     """
-    def __init__(self, value="", label=None):
+    def __init__(self, value="", label=False):
         self.value = self.default = value;
         self.label = label;
     def message(self):

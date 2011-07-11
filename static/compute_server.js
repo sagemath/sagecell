@@ -439,7 +439,7 @@ InteractCell.prototype.renderCanvas = (function() {
 	var table = document.createElement("table");
 	for (var name in this.controls) {
 	    var label = this.controls[name]["control"].label;
-	    if (!label && label !== null) {
+	    if (!label && label !== false) {
 		label = name;
 	    }
 	    var control_id = id + '_' + name;
