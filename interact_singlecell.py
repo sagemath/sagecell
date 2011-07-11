@@ -209,7 +209,10 @@ def interact(f, controls=[]):
         MESSAGE.pop_output_id()
         return returned
 
-    _INTERACTS[function_id]=adapted_f
+    _INTERACTS[function_id] = {
+        "state": dict(zip(names,[c.default for c in controls])),
+        "function": adapted_f
+        }
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),

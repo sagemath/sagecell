@@ -60,9 +60,12 @@ user_code="""
 import sys
 sys._sage_messages=MESSAGE
 sys._sage_upload_file_pipe=_file_upload_send
-def _get_interact_function(id):
+def _update_interact(id, **kwargs):
     import interact_singlecell
-    return interact_singlecell._INTERACTS[id]
+    for var in kwargs:
+        interact_singlecell._INTERACTS[id]["state"][var] = kwargs[var]
+    interact_singlecell._INTERACTS[id]["function"](
+        **(interact_singlecell._INTERACTS[id]["state"]))
 """
 
 user_code_sage="""

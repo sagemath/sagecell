@@ -377,24 +377,30 @@ InteractCell.prototype.bindChange = function(interact) {
     for (var i in this.controls) {
 	var handlers = this.controls[i].changeHandlers();
 	for (var j = 0, j_max = handlers.length; j < j_max; j ++) {
-	    events[handlers[j]] = null;
+	    if (events[handlers[j]] === undefined) {
+		events[handlers[j]] = [i];
+	    } else {
+		events[handlers[j]].push(i);
+	    }
 	}
     }
 
-    this.session.eventHandlers[id] = [];
+    this.session.eventHandlers[id] = {};
     for (var i in events) {
-	this.session.eventHandlers[id].push(i);
-	$(id).live(i, function(){
-            var changes = interact.getChanges();
-	    var code = "_get_interact_function('"+interact.interact_id+"')(";
-            for (var j in changes) {
-		if (interact.controls[j]["control"]["raw"]) {
-		    code = code + j + "=" + changes[j] + ",";
-		} else {
-		    code = code + j + "='" + changes[j].replace(/'/g, "\\'") + "',";
-		}
-            }
-            code = code + ")";
+	this.session.eventHandlers[id][i] = events[i];
+	$(id).live(i, function(e){
+	    var changedControl = e.target.id.replace(
+		"urn_uuid_"+interact.interact_id+"_","");
+	    var change = interact.controls[changedControl].changes();
+	    var code = "_update_interact('"+interact.interact_id+"',"+
+		changedControl + "=";
+
+	    if (interact.controls[changedControl]["control"]["raw"]) {
+		code += change + ")";
+	    } else {
+		code += "'" + change.replace(/['"]/g, "\\'") + "')";
+	    }
+
 	    interact.session.sendMsg(code, interact.msg_id);
 	    interact.session.replace_output=true;
 	    return false;
