@@ -193,8 +193,16 @@ def interact(f, controls=[], update={}):
     names=[n for n,_ in controls]
     controls=[automatic_control(c) for _,c in controls]
 
+    update_buttons = {}
+    for c in range(len(controls)):
+        # Check for update button controls
+        if isinstance(controls[c], UpdateButton):
+            update_buttons[names[c]] = controls[c].boundVars()
+
     if isinstance(update,dict):
-        if update:
+        for i in update_buttons:
+            update[i] = update_buttons[i]
+        if update: # If not an empty dict
             for change in update:
                 try:
                     # Test if the updating variable is defined
@@ -212,7 +220,7 @@ def interact(f, controls=[], update={}):
                         except ValueError:
                             raise RuntimeError("%s is not an interacted variable."%i)
                         try:
-                            # Make sure that there aren't any repeate updates
+                            # Make sure that there aren't any repeated updates
                             update[change].index(change)
                         except:
                             update[change].append(change)
@@ -940,6 +948,46 @@ class HtmlBox(InteractControl):
         return {'control_type': 'html_box',
                 'value': self.value,
                 'label': self.label}
+
+class UpdateButton(InteractControl):
+    """
+    An update button interact control
+    
+    :arg list update: List of vars (all of which should be quoted) that the
+        update button updates when pressed.
+    :arg string text: button text
+    :arg value: value of the button, when pressed.
+    :arg default: default value that should be used if the button is not
+        pushed. This **must** be specified.
+    :arg string width: CSS width of the button. This should be specified in
+        px or em.
+    :arg str label: the label of the control
+    """
+    def __init__(self, update=["*"], text="Update", value="", default="", width="", label=None):
+        self.vars = update
+        self.text = text
+        self.width = width
+        self.value = value
+        self.default = False
+        self.default_value = default
+        self.label = label
+
+    def message(self):
+        return {'control_type':'button',
+                'width':self.width,
+                'text':self.text,
+                'raw': True,
+                'label': self.label}
+
+    def adapter(self, v):
+        if v:
+            return self.value
+        else:
+            return self.default_value
+
+    def boundVars(self):
+        return self.vars
+
 
 def automatic_control(control):
     """

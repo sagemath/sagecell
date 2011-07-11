@@ -400,8 +400,10 @@ InteractCell.prototype.bindChange = function(interact) {
     for (var i in events) {
 	this.session.eventHandlers[id][i] = events[i];
 	$(id).live(i, function(e){
-	    var changedControl = e.target.id.replace(
-		"urn_uuid_"+interact.interact_id+"_","");
+	    var changedControl = e.target.id // Get changed variable name
+		.replace("urn_uuid_"+interact.interact_id+"_","")
+		.replace("_value","")
+		.replace("_index","");
 	    if ($.inArray(changedControl, interact.session.eventHandlers[id][e.type]) !== -1) {
 		var changes = interact.getChanges(interact.update, changedControl);
 		var code = "_update_interact('"+interact.interact_id+"',";
