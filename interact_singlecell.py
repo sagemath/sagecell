@@ -139,7 +139,7 @@ def decorator_defaults(func):
     return my_wrap
 
 @decorator_defaults
-def interact(f, controls=[]):
+def interact(f, controls=[], update={}):
     """
     A decorator that creates an interact.
 
@@ -193,6 +193,42 @@ def interact(f, controls=[]):
     names=[n for n,_ in controls]
     controls=[automatic_control(c) for _,c in controls]
 
+    update_buttons = {}
+    for c in range(len(controls)):
+        # Check for update button controls
+        if isinstance(controls[c], UpdateButton):
+            update_buttons[names[c]] = controls[c].boundVars()
+
+    if isinstance(update,dict):
+        for i in update_buttons:
+            update[i] = update_buttons[i]
+        if update: # If not an empty dict
+            for change in update:
+                try:
+                    # Test if the updating variable is defined
+                    names.index(change)
+                except ValueError:
+                    raise RuntimeError("%s is not an interacted variable."%change)
+                for i in update[change]:
+                    if i is "*":
+                        # Test if the updating variable should update everything
+                        update[change] = names
+                    else:
+                        try:
+                            # Test if the variables to be updated are defined
+                            names.index(i)
+                        except ValueError:
+                            raise RuntimeError("%s is not an interacted variable."%i)
+                        try:
+                            # Make sure that there aren't any repeated updates
+                            update[change].index(change)
+                        except:
+                            update[change].append(change)
+        else:
+            update = "auto"
+    else:
+        raise ValueError("Incorrect interact update parameters specified.")
+
     from sys import _sage_messages as MESSAGE, maxint
     from random import randrange
 
@@ -209,10 +245,14 @@ def interact(f, controls=[]):
         MESSAGE.pop_output_id()
         return returned
 
-    _INTERACTS[function_id]=adapted_f
+    _INTERACTS[function_id] = {
+        "state": dict(zip(names,[c.default for c in controls])),
+        "function": adapted_f
+        }
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),
+                                   'update':update,
                                    'layout':names})
     global __single_cell_timeout__
     __single_cell_timeout__=60
@@ -921,6 +961,46 @@ class HtmlBox(InteractControl):
                 'value': self.value,
                 'label': self.label}
 
+class UpdateButton(InteractControl):
+    """
+    An update button interact control
+    
+    :arg list update: List of vars (all of which should be quoted) that the
+        update button updates when pressed.
+    :arg string text: button text
+    :arg value: value of the button, when pressed.
+    :arg default: default value that should be used if the button is not
+        pushed. This **must** be specified.
+    :arg string width: CSS width of the button. This should be specified in
+        px or em.
+    :arg str label: the label of the control
+    """
+    def __init__(self, update=["*"], text="Update", value="", default="", width="", label=False):
+        self.vars = update
+        self.text = text
+        self.width = width
+        self.value = value
+        self.default = False
+        self.default_value = default
+        self.label = label
+
+    def message(self):
+        return {'control_type':'button',
+                'width':self.width,
+                'text':self.text,
+                'raw': True,
+                'label': self.label}
+
+    def adapter(self, v):
+        if v:
+            return self.value
+        else:
+            return self.default_value
+
+    def boundVars(self):
+        return self.vars
+
+
 def automatic_control(control):
     """
     Guesses the desired interact control from the syntax of the parameter.
@@ -955,7 +1035,11 @@ def automatic_control(control):
     elif isinstance(control, Number):
         C = input_box(default = control, label = label, raw = True)
     elif isinstance(control, list):
-        C = selector(buttons = len(control) <= 5, default = default_value, label = label, values = control, raw = False)
+        if len(control) <= 5:
+            selectortype = "button"
+        else:
+            selectortype = "list"
+        C = selector(selector_type = selectortype, default = default_value, label = label, values = control)
     elif isinstance(control, GeneratorType):
         C = discrete_slider(default = default_value, values = take(10000,control), label = label)
     elif isinstance (control, tuple):
