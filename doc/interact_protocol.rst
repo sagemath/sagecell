@@ -41,12 +41,15 @@ Supported / Partially Supported Interact Controls and Features
 
 [X] Autoguessing Syntax
 
+[X] User defined-update parameters
+
+* Update button that can update an entire interact or only particular variables
+* Arbitrary variables can update other arbitrary variables
+
 Unsupported Interact Features
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [ ] Layouts
-
-[ ] Non-auto update
 
 Using Interacts
 ---------------
@@ -91,6 +94,19 @@ singlecell replaces the Sage decorator with its own version. In contrast,
 since the singlecell can also run and interpret stock python code, the
 goal is to avoid cluttering the user namespace, so the prefacing import
 statement must be explicit.
+
+Updating Interacts
+^^^^^^^^^^^^^^^^^^
+
+By default, interact controls update themselves automatically when they 
+are changed. However, one can specify custom updating structures in two
+different ways:
+
+* UpdateButton controls. This creates an interact control which, when clicked, updates specified variables.
+
+* Decorator specification. If a parameter ``update`` is given in @interact, arbitrary variables can update other arbitrary variables. This should take the form::
+    
+    update = {"updated var": ["var_1 to update" ... "var_n to update"]}
 
 .. _controls:
 
@@ -153,11 +169,19 @@ Controls
 
 .. autoclass:: interact_singlecell.button
 
-.. autoclass: interact_singlecell.ButtonBar
+.. autoclass:: interact_singlecell.ButtonBar
     :show-inheritance:
     :no-members:
 
 .. autoclass:: interact_singlecell.button_bar
+
+.. autoclass:: interact_singlecell.HtmlBox
+    :show-inheritance:
+    :no-members:
+
+.. autoclass:: interact_singlecell.UpdateButton
+    :show-inheritance:
+    :no-members:
 
 Note that for each control, not all parameters must be given; the device 
 will automatically assign default parameters as needed.
@@ -206,7 +230,8 @@ The interact decorator is defined in the user namespace on the device. It:
 
 1. Parses the arguments for the function, if necessary
 2. Generates a unique identifier for the function and stores it
-   in a global dict of interact functions for this session
+   in a global dict of interact functions for this session along with
+   the state of the function's arguments.
 3. Sends a message of type ``interact_prepare`` on the
    user message channel:
 
@@ -240,16 +265,17 @@ The BROWSER:
 After the USER makes a change on one of the controls, the BROWSER
 detects it and sends a new ``execute_request`` message with some code
 that will call the function whose arguments that control manipulates,
-with the arguments defined by the current state of the interact controls::
+with the updated argument(s).
 
-    _get_interact_function('12345')(n=3,)
+    _update_interact('12345')(n=3,)
 
 When the EXEC process receives this message, it pushes the ID (``"12345"``)
-to the output stack, and executes the function with the arguments given
-(here ``n=3``). Any output from this execution will be put into a message
-whose ``output_block`` field contains the ID. The BROWSER receives the
-output message, and replaces the current contents of the div representing
-the interact output with the new output it receives.
+to the output stack, updates the stored state of the interact with the
+new argument(s) and executes the function with the new state. Any output
+from this execution will be put into a message whose ``output_block``
+field contains the ID. The BROWSER receives the output message, and
+replaces the current contents of the div representing the interact
+output with the new output it receives.
 
 An interesting way to think about this architecture is:
 
