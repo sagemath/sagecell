@@ -1014,7 +1014,7 @@ def automatic_control(control):
     """
     from numbers import Number
     from types import GeneratorType
-    label = ""
+    label = None
     default_value = 0
     
     # Checks for interact controls that are verbosely defined
