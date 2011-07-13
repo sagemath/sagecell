@@ -302,6 +302,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
 			'controls': user_msg.content.controls,
+			'update': user_msg.content.update,
 			'session': this});
 		    break;
 		}
@@ -329,6 +330,7 @@ InteractCell.prototype.init = function (selector, data) {
     this.interact_id = data.interact_id
     this.function_code = data.function_code;
     this.controls = {};
+    this.update = data.update;
     this.layout = data.layout;
     this.session = data.session;
     this.msg_id = data.msg_id;
@@ -350,6 +352,8 @@ InteractCell.prototype.init = function (selector, data) {
 	    this.controls[i] = new InteractData.Button(args);
 	} else if (control_type === "button_bar") {
 	    this.controls[i] = new InteractData.ButtonBar(args);
+	} else if (control_type === "checkbox") {
+	    this.controls[i] = new InteractData.Checkbox(args);
 	} else if (control_type === "color_selector") {
 	    this.controls[i] = new InteractData.ColorSelector(args);
 	} else if (control_type === "html_box") {
@@ -373,41 +377,66 @@ InteractCell.prototype.init = function (selector, data) {
 
 InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
-    var events = {};
-    for (var i in this.controls) {
+    var elements, events = {};
+
+    if (this.update === "auto") {
+	elements = this.controls;
+    } else {
+	elements = this.update;
+    }
+
+    for (var i in elements) {
 	var handlers = this.controls[i].changeHandlers();
 	for (var j = 0, j_max = handlers.length; j < j_max; j ++) {
-	    events[handlers[j]] = null;
+	    if (events[handlers[j]] === undefined) {
+		events[handlers[j]] = [i];
+	    } else {
+		events[handlers[j]].push(i);
+	    }
 	}
     }
 
-    this.session.eventHandlers[id] = [];
+    this.session.eventHandlers[id] = {};
     for (var i in events) {
-	this.session.eventHandlers[id].push(i);
-	$(id).live(i, function(){
-            var changes = interact.getChanges();
-	    var code = "_get_interact_function('"+interact.interact_id+"')(";
-            for (var j in changes) {
-		if (interact.controls[j]["control"]["raw"]) {
-		    code = code + j + "=" + changes[j] + ",";
-		} else {
-		    code = code + j + "='" + changes[j].replace(/'/g, "\\'") + "',";
+	this.session.eventHandlers[id][i] = events[i];
+	$(id).live(i, function(e){
+	    var changedControl = e.target.id // Get changed variable name
+		.replace("urn_uuid_"+interact.interact_id+"_","")
+		.replace("_value","")
+		.replace("_index","");
+	    if ($.inArray(changedControl, interact.session.eventHandlers[id][e.type]) !== -1) {
+		var changes = interact.getChanges(interact.update, changedControl);
+		var code = "_update_interact('"+interact.interact_id+"',";
+
+		for (j in changes) {
+		    if (interact.controls[j]["control"]["raw"]) {
+			code += j + "=" +  changes[j] + ",";
+		    } else {
+			code += j + "='" + changes[j].replace(/['"]/g, "\\'") + "',";
+		    }
 		}
-            }
-            code = code + ")";
-	    interact.session.sendMsg(code, interact.msg_id);
-	    interact.session.replace_output=true;
+		code += ")";
+
+		interact.session.sendMsg(code, interact.msg_id);
+		interact.session.replace_output=true;
+	    }
 	    return false;
 	});
     }
 }
 
-InteractCell.prototype.getChanges = function() {
-    var id = "#urn_uuid_" + this.interact_id;
+InteractCell.prototype.getChanges = function(interact_update, changed_control) {
     var params = {};
-    for (var name in this.controls){
-	params[name] = this.controls[name].changes();
+
+    if (interact_update === "auto") {
+	params[changed_control] = this.controls[changed_control].changes();
+    } else {
+	var controls = interact_update[changed_control];
+	for (var i = 0, i_max = controls.length; i < i_max; i++) {
+	    params[controls[i]] = this.controls[controls[i]].changes();
+	}
     }
+
     return params;
 }
 
@@ -438,7 +467,10 @@ InteractCell.prototype.renderCanvas = (function() {
 	var id = "urn_uuid_" + this.interact_id;
 	var table = document.createElement("table");
 	for (var name in this.controls) {
-	    var label = this.controls[name]["control"].label || name;
+	    var label = this.controls[name]["control"].label;
+	    if (!label && label !== false) {
+		label = name;
+	    }
 	    var control_id = id + '_' + name;
 	    addRow(table, label, name, this.controls[name].html(), control_id);
 	    this.controls[name].finishRender(table);
@@ -580,7 +612,7 @@ InteractData.ButtonBar.prototype.finishRender = function(location) {
 
 
 InteractData.Checkbox = makeClass();
-InteractData.Checkbox.prototype.init = function() {
+InteractData.Checkbox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -1084,7 +1116,7 @@ InteractData.Slider.prototype.changes = function() {
 	input = control_out.find("#"+this.control_id+"_value").val();
 	control_out.find("#"+this.control_id).slider("option","value",input);
 	return String(input);
-    } else if (subtype === "continous_range") {
+    } else if (subtype === "continuous_range") {
 	input = String("["+control_out.find("#"+this.control_id+"_value").val()+"]");
 	control_out.find("#"+this.control_id).slider("option","values",JSON.parse(input));
 	return input;

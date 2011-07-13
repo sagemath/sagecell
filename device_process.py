@@ -60,9 +60,12 @@ user_code="""
 import sys
 sys._sage_messages=MESSAGE
 sys._sage_upload_file_pipe=_file_upload_send
-def _get_interact_function(id):
+def _update_interact(id, **kwargs):
     import interact_singlecell
-    return interact_singlecell._INTERACTS[id]
+    for var in kwargs:
+        interact_singlecell._INTERACTS[id]["state"][var] = kwargs[var]
+    interact_singlecell._INTERACTS[id]["function"](
+        **(interact_singlecell._INTERACTS[id]["state"]))
 """
 
 user_code_sage="""
@@ -372,12 +375,13 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
             try:
                 session = msg['parent_header']['session']
                 last_msg=last_message.get(session)
-                # Consolidate session messages of stderr or stdout
+                # Consolidate session messages of stderr or stdout to same output block
                 # channels
                 if (last_msg is not None
                     and msg['msg_type'] == 'stream' and last_msg['msg_type']=='stream'
                     and msg['content']['name'] in ('stdout', 'stderr')
-                    and msg['content']['name']==last_msg['content']['name']):
+                    and msg['content']['name']==last_msg['content']['name']
+                    and msg['output_block'] == last_msg['output_block']):
 
                     last_msg['content']['data']+=msg['content']['data']
                 else:
