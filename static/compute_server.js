@@ -400,10 +400,14 @@ InteractCell.prototype.bindChange = function(interact) {
     for (var i in events) {
 	this.session.eventHandlers[id][i] = events[i];
 	$(id).live(i, function(e){
-	    var changedControl = e.target.id // Get changed variable name
-		.replace("urn_uuid_"+interact.interact_id+"_","")
-		.replace("_value","")
-		.replace("_index","");
+	    var parentSpan = $(e.target).parentsUntil("span[class^='singlecell_var_']");
+	    if (parentSpan.length === 0) {
+		parentSpan = $(e.target).parent();
+	    } else {
+		parentSpan = parentSpan.parent();
+	    }
+	    var changedControl = parentSpan.attr("class").replace("singlecell_var_",""); // Get changed variable name
+
 	    if ($.inArray(changedControl, interact.session.eventHandlers[id][e.type]) !== -1) {
 		var changes = interact.getChanges(interact.update, changedControl);
 		var code = "_update_interact('"+interact.interact_id+"',";
@@ -506,8 +510,9 @@ InteractData.Button.prototype.changes = function() {
 }
 
 InteractData.Button.prototype.html = function() {
-    return "<button class='singlecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_button'>"+
-	"<span>"+this.control["text"]+"</span></button><input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"_value' value='false'>";
+    return "<span class='singlecell_var_"+this.name+"'>"+
+	"<button class='singlecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_button'>"+
+	"<span>"+this.control["text"]+"</span></button><input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"_value' value='false'></span>";
 }
 
 InteractData.Button.prototype.finishRender = function(location) {
@@ -561,8 +566,8 @@ InteractData.ButtonBar.prototype.html = function() {
     var nrows = this.control["nrows"],
     ncols = this.control["ncols"],
     value_labels = this.control["value_labels"],
-    inner_table = "<table><tbody>",
-    html_code;
+    html_code = "<span class='singlecell_var_"+this.name+"'>",
+    inner_table = "<table><tbody>";
 
     for (var r = 0, i = 0; r < nrows; r ++) {
 	inner_table += "<tr>";
@@ -577,8 +582,8 @@ InteractData.ButtonBar.prototype.html = function() {
     
     inner_table += "</tbody></table>";
 
-    html_code = inner_table + "<input type='hidden' id='"+this.control_id+
-	"_value' class='"+this.control_class+"' value='None'>";
+    html_code += inner_table + "<input type='hidden' id='"+this.control_id+
+	"_value' class='"+this.control_class+"' value='None'></span>";
 
     return html_code;
 }
@@ -637,8 +642,9 @@ InteractData.Checkbox.prototype.changes = function() {
 }
 
 InteractData.Checkbox.prototype.html = function() {
-    return "<input type='checkbox' class='"+this.control_class+"' id='"+
-	this.control_id+"' checked='"+this.control["default"]+"'>";
+    return "<span class='singlecell_var_"+this.name+"'>"+
+	"<input type='checkbox' class='"+this.control_class+"' id='"+
+	this.control_id+"' checked='"+this.control["default"]+"'></span>";
 }
 
 InteractData.Checkbox.prototype.finishRender = function(location) {
@@ -667,10 +673,9 @@ InteractData.ColorSelector.prototype.changes = function() {
 }
 
 InteractData.ColorSelector.prototype.html = function() {
-    return "<input type='text' class='singlecell_colorSelector' id='"+
-	this.control_id+"'><input type='text' class='"+this.control_class+
-	" singlecell_interactValueBox' id='"+this.control_id+"_value' style='border:none' value='"+
-	this.control["default"]+"'>";
+    return "<span class='singlecell_var_"+this.name+"'><input type='text' class='singlecell_colorSelector' id='"+
+	this.control_id+"'><input type='text' class='"+this.control_class+" singlecell_interactValueBox' id='"+
+	this.control_id+"_value' style='border:none' value='"+this.control["default"]+"'><span>";
 }
 
 InteractData.ColorSelector.prototype.finishRender = function(location) {
@@ -733,7 +738,7 @@ InteractData.HtmlBox.prototype.changes = function() {
 
 InteractData.HtmlBox.prototype.html = function() {
     var html = this.control["value"].replace(/cell:\/\//gi, $URL["root"]+"files/"+this.session_id+'/');
-    return "<div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div>";
+    return "<span class='singlecell_var_"+this.name+"'><div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div></span>";
 }
 
 InteractData.HtmlBox.prototype.finishRender = function(location) {
@@ -772,13 +777,14 @@ InteractData.InputBox.prototype.html = function() {
     var subtype = this.control["subtype"];
 
     if (subtype === "textarea") {
-	return "<textarea class='"+this.control_class+"' id='"+this.control_id+
-	    "' rows='"+this.control["height"]+"' cols='"+this.control["width"]+
-	    "'>"+this.control["default"]+"</textarea>";
+	return "<span class='singlecell_var_"+this.name+"'><textarea class='"+
+	    this.control_class+"' id='"+this.control_id+"' rows='"+
+	    this.control["height"]+"' cols='"+this.control["width"]+
+	    "'>"+this.control["default"]+"</textarea></span>";
     } else if (subtype === "input") {
-	return "<input type='text' class='"+this.control_class+"' id='"+
-	    this.control_id+"' size="+this.control["width"]+" value='"+
-	    this.control["default"]+"'>";
+	return "<span class='singlecell_var_"+this.name+"'><input type='text' class='"+
+	    this.control_class+"' id='"+this.control_id+"' size="+
+	    this.control["width"]+" value='"+this.control["default"]+"'></span>";
     }
 }
 
@@ -804,13 +810,13 @@ InteractData.InputGrid.prototype.changeHandlers = function() {
 }
 
 InteractData.InputGrid.prototype.changes = function() {
-    var control_out = $(location),
+    var control_out = $(this.location),
     values = "[";
 
     for (var i = 0, i_max = this.control["nrows"]; i < i_max; i ++) {
 	values += "[";
 	for (var j =0, j_max = this.control["ncols"]; j < j_max; j ++) {
-	    values += control_out.find("#"+this.control_id + "_" + this.name + "_" + i + "_" + j).val() + ", ";
+	    values += control_out.find("#"+this.control_id + "_" + i + "_" + j).val() + ", ";
 	}
 	values += "],";
     }
@@ -822,7 +828,7 @@ InteractData.InputGrid.prototype.changes = function() {
 InteractData.InputGrid.prototype.html = function() {
     var default_values = this.control["default"],
     width = this.control["width"],
-    html_code = "<table><tbody>";
+    html_code = "<span class='singlecell_var_"+this.name+"'><table><tbody>";
 
     for (var r = 0, r_max = this.control["nrows"]; r < r_max; r ++) {
 	html_code += "<tr>";
@@ -835,7 +841,7 @@ InteractData.InputGrid.prototype.html = function() {
 	html_code += "</tr>"
     }
 
-    html_code += "</tbody></table>";
+    html_code += "</tbody></table></span>";
     return html_code;
 }
 
@@ -889,7 +895,7 @@ InteractData.MultiSlider.prototype.changes = function() {
 
 InteractData.MultiSlider.prototype.html = function() {
     var sliders = this.control["sliders"],
-    html_code = "<div class='" + this.control_class +
+    html_code = "<span class='singlecell_var_"+this.name+"'><div class='" + this.control_class +
 	" singlecell_multiSliderContainer'><span style='whitespace:nowrap'>";
 
     for (var i = 0; i < sliders; i ++) {
@@ -898,7 +904,7 @@ InteractData.MultiSlider.prototype.html = function() {
 	    "<input type='text' class='"+this.control_id+" singlecell_interactValueBox' id='"+this.control_id+"_"+i+"_value' style='border:none'>"+
 	    "<input type='text' class='"+this.control_id+"' id='"+this.control_id+"_"+i+"_index' style='display:none'>";
     }
-    html_code = html_code + "</span></div>";
+    html_code = html_code + "</span></div></span>";
     
     return html_code;
 }
@@ -997,10 +1003,11 @@ InteractData.Selector.prototype.html = function() {
     value_labels = this.control["value_labels"],
     default_index = this.control["default"],
     subtype = this.control["subtype"],
-    html_code, inner_table;
+    html_code = "<span class='singlecell_var_"+this.name+"'>";
+    inner_table;
 
     if (subtype === "list") {
-	html_code = "<select class='"+this.control_class+"' id='"+this.control_id+"'>";
+	html_code += "<select class='"+this.control_class+"' id='"+this.control_id+"'>";
 	for (var i = 0; i < values; i ++) {
 	    html_code += "<option value='"+i+"'><div>"+value_labels[i]+"</div></option>";
 	}
@@ -1018,7 +1025,7 @@ InteractData.Selector.prototype.html = function() {
 	}
 	inner_table += "</tbody></table>";
 
-	html_code = inner_table + "<input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"' + value='"+default_index+"'>";
+	html_code += inner_table + "<input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"' + value='"+default_index+"'>";
 
     } else if (subtype === "button") {
 	inner_table = "<table><tbody>";
@@ -1032,9 +1039,10 @@ InteractData.Selector.prototype.html = function() {
 	}
 	inner_table += "</tbody></table>";
 	
-	html_code = inner_table + "<input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"' + value='"+default_index+"'></div>";
+	html_code += inner_table + "<input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"' + value='"+default_index+"'></div>";
 
     }
+    html_code += "</span>";
     return html_code;
 }
 
@@ -1128,7 +1136,7 @@ InteractData.Slider.prototype.changes = function() {
 }
 
 InteractData.Slider.prototype.html = function() {
-    return "<span style='whitespace:nowrap'>"+
+    return "<span class='singlecell_var_"+this.name+"' style='whitespace:nowrap'>"+
 	"<span class='" + this.control_class + " singlecell_sliderControl' id='" + this.control_id + "'></span>"+
 	"<input type='text' class='" + this.control_class + " singlecell_interactValueBox' id='" + this.control_id + "_value' style='border:none'>"+
 	"<input type='text' class='" + this.control_class +"' id='" + this.control_id + "_index' style='display:none'></span>";
