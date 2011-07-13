@@ -926,7 +926,7 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 		.val(default_value)
 		.addClass(this.control_class)
 		.attr("size", String(default_value).length)
-		.css("display", (this.control["display_value"] ? "" : "none"));
+		.css("display", (this.control["display_values"] ? "" : "none"));
 
 	    slider_config = {
 		orientation: "vertical",
@@ -950,7 +950,7 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 	    control_out.find("#"+this.control_id+"_"+i+"_value")
 		.val(default_value)
 		.attr("size", String(default_value).length)
-		.css("display", (this.control["display_value"] ? "" : "none"));
+		.css("display", (this.control["display_values"] ? "" : "none"));
 	    control_out.find("#"+this.control_id+"_"+i+"_index").val(this.control["default"][i]);
 
 	    slider_config = {
