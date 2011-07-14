@@ -237,7 +237,7 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
     if label is None:
         label = ""
 
-    # TODO: make input_box take a height and type
+    # TODO: make input_box take a type
     if type is Color:
         # kwargs are only used if the type is Color.  
         widget=kwargs.get('widget', None)
@@ -300,8 +300,7 @@ def color_selector(default=(0,0,1), label=None,
         label=""
     if widget!='colorpicker':
         print "ColorSelector: Only widget='colorpicker' is supported; changing color widget"
-    # TODO: make 'hide_box': True/False (whether to hide the input box for the color widget)
-    return ColorSelector(default=default, label=label)
+    return ColorSelector(default=default, label=label, hide_input=hide_box)
 
 def selector(values, label=None, default=None,
                  nrows=None, ncols=None, width=None, buttons=False):
