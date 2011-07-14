@@ -376,13 +376,8 @@ InteractCell.prototype.init = function (selector, data) {
 
 InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
-    var elements, events = {};
-
-    if (this.update === "auto") {
-	elements = this.controls;
-    } else {
-	elements = this.update;
-    }
+    var elements = this.update
+    var events = {};
 
     for (var i in elements) {
 	var handlers = this.controls[i].changeHandlers();
@@ -430,15 +425,11 @@ InteractCell.prototype.bindChange = function(interact) {
 
 InteractCell.prototype.getChanges = function(interact_update, changed_control) {
     var params = {};
+    var controls = interact_update[changed_control];
 
-    if (interact_update === "auto") {
-	params[changed_control] = this.controls[changed_control].changes();
-    } else {
-	var controls = interact_update[changed_control];
-	for (var i = 0, i_max = controls.length; i < i_max; i++) {
-	    params[controls[i]] = this.controls[controls[i]].changes();
+    for (var i = 0, i_max = controls.length; i < i_max; i++) {
+	params[controls[i]] = this.controls[controls[i]].changes();
 	}
-    }
 
     return params;
 }
