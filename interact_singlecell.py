@@ -172,6 +172,11 @@ def interact(f, controls=[], update={}, layout={}):
     :returns: the original function
     :rtype: function
     """
+
+    from copy import deepcopy
+    updates = deepcopy(update)
+    layouts = deepcopy(layout)
+    
     global _INTERACTS
 
     if isinstance(controls,(list,tuple)):
@@ -199,20 +204,20 @@ def interact(f, controls=[], update={}, layout={}):
         if isinstance(controls[c], UpdateButton):
             update_buttons[names[c]] = controls[c].boundVars()
 
-    if isinstance(update,dict):
+    if isinstance(updates,dict):
         for i in update_buttons:
-            update[i] = update_buttons[i]
-        if update: # If not an empty dict
-            for change in update:
+            updates[i] = update_buttons[i]
+        if updates: # If not an empty dict
+            for change in updates:
                 try:
                     # Test if the updating variable is defined
                     names.index(change)
                 except ValueError:
                     raise RuntimeError("%s is not an interacted variable."%repr(change))
-                for i in update[change]:
+                for i in updates[change]:
                     if i is "*":
                         # Test if the updating variable should update everything
-                        update[change] = names
+                        updates[change] = names
                     else:
                         try:
                             # Test if the variables to be updated are defined
@@ -221,27 +226,34 @@ def interact(f, controls=[], update={}, layout={}):
                             raise RuntimeError("%s is not an interacted variable."%repr(i))
                         try:
                             # Make sure that there aren't any repeated updates
-                            update[change].index(change)
+                            updates[change].index(change)
                         except:
-                            update[change].append(change)
+                            updates[change].append(change)
         else:
             for i in range(len(names)):
-                update[names[i]] = [names[i]]
+                updates[names[i]] = [names[i]]
     else:
         raise ValueError("Incorrect interact update parameters specified.")
 
-    if isinstance(layout,dict):
-        if layout:
-            layout_values = ["top","right","left","bottom"]
+    if isinstance(layouts,dict):
+        if layouts:
+            layout_values = ["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center"]
+            layout_compatibility = ["top","bottom"]
             layout_vars = 0
-            for i in layout:
+            for i in layouts:
                 try: # Make sure that layout keys are alowed
                     layout_values.index(i)
                 except ValueError:
-                    raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(i), layout_values))
-                for j in layout[i]:
+                    if layout_compatibility.index(i) >= 0:
+                        layouts[i+"_center"] = deepcopy(layouts[i])
+                        del(layouts[i])
+                        i += "_center"
+                        continue
+                    else:
+                        raise ValueError("%s is an incorrect layout key. Possible options are %s, or for compatbility %s"%(repr(i), layout_values, layout_compatibility))
+                for j in layouts[i]:
                     if j is "*": # Layout all controls under the current key
-                        layout[i] = names
+                        layouts[i] = names
                         layout_vars += len(names)
                     else:
                         try: # Make sure the variable exists
@@ -253,7 +265,7 @@ def interact(f, controls=[], update={}, layout={}):
                 # Make sure that each varible occurs only once
                 raise RuntimeError("Too many or too few variables in layout. Each variable should only occur once.")
         else:
-            layout["top"] = names
+            layouts["top_center"] = names
     else:
         raise ValueError("Incorrect interact layout parameters specified.")
 
@@ -280,8 +292,8 @@ def interact(f, controls=[], update={}, layout={}):
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),
-                                   'update':update,
-                                   'layout':layout})
+                                   'update':updates,
+                                   'layout':layouts})
     global __single_cell_timeout__
     __single_cell_timeout__=60
     adapted_f(**dict(zip(names,[c.default for c in controls])))

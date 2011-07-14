@@ -294,8 +294,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    break;
 		case "interact_prepare":
 		    var interact_id = user_msg.content.interact_id;
-		    var div_id = "interact-" + interact_id;
-		    this.output("<div class='singlecell_interactContainer'><div class='singlecell_interact' id='"+div_id+"'></div><div class='singlecell_interactOutput' id='output_"+interact_id+"'></div></div>",output_block);
+		    var div_id = "interact_" + interact_id;
+		    this.output("<table class='singlecell_interactContainer' id='"+div_id+"'>"+
+				"<tr><td class='singlecell_interactContainer_top_left'></td><td class='singlecell_interactContainer_top_center'></td><td class='singlecell_interactContainer_top_right'></td></tr>"+
+				"<tr><td class='singlecell_interactContainer_left'></td><td class='singlecell_interactOutput'><div id='output_"+interact_id+"'></div></td><td class='singlecell_interactContainer_right'></tr>"+
+				"<tr><td class='singlecell_interactContainer_bottom_left'></td><td class='singlecell_interactContainer_bottom_center'></td><td class='singlecell_interactContainer_bottom_right'></td></tr></table>", output_block);
+
 		    this.interacts[interact_id] = 1;
 		    new InteractCell("#" + div_id, {
 			'interact_id': interact_id,
@@ -435,41 +439,48 @@ InteractCell.prototype.getChanges = function(interact_update, changed_control) {
 }
 
 InteractCell.prototype.renderCanvas = (function() {
-    var addRow=function(table, labeltext, name, controlHTML, id) {
-	var row=document.createElement("tr");
-	var c_td=document.createElement("td");
-	if(labeltext) {
-	    var l_td=document.createElement("td");
-	    var label=document.createElement("label");
-	    if(id) {
-		label.setAttribute('for',id);
+    var addRow=function(table, labeltext, name, controlHtml, id) {
+	var html_code = "<tr>";
+
+	if (labeltext) {
+	    html_code += "<td><label ";
+	    if (id) {
+		html_code += "for='"+id+"' ";
 	    }
-	    label.setAttribute('title',name);
-	    label.appendChild(document.createTextNode(labeltext));
-	    l_td.appendChild(label);
-	    row.appendChild(l_td);
+	    html_code += " title='"+name+"'>"+labeltext+"</label></td><td>";
 	} else {
-	    c_td.setAttribute("colspan",2);
+	    html_code += "<td colspan='2'>";
 	}
-	c_td.innerHTML=controlHTML;
-	row.appendChild(c_td);
-	table.appendChild(row);
+
+	html_code += controlHtml+"</td></tr>";
+	
+	table.append(html_code);
+
+	return false;
     }
     var select_labels={};
     return function() {
-	// TODO: use this.layout to lay out the controls
+	var container = $("table#interact_"+this.interact_id);
 	var id = "urn_uuid_" + this.interact_id;
-	var table = document.createElement("table");
-	for (var name in this.controls) {
-	    var label = this.controls[name]["control"].label;
-	    if (label === null) {
-		label = name;
+
+	for (var i in this.layout) {
+	    var section = container.find("td.singlecell_interactContainer_"+i);
+	    section.html("<table class='singlecell_interactControls'></table>");
+
+	    var control_location = section.find(".singlecell_interactControls");
+	    
+	    for (var j = 0, j_max = this.layout[i].length; j < j_max; j ++) { //name in this.layout[i]) {
+		var name = this.layout[i][j];
+
+		var label = this.controls[name]["control"].label;
+		if (label === null) {
+		    label = name;
+		}
+		var control_id = id + "_" + name;
+		addRow(control_location, label, name, this.controls[name].html(), control_id);
+		this.controls[name].finishRender(control_location);
 	    }
-	    var control_id = id + '_' + name;
-	    addRow(table, label, name, this.controls[name].html(), control_id);
-	    this.controls[name].finishRender(table);
 	}
-	this.element[0].appendChild(table);
     }
 })();
 
