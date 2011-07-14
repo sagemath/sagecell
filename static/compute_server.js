@@ -641,9 +641,14 @@ InteractData.Checkbox.prototype.changes = function() {
 }
 
 InteractData.Checkbox.prototype.html = function() {
-    return "<span class='singlecell_var_"+this.name+"'>"+
+    var html="<span class='singlecell_var_"+this.name+"'>"+
 	"<input type='checkbox' class='"+this.control_class+"' id='"+
-	this.control_id+"' checked='"+this.control["default"]+"'></span>";
+	this.control_id+"'"
+    if(this.control["default"]) {
+	html += " checked ";
+    }
+    html +="></span>";
+    return html
 }
 
 InteractData.Checkbox.prototype.finishRender = function(location) {
