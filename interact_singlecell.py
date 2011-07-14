@@ -431,7 +431,7 @@ class Selector(InteractControl):
     """
     A selector interact control
 
-    :arg int default: initially selected index of the list of values
+    :arg int default: initially selected item in the list of values
     :arg list values: list of values from which the user can select. A value can
         also be represented as a tuple of the form ``(value, label)``, where the
         value is the name of the variable and the label is the text displayed to
@@ -457,7 +457,6 @@ class Selector(InteractControl):
     """
 
     def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=None):
-        self.default=int(default)
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
@@ -475,8 +474,7 @@ class Selector(InteractControl):
                        len(v)==2 else v for v in values]
 
         # Ensure that default index is always in the correct range.
-        if default < 0 or default >= len(values):
-            self.default = 0
+        self.default = default_to_index(self.values, default)
 
         # If not using a dropdown list,
         # check/set rows and columns for layout.
@@ -560,21 +558,17 @@ class DiscreteSlider(InteractControl):
         self.range_slider = range_slider
         self.display_value = display_value
         
-        # self.default is an *index* or tuple of indices.
         if self.range_slider:
             self.subtype = "discrete_range"
             if default is None:
                 self.default = (0,len(values))
-            elif not isinstance(default, tuple) or len(default)!=2:
-                raise TypeError("default value must be None or a 2-tuple.")
             else:
-                self.default=tuple(_old_determine_default_index(values,
-                                                                 d)
+                self.default=tuple(default_to_index(self.values, d)
                                    for d in default)
         else:
             self.subtype = "discrete"
-            self.default = _old_determine_default_index(self.values,
-                                                        default)
+            self.default = default_to_index(self.values,
+                                            default)
 
         self.label=label
 
@@ -607,7 +601,7 @@ class ContinuousSlider(InteractControl):
 
     The slider value moves between a range of numbers.
 
-    :arg int default: initial value (index) of the slider; if ``None``, the
+    :arg int default: initial value of the slider; if ``None``, the
         slider defaults to its minimum
     :arg tuple interval: range of the slider, in the form ``(min, max)``
     :arg int steps: number of steps the slider should have between min and max
@@ -699,6 +693,7 @@ class MultiSlider(InteractControl):
 
             self.interval = [(0, len(self.values[i])-1) for i in self.slider_range]
 
+            # TODO: make sure default specifies a value, not an index into self.values; use default_to_index
             if len(default) == self.sliders:
                 self.default = [default[i] if i >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
             elif len(default) == 1:
@@ -1115,7 +1110,7 @@ def take(n, iterable):
 
 
 
-def _old_determine_default_index(values, default):
+def default_to_index(values, default):
     """
     From sage notebook's interact.py file
     """
