@@ -473,7 +473,6 @@ class Selector(InteractControl):
         self.values = [v[0] if isinstance(v,tuple) and
                        len(v)==2 else v for v in values]
 
-        # Ensure that default index is always in the correct range.
         self.default = default_to_index(self.values, default)
 
         # If not using a dropdown list,
@@ -660,7 +659,7 @@ class MultiSlider(InteractControl):
 
     :arg string slider_type: type of sliders to generate. Currently, only "continuous" and "discrete" are valid, and other input defaults to "continuous."
     :arg int sliders: Number of sliders to generate
-    :arg list default: Default value (continuous sliders) or index position (continuous sliders) of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
+    :arg list default: Default value of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
     :arg list values: Values for each value slider in a multi-dimensional list for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1, .. ,slider_n_val_n]]. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to iterate through the same values, the list only needs to contain that one list of values.
     :arg list interval: Intervals for each continuous slider in a list of tuples of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot be set if value sliders are specified. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to have the same interval, the list only needs to contain that one tuple.
     :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
@@ -695,9 +694,9 @@ class MultiSlider(InteractControl):
 
             # TODO: make sure default specifies a value, not an index into self.values; use default_to_index
             if len(default) == self.sliders:
-                self.default = [default[i] if i >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
+                self.default = [default_to_index(self.values, default[i]) for i in default]
             elif len(default) == 1:
-                self.default = [default[0] if default[0] >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in self.slider_range]
+                self.default = [default_to_index(self.values, default[0]) for i in self.slider_range]
             else:
                 self.default = [0] * self.sliders
 
