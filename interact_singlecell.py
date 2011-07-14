@@ -456,7 +456,7 @@ class Selector(InteractControl):
         a default value (None) of the control's variable.
     """
 
-    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=None):
+    def __init__(self, default=None, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=None):
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
@@ -472,9 +472,7 @@ class Selector(InteractControl):
                            len(v)==2 else str(v) for v in values]
         self.values = [v[0] if isinstance(v,tuple) and
                        len(v)==2 else v for v in values]
-
         self.default = default_to_index(self.values, default)
-
         # If not using a dropdown list,
         # check/set rows and columns for layout.
         if self.selector_type != "list":
@@ -1057,16 +1055,18 @@ def automatic_control(control):
             selectortype = "button"
         else:
             selectortype = "list"
-        C = Selector(selector_type = selectortype, default = default_value, label = label, values = control)
+        C = Selector(selector_type = selectortype, default = control[default_value], label = label, values = control)
     elif isinstance(control, GeneratorType):
-        C = DiscreteSlider(default = default_value, values = take(10000,control), label = label)
+        values=take(10000,control)
+        C = DiscreteSlider(default = values[default_value], values = values, label = label)
     elif isinstance (control, tuple):
         if len(control) == 2:
             C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), label = label)
         elif len(control) == 3:
             C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), stepsize = control[2], label = label)
         else:
-            C = DiscreteSlider(default = default_value, values = list(control), label = label)
+            values=list(control)
+            C = DiscreteSlider(default = values[default_value], values = values, label = label)
     else:
         C = InputBox(default = control, label=label, raw = True)
 
