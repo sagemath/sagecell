@@ -235,13 +235,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		}
 		if(msg.content.data['image/png']!==undefined) {
 		    console.log('making png img with data in src');
-		    this.output('<img src="'+msg.content.data['image/png']+'" />');
+		    this.output('<img src="'+msg.content.data['image/png']+'" />',output_block);
 		}
 		if(msg.content.data['application/x-jmol']!==undefined) {
 		    console.log('making jmol applet');
-		    console.log(this);
-		    jmolSetDocument(this);
-		    jmolApplet(500, 'set defaultdirectory "'+filepath+msg.content.data['application/x-jmol']+'";\n script SCRIPT;\n');
+		    jmolSetDocument(false);
+		    this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+msg.content.data['application/x-jmol']+'";\n script SCRIPT;\n'),output_block);
 		}
 		
 		break;
