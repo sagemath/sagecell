@@ -198,7 +198,7 @@ def range_slider(vmin, vmax=None, step_size=None, default=None, label=None, disp
                           default=default, label=label, display_value=display_value)
 
 
-def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs):
+def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **kwargs):
     r"""
     An input box interactive control.  Use this in conjunction
     with the :func:`interact` command.
@@ -231,6 +231,8 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         Interact input box labeled 'Click to change value' with default value 'Multiline\nInput'
     """
     # TODO: make input_box take a type
+    from sagenb.misc.misc import Color
+
     if type is Color:
         # kwargs are only used if the type is Color.  
         widget=kwargs.get('widget', None)
@@ -238,8 +240,17 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         return color_selector(default=default, label=label, 
                               widget=widget, hide_box=hide_box)
     
+    if not isinstance(default, basestring):
+        default=repr(default)
+    from sage.all import sage_eval
+    if type is None:
+        adapter = lambda x: sage_eval(x)
+    elif type is str:
+        adapter=lambda x: x
+    else:
+        adapter=lambda x: type(sage_eval(x))
     return InputBox(default=default, width=width, 
-                    label=label, value_type=type, height=height)
+                    label=label, adapter=adapter, height=height)
 
 def color_selector(default=(0,0,1), label=None,
                  widget='colorpicker', hide_box=False):
@@ -421,9 +432,8 @@ def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, wid
         Interact 1 x 3 input grid control labeled None with default value [[1, 2, 3]]
 
     """
-    # TODO: implement to_value (which is very simlar to the input_box `type`)
     return InputGrid(nrows=nrows, ncols=ncols, width=width,
-                     default=default, label=label)    
+                     default=default, label=label, adapter=to_value)    
 
 def checkbox(default=True, label=None):
     """

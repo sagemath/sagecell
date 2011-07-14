@@ -799,7 +799,7 @@ class ColorSelector(InteractControl):
             elif isinstance(default, str):
                 self.default = Color(default)
             else:
-                Color("#000000")
+                self.default = Color("#000000")
         else:
             self.default = default if isinstance(default,str) else "#000000"
 
