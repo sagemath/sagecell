@@ -1002,7 +1002,7 @@ InteractData.Selector.prototype.html = function() {
     value_labels = this.control["value_labels"],
     default_index = this.control["default"],
     subtype = this.control["subtype"],
-    html_code = "<span class='singlecell_var_"+this.name+"'>";
+    html_code = "<span class='singlecell_var_"+this.name+"'>",
     inner_table;
 
     if (subtype === "list") {
