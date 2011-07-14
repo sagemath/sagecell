@@ -328,14 +328,23 @@ class InputBox(InteractControl):
         greater than one) will always be treated as a string.
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
+    :arg adapter: a callable which will be passed the input before
+        sending it into the function.  This might ensure that the
+        input to the function is of a specific type, for example.  The
+        function should take as input the value of the control and
+        should return something that is then passed into the interact
+        function as the value of the control.
     """
 
-    def __init__(self, default="", width=0, height=1, raw=False, label=None):
+    def __init__(self, default="", width=0, height=1, raw=False,
+                 label=None, adapter=None):
         self.default=self.default_return=default
         self.width=int(width)
         self.height=int(height)
         self.raw=raw
         self.label=label
+        if adapter is not None:
+            self.adapter=adapter
 
         if self.height > 1:
             self.subtype = "textarea"
@@ -376,14 +385,23 @@ class InputGrid(InteractControl):
         value should be treated as a string
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
+    :arg adapter: a callable which will be passed the input before
+        sending it into the function.  This might ensure that the
+        input to the function is of a specific type, for example.  The
+        function should take as input the value of the control and
+        should return something that is then passed into the interact
+        function as the value of the control.
     """
 
-    def __init__(self, nrows=1, ncols=1, width=0, default=0, raw=True, label=None):
+    def __init__(self, nrows=1, ncols=1, width=0, default=0, raw=True,
+                 label=None, adapter=None):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
         self.width = int(width)
         self.raw = raw
         self.label = label
+        if adapter is not None:
+            self.adapter = adapter
 
         if not isinstance(default, list):
             self.default = self.default_return = [[default for _ in range(self.ncols)] for _ in range(self.nrows)]
@@ -1065,7 +1083,8 @@ def automatic_control(control):
                 nrows = control.nrows()
                 ncols = control.ncols()
                 default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
-                C = InputGrid(nrows = nrows, ncols = ncols, label = label, default = default_value)
+                C = InputGrid(nrows = nrows, ncols = ncols, label =
+                              label, default = default_value, adapter=parent(control))
             elif isinstance(control, Color):
                 C = ColorSelector(default = control, label = label)
     
