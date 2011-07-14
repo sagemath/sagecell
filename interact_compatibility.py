@@ -152,8 +152,6 @@ def slider(vmin, vmax=None,step_size=None, default=None, label=None,
         Slider: alpha [1--|x|---2/3]            
     """
     values=__old_make_values_list(vmin, vmax, step_size)
-    if label is None:
-        label = ""
     return DiscreteSlider(range_slider=False, values=values, 
                           default=default, label=label, display_value=display_value)
 
@@ -196,8 +194,6 @@ def range_slider(vmin, vmax=None, step_size=None, default=None, label=None, disp
         Range Slider: alpha [1--|3==7|---10]
     """
     values=__old_make_values_list(vmin, vmax, step_size)
-    if label is None:
-        label = ""
     return DiscreteSlider(range_slider=True, values=values, 
                           default=default, label=label, display_value=display_value)
 
@@ -234,9 +230,6 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         sage: input_box('Multiline\nInput',label='Click to change value',type=str,height=5)
         Interact input box labeled 'Click to change value' with default value 'Multiline\nInput'
     """
-    if label is None:
-        label = ""
-
     # TODO: make input_box take a type
     if type is Color:
         # kwargs are only used if the type is Color.  
@@ -296,8 +289,6 @@ def color_selector(default=(0,0,1), label=None,
     # TODO: look at various other widgets we used to support
         #'widget': 'jpicker, 'colorpicker', 'farbtastic' 
         #    -- we don't need to support each one right now
-    if label is None:
-        label=""
     if widget!='colorpicker':
         print "ColorSelector: Only widget='colorpicker' is supported; changing color widget"
     return ColorSelector(default=default, label=label, hide_input=hide_box)
@@ -375,9 +366,6 @@ def selector(values, label=None, default=None,
         ...       print a
         <html>...
     """
-    if label is None:
-        label=""
-
     if buttons:
         selector_type='buttons'
     else:
@@ -433,9 +421,6 @@ def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, wid
         Interact 1 x 3 input grid control labeled None with default value [[1, 2, 3]]
 
     """
-    if label is None:
-        label = ""
-    
     # TODO: implement to_value (which is very simlar to the input_box `type`)
     return InputGrid(nrows=nrows, ncols=ncols, width=width,
                      default=default, label=label)    
@@ -464,8 +449,6 @@ def checkbox(default=True, label=None):
         sage: checkbox()
         Interact checkbox labeled None with default value True
     """
-    if label is None:
-        label=""
     return Checkbox(default=default, label=label)
 
 def text_control(value=""):
