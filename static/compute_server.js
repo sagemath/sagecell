@@ -415,7 +415,7 @@ InteractCell.prototype.bindChange = function(interact) {
 		    if (interact.controls[j]["control"]["raw"]) {
 			code += j + "=" +  changes[j] + ",";
 		    } else {
-			code += j + "='" + changes[j].replace(/['"]/g, "\\'") + "',";
+			code += j + "='" + changes[j].replace(/'/g, "\\'") + "',";
 		    }
 		}
 		code += ")";
