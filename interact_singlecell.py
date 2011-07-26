@@ -186,7 +186,7 @@ def interact(f, controls=[], update={}):
     controls=zip(args,[None]*n+list(defaults))+controls
 
     names=[n for n,_ in controls]
-    controls=[automatic_control(c) for _,c in controls]
+    controls=[automatic_control(c, var=n) for n,c in controls]
 
     update_buttons = {}
     for c in range(len(controls)):
@@ -1041,7 +1041,7 @@ class UpdateButton(InteractControl):
         return self.vars
 
 
-def automatic_control(control):
+def automatic_control(control, var=None):
     """
     Guesses the desired interact control from the syntax of the parameter.
     
@@ -1056,6 +1056,13 @@ def automatic_control(control):
     from types import GeneratorType
     label = None
     default_value = 0
+
+    # For backwards compatibility, we check to see if
+    # auto_update=False as passed in. If so, we set up an
+    # UpdateButton.  This should be deprecated.
+
+    if var=="auto_update" and control is False:
+        return UpdateButton()
     
     # Checks for interact controls that are verbosely defined
     if isinstance(control, InteractControl):
