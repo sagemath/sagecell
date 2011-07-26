@@ -231,19 +231,27 @@ def interact(f, controls=[], update={}):
     # bug in Python 2.6 on Mac OS X (http://bugs.python.org/issue8621)
     function_id=str(randrange(maxint))
 
-    def adapted_f(**kwargs):
+    def adapted_f(control_vals):
         MESSAGE.push_output_id(function_id)
-        # remap parameters
-        for k,v in kwargs.items():
-            kwargs[k]=controls[names.index(k)].adapter(v)
-        returned=f(**kwargs)
+        returned=f(**control_vals)
         MESSAGE.pop_output_id()
         return returned
 
     _INTERACTS[function_id] = {
         "state": dict(zip(names,[c.default for c in controls])),
-        "function": adapted_f
+        "function": adapted_f,
+        "controls": dict(zip(names, controls)),
+        "globals": f.func_globals,
         }
+    state = _INTERACTS[function_id]["state"]
+
+    # transform state by the adapter
+    for var, value in state.items():
+        c = _INTERACTS[function_id]["controls"][var]
+        # initially, the default global context is the function's
+        # global namespace
+        state[var] = c.adapter(value, f.func_globals)
+
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),
@@ -251,23 +259,36 @@ def interact(f, controls=[], update={}):
                                    'layout':names})
     global __single_cell_timeout__
     __single_cell_timeout__=60
-    adapted_f(**dict(zip(names,[c.default for c in controls])))
+    adapted_f(control_vals=state.copy())
     return f
+
+
+
+
 
 class InteractControl:
     """
     Base class for all interact controls.
     """
+
+    preserve_state = True
+
     def __init__(self, *args, **kwargs):
         self.args=args
         self.kwargs=kwargs
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         """
         Get the value of the interact in a form that can be passed to
         the inner function
 
+        We pass in a global variable dictionary ``globs`` so that the
+        arguments can be evaluated in context of the current global
+        environment. This is necessary since the arguments are being evaluated
+        in a totally different context from the rest of the function.
+
         :arg v: a value as passed from the client
+        :dict globs: the global variables in which to evaluate things
         :returns: the interpretation of that value in the context of
             this control (by default, the value is not changed)
         """
@@ -521,7 +542,7 @@ class Selector(InteractControl):
                 'width': self.width,
                 'label':self.label}
                 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         return self.values[int(v)]
 
 class DiscreteSlider(InteractControl):
@@ -586,7 +607,7 @@ class DiscreteSlider(InteractControl):
                 'step':1,
                 'raw':True,
                 'label':self.label}
-    def adapter(self,v):
+    def adapter(self,v, globs):
         if self.range_slider:
             return [self.values[int(i)] for i in v]
         else:
@@ -761,7 +782,7 @@ class MultiSlider(InteractControl):
             return_message["default"] = self.default_return
         return return_message
 
-    def adapter(self,v):
+    def adapter(self,v, globs):
         if self.slider_type == "discrete":
             return [self.values[i][v[i]] for i in self.slider_range]
         else:
@@ -823,7 +844,7 @@ class ColorSelector(InteractControl):
             self.return_value["default"] = self.default
         return self.return_value
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         if self.sage_mode and self.enable_sage and self.sage_color:
             from sagenb.misc.misc import Color
             return Color(v)
@@ -850,6 +871,7 @@ class Button(InteractControl):
         self.default = False
         self.default_value = default
         self.label = label
+        self.preserve_state = False
 
     def message(self):
         return {'control_type':'button',
@@ -858,7 +880,7 @@ class Button(InteractControl):
                 'raw': True,
                 'label': self.label}
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         if v:
             return self.value
         else:
@@ -896,6 +918,7 @@ class ButtonBar(InteractControl):
         self.ncols = ncols
         self.width = str(width)
         self.label = label
+        self.preserve_state=False
 
         # Assign button labels and values.
         self.value_labels=[str(v[1]) if isinstance(v,tuple) and
@@ -947,7 +970,7 @@ class ButtonBar(InteractControl):
                 'width': self.width,
                 'label': self.label}
 
-    def adapter(self,v):
+    def adapter(self,v, globs):
         if v is None:
             return self.default_value
         else:
@@ -999,6 +1022,7 @@ class UpdateButton(InteractControl):
         self.default = False
         self.default_value = default
         self.label = label
+        self.preserve_state = False
 
     def message(self):
         return {'control_type':'button',
@@ -1007,7 +1031,7 @@ class UpdateButton(InteractControl):
                 'raw': True,
                 'label': self.label}
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         if v:
             return self.value
         else:
@@ -1080,13 +1104,13 @@ def automatic_control(control):
                 default_value = control.list()
                 default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
                 C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=parent(control))
+                              default = default_value, adapter=lambda x, globs: parent(control)(x))
             elif is_Vector(control):
                 default_value = [control.list()]
                 nrows = 1
                 ncols = len(control)
                 C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=lambda x: parent(control)(x[0]))
+                              default = default_value, adapter=lambda x, globs: parent(control)(x[0]))
             elif isinstance(control, Color):
                 C = ColorSelector(default = control, label = label)
     

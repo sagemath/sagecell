@@ -244,11 +244,11 @@ def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **
         default=repr(default)
     from sage.all import sage_eval
     if type is None:
-        adapter = lambda x: sage_eval(x)
+        adapter = lambda x, globs: sage_eval(x, globs)
     elif type is str:
-        adapter=lambda x: x
+        adapter=lambda x, globs: x
     else:
-        adapter=lambda x: type(sage_eval(x))
+        adapter = lambda x, globs: sage_eval(x, globs)
     return InputBox(default=default, width=width, 
                     label=label, adapter=adapter, height=height)
 

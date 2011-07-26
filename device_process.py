@@ -60,12 +60,18 @@ user_code="""
 import sys
 sys._sage_messages=MESSAGE
 sys._sage_upload_file_pipe=_file_upload_send
-def _update_interact(id, **kwargs):
+def _update_interact(id, control_vals):
     import interact_singlecell
-    for var in kwargs:
-        interact_singlecell._INTERACTS[id]["state"][var] = kwargs[var]
-    interact_singlecell._INTERACTS[id]["function"](
-        **(interact_singlecell._INTERACTS[id]["state"]))
+    interact_info = interact_singlecell._INTERACTS[id]
+    kwargs = interact_info["state"].copy()
+    controls = interact_info["controls"]
+    for var,value in control_vals.items():
+        c = controls[var]
+        kwargs[var] = c.adapter(value, interact_info["globals"])
+        if c.preserve_state:
+            interact_info["state"][var]=kwargs[var]
+
+    interact_singlecell._INTERACTS[id]["function"](control_vals=kwargs)
 """
 
 user_code_sage="""
