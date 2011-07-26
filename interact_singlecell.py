@@ -187,7 +187,7 @@ def interact(f, controls=[], update=None, layout=None):
         defaults=[]
     n=len(args)-len(defaults)
     
-    controls=sorted(zip(args,[None]*n+list(defaults))+controls)
+    controls=zip(args,[None]*n+list(defaults))+controls
 
     names=[n for n,_ in controls]
     controls=[automatic_control(c, var=n) for n,c in controls]
