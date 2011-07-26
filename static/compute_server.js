@@ -409,16 +409,16 @@ InteractCell.prototype.bindChange = function(interact) {
 
 	    if ($.inArray(changedControl, interact.session.eventHandlers[id][e.type]) !== -1) {
 		var changes = interact.getChanges(interact.update, changedControl);
-		var code = "_update_interact('"+interact.interact_id+"',";
+		var code = "_update_interact('"+interact.interact_id+"',control_vals=dict(";
 
 		for (j in changes) {
 		    if (interact.controls[j]["control"]["raw"]) {
 			code += j + "=" +  changes[j] + ",";
 		    } else {
-			code += j + "='" + changes[j].replace(/['"]/g, "\\'") + "',";
+			code += j + "='" + changes[j].replace(/'/g, "\\'") + "',";
 		    }
 		}
-		code += ")";
+		code += "))";
 
 		interact.session.sendMsg(code, interact.msg_id);
 		interact.session.replace_output=true;

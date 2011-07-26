@@ -34,7 +34,6 @@ Button bar example::
 
 Multislider example::
 
-    from interact_singlecell import *
     sliders = 5
     interval = [(0,10)]*sliders
     default = [3]*sliders
@@ -44,9 +43,8 @@ Multislider example::
 
 Nested interacts::
 
-    from interact_singlecell import *
     @interact
-    def f(n=(0,10)):
+    def f(n=(0,10,1)):
         print n
         @interact
         def transformation(c=(0,n)):
@@ -55,18 +53,15 @@ Nested interacts::
 
 Nested interacts where the number of controls is changed::
 
-    from interact_singlecell import *
     @interact
     def f(n=(0,10)):
         @interact(controls=[('x%d'%i, (0,10)) for i in range(n)])
         def s(multiplier=2, **kwargs):
-            print sum(kwargs.items())*multiplier
+            print sum(kwargs.values())*multiplier
 
 
 Recursively nested interact::
 
-
-    from interact_singlecell import *
     c=1
     @interact
     def f(n=(0,10)):
@@ -191,7 +186,7 @@ def interact(f, controls=[], update={}):
     controls=zip(args,[None]*n+list(defaults))+controls
 
     names=[n for n,_ in controls]
-    controls=[automatic_control(c) for _,c in controls]
+    controls=[automatic_control(c, var=n) for n,c in controls]
 
     update_buttons = {}
     for c in range(len(controls)):
@@ -236,19 +231,27 @@ def interact(f, controls=[], update={}):
     # bug in Python 2.6 on Mac OS X (http://bugs.python.org/issue8621)
     function_id=str(randrange(maxint))
 
-    def adapted_f(**kwargs):
+    def adapted_f(control_vals):
         MESSAGE.push_output_id(function_id)
-        # remap parameters
-        for k,v in kwargs.items():
-            kwargs[k]=controls[names.index(k)].adapter(v)
-        returned=f(**kwargs)
+        returned=f(**control_vals)
         MESSAGE.pop_output_id()
         return returned
 
     _INTERACTS[function_id] = {
         "state": dict(zip(names,[c.default for c in controls])),
-        "function": adapted_f
+        "function": adapted_f,
+        "controls": dict(zip(names, controls)),
+        "globals": f.func_globals,
         }
+    state = _INTERACTS[function_id]["state"]
+
+    # transform state by the adapter
+    for var, value in state.items():
+        c = _INTERACTS[function_id]["controls"][var]
+        # initially, the default global context is the function's
+        # global namespace
+        state[var] = c.adapter(value, f.func_globals)
+
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),
@@ -256,23 +259,36 @@ def interact(f, controls=[], update={}):
                                    'layout':names})
     global __single_cell_timeout__
     __single_cell_timeout__=60
-    adapted_f(**dict(zip(names,[c.default for c in controls])))
+    adapted_f(control_vals=state.copy())
     return f
+
+
+
+
 
 class InteractControl:
     """
     Base class for all interact controls.
     """
+
+    preserve_state = True
+
     def __init__(self, *args, **kwargs):
         self.args=args
         self.kwargs=kwargs
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         """
         Get the value of the interact in a form that can be passed to
         the inner function
 
+        We pass in a global variable dictionary ``globs`` so that the
+        arguments can be evaluated in context of the current global
+        environment. This is necessary since the arguments are being evaluated
+        in a totally different context from the rest of the function.
+
         :arg v: a value as passed from the client
+        :dict globs: the global variables in which to evaluate things
         :returns: the interpretation of that value in the context of
             this control (by default, the value is not changed)
         """
@@ -300,7 +316,6 @@ class Checkbox(InteractControl):
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     """
-
     def __init__(self, default=True, raw=True, label=None):
         self.default=default
         self.raw=raw
@@ -334,14 +349,23 @@ class InputBox(InteractControl):
         greater than one) will always be treated as a string.
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
+    :arg adapter: a callable which will be passed the input before
+        sending it into the function.  This might ensure that the
+        input to the function is of a specific type, for example.  The
+        function should take as input the value of the control and
+        should return something that is then passed into the interact
+        function as the value of the control.
     """
 
-    def __init__(self, default="", width=0, height=1, raw=False, label=None):
+    def __init__(self, default="", width=0, height=1, raw=False,
+                 label=None, adapter=None):
         self.default=self.default_return=default
         self.width=int(width)
         self.height=int(height)
         self.raw=raw
         self.label=label
+        if adapter is not None:
+            self.adapter=adapter
 
         if self.height > 1:
             self.subtype = "textarea"
@@ -382,14 +406,23 @@ class InputGrid(InteractControl):
         value should be treated as a string
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
+    :arg adapter: a callable which will be passed the input before
+        sending it into the function.  This might ensure that the
+        input to the function is of a specific type, for example.  The
+        function should take as input the value of the control and
+        should return something that is then passed into the interact
+        function as the value of the control.
     """
 
-    def __init__(self, nrows=1, ncols=1, width=0, default=0, raw=True, label=None):
+    def __init__(self, nrows=1, ncols=1, width=0, default=0, raw=True,
+                 label=None, adapter=None):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
         self.width = int(width)
         self.raw = raw
         self.label = label
+        if adapter is not None:
+            self.adapter = adapter
 
         if not isinstance(default, list):
             self.default = self.default_return = [[default for _ in range(self.ncols)] for _ in range(self.nrows)]
@@ -419,7 +452,7 @@ class Selector(InteractControl):
     """
     A selector interact control
 
-    :arg int default: initially selected index of the list of values
+    :arg int default: initially selected item in the list of values
     :arg list values: list of values from which the user can select. A value can
         also be represented as a tuple of the form ``(value, label)``, where the
         value is the name of the variable and the label is the text displayed to
@@ -444,8 +477,7 @@ class Selector(InteractControl):
         a default value (None) of the control's variable.
     """
 
-    def __init__(self, default=0, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=None):
-        self.default=int(default)
+    def __init__(self, default=None, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=None):
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
@@ -461,11 +493,7 @@ class Selector(InteractControl):
                            len(v)==2 else str(v) for v in values]
         self.values = [v[0] if isinstance(v,tuple) and
                        len(v)==2 else v for v in values]
-
-        # Ensure that default index is always in the correct range.
-        if default < 0 or default >= len(values):
-            self.default = 0
-
+        self.default = default_to_index(self.values, default)
         # If not using a dropdown list,
         # check/set rows and columns for layout.
         if self.selector_type != "list":
@@ -514,7 +542,7 @@ class Selector(InteractControl):
                 'width': self.width,
                 'label':self.label}
                 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         return self.values[int(v)]
 
 class DiscreteSlider(InteractControl):
@@ -524,9 +552,11 @@ class DiscreteSlider(InteractControl):
     The slider value correlates with the index of an array of values.
 
     :arg int default: initial value (index) of the slider; if ``None``, the
-        slider defaults to the 0th index.
+        slider defaults to the 0th index.  The default will be the
+        closest values to this parameter.
     :arg list values: list of values to which the slider position refers.
-    :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
+    :arg bool range_slider: toggles whether the slider should select
+        one value (False, default) or a range of values (True).
     :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
@@ -540,17 +570,23 @@ class DiscreteSlider(InteractControl):
         else:
             self.values = values[:]
 
-        self.values = [0,1] if len(self.values) < 2 else self.values
+        if len(self.values) < 2:
+            self.values = [0,1]
 
         self.range_slider = range_slider
         self.display_value = display_value
         
         if self.range_slider:
             self.subtype = "discrete_range"
-            self.default = [int(i) for i in default] if default is not None and len(default) == 2 else [0,len(self.values) - 1]
+            if default is None:
+                self.default = (0,len(values))
+            else:
+                self.default=tuple(default_to_index(self.values, d)
+                                   for d in default)
         else:
             self.subtype = "discrete"
-            self.default = int(default if default is not None and default < len(self.values) and default > 0 else 0)
+            self.default = default_to_index(self.values,
+                                            default)
 
         self.label=label
 
@@ -571,7 +607,7 @@ class DiscreteSlider(InteractControl):
                 'step':1,
                 'raw':True,
                 'label':self.label}
-    def adapter(self,v):
+    def adapter(self,v, globs):
         if self.range_slider:
             return [self.values[int(i)] for i in v]
         else:
@@ -583,7 +619,7 @@ class ContinuousSlider(InteractControl):
 
     The slider value moves between a range of numbers.
 
-    :arg int default: initial value (index) of the slider; if ``None``, the
+    :arg int default: initial value of the slider; if ``None``, the
         slider defaults to its minimum
     :arg tuple interval: range of the slider, in the form ``(min, max)``
     :arg int steps: number of steps the slider should have between min and max
@@ -642,7 +678,7 @@ class MultiSlider(InteractControl):
 
     :arg string slider_type: type of sliders to generate. Currently, only "continuous" and "discrete" are valid, and other input defaults to "continuous."
     :arg int sliders: Number of sliders to generate
-    :arg list default: Default value (continuous sliders) or index position (continuous sliders) of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
+    :arg list default: Default value of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
     :arg list values: Values for each value slider in a multi-dimensional list for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1, .. ,slider_n_val_n]]. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to iterate through the same values, the list only needs to contain that one list of values.
     :arg list interval: Intervals for each continuous slider in a list of tuples of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot be set if value sliders are specified. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to have the same interval, the list only needs to contain that one tuple.
     :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
@@ -675,10 +711,11 @@ class MultiSlider(InteractControl):
 
             self.interval = [(0, len(self.values[i])-1) for i in self.slider_range]
 
+            # TODO: make sure default specifies a value, not an index into self.values; use default_to_index
             if len(default) == self.sliders:
-                self.default = [default[i] if i >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in default]
+                self.default = [default_to_index(self.values, default[i]) for i in default]
             elif len(default) == 1:
-                self.default = [default[0] if default[0] >= self.interval[i][0] and i <= self.interval[i][1] else 0 for i in self.slider_range]
+                self.default = [default_to_index(self.values, default[0]) for i in self.slider_range]
             else:
                 self.default = [0] * self.sliders
 
@@ -745,7 +782,7 @@ class MultiSlider(InteractControl):
             return_message["default"] = self.default_return
         return return_message
 
-    def adapter(self,v):
+    def adapter(self,v, globs):
         if self.slider_type == "discrete":
             return [self.values[i][v[i]] for i in self.slider_range]
         else:
@@ -781,7 +818,7 @@ class ColorSelector(InteractControl):
             elif isinstance(default, str):
                 self.default = Color(default)
             else:
-                Color("#000000")
+                self.default = Color("#000000")
         else:
             self.default = default if isinstance(default,str) else "#000000"
 
@@ -807,7 +844,7 @@ class ColorSelector(InteractControl):
             self.return_value["default"] = self.default
         return self.return_value
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         if self.sage_mode and self.enable_sage and self.sage_color:
             from sagenb.misc.misc import Color
             return Color(v)
@@ -834,6 +871,7 @@ class Button(InteractControl):
         self.default = False
         self.default_value = default
         self.label = label
+        self.preserve_state = False
 
     def message(self):
         return {'control_type':'button',
@@ -842,7 +880,7 @@ class Button(InteractControl):
                 'raw': True,
                 'label': self.label}
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         if v:
             return self.value
         else:
@@ -880,6 +918,7 @@ class ButtonBar(InteractControl):
         self.ncols = ncols
         self.width = str(width)
         self.label = label
+        self.preserve_state=False
 
         # Assign button labels and values.
         self.value_labels=[str(v[1]) if isinstance(v,tuple) and
@@ -931,7 +970,7 @@ class ButtonBar(InteractControl):
                 'width': self.width,
                 'label': self.label}
 
-    def adapter(self,v):
+    def adapter(self,v, globs):
         if v is None:
             return self.default_value
         else:
@@ -983,6 +1022,7 @@ class UpdateButton(InteractControl):
         self.default = False
         self.default_value = default
         self.label = label
+        self.preserve_state = False
 
     def message(self):
         return {'control_type':'button',
@@ -991,7 +1031,7 @@ class UpdateButton(InteractControl):
                 'raw': True,
                 'label': self.label}
 
-    def adapter(self, v):
+    def adapter(self, v, globs):
         if v:
             return self.value
         else:
@@ -1001,7 +1041,7 @@ class UpdateButton(InteractControl):
         return self.vars
 
 
-def automatic_control(control):
+def automatic_control(control, var=None):
     """
     Guesses the desired interact control from the syntax of the parameter.
     
@@ -1016,6 +1056,13 @@ def automatic_control(control):
     from types import GeneratorType
     label = None
     default_value = 0
+
+    # For backwards compatibility, we check to see if
+    # auto_update=False as passed in. If so, we set up an
+    # UpdateButton.  This should be deprecated.
+
+    if var=="auto_update" and control is False:
+        return UpdateButton()
     
     # Checks for interact controls that are verbosely defined
     if isinstance(control, InteractControl):
@@ -1029,39 +1076,50 @@ def automatic_control(control):
             default_value, control = control
 
     if isinstance(control, str):
-        C = input_box(default = control, label = label)
+        C = InputBox(default = control, label = label)
     elif isinstance(control, bool):
-        C = checkbox(default = control, label = label, raw = True)
+        C = Checkbox(default = control, label = label, raw = True)
     elif isinstance(control, Number):
-        C = input_box(default = control, label = label, raw = True)
+        C = InputBox(default = control, label = label, raw = True)
     elif isinstance(control, list):
         if len(control) <= 5:
             selectortype = "button"
         else:
             selectortype = "list"
-        C = selector(selector_type = selectortype, default = default_value, label = label, values = control)
+        C = Selector(selector_type = selectortype, default = control[default_value], label = label, values = control)
     elif isinstance(control, GeneratorType):
-        C = discrete_slider(default = default_value, values = take(10000,control), label = label)
+        values=take(10000,control)
+        C = DiscreteSlider(default = values[default_value], values = values, label = label)
     elif isinstance (control, tuple):
         if len(control) == 2:
-            C = continuous_slider(default = default_value, interval = (control[0], control[1]), label = label)
+            C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), label = label)
         elif len(control) == 3:
-            C = continuous_slider(default = default_value, interval = (control[0], control[1]), stepsize = control[2], label = label)
+            C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), stepsize = control[2], label = label)
         else:
-            C = discrete_slider(default = default_value, values = list(control), label = label)
+            values=list(control)
+            C = DiscreteSlider(default = values[default_value], values = values, label = label)
     else:
-        C = input_box(default = control, label=label, raw = True)
+        C = InputBox(default = control, label=label, raw = True)
 
         if CONFIG.EMBEDDED_MODE["sage_mode"] and CONFIG.EMBEDDED_MODE["enable_sage"]:
-            from sagenb.misc.misc import is_Matrix, Color
+            from sagenb.misc.misc import Color
+            from sage.structure.all import is_Vector, is_Matrix
+            from sage.all import parent
             if is_Matrix(control):
-                default_value = control.list()
                 nrows = control.nrows()
                 ncols = control.ncols()
+                default_value = control.list()
                 default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
-                C = input_grid(nrows = nrows, ncols = ncols, label = label, default = default_value)
+                C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
+                              default = default_value, adapter=lambda x, globs: parent(control)(x))
+            elif is_Vector(control):
+                default_value = [control.list()]
+                nrows = 1
+                ncols = len(control)
+                C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
+                              default = default_value, adapter=lambda x, globs: parent(control)(x[0]))
             elif isinstance(control, Color):
-                C = color_selector(default = control, label = label)
+                C = ColorSelector(default = control, label = label)
     
     return C
 
@@ -1080,14 +1138,28 @@ def take(n, iterable):
     return list(islice(iterable, n))
 
 
-# Aliases for backwards compatibility
-selector=Selector
-input_box=InputBox
-input_grid=InputGrid
-checkbox=Checkbox
-continuous_slider=ContinuousSlider
-discrete_slider=DiscreteSlider
-multi_slider=MultiSlider
-color_selector=ColorSelector
-button=Button
-button_bar=ButtonBar
+
+
+def default_to_index(values, default):
+    """
+    From sage notebook's interact.py file
+    """
+    # determine the best choice of index into the list of values
+    # for the user-selected default. 
+    if default is None:
+        index = 0
+    else:
+        try:
+            i = values.index(default)
+        except ValueError:
+            # here no index matches -- which is best?
+            try:
+                v = [(abs(default - values[j]), j) for j in range(len(values))]
+                m = min(v)
+                i = m[1]
+            except TypeError: # abs not defined on everything, so give up
+                i = 0
+        index = i
+    return index
+
+

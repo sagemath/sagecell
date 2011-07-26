@@ -119,61 +119,42 @@ Controls
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.checkbox
-
 .. autoclass:: interact_singlecell.InputBox
    :show-inheritance:
    :no-members:
-
-.. autoclass:: interact_singlecell.input_box
 
 .. autoclass:: interact_singlecell.InputGrid
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.input_grid
-
 .. autoclass:: interact_singlecell.Selector
    :show-inheritance:
    :no-members:
-
-.. autoclass:: interact_singlecell.selector
 
 .. autoclass:: interact_singlecell.DiscreteSlider
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.discrete_slider
-
 .. autoclass:: interact_singlecell.ContinuousSlider
     :show-inheritance:
     :no-members:
-
-.. autoclass:: interact_singlecell.continuous_slider
 
 .. autoclass:: interact_singlecell.MultiSlider
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.multi_slider
-
 .. autoclass:: interact_singlecell.ColorSelector
     :show-inheritance:
     :no-members:
-
-.. autoclass:: interact_singlecell.color_selector
 
 .. autoclass:: interact_singlecell.Button
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.button
-
 .. autoclass:: interact_singlecell.ButtonBar
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.button_bar
 
 .. autoclass:: interact_singlecell.HtmlBox
     :show-inheritance:
@@ -365,7 +346,16 @@ Interact Frontend
 
 See the :ref:`js` Documentation.
 
+Interact Compatibility
+----------------------
+
+This module lists some of the functions we've built for backwards
+compatibility with the old interact system.
+
+.. automodule:: interact_compatibility
+
 Interact Module
 ---------------
 
 .. automodule:: interact_singlecell
+
