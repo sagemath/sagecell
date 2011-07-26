@@ -46,10 +46,9 @@ Supported / Partially Supported Interact Controls and Features
 * Update button that can update an entire interact or only particular variables
 * Arbitrary variables can update other arbitrary variables
 
-Unsupported Interact Features
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[X] Layouts
 
-[ ] Layouts
+* Users can specify order of controls and position relative to interact output
 
 Using Interacts
 ---------------
@@ -108,7 +107,40 @@ different ways:
     
     update = {"updated var": ["var_1 to update" ... "var_n to update"]}
 
+For both options, one can give the shortcut ``["*"]`` in place of variable names to bind all variables.
+
 .. _controls:
+
+Interact Layouts
+^^^^^^^^^^^^^^^^
+
+An entire interact can be visualized as a table taking the following form::
+
+     ____________________________________________
+    |             |               |              |
+    |  top_left   |  top_center   |   top_right  |
+    |_____________|_______________|______________|
+    |             |               |              |
+    |     left    |  __output__   |     right    |
+    |_____________|_______________|______________|
+    |             |               |              |
+    | bottom_left | bottom_center | bottom_right |
+    |_____________|_______________|______________|
+
+
+In the interact decorator, a parameter ``layout`` can be given taking the form::
+
+    layout = {"location_1": ["var_1" ... "var_n"] ... "location_n": ["var_1" ... "var_n"]}
+    
+where ``location_n`` is an element of the interact table, with the exception of ``__output__`` (which is reserved for interact output). The given controls will be placed in the corresponding location in the table in the order in which they are given.
+
+If layout is manually specified, all variables must be manually specified. To manually place all variables (alphabetically) in a given portion of the table, the following shortcut can be used::
+
+    layout = {"location": ["*"]}
+
+If layout is not given, controls will be placed alphabetically in the ``top_center`` area, above interact output.
+
+For backwards compatibility with the interact layout parameter in the Sage Notebook, ``top`` and ``bottom`` map to ``top_center`` and ``bottom_center``.
 
 Controls
 ^^^^^^^^
@@ -324,7 +356,7 @@ terminated if they are idle for 10 seconds, say.
 
 [X] Get current Sage interact theme
 
-[ ] Use sent layout parameters and css / tables to output interacts.
+[A] Use sent layout parameters and css / tables to output interacts.
 
 [X] Other interact controls (checkbox, matrix/grid, buttons, etc.)
 

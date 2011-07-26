@@ -134,7 +134,7 @@ def decorator_defaults(func):
     return my_wrap
 
 @decorator_defaults
-def interact(f, controls=[], update={}):
+def interact(f, controls=[], update={}, layout={}):
     """
     A decorator that creates an interact.
 
@@ -167,6 +167,11 @@ def interact(f, controls=[], update={}):
     :returns: the original function
     :rtype: function
     """
+
+    from copy import deepcopy
+    updates = deepcopy(update)
+    layouts = deepcopy(layout)
+    
     global _INTERACTS
 
     if isinstance(controls,(list,tuple)):
@@ -183,7 +188,7 @@ def interact(f, controls=[], update={}):
         defaults=[]
     n=len(args)-len(defaults)
     
-    controls=zip(args,[None]*n+list(defaults))+controls
+    controls=sorted(zip(args,[None]*n+list(defaults))+controls)
 
     names=[n for n,_ in controls]
     controls=[automatic_control(c, var=n) for n,c in controls]
@@ -194,35 +199,70 @@ def interact(f, controls=[], update={}):
         if isinstance(controls[c], UpdateButton):
             update_buttons[names[c]] = controls[c].boundVars()
 
-    if isinstance(update,dict):
+    if isinstance(updates,dict):
         for i in update_buttons:
-            update[i] = update_buttons[i]
-        if update: # If not an empty dict
-            for change in update:
+            updates[i] = update_buttons[i]
+        if updates: # If not an empty dict
+            for change in updates:
                 try:
                     # Test if the updating variable is defined
                     names.index(change)
                 except ValueError:
-                    raise RuntimeError("%s is not an interacted variable."%change)
-                for i in update[change]:
+                    raise RuntimeError("%s is not an interacted variable."%repr(change))
+                for i in updates[change]:
                     if i is "*":
                         # Test if the updating variable should update everything
-                        update[change] = names
+                        updates[change] = names
                     else:
                         try:
                             # Test if the variables to be updated are defined
                             names.index(i)
                         except ValueError:
-                            raise RuntimeError("%s is not an interacted variable."%i)
+                            raise RuntimeError("%s is not an interacted variable."%repr(i))
                         try:
                             # Make sure that there aren't any repeated updates
-                            update[change].index(change)
+                            updates[change].index(change)
                         except:
-                            update[change].append(change)
+                            updates[change].append(change)
         else:
-            update = "auto"
+            for i in range(len(names)):
+                updates[names[i]] = [names[i]]
     else:
         raise ValueError("Incorrect interact update parameters specified.")
+
+    if isinstance(layouts,dict):
+        if layouts:
+            layout_values = ["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center"]
+            layout_compatibility = ["top","bottom"]
+            layout_vars = 0
+            for i in layouts:
+                try: # Make sure that layout keys are alowed
+                    layout_values.index(i)
+                except ValueError:
+                    if layout_compatibility.index(i) >= 0:
+                        layouts[i+"_center"] = deepcopy(layouts[i])
+                        del(layouts[i])
+                        i += "_center"
+                        continue
+                    else:
+                        raise ValueError("%s is an incorrect layout key. Possible options are %s, or for compatbility %s"%(repr(i), layout_values, layout_compatibility))
+                for j in layouts[i]:
+                    if j is "*": # Layout all controls under the current key
+                        layouts[i] = names
+                        layout_vars += len(names)
+                    else:
+                        try: # Make sure the variable exists
+                            names.index(j)
+                            layout_vars += 1
+                        except ValueError:
+                            raise ValueError("%s is not an interacted variable."%repr(j))
+            if layout_vars is not len(names):
+                # Make sure that each varible occurs only once
+                raise RuntimeError("Too many or too few variables in layout. Each variable should only occur once.")
+        else:
+            layouts["top_center"] = names
+    else:
+        raise ValueError("Incorrect interact layout parameters specified.")
 
     from sys import _sage_messages as MESSAGE, maxint
     from random import randrange
@@ -255,8 +295,8 @@ def interact(f, controls=[], update={}):
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),
-                                   'update':update,
-                                   'layout':names})
+                                   'update':updates,
+                                   'layout':layouts})
     global __single_cell_timeout__
     __single_cell_timeout__=60
     adapted_f(control_vals=state.copy())
