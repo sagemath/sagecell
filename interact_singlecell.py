@@ -1,6 +1,7 @@
 """
 Interacts
 
+The camelcase controls (like Selector or ButtonBar) have experimental APIs and may change.  The stable API is still the backwards-compatible API.
 
 Examples
 --------
