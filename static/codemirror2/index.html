@@ -42,13 +42,16 @@
       <li><a href="mode/python/index.html">Python</a></li>
       <li><a href="mode/php/index.html">PHP</a></li>
       <li><a href="mode/diff/index.html">diff</a></li>
-      <li><a href="mode/clike/index.html">C, Java, and similar</a></li>
+      <li><a href="mode/clike/index.html">C, Java, C#, and similar</a></li>
       <li><a href="mode/stex/index.html">sTeX, LaTeX</a></li>
       <li><a href="mode/haskell/index.html">Haskell</a></li>
       <li><a href="mode/smalltalk/index.html">Smalltalk</a></li>
-      <li><a href="mode/rst/index.html">reStructuredText</a></li>
       <li><a href="mode/plsql/index.html">PL/SQL</a></li>
       <li><a href="mode/lua/index.html">Lua</a></li>
+      <li><a href="mode/scheme/index.html">Scheme</a></li>
+      <li><a href="mode/rst/index.html">reStructuredText</a></li>
+      <li><a href="mode/yaml/index.html">YAML</a></li>
+      <li><a href="mode/sparql/index.html">SPARQL</a></li>
     </ul>
 
   </div><div class="left2 blk">
@@ -59,11 +62,14 @@
       <li><a href="demo/complete.html">Autocompletion</a></li>
       <li><a href="demo/mustache.html">Mode overlays</a></li>
       <li><a href="demo/search.html">Search/replace</a></li>
+      <li><a href="demo/preview.html">HTML editor with preview</a></li>
       <li><a href="demo/resize.html">Auto-resizing editor</a></li>
       <li><a href="demo/marker.html">Setting breakpoints</a></li>
       <li><a href="demo/activeline.html">Highlighting the current line</a></li>
       <li><a href="demo/theme.html">Theming</a></li>
       <li><a href="demo/runmode.html">Stand-alone highlighting</a></li>
+      <li><a href="demo/fullscreen.html">Full-screen editing</a></li>
+      <li><a href="demo/changemode.html">Mode auto-changing</a></li>
     </ul>
 
   </div></div>
@@ -153,7 +159,34 @@
 
   <h2>Releases:</h2>
 
-  <p class="rel">07-06-2011: <a href="http://codemirror.net/codemirror-2.02.zip">Version 2.1</a>:</p>
+  <p class="rel">25-07-2011: <a href="http://codemirror.net/codemirror-2.12.zip">Version 2.12</a>:</p>
+  <ul class="rel-note">
+    <li>Add a <a href="mode/sparql/index.html">SPARQL</a> mode.</li>
+    <li>Fix bug with cursor jumping around in an unfocused editor in IE.</li>
+    <li>Allow key and mouse events to bubble out of the editor. Ignore widget clicks.</li>
+    <li>Solve cursor flakiness after undo/redo.</li>
+    <li>Fix block-reindent ignoring the last few lines.</li>
+    <li>Fix parsing of multi-line attrs in XML mode.</li>
+    <li>Use <code>innerHTML</code> for HTML-escaping.</li>
+    <li>Some fixes to indentation in C-like mode.</li>
+    <li>Shrink horiz scrollbars when long lines removed.</li>
+    <li>Fix width feedback loop bug that caused the width of an inner DIV to shrink.</li>
+  </ul>
+
+  <p class="rel">04-07-2011: <a href="http://codemirror.net/codemirror-2.11.zip">Version 2.11</a>:</p>
+  <ul class="rel-note">
+    <li>Add a <a href="mode/scheme/index.html">Scheme mode</a>.</li>
+    <li>Add a <code>replace</code> method to search cursors, for cursor-preserving replacements.</li>
+    <li>Make the <a href="mode/clike/index.html">C-like mode</a> mode more customizeable.</li>
+    <li>Update XML mode to spot mismatched tags.</li>
+    <li>Add <code>getStateAfter</code> API and <code>compareState</code> mode API methods for finer-grained mode magic.</li>
+    <li>Add a <code>getScrollerElement</code> API method to manipulate the scrolling DIV.</li>
+    <li>Fix drag-and-drop for Firefox.</li>
+    <li>Add a C# configuration for the <a href="mode/clike/index.html">C-like mode</a>.</li>
+    <li>Add <a href="demo/fullscreen.html">full-screen editing</a> and <a href="demo/changemode.html">mode-changing</a> demos.</li>
+  </ul>
+
+  <p class="rel">07-06-2011: <a href="http://codemirror.net/codemirror-2.1.zip">Version 2.1</a>:</p>
   <p class="rel-note">Add
   a <a href="manual.html#option_theme">theme</a> system
   (<a href="demo/theme.html">demo</a>). Note that this is not
@@ -189,34 +222,6 @@
     <li>Add an <code>onHighlightComplete</code> option.</li>
     <li>Fix the context menu for Firefox.</li>
   </ul>
-
-  <p class="rel">28-03-2011: <a href="http://codemirror.net/codemirror-2.0.zip">Version 2.0</a>:</p>
-  <p class="rel-note">CodeMirror 2 is a complete rewrite that's
-  faster, smaller, simpler to use, and less dependent on browser
-  quirks. See <a href="internals.html">this</a>
-  and <a href="http://groups.google.com/group/codemirror/browse_thread/thread/5a8e894024a9f580">this</a>
-  for more information.</a>
-
-  <p class="rel">28-03-2011: <a href="http://codemirror.net/codemirror-1.0.zip">Version 1.0</a>:</p>
-  <ul class="rel-note">
-    <li>Fix error when debug history overflows.</li>
-    <li>Refine handling of C# verbatim strings.</li>
-    <li>Fix some issues with JavaScript indentation.</li>
-  </ul>
-
-  <p class="rel">22-02-2011: <a href="https://github.com/marijnh/codemirror2/tree/beta2">Version 2.0 beta 2</a>:</p>
-  <p class="rel-note">Somewhate more mature API, lots of bugs shaken out.</a>
-
-  <p class="rel">17-02-2011: <a href="http://codemirror.net/codemirror-0.94.zip">Version 0.94</a>:</p>
-  <ul class="rel-note">
-    <li><code>tabMode: "spaces"</code> was modified slightly (now indents when something is selected).</li>
-    <li>Fixes a bug that would cause the selection code to break on some IE versions.</li>
-    <li>Disabling spell-check on WebKit browsers now works.</li>
-  </ul>
-
-  <p class="rel">08-02-2011: <a href="http://codemirror.net/2/">Version 2.0 beta 1</a>:</p>
-  <p class="rel-note">CodeMirror 2 is a complete rewrite of
-  CodeMirror, no longer depending on an editable frame.</p>
 
   <p><a href="oldrelease.html">Older releases...</a></p>
 
