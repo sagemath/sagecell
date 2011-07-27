@@ -217,7 +217,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		break;
 
 	    case 'pyout':
-                this.output("<pre class='singlecell_pyout'></pre>",output_block).append(msg.content.data['text/plain']);
+                this.output("<pre class='singlecell_pyout'></pre>",output_block).text(msg.content.data['text/plain']);
 		break;
 
 	    case 'display_data':
