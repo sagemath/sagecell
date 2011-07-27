@@ -213,44 +213,35 @@ def interact(f, controls=[], update=None, layout=None):
                 # include all controls
                 value = nameset
             elif value-nameset:
-                raise ValueError("Update variables %s are not interact variables."%repr(value-nameset))
+                raise ValueError("Update variables %s are not interact variables."%repr(list(value-nameset)))
             update[key]=list(value)
     else:
         update = dict((n,n) for n in names)
 
-    if isinstance(layout,dict):
-        if layout:
-            layout_values = ["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center"]
-            layout_compatibility = ["top","bottom"]
-            layout_vars = 0
-            for i in layout:
-                try: # Make sure that layout keys are alowed
-                    layout_values.index(i)
-                except ValueError:
-                    if layout_compatibility.index(i) >= 0:
-                        layout[i+"_center"] = deepcopy(layout[i])
-                        del(layout[i])
-                        i += "_center"
-                        continue
-                    else:
-                        raise ValueError("%s is an incorrect layout key. Possible options are %s, or for compatbility %s"%(repr(i), layout_values, layout_compatibility))
-                for j in layout[i]:
-                    if j is "*": # Layout all controls under the current key
-                        layout[i] = names
-                        layout_vars += len(names)
-                    else:
-                        try: # Make sure the variable exists
-                            names.index(j)
-                            layout_vars += 1
-                        except ValueError:
-                            raise ValueError("%s is not an interacted variable."%repr(j))
-            if layout_vars is not len(names):
-                # Make sure that each varible occurs only once
-                raise RuntimeError("Too many or too few variables in layout. Each variable should only occur once.")
-        else:
-            layout["top_center"] = names
+    if isinstance(layout, (list, tuple)):
+        layout = {'top_center': layout}
+
+    if layout:
+        # sanitize input
+        layout_values = set(["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center", "top", "bottom"])
+        sanitized_layout = {}
+        for key,value in layout.items():
+            if key in layout_values:
+                if key in ("top", "bottom"):
+                    oldkey=key
+                    key+="_center"
+                    if key in layout:
+                        raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
+            else:
+                raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
+            if "*" in flatten(value):
+                value = [[n] for n in names]
+            elif set(flatten(value))-nameset:
+                raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
+            sanitized_layout[key] = value
+        layout = sanitized_layout
     else:
-        raise ValueError("Incorrect interact layout parameters specified.")
+        layout["top_center"] = [[n] for n in names]
 
     from sys import _sage_messages as MESSAGE, maxint
     from random import randrange
@@ -1155,17 +1146,26 @@ def take(n, iterable):
     """
     Return the first n elements of an iterator as a list.
 
+    This is from the `Python itertools documentation <http://docs.python.org/library/itertools.html#recipes>`_.
+
     :arg int n: Number of elements through which v should be iterated.
     :arg iterable: An iterator.
 
     :returns: First n elements of iterable.
-    :rtype: List
+    :rtype: list
     """
 
     from itertools import islice
     return list(islice(iterable, n))
 
-
+def flatten(listOfLists):
+    """
+    Flatten one level of nesting
+    
+    This is from the `Python itertools documentation <http://docs.python.org/library/itertools.html#recipes>`_.
+    """
+    from itertools import chain
+    return chain.from_iterable(listOfLists)
 
 
 def default_to_index(values, default):
