@@ -335,7 +335,7 @@ class Checkbox(InteractControl):
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     """
-    def __init__(self, default=True, raw=True, label=None):
+    def __init__(self, default=True, label=None, raw=True):
         self.default=default
         self.raw=raw
         self.label=label
@@ -376,8 +376,8 @@ class InputBox(InteractControl):
         function as the value of the control.
     """
 
-    def __init__(self, default="", width=0, height=1, raw=False,
-                 label=None, adapter=None):
+    def __init__(self, default="", label=None, width=0, height=1, raw=False,
+                 adapter=None):
         self.default=self.default_return=default
         self.width=int(width)
         self.height=int(height)
@@ -432,7 +432,6 @@ class InputGrid(InteractControl):
         should return something that is then passed into the interact
         function as the value of the control.
     """
-
     def __init__(self, nrows=1, ncols=1, width=0, default=0, raw=True,
                  label=None, adapter=None):
         self.nrows = int(nrows)
@@ -496,7 +495,7 @@ class Selector(InteractControl):
         a default value (None) of the control's variable.
     """
 
-    def __init__(self, default=None, values=[0], selector_type="list", nrows=None, ncols=None, width="", label=None):
+    def __init__(self, values=[0], default=None, selector_type="list", nrows=None, ncols=None, width="", label=None):
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
@@ -581,7 +580,7 @@ class DiscreteSlider(InteractControl):
         a default value (None) of the control's variable.
     """
 
-    def __init__(self, range_slider=False, display_value=True, values=[0,1], default=None, label=None):
+    def __init__(self, values=[0,1], default=None, range_slider=False, display_value=True, label=None):
         from types import GeneratorType
 
         if isinstance(values, GeneratorType):
@@ -651,7 +650,7 @@ class ContinuousSlider(InteractControl):
     Note that while "number of steps" and/or "stepsize" can be specified for the slider, this is to enable snapping, rather than a restriction on the slider's values. The only restrictions placed on the values of the slider are the endpoints of its range.
     """
 
-    def __init__(self, range_slider=False, display_value=True, interval=(0,100), default=None, steps=250, stepsize=0, label=None):
+    def __init__(self, interval=(0,100), default=None, steps=250, stepsize=0, label=None, range_slider=False, display_value=True):
         self.range_slider = range_slider
         self.display_value = display_value
         self.interval = interval if interval[0] < interval[1] and len(interval) == 2 else (0,100)
@@ -707,7 +706,7 @@ class MultiSlider(InteractControl):
         a default value (None) of the control's variable.
     """
 
-    def __init__(self, slider_type="continuous", sliders=1, default=[0], interval=[(0,1)], values=[[0,1]], stepsize=[0], steps=[250], display_values=True, label=None):
+    def __init__(self, sliders=1, values=[[0,1]], interval=[(0,1)], slider_type="continuous",  default=[0], stepsize=[0], steps=[250], display_values=True, label=None):
         from types import GeneratorType
 
         self.slider_type = slider_type
@@ -883,7 +882,7 @@ class Button(InteractControl):
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     """
-    def __init__(self, text="Button", value = "", default="", width="", label=None):
+    def __init__(self, default="", value = "", text="Button", width="", label=None):
         self.text = text
         self.width = width
         self.value = value
