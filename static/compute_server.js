@@ -164,8 +164,12 @@ Session.prototype.appendMsg = function(msg, text) {
     this.outputDiv.find(".singlecell_messages").append(document.createElement('div')).children().last().text(text+JSON.stringify(msg));
 }
 
+Session.prototype.output_id = function(block_id) {
+    return "output_"+(block_id || this.session_id);
+}
+
 Session.prototype.output = function(html, block_id) {
-    var output_block=$("#output_"+(block_id || this.session_id));
+    var output_block=$("#"+this.output_id(block_id));
     if (this.replace_output) {
 	output_block.empty();
 	this.replace_output=false;
@@ -314,6 +318,9 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    
 	    this.appendMsg(msg, "Accepted: ");
         }
+	var output_id = this.output_id(output_block)
+	MathJax.Hub.Queue(["Typeset",MathJax.Hub, output_id]);
+	MathJax.Hub.Queue([function () {$("#"+output_id+" .math").removeClass('math');}]);
     }
     if (this.sessionContinue) {
 	this.setQuery();
