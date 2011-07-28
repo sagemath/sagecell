@@ -63,17 +63,26 @@ singlecell.makeSinglecell = (function(args) {
     if (typeof computationID !== "boolean") {
 	computationID = true;
     }
+    if (typeof code === "undefined") {
+	code = $(inputDiv).text();
+	// delete the text
+	$(inputDiv).text("");
+    }
     
-    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv};
+    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code};
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
 	// Wait for CodeMirror to load before using the $ function
+	// Could we use MathJax Queues for this?
+	// We have to do something special here since Codemirror is loaded dynamically,
+	// so it may not be ready even though the page is loaded and ready.
 	if (typeof CodeMirror === "undefined") {
 	    setTimeout(arguments.callee, 100);
 	    return false;
 	} else {
 	    $(function() {
 		$(inputDiv).html(body);
+		$(inputDiv+" .singlecell_commands").text(code);
 		if (inputDiv !== outputDiv) {
 		    $(inputDiv+" .singlecell_output, .singlecell_messages").appendTo(outputDiv);
 		}
@@ -111,14 +120,17 @@ singlecell.initCell = (function(singlecellInfo) {
 		event.stop();
 		return true;
 	    }
+	    /* Uncomment to have div remember the last code */
 	    try {
 		sessionStorage.removeItem(inputDivName+"_editorValue");
 		sessionStorage.setItem(inputDivName+"_editorValue", editor.getValue());
 	    } catch (e) {
 		// if we can't store, don't do anything, e.g. if cookies are blocked
 	    }
+	    /* */
 	})
     });
+    /* Uncomment to have div remember the last code */
     try {
 	if (sessionStorage[inputDivName+"_editorValue"]) {
 	    editor.setValue(sessionStorage.getItem(inputDivName+"_editorValue"));
@@ -130,6 +142,7 @@ singlecell.initCell = (function(singlecellInfo) {
 	    sessionStorage.setItem(inputDivName+"_sageMode",$(e.target).attr("checked"));
 	});
     } catch(e) {}
+    /* */
     editor.focus();
     
     var files = 0;

@@ -25,13 +25,16 @@ xreq=None
 messages=[]
 sysargs=None
 
-scripts=[('jmol/appletweb/Jmol.js', {}),
-         ('codemirror2/lib/codemirror.js', {}),
-         ('codemirror2/mode/python/python.js', {}),
+#: (URL, dict of URL parameters)
+scripts=[('codemirror2/lib/codemirror.js', {}),
+         ('jmol/appletweb/Jmol.js', {}),
          ('jqueryui/js/jquery-ui-1.8.13.custom.min.js', {}),
          ('colorpicker/js/colorpicker.min.js', {}),
          ('compute_server.js', {}),
          ('mathjax/MathJax.js', {'config': 'TeX-AMS-MML_HTMLorMML'}),
+         # need to figure out how to load python.js *after* codemirror is loaded.
+         # perhaps mathjax queues would be good here?
+         ('codemirror2/mode/python/python.js', {}),
 ]
 
 jQuery_current='jquery-1.5.min.js'
