@@ -25,13 +25,15 @@ xreq=None
 messages=[]
 sysargs=None
 
-scripts=['jmol/appletweb/Jmol.js', 
-         'codemirror2/lib/codemirror.js',
-         'codemirror2/mode/python/python.js',
-         'jqueryui/js/jquery-ui-1.8.13.custom.min.js',
-         'colorpicker/js/colorpicker.min.js',
-         'compute_server.js',
+scripts=[('jmol/appletweb/Jmol.js', {}),
+         ('codemirror2/lib/codemirror.js', {}),
+         ('codemirror2/mode/python/python.js', {}),
+         ('jqueryui/js/jquery-ui-1.8.13.custom.min.js', {}),
+         ('colorpicker/js/colorpicker.min.js', {}),
+         ('compute_server.js', {}),
+         ('mathjax/MathJax.js', {'config': 'TeX-AMS-MML_HTMLorMML'}),
 ]
+
 jQuery_current='jquery-1.5.min.js'
 
 stylesheets=['codemirror2/lib/codemirror.css',

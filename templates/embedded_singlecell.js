@@ -1,12 +1,30 @@
 var singlecell = {};
 
 singlecell.init = (function() {
+    var load = function ( config ) {
+	// We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag 
+	// being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
+        var script = document.createElement( 'script' );
+	if (config.type!==undefined) {
+	    script.type = config.type
+	} else {
+	    script.type="text/javascript"
+	}
+	if (config.src!==undefined) { script.src = config.src; }
+	if (config.text!==undefined) {script.text = config.text;}
+
+	document.head.appendChild(script);
+    };
+
+    load({'text': 'MathJax.Hub.Config({  extensions: ["jsMath2jax.js"]});', 
+	  'type': 'text/x-mathjax-config'});
     var scripts=[
-	{%- for script in scripts -%}
-	"{{- url_for('static',filename=script,_external=True) -}}",
+	{%- for (script,params) in scripts -%}
+	"{{- url_for('static',filename=script,_external=True, **params) -}}",
 	{%- endfor -%}]
     for(var i = 0; i < scripts.length; i++) {
-	$("head").append("<script type='text/javascript' src='"+scripts[i]+"'></script>");
+	console.log('got '+scripts[i]);
+	load({'src': scripts[i]});
     }
 
     var stylesheets=[
