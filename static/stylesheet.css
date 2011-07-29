@@ -10,9 +10,10 @@
 .stderr {color: red}
 .colorpicker {z-index: 10} /* So that sliders, etc. don't appear on top of it */
 .CodeMirror {border: 1px solid black;}
-.CodeMirror-scroll {height: auto; overflow-y: auto; overflow-x: auto; min-height: 10ex; max-height: 60ex;} 
+/* resizable */
+/* .CodeMirror-scroll {height: auto; overflow-y: auto; overflow-x: auto; min-height: 10ex; max-height: 60ex;}  */
 /* not resizeable */
-/* .CodeMirror-scroll {height: 200px}  */
+.CodeMirror-scroll {height: 200px}
 .singlecell_done {color: red}
 .singlecell_sessionOutput {border: 2px solid black; padding: 5px; overflow-x: auto}
 .singlecell_sessionFiles {padding-bottom: 1.0em;}
