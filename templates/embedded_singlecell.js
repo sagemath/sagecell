@@ -1,3 +1,4 @@
+
 var singlecell = {};
 
 singlecell.init = (function() {
@@ -18,14 +19,9 @@ singlecell.init = (function() {
 
     load({'text': 'MathJax.Hub.Config({  extensions: ["jsMath2jax.js"]});', 
 	  'type': 'text/x-mathjax-config'});
-    var scripts=[
-	{%- for (script,params) in scripts -%}
-	"{{- url_for('static',filename=script,_external=True, **params) -}}",
-	{%- endfor -%}]
-    for(var i = 0; i < scripts.length; i++) {
-	console.log('got '+scripts[i]);
-	load({'src': scripts[i]});
-    }
+    load({'src': 'static/all.min.js'});
+    load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
+
 
     var stylesheets=[
 	{%- for stylesheet in stylesheets -%}
@@ -35,6 +31,8 @@ singlecell.init = (function() {
 	$("head").append("<link rel='stylesheet' href='"+stylesheets[i]+"'></script>");
     }
 });
+
+var singlecell_dependencies_callback = function() {console.log("dependencies loaded"); singlecell_dependencies=true;};
 
 singlecell.makeSinglecell = (function(args) {
     if (typeof args === "undefined") {
@@ -76,7 +74,7 @@ singlecell.makeSinglecell = (function(args) {
 	// Could we use MathJax Queues for this?
 	// We have to do something special here since Codemirror is loaded dynamically,
 	// so it may not be ready even though the page is loaded and ready.
-	if (typeof CodeMirror === "undefined") {
+	if (typeof singlecell_dependencies === "undefined") {
 	    setTimeout(arguments.callee, 100);
 	    return false;
 	} else {
