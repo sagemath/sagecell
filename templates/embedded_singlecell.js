@@ -17,19 +17,16 @@ singlecell.init = (function() {
 	document.head.appendChild(script);
     };
 
+    // many prerequisites that have been smashed together into all.min.js
+    load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
+
+    // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
     load({'text': 'MathJax.Hub.Config({  extensions: ["jsMath2jax.js"]});', 
 	  'type': 'text/x-mathjax-config'});
-    load({'src': 'static/all.min.js'});
     load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
 
-
-    var stylesheets=[
-	{%- for stylesheet in stylesheets -%}
-	"{{- url_for('static',filename=stylesheet,_external=True) -}}",
-	{%- endfor -%}];
-    for(var i = 0; i < stylesheets.length; i++) {
-	$("head").append("<link rel='stylesheet' href='"+stylesheets[i]+"'></script>");
-    }
+    // many stylesheets that have been smashed together into all.min.css
+    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
 });
 
 var singlecell_dependencies_callback = function() {console.log("dependencies loaded"); singlecell_dependencies=true;};
