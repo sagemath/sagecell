@@ -39,11 +39,6 @@ function makeClass(){
 
 
 
-// Initialize jmol
-// TODO: move to a better place
-jmolInitialize('/static/jmol');
-// TODO: setting the menu doesn't appear to work
-//jmolSetCallback("menuFile","/static/jmol/appletweb/SageMenu.mnu");
 
 
 /**************************************************************
@@ -1241,3 +1236,10 @@ InteractData.Slider.prototype.finishRender = function(location) {
     control_out.find("#"+this.control_id).slider(slider_config);
     
 }
+
+
+
+// Initialize jmol
+// TODO: move to a better place
+jmolInitialize('/static/jmol');
+jmolSetCallback("menuFile","/static/jmol/appletweb/SageMenu.mnu");
