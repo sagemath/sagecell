@@ -1,7 +1,7 @@
 
 var singlecell = {};
 
-singlecell.init = (function() {
+singlecell.init = (function(callback) {
     var load = function ( config ) {
 	// We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag 
 	// being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
@@ -17,19 +17,26 @@ singlecell.init = (function() {
 	document.head.appendChild(script);
     };
 
-    // many prerequisites that have been smashed together into all.min.js
-    load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
+    singlecell.init_callback = callback
+
+    // many stylesheets that have been smashed together into all.min.css
+    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
 
     // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
     load({'text': 'MathJax.Hub.Config({  extensions: ["jsMath2jax.js"]});', 
 	  'type': 'text/x-mathjax-config'});
     load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
 
-    // many stylesheets that have been smashed together into all.min.css
-    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
+    // many prerequisites that have been smashed together into all.min.js
+    load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
 });
 
-var singlecell_dependencies_callback = function() {console.log("dependencies loaded"); singlecell_dependencies=true;};
+var singlecell_dependencies_callback = function() {
+    singlecell_dependencies=true;     
+    if (singlecell.init_callback !== undefined) {
+	singlecell.init_callback();
+    }
+};
 
 singlecell.makeSinglecell = (function(args) {
     if (typeof args === "undefined") {
