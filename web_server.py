@@ -128,7 +128,6 @@ def evaluate(db,fs):
             code = request.form.get("commands")
 
             if bool(request.form.get("sage_mode")) is True:
-                print "SAGE MODE ACTIVATED"
                 sage_mode = True
 
             message = {"parent_header": {},
