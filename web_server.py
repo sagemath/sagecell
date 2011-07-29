@@ -25,25 +25,7 @@ xreq=None
 messages=[]
 sysargs=None
 
-#: (URL, dict of URL parameters)
-scripts=[('codemirror2/lib/codemirror.js', {}),
-         ('jmol/appletweb/Jmol.js', {}),
-         ('jqueryui/js/jquery-ui-1.8.13.custom.min.js', {}),
-         ('colorpicker/js/colorpicker.min.js', {}),
-         ('compute_server.js', {}),
-         ('mathjax/MathJax.js', {'config': 'TeX-AMS-MML_HTMLorMML'}),
-         # need to figure out how to load python.js *after* codemirror is loaded.
-         # perhaps mathjax queues would be good here?
-         ('codemirror2/mode/python/python.js', {}),
-]
-
 jQuery_current='jquery-1.5.min.js'
-
-stylesheets=['codemirror2/lib/codemirror.css',
-             'codemirror2/theme/default.css',
-             'stylesheet.css',
-             'jqueryui/css/sage/jquery-ui-1.8.13.custom.css',
-             'colorpicker/css/colorpicker.css']
 
 def print_exception(f):
     """
@@ -266,9 +248,7 @@ def config(db, fs):
 
 @app.route("/embedded_singlecell.js")
 def embedded():
-    return Response(render_template("embedded_singlecell.js",
-                                    scripts=scripts,
-                                    stylesheets=stylesheets),
+    return Response(render_template("embedded_singlecell.js"),
                     content_type='text/javascript')
 
 if __name__ == "__main__":

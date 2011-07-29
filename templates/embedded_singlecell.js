@@ -1,6 +1,7 @@
+
 var singlecell = {};
 
-singlecell.init = (function() {
+singlecell.init = (function(callback) {
     var load = function ( config ) {
 	// We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag 
 	// being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
@@ -16,25 +17,26 @@ singlecell.init = (function() {
 	document.head.appendChild(script);
     };
 
+    singlecell.init_callback = callback
+
+    // many stylesheets that have been smashed together into all.min.css
+    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
+
+    // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
     load({'text': 'MathJax.Hub.Config({  extensions: ["jsMath2jax.js"]});', 
 	  'type': 'text/x-mathjax-config'});
-    var scripts=[
-	{%- for (script,params) in scripts -%}
-	"{{- url_for('static',filename=script,_external=True, **params) -}}",
-	{%- endfor -%}]
-    for(var i = 0; i < scripts.length; i++) {
-	console.log('got '+scripts[i]);
-	load({'src': scripts[i]});
-    }
+    load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
 
-    var stylesheets=[
-	{%- for stylesheet in stylesheets -%}
-	"{{- url_for('static',filename=stylesheet,_external=True) -}}",
-	{%- endfor -%}];
-    for(var i = 0; i < stylesheets.length; i++) {
-	$("head").append("<link rel='stylesheet' href='"+stylesheets[i]+"'></script>");
-    }
+    // many prerequisites that have been smashed together into all.min.js
+    load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
 });
+
+var singlecell_dependencies_callback = function() {
+    singlecell_dependencies=true;     
+    if (singlecell.init_callback !== undefined) {
+	singlecell.init_callback();
+    }
+};
 
 singlecell.makeSinglecell = (function(args) {
     if (typeof args === "undefined") {
@@ -76,7 +78,7 @@ singlecell.makeSinglecell = (function(args) {
 	// Could we use MathJax Queues for this?
 	// We have to do something special here since Codemirror is loaded dynamically,
 	// so it may not be ready even though the page is loaded and ready.
-	if (typeof CodeMirror === "undefined") {
+	if (typeof singlecell_dependencies === "undefined") {
 	    setTimeout(arguments.callee, 100);
 	    return false;
 	} else {
