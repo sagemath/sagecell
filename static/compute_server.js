@@ -233,11 +233,11 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		    this.output('<img src="'+filepath+msg.content.data['text/filename']+'" />',output_block);
 		}
 		if(msg.content.data['image/png']!==undefined) {
-		    console.log('making png img with data in src');
+		    //console.log('making png img with data in src');
 		    this.output('<img src="'+msg.content.data['image/png']+'" />',output_block);
 		}
 		if(msg.content.data['application/x-jmol']!==undefined) {
-		    console.log('making jmol applet');
+		    //console.log('making jmol applet');
 		    jmolSetDocument(false);
 		    this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+msg.content.data['application/x-jmol']+'";\n script SCRIPT;\n'),output_block);
 		}
