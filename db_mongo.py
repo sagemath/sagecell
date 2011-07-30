@@ -49,6 +49,8 @@ class DB(db.DB):
             msg['device']=doc['device']
  
         msg['evaluated']=False
+        import datetime
+        msg['timestamp']=datetime.datetime.utcnow()
         self.database.input_messages.insert(msg)
     
     def get_input_messages(self, device, limit=None):
