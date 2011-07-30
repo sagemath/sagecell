@@ -385,7 +385,7 @@ def selector(values, label=None, default=None,
     return Selector(values=values, default=default, label=label, selector_type=selector_type,
                     nrows=nrows, ncols=ncols, width=width)
 
-def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, width=4):
+def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x, globs: x, width=4):
     r"""
     An input grid interactive control.  Use this in conjunction
     with the :func:`interact` command.
