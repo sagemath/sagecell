@@ -217,7 +217,7 @@ def interact(f, controls=[], update=None, layout=None):
                 raise ValueError("Update variables %s are not interact variables."%repr(list(value-nameset)))
             update[key]=list(value)
     else:
-        update = dict((n,n) for n in names)
+        update = dict((n,[n]) for n in names)
 
     if isinstance(layout, (list, tuple)):
         layout = {'top_center': layout}
