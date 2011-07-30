@@ -25,8 +25,13 @@ singlecell.init = (function(callback) {
     $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='colorpicker/css/colorpicker.css', _external=True) -}}'></link>");
 
     // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
-    load({'text': 'MathJax.Hub.Config({  extensions: ["jsMath2jax.js"]});', 
-	  'type': 'text/x-mathjax-config'});
+    load({'text': 'MathJax.Hub.Config({  ' +
+	  'extensions: ["jsMath2jax.js", "tex2jax.js"],' + 
+	  'tex2jax: {' +
+	  ' inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ],' +
+	  ' displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ],' +
+	  ' processEscapes: true}' +
+	  '});', 'type': 'text/x-mathjax-config'});
     load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
 
     // many prerequisites that have been smashed together into all.min.js

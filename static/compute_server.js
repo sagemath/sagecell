@@ -313,9 +313,12 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    
 	    this.appendMsg(msg, "Accepted: ");
         }
-	var output_id = this.output_id(output_block)
-	MathJax.Hub.Queue(["Typeset",MathJax.Hub, output_id]);
-	MathJax.Hub.Queue([function () {$("#"+output_id+" .math").removeClass('math');}]);
+	// need to mathjax the entire output, since output_block could just be part of the output
+	// TODO: this is really too much, as it typesets *all* of the session outputs
+	// TODO: the session object really should have it's own output DOM element
+	var output = this.outputDiv.find(".singlecell_output").get(0);
+	MathJax.Hub.Queue(["Typeset",MathJax.Hub, output]);
+	MathJax.Hub.Queue([function () {$(output).find(".math").removeClass('math');}]);
     }
     if (this.sessionContinue) {
 	this.setQuery();
