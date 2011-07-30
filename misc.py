@@ -9,7 +9,10 @@ def select_db(sysargs, context=None):
     :type context: zmq.Context
     :returns: a tuple of the form ``(db, fs)``
     """
-    db=sysargs.db
+    try:
+        db=sysargs.db
+    except:
+        db="mongo"
     if db=="sqlite":
         import db_sqlite
         import sqlite3
