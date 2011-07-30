@@ -21,6 +21,8 @@ singlecell.init = (function(callback) {
 
     // many stylesheets that have been smashed together into all.min.css
     $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
+    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='jqueryui/css/sage/jquery-ui-1.8.13.custom.css', _external=True) -}}'></link>");
+    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='colorpicker/css/colorpicker.css', _external=True) -}}'></link>");
 
     // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
     load({'text': 'MathJax.Hub.Config({  extensions: ["jsMath2jax.js"]});', 
