@@ -378,11 +378,11 @@ def selector(values, label=None, default=None,
         <html>...
     """
     if buttons:
-        selector_type='buttons'
+        selector_type='button'
     else:
         selector_type='list'
         
-    return Selector(default=default, label=label, selector_type=selector_type,
+    return Selector(values=values, default=default, label=label, selector_type=selector_type,
                     nrows=nrows, ncols=ncols, width=width)
 
 def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, width=4):

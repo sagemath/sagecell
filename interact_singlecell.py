@@ -496,7 +496,7 @@ class Selector(InteractControl):
         a default value (None) of the control's variable.
     """
 
-    def __init__(self, values=[0], default=None, selector_type="list", nrows=None, ncols=None, width="", label=None):
+    def __init__(self, values, default=None, selector_type="list", nrows=None, ncols=None, width="", label=None):
         self.values=values[:]
         self.selector_type=selector_type
         self.nrows=nrows
@@ -555,8 +555,8 @@ class Selector(InteractControl):
                 'values': len(self.values),
                 'value_labels': self.value_labels,
                 'default': self.default,
-                'nrows': self.nrows,
-                'ncols': self.ncols,
+                'nrows': int(self.nrows) if self.nrows is not None else None,
+                'ncols': int(self.ncols) if self.ncols is not None else None,
                 'raw': True,
                 'width': self.width,
                 'label':self.label}
