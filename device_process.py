@@ -461,8 +461,12 @@ def displayhook_hack(string):
     if i >= 0:
         # skip lines that are either empty or start with whitespace
         # or are comments
-        while len(string[i])==0 or string[i][0] in ' \t#': # indented or comment
+        while (len(string[i])==0 # empty line
+               or string[i][0] in ' \t#' # indented or comment
+               or (i>0 and len(string[i-1])>0 and string[i-1][-1]=='\\')): # previous line is a continuation
             i -= 1
+
+        if i==-1: i=0
         final_lines = unicode_str('\n'.join(string[i:]))
         if not (final_lines.startswith('def ') or final_lines.startswith('class ')):
             try:
@@ -539,7 +543,6 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
             code = "print 'NOTE: Sage Mode is unavailable, which may cause errors if using Sage-specific syntax.'\n" + user_code + msg['content']['code']
         else:
             code = user_code + msg['content']['code']
-
         code = displayhook_hack(code)
         # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
         code += '\n'
