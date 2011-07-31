@@ -163,13 +163,21 @@ Session.prototype.output_id = function(block_id) {
     return "output_"+(block_id || this.session_id);
 }
 
-Session.prototype.output = function(html, block_id) {
+Session.prototype.output = function(html, block_id, create) {
+    // create===false means just pass back the last child of the output_block
+    // if we aren't replacing the output block
+    if (create===undefined) {create=true;}
     var output_block=$("#"+this.output_id(block_id));
     if (this.replace_output) {
 	output_block.empty();
 	this.replace_output=false;
+	create=true;
     }
-    return output_block.append(html).children().last();
+    out = output_block
+    if (create) {
+	out = out.append(html);
+    }
+    return out.children().last();
 }
 
 Session.prototype.write = function(html) {
@@ -210,9 +218,10 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 	    }
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
-		//TODO: if two stdout/stderr messages happen consecutively, consolidate them in the same pre
 	    case 'stream':
-		this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block).text(msg.content.data);
+		new_pre = !$('#'+this.output_id(output_block)).children().last().hasClass("singlecell_"+msg.content.name);
+		out=this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block,new_pre);
+		out.text(out.text()+msg.content.data);
 		break;
 
 	    case 'pyout':
