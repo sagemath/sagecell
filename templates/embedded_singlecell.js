@@ -182,9 +182,10 @@ singlecell.initCell = (function(singlecellInfo) {
     });
     
     inputDiv.find(".singlecell_evalButton").click(function() {
+	// TODO: actually make the JSON execute request message here.
 	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageMode").attr("checked"));
 	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
-	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(editor.getValue());
+	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(editor.getValue()));
 	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
 	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
 	inputDiv.find(".singlecell_sageMode").clone().appendTo($("#"+inputDivName+"_form"));

@@ -89,6 +89,7 @@ def evaluate(db,fs):
         return jsonify_with_callback(callback, computation_id=session_id)
      # Else if the request is the initial form submission at the beginning of a session:
     else:
+        log('Received Request: %s'%(request.form,))
         session_id = request.form.get("session_id")
         sage_mode = False
         valid_request = True
@@ -107,7 +108,10 @@ def evaluate(db,fs):
                     filename = secure_filename(file.filename)
                     fs.create_file(file, filename=filename, cell_id=session_id)
                     files.append(filename)
-            code = request.form.get("commands")
+            code = json.loads(request.form.get("commands"))
+            if not isinstance(code, basestring):
+                log("code was not a string: %r"%(code,))
+                return ""
 
             if bool(request.form.get("sage_mode")) is True:
                 sage_mode = True
