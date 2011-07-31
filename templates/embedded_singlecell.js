@@ -13,8 +13,7 @@ singlecell.init = (function(callback) {
 	}
 	if (config.src!==undefined) { script.src = config.src; }
 	if (config.text!==undefined) {script.text = config.text;}
-
-	document.head.appendChild(script);
+	document.getElementsByTagName("head")[0].appendChild(script);
     };
 
     singlecell.init_callback = callback
