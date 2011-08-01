@@ -53,9 +53,10 @@ singlecell.makeSinglecell = (function(args) {
     files = args.files,
     messages = args.messages,
     computationID = args.computationID;
+    code = args.code;
 
     if (typeof inputDiv === "undefined") {
-	inputDiv = "#singlecell";
+	throw "Must specify an input"
     }
     
     if (typeof outputDiv === "undefined") {
@@ -136,6 +137,11 @@ singlecell.initCell = (function(singlecellInfo) {
 	    }
 	})
     });
+
+    if (singlecellInfo.code !== undefined) {
+	editor.setValue(singlecellInfo.code);
+    }
+
     try {
 	if (editor.getValue().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
 	    editor.setValue(sessionStorage.getItem(inputDivName+"_editorValue"));
