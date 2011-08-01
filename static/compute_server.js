@@ -144,7 +144,7 @@ Session.prototype.sendMsg = function() {
        for why. If we don't do the proxy, then "this" in the
        send_computation_success function will *not* refer to the
        session object. */
-    $.post($URL.evaluate, {message: JSON.stringify(msg)}, function(){})
+    $.post($URL.evaluate, {message: JSON.stringify(msg)}, function(){}, 'jsonp')
 	.success($.proxy( this, 'send_computation_success' ))
 	.error(function(jqXHR, textStatus, errorThrown) {
 	    console.warn(jqXHR); 
