@@ -128,19 +128,16 @@ singlecell.initCell = (function(singlecellInfo) {
 		event.stop();
 		return true;
 	    }
-	    /* Uncomment to have div remember the last code */
 	    try {
 		sessionStorage.removeItem(inputDivName+"_editorValue");
 		sessionStorage.setItem(inputDivName+"_editorValue", editor.getValue());
 	    } catch (e) {
 		// if we can't store, don't do anything, e.g. if cookies are blocked
 	    }
-	    /* */
 	})
     });
-    /* Uncomment to have div remember the last code */
     try {
-	if (sessionStorage[inputDivName+"_editorValue"]) {
+	if (editor.getValue().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
 	    editor.setValue(sessionStorage.getItem(inputDivName+"_editorValue"));
 	}
 	if (sessionStorage[inputDivName+"_sageMode"]) {
@@ -150,7 +147,6 @@ singlecell.initCell = (function(singlecellInfo) {
 	    sessionStorage.setItem(inputDivName+"_sageMode",$(e.target).attr("checked"));
 	});
     } catch(e) {}
-    /* */
     editor.focus();
     
     var files = 0;
