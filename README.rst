@@ -15,6 +15,7 @@ We depend on the following packages:
   packaged in Ubuntu!)
 * `ØMQ <http://www.zeromq.org/>`_
 * `pyzmq <http://www.zeromq.org/bindings:python>`_
+* `MathJax <http://www.mathjax.org/>`_
 
 Optionally, you can also use `nginx <http://www.nginx.org/>`_
 and `uWSGI <http://projects.unbit.it/uwsgi/>`_ to have a multithreaded
@@ -154,6 +155,14 @@ appropriate Jmol directory in the Sage notebook::
     cd $SERVER/static
     ln -s $SAGE_ROOT/sage/devel/sagenb/sagenb/data/jmol .
 
+MathJax
+^^^^^^^
+
+MathJax is used for typesetting complex expressions. Due to its size, it
+cannot be included in the repository, so it must be
+`downloaded <http://www.mathjax.org/download/>`_ and installed
+seperately to $SERVER/static/mathjax/.
+
 
 Configuration and Running
 -------------------------
@@ -240,6 +249,11 @@ nginx
 
 Single Cell Server
 ^^^^^^^^^^^^^^^^^^
+
+First, minify CSS and JavaScript files (this is required)::
+
+    cd $SERVER/static
+    make
 
 The only thing left now is to configure and start the single-cell
 compute server.  The server will automatically launch a number
