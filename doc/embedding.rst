@@ -91,19 +91,27 @@ appropriate address)::
         <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
         <meta name="viewport" content="width=device-width">
         <title>Simple Compute Server</title>
-        <script type="text/javascript" src="<SERVER>/static/jquery-1.5.min.js"></script>
-        <script type="text/javascript" src="<SERVER>/embedded_singlecell.js"></script>
+        <script type="text/javascript" src="http://localhost:8080/static/jquery-1.5.min.js"></script>
+        <script type="text/javascript" src="http://localhost:8080/embedded_singlecell.js"></script>
 
-        <script>$(function() {singlecell.init(function ()
-      {singlecell.makeSinglecell({
-    'inputDiv': '#mysingle',
-    'files': false,
-    'messages': false,
-    'computationID': false,
-    'code': 'print "hi"'});});})</script>
-      </head>
+        <script>
+    $(function() {
+        var makecells = function() {
+            singlecell.makeSinglecell({
+                inputDiv: '#mysingle',
+                hide: ['messages', 'computationID', 'files', 'sageMode', 'editor'],
+                evalButtonText: 'Make Live'});
+        }
+        singlecell.init(makecells);
+    })</script>
+
+     </head>
       <body>
-        <div id="mysingle"><script type="text/code"></script></div>
+        <div id="mysingle"><script type="text/code">
+    @interact
+    def _(a=(1,10)):
+          print factorial(a)
+    </script></div>
       </body>
     </html>
 

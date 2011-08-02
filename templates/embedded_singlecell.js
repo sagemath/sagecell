@@ -44,33 +44,33 @@ var singlecell_dependencies_callback = function() {
     }
 };
 
+
+
+
 singlecell.makeSinglecell = (function(args) {
     if (typeof args === "undefined") {
 	args = {};
     }
-    var inputDiv = args.inputDiv,
-    outputDiv = args.outputDiv,
-    files = args.files,
-    messages = args.messages,
-    computationID = args.computationID;
-    code = args.code;
+    // Args:
 
+    var inputDiv = args.inputDiv;
+    var outputDiv = args.outputDiv;
+    var hide = args.hide;
+    // 'editor', 'files', 'evalButton', 'sageMode', 'output', 'computationID', 'messages'
+    var code = args.code;
+    var evalButtonText = args.evalButtonText;
+    
+    // default arguments
     if (typeof inputDiv === "undefined") {
-	throw "Must specify an input"
+	throw "Must specify an inputDiv"
     }
     
     if (typeof outputDiv === "undefined") {
 	outputDiv = inputDiv;
     }
 
-    if (typeof files !== "boolean") {
-	files = true;
-    }
-    if (typeof messages !== "boolean") {
-	messages = true;
-    }
-    if (typeof computationID !== "boolean") {
-	computationID = true;
+    if (typeof hide === "undefined") {
+	hide = {};
     }
     if (typeof code === "undefined") {
 	code = $(inputDiv).text();
@@ -95,14 +95,20 @@ singlecell.makeSinglecell = (function(args) {
 		if (inputDiv !== outputDiv) {
 		    $(inputDiv+" .singlecell_output, .singlecell_messages").appendTo(outputDiv);
 		}
-		if (messages === false) {
-		    $(outputDiv+" .singlecell_messages").css("display","none");
+		for (var i = 0, i_max = hide.length; i < i_max; i++) {
+		    if (hide[i] === 'editor' || 
+			hide[i] === 'files' || 
+			hide[i] ==='evalButton' || 
+			hide[i] ==='sageMode') {
+			$(inputDiv+" .singlecell_"+hide[i]).css("display", "none");
+		    } else if (hide[i] ==='output' || 
+			       hide[i] ==='computationID' || 
+			       hide[i] ==='messages') {
+			$(outputDiv+" .singlecell_"+hide[i]).css("display", "none");
+		    }
 		}
-		if (computationID === false) {
-		    $(inputDiv+" .singlecell_computationID").css("display","none");
-		}
-		if (files === false) {
-		    $(inputDiv+" .singlecell_files").css("display","none");
+		if (evalButtonText !== undefined) {
+		    $(inputDiv+ " .singlecell_evalButton").val(evalButtonText);
 		}
 		singlecell.initCell(singlecellInfo);
 	    });
@@ -146,11 +152,11 @@ singlecell.initCell = (function(singlecellInfo) {
 	if (editor.getValue().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
 	    editor.setValue(sessionStorage.getItem(inputDivName+"_editorValue"));
 	}
-	if (sessionStorage[inputDivName+"_sageMode"]) {
-	    inputDiv.find(".singlecell_sageMode").attr("checked", sessionStorage.getItem(inputDivName+"_sageMode")=="true");
+	if (sessionStorage[inputDivName+"_sageModeCheck"]) {
+	    inputDiv.find(".singlecell_sageModeCheck").attr("checked", sessionStorage.getItem(inputDivName+"_sageModeCheck")=="true");
 	}
-	inputDiv.find(".singlecell_sageMode").change(function(e) {
-	    sessionStorage.setItem(inputDivName+"_sageMode",$(e.target).attr("checked"));
+	inputDiv.find(".singlecell_sageModeCheck").change(function(e) {
+	    sessionStorage.setItem(inputDivName+"_sageModeCheck",$(e.target).attr("checked"));
 	});
     } catch(e) {}
     editor.focus();
@@ -184,12 +190,12 @@ singlecell.initCell = (function(singlecellInfo) {
     
     inputDiv.find(".singlecell_evalButton").click(function() {
 	// TODO: actually make the JSON execute request message here.
-	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageMode").attr("checked"));
+	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageModeCheck").attr("checked"));
 	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
 	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(editor.getValue()));
 	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
 	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
-	inputDiv.find(".singlecell_sageMode").clone().appendTo($("#"+inputDivName+"_form"));
+	inputDiv.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputDivName+"_form"));
 	inputDiv.find(".singlecell_fileInput").appendTo($("#"+inputDivName+"_form"));
 	$("#"+inputDivName+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
 	inputDiv.append("<iframe style='display:none' name='singlecell_serverResponse_"+session.session_id+"' id='singlecell_serverResponse_"+session.session_id+"'></iframe>");

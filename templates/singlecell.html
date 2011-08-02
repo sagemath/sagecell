@@ -1,15 +1,19 @@
-<textarea class="singlecell_commands" rows="1" cols="1"></textarea><br>
+<div class="singlecell_editor"><textarea class="singlecell_commands" rows="1" cols="1"></textarea><br></div>
+
 <fieldset style="width:30%; border:none" class="singlecell_files">
   <legend>Upload Files:</legend>
   <input type="button" value="Add file" class="singlecell_addFile">
   <input type="button" value="Clear files" class="singlecell_clearFiles">
   <div class="singlecell_fileUpload"></div>
 </fieldset>
+
 <input type="button" value="Evaluate" class="singlecell_evalButton">
-<span style="display:inline-block;width:3em"></span>
-<input type="checkbox" CHECKED class="singlecell_sageMode" name="sage_mode" value="True">
-<label for="sage_mode" accesskey="S">Use &ldquo;Sage Mode&rdquo; for code execution</label>
-<br>
+
+<span class="singlecell_sageMode"><span style="display:inline-block;width:3em"></span>
+<input type="checkbox" CHECKED class="singlecell_sageModeCheck" name="sage_mode" value="True">
+<label for="sage_mode" accesskey="S">Use &ldquo;Sage Mode&rdquo; for code execution</label><br/>
+</span>
+
 <div class="singlecell_output"></div>
 <div class="singlecell_computationID"><p>Computation ID:</p></span></div>
 <div class="singlecell_messages">
