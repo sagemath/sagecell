@@ -538,7 +538,8 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
 
         CONFIG.EMBEDDED_MODE["sage_mode"] =  sage_mode = msg['content']['sage_mode']
         if enable_sage and sage_mode:
-            code = user_code_sage + "\n" + sage.all.preparse(msg['content']['code'])
+            from sage.misc.preparser import preparse_file
+            code = user_code_sage + "\n" + preparse_file(msg['content']['code'].encode())
         elif sage_mode:
             code = "print 'NOTE: Sage Mode is unavailable, which may cause errors if using Sage-specific syntax.'\n" + user_code + msg['content']['code']
         else:
