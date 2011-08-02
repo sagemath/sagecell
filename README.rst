@@ -161,7 +161,7 @@ MathJax
 MathJax is used for typesetting complex expressions. Due to its size, it
 cannot be included in the repository, so it must be
 `downloaded <http://www.mathjax.org/download/>`_ and installed
-seperately to $SERVER/static/mathjax/.
+separately to $SERVER/static/mathjax/.
 
 
 Configuration and Running
