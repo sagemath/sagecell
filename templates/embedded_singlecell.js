@@ -72,6 +72,7 @@ singlecell.makeSinglecell = (function(args) {
     if (typeof hide === "undefined") {
 	hide = {};
     }
+
     if (typeof code === "undefined") {
 	code = $(inputDiv).text();
 	// delete the text
@@ -117,39 +118,13 @@ singlecell.makeSinglecell = (function(args) {
     return singlecellInfo;
 });
 
-singlecell.makeEditor = (function(inputDiv) {
-    var editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
-	mode:"python",
-	indentUnit:4,
-	tabMode:"shift",
-	lineNumbers:true,
-	matchBrackets:true,
-	onKeyEvent: (function(editor, event){
-	    if (event.which === 13 && event.shiftKey && event.type === "keypress") {
-		inputDiv.find(".singlecell_evalButton").click();
-		event.stop();
-		return true;
-	    }
-	    editor.save();
-	    try {
-		sessionStorage.removeItem(inputDivName+"_editorValue");
-		sessionStorage.setItem(inputDivName+"_editorValue", inputDiv.find(".singlecell_commands").val());
-	    } catch (e) {
-		// if we can't store, don't do anything, e.g. if cookies are blocked
-	    }
-	})
-    });
-
-    return editor;
-
-});
-
 singlecell.initCell = (function(singlecellInfo) {
 //Strips all special characters
     var inputDivName = singlecellInfo.inputDiv.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
     var inputDiv = $(singlecellInfo.inputDiv);
     var outputDiv = $(singlecellInfo.outputDiv);
     var textArea = inputDiv.find(".singlecell_commands");
+    var files = 0;
 
     if (singlecellInfo.code !== undefined) {
 	textArea.val(singlecellInfo.code);
@@ -167,18 +142,25 @@ singlecell.initCell = (function(singlecellInfo) {
 	});
     } catch(e) {}
 
-    var editor = this.makeEditor(inputDiv);
-    
-    var files = 0;
-    
+    editor = this.renderEditor(inputDiv);
+
     $(document.body).append("<form class='singlecell_form' id='"+inputDivName+"_form'></form>");
     $("#"+inputDivName+"_form").attr({"action": $URL.evaluate,
 				"enctype": "multipart/form-data",
 				"method": "POST"
 			       });
+
+    inputDiv.find(".singlecell_editorToggle").click(function(){
+	if (editor === "plain") {
+	    editor = singlecell.renderEditor(inputDiv);
+	} else {
+	    editor = singlecell.removeEditor(editor);
+	}
+    });
     inputDiv.find(".singlecell_addFile").click(function(){
-	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove()'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
+	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
 	files++;
+	return false;
     });
     inputDiv.find(".singlecell_clearFiles").click(function() {
 	files = 0;
@@ -201,11 +183,6 @@ singlecell.initCell = (function(singlecellInfo) {
 	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageModeCheck").attr("checked"));
 	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
 	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
-	try {
-	    editor.toTextArea();
-	} catch(E) {
-	    console.log("WHAT");
-	}
 	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
 	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
 	inputDiv.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputDivName+"_form"));
@@ -257,3 +234,34 @@ $URL={'root': {{ request.url_root|tojson|safe }},
           '?callback=?',
       'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
      };
+
+
+singlecell.renderEditor = (function(inputDiv) {
+    editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
+	mode:"python",
+	indentUnit:4,
+	tabMode:"shift",
+	lineNumbers:true,
+	matchBrackets:true,
+	onKeyEvent: (function(editor, event){
+	    if (event.which === 13 && event.shiftKey && event.type === "keypress") {
+		inputDiv.find(".singlecell_evalButton").click();
+		event.stop();
+		return true;
+	    }
+	    editor.save();
+	    try {
+		sessionStorage.removeItem(inputDivName+"_editorValue");
+		sessionStorage.setItem(inputDivName+"_editorValue", inputDiv.find(".singlecell_commands").val());
+	    } catch (e) {
+		// if we can't store, don't do anything, e.g. if cookies are blocked
+	    }
+	})
+    });
+    return editor;
+});
+
+singlecell.removeEditor = (function(editor) {
+    editor.toTextArea();
+    return "plain";
+});
