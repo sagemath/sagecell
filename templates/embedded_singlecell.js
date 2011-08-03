@@ -117,13 +117,8 @@ singlecell.makeSinglecell = (function(args) {
     return singlecellInfo;
 });
 
-singlecell.initCell = (function(singlecellInfo) {
-//Strips all special characters
-    var inputDivName = singlecellInfo.inputDiv.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
-    var inputDiv = $(singlecellInfo.inputDiv);
-    var outputDiv = $(singlecellInfo.outputDiv);
-
-    var editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0),{
+singlecell.makeEditor = (function(inputDiv) {
+    var editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
 	mode:"python",
 	indentUnit:4,
 	tabMode:"shift",
@@ -135,22 +130,34 @@ singlecell.initCell = (function(singlecellInfo) {
 		event.stop();
 		return true;
 	    }
+	    editor.save();
 	    try {
 		sessionStorage.removeItem(inputDivName+"_editorValue");
-		sessionStorage.setItem(inputDivName+"_editorValue", editor.getValue());
+		sessionStorage.setItem(inputDivName+"_editorValue", inputDiv.find(".singlecell_commands").val());
 	    } catch (e) {
 		// if we can't store, don't do anything, e.g. if cookies are blocked
 	    }
 	})
     });
 
+    return editor;
+
+});
+
+singlecell.initCell = (function(singlecellInfo) {
+//Strips all special characters
+    var inputDivName = singlecellInfo.inputDiv.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
+    var inputDiv = $(singlecellInfo.inputDiv);
+    var outputDiv = $(singlecellInfo.outputDiv);
+    var textArea = inputDiv.find(".singlecell_commands");
+
     if (singlecellInfo.code !== undefined) {
-	editor.setValue(singlecellInfo.code);
+	textArea.val(singlecellInfo.code);
     }
 
     try {
-	if (editor.getValue().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
-	    editor.setValue(sessionStorage.getItem(inputDivName+"_editorValue"));
+	if (textArea.val().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
+	    textArea.val(sessionStorage.getItem(inputDivName+"_editorValue"));
 	}
 	if (sessionStorage[inputDivName+"_sageModeCheck"]) {
 	    inputDiv.find(".singlecell_sageModeCheck").attr("checked", sessionStorage.getItem(inputDivName+"_sageModeCheck")=="true");
@@ -159,7 +166,8 @@ singlecell.initCell = (function(singlecellInfo) {
 	    sessionStorage.setItem(inputDivName+"_sageModeCheck",$(e.target).attr("checked"));
 	});
     } catch(e) {}
-    editor.focus();
+
+    var editor = this.makeEditor(inputDiv);
     
     var files = 0;
     
@@ -192,7 +200,12 @@ singlecell.initCell = (function(singlecellInfo) {
 	// TODO: actually make the JSON execute request message here.
 	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageModeCheck").attr("checked"));
 	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
-	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(editor.getValue()));
+	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
+	try {
+	    editor.toTextArea();
+	} catch(E) {
+	    console.log("WHAT");
+	}
 	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
 	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
 	inputDiv.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputDivName+"_form"));
