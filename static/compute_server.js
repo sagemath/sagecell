@@ -394,7 +394,7 @@ InteractCell.prototype.init = function (selector, data) {
 
 InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
-    var elements = this.update
+    var elements = this.controls;
     var events = {};
 
     for (var i in elements) {
@@ -420,8 +420,8 @@ InteractCell.prototype.bindChange = function(interact) {
 	    }
 	    var changedControl = parentSpan.attr("class").replace("singlecell_var_",""); // Get changed variable name
 
-	    if ($.inArray(changedControl, interact.session.eventHandlers[id][e.type]) !== -1) {
-		var changes = interact.getChanges(interact.update, changedControl);
+	    if (interact.update[changedControl] !== undefined) {
+		var changes = interact.getChanges(interact.update, changedControl, interact.interact_id);
 		var code = "_update_interact('"+interact.interact_id+"',control_vals=dict(";
 
 		for (j in changes) {
@@ -435,19 +435,26 @@ InteractCell.prototype.bindChange = function(interact) {
 
 		interact.session.sendMsg(code, interact.msg_id);
 		interact.session.replace_output=true;
+	    } else {
+		parentSpan.parent().addClass("singlecell_dirtyControl");
 	    }
 	    return false;
 	});
     }
 }
 
-InteractCell.prototype.getChanges = function(interact_update, changed_control) {
+InteractCell.prototype.getChanges = function(interact_update, changed_control, interact_id) {
     var params = {};
     var controls = interact_update[changed_control];
+    var interact_location = $("#interact_"+interact_id);
 
     for (var i = 0, i_max = controls.length; i < i_max; i++) {
 	params[controls[i]] = this.controls[controls[i]].changes();
-	}
+	interact_location
+	    .find("span[class^='singlecell_var_"+controls[i]+"']")
+	    .parent()
+	    .removeClass("singlecell_dirtyControl");
+    }
 
     return params;
 }
