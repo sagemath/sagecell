@@ -75,7 +75,7 @@ singlecell.makeSinglecell = (function(args) {
     }
 
     if (typeof editor === "undefined") {
-	editor = true;
+	editor = "codemirror";
     }
 
     if (typeof code === "undefined") {
@@ -136,6 +136,7 @@ singlecell.initCell = (function(singlecellInfo) {
     var editor = singlecellInfo.editor;
     var textArea = inputDiv.find(".singlecell_commands");
     var files = 0;
+    var editorData, temp;
 
     if (singlecellInfo.code !== undefined) {
 	textArea.val(singlecellInfo.code);
@@ -153,9 +154,9 @@ singlecell.initCell = (function(singlecellInfo) {
 	});
     } catch(e) {}
 
-    if (editor !== false) {
-	editor = this.renderEditor(inputDiv);
-    }
+    temp = this.renderEditor(editor, inputDiv);
+    editor = temp[0];
+    editorData = temp[1];
 
     $(document.body).append("<form class='singlecell_form' id='"+inputDivName+"_form'></form>");
     $("#"+inputDivName+"_form").attr({"action": $URL.evaluate,
@@ -164,11 +165,9 @@ singlecell.initCell = (function(singlecellInfo) {
 			       });
 
     inputDiv.find(".singlecell_editorToggle").click(function(){
-	if (editor === false) {
-	    editor = singlecell.renderEditor(inputDiv);
-	} else {
-	    editor = singlecell.removeEditor(editor);
-	}
+	temp = singlecell.toggleEditor(editor, editorData, inputDiv);
+	editor = temp[0];
+	editorData = temp[1];
     });
     inputDiv.find(".singlecell_addFile").click(function(){
 	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
@@ -240,34 +239,55 @@ singlecell.restoreInputForm = (function(singlecellInfo) {
     $("#singlecell_moved").remove();
 });
 
-singlecell.renderEditor = (function(inputDiv) {
-    editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
-	mode:"python",
-	indentUnit:4,
-	tabMode:"shift",
-	lineNumbers:true,
-	matchBrackets:true,
-	onKeyEvent: (function(editor, event){
-	    if (event.which === 13 && event.shiftKey && event.type === "keypress") {
-		inputDiv.find(".singlecell_evalButton").click();
-		event.stop();
-		return true;
-	    }
-	    editor.save();
-	    try {
-		sessionStorage.removeItem(inputDivName+"_editorValue");
-		sessionStorage.setItem(inputDivName+"_editorValue", inputDiv.find(".singlecell_commands").val());
-	    } catch (e) {
-		// if we can't store, don't do anything, e.g. if cookies are blocked
-	    }
-	})
-    });
-    return editor;
+singlecell.renderEditor = (function(editor, inputDiv) {
+    var editorData;
+
+    if (editor === "textarea") {
+	editorData = editor;
+    } else {
+	editor = "codemirror";
+
+	editorData = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
+	    mode:"python",
+	    indentUnit:4,
+	    tabMode:"shift",
+	    lineNumbers:true,
+	    matchBrackets:true,
+	    onKeyEvent: (function(editor, event){
+		if (event.which === 13 && event.shiftKey && event.type === "keypress") {
+		    inputDiv.find(".singlecell_evalButton").click();
+		    event.stop();
+		    return true;
+		}
+		editor.save();
+		try {
+		    sessionStorage.removeItem(inputDivName+"_editorValue");
+		    sessionStorage.setItem(inputDivName+"_editorValue", inputDiv.find(".singlecell_commands").val());
+		} catch (e) {
+		    // if we can't store, don't do anything, e.g. if cookies are blocked
+		}
+	    })
+	});
+    }
+
+    return [editor, editorData];
 });
 
-singlecell.removeEditor = (function(editor) {
-    editor.toTextArea();
-    return false;
+singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
+    var temp;
+    
+    if (editor === "codemirror") {
+	editorData.toTextArea();
+	editor = editorData = "textarea";
+    } else {
+	editor = "codemirror";
+
+	temp = this.renderEditor(editor, inputDiv);
+	editor = temp[0];
+	editorData = temp[1];
+    }
+
+    return [editor, editorData];
 });
 
 

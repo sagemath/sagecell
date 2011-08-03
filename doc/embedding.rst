@@ -70,7 +70,7 @@ form::
     "code": text string to initialize the code block,
     "hide": list of strings of elements to hide,
     "evalButtonText": text string of the "evaluate" button,
-    "editor": boolean indicating CodeMirror (true) or plaintext (false) editor}
+    "editor": text string indicating editor to use (currently, "codemirror" (default) and "textarea" are supported)
 
 Parameters are optional; the default behavior of each parameter is as
 follows::
@@ -80,7 +80,7 @@ follows::
     "hide": [],
     "code": "",
     "evalButtonText": "Evaluate",
-    "editor": true}
+    "editor": "codemirror"}
 
 If the code parameter is not set, the inputDiv is first examined for
 code.  If no code is found there, the javascript attempts to restore
