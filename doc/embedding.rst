@@ -53,7 +53,12 @@ The following options are customizable:
 
 * Input (code / files / evaluate button) location
 * Output (output / messages) location
+* Editor type (plain or CodeMirror)
+* Pre-defined editor content
+* Showing editor, toggling of editor type
+* Showing Sage mode checkbox
 * Showing file uploads
+* Showing output
 * Showing messages
 * Showing computation ID
 
@@ -63,23 +68,35 @@ form::
     {"inputDiv": jQuery selector for input location,
     "outputDiv": jQuery selector for output location,
     "code": text string to initialize the code block,
-    "files": javascript boolean for showing file uploads,
-    "messages": javascript boolean for showing messages,
-    "computationID": javascript boolean for showing computation ID}
+    "hide": list of strings of elements to hide,
+    "evalButtonText": text string of the "evaluate" button,
+    "editor": boolean indicating CodeMirror (true) or plaintext (false) editor}
 
 Parameters are optional; the default behavior of each parameter is as
 follows::
 
     {"inputDiv": "#singlecell",
     "outputDiv": inputDiv,
-    "files": true,
-    "messages": true,
-    "computationID": true}
+    "hide": [],
+    "code": "",
+    "evalButtonText": "Evaluate",
+    "editor": true}
 
 If the code parameter is not set, the inputDiv is first examined for
 code.  If no code is found there, the javascript attempts to restore
 in the text cell whatever the user had in that particular cell
 before.  If that fails, the code is initialized to an empty string.
+
+Potential elements in the "hide" option:
+
+* editor: Hides the editor
+* editorToggle: Hides the CodeMirror / plaintext editor toggle (note that this overlaps with the editor switch, so hiding both editor and editorToggle is redundant. Specifying only the editorToggle switch will only hide the option to toggle the editor type, but leave the specified editor intact)
+* files: Hides the file upload dialog
+* evalButton: Hides the eval button
+* sageMode: Hides the "Sage Mode" checkbox
+* output: Hides the session output
+* computationID: Hides the computation ID log
+* messages: Hides the displayed message logs
 
 For example, here is a very simple embedded cell with most things
 turned off and a default piece of code (replace <SERVER> with the

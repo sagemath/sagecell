@@ -71,7 +71,7 @@ singlecell.makeSinglecell = (function(args) {
     }
 
     if (typeof hide === "undefined") {
-	hide = {};
+	hide = [];
     }
 
     if (typeof editor === "undefined") {
@@ -82,6 +82,10 @@ singlecell.makeSinglecell = (function(args) {
 	code = $(inputDiv).text();
 	// delete the text
 	$(inputDiv).text("");
+    }
+
+    if (typeof evalButtonText === "undefined") {
+	evalButtonText = "Evaluate";
     }
     
     var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code, "editor": editor};
