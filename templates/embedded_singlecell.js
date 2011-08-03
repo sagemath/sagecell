@@ -59,6 +59,7 @@ singlecell.makeSinglecell = (function(args) {
     // 'editor', 'files', 'evalButton', 'sageMode', 'output', 'computationID', 'messages'
     var code = args.code;
     var evalButtonText = args.evalButtonText;
+    var editor = args.editor;
     
     // default arguments
     if (typeof inputDiv === "undefined") {
@@ -73,13 +74,17 @@ singlecell.makeSinglecell = (function(args) {
 	hide = {};
     }
 
+    if (typeof editor === "undefined") {
+	editor = true;
+    }
+
     if (typeof code === "undefined") {
 	code = $(inputDiv).text();
 	// delete the text
 	$(inputDiv).text("");
     }
     
-    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code};
+    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code, "editor": editor};
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
 	// Wait for CodeMirror to load before using the $ function
@@ -98,6 +103,7 @@ singlecell.makeSinglecell = (function(args) {
 		}
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
 		    if (hide[i] === 'editor' || 
+			hide[i] === 'editorToggle' || 
 			hide[i] === 'files' || 
 			hide[i] ==='evalButton' || 
 			hide[i] ==='sageMode') {
@@ -123,6 +129,7 @@ singlecell.initCell = (function(singlecellInfo) {
     var inputDivName = singlecellInfo.inputDiv.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
     var inputDiv = $(singlecellInfo.inputDiv);
     var outputDiv = $(singlecellInfo.outputDiv);
+    var editor = singlecellInfo.editor;
     var textArea = inputDiv.find(".singlecell_commands");
     var files = 0;
 
@@ -142,7 +149,9 @@ singlecell.initCell = (function(singlecellInfo) {
 	});
     } catch(e) {}
 
-    editor = this.renderEditor(inputDiv);
+    if (editor !== false) {
+	editor = this.renderEditor(inputDiv);
+    }
 
     $(document.body).append("<form class='singlecell_form' id='"+inputDivName+"_form'></form>");
     $("#"+inputDivName+"_form").attr({"action": $URL.evaluate,
@@ -151,7 +160,7 @@ singlecell.initCell = (function(singlecellInfo) {
 			       });
 
     inputDiv.find(".singlecell_editorToggle").click(function(){
-	if (editor === "plain") {
+	if (editor === false) {
 	    editor = singlecell.renderEditor(inputDiv);
 	} else {
 	    editor = singlecell.removeEditor(editor);
@@ -227,15 +236,6 @@ singlecell.restoreInputForm = (function(singlecellInfo) {
     $("#singlecell_moved").remove();
 });
 
-// Make the script root available to jquery
-$URL={'root': {{ request.url_root|tojson|safe }},
-      'evaluate': {{url_for('evaluate',_external=True)|tojson|safe}},
-      'output_poll': {{url_for('output_poll',_external=True)|tojson|safe}} +
-          '?callback=?',
-      'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
-     };
-
-
 singlecell.renderEditor = (function(inputDiv) {
     editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
 	mode:"python",
@@ -263,5 +263,14 @@ singlecell.renderEditor = (function(inputDiv) {
 
 singlecell.removeEditor = (function(editor) {
     editor.toTextArea();
-    return "plain";
+    return false;
 });
+
+
+// Make the script root available to jquery
+$URL={'root': {{ request.url_root|tojson|safe }},
+      'evaluate': {{url_for('evaluate',_external=True)|tojson|safe}},
+      'output_poll': {{url_for('output_poll',_external=True)|tojson|safe}} +
+          '?callback=?',
+      'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
+     };
