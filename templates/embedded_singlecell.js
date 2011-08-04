@@ -52,7 +52,7 @@ singlecell.makeSinglecell = (function(args) {
     }
 
     // Args:
-    var preset = args.preset;
+    var template = args.template;
     var inputDiv = args.inputDiv;
     var outputDiv = args.outputDiv;
     var code = args.code;
@@ -60,18 +60,18 @@ singlecell.makeSinglecell = (function(args) {
     var hide = args.hide;
     var editor = args.editor;
 
-    if (typeof preset !== "undefined") {
+    if (typeof template !== "undefined") {
 	if (typeof evalButtonText === "undefined") {
-	    evalButtonText = preset.evalButtonText;
+	    evalButtonText = template.evalButtonText;
 	}
 	if (typeof editor === "undefined") {
-	    editor = preset.editor;
+	    editor = template.editor;
 	}
 	if (typeof hide === "undefined") {
-	    hide = preset.hide;
+	    hide = template.hide;
 	} else {
-	    for (var i = 0, i_max = preset.hide.length; i < i_max; i++) {
-		hide.push(preset.hide[i]);
+	    for (var i = 0, i_max = template.hide.length; i < i_max; i++) {
+		hide.push(template.hide[i]);
 	    }
 	}
     }
@@ -308,7 +308,7 @@ singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
     return [editor, editorData];
 });
 
-singlecell.presets = {
+singlecell.templates = {
     "minimal": {
 	"editor": "static",
 	"hide": ["computationID", "editor", "editorToggle", "files",
