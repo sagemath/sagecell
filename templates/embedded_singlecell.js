@@ -46,21 +46,33 @@ var singlecell_dependencies_callback = function() {
 
 
 
-
 singlecell.makeSinglecell = (function(args) {
     if (typeof args === "undefined") {
 	args = {};
     }
-    // Args:
 
+    // Args:
+    var preset = args.preset;
     var inputDiv = args.inputDiv;
     var outputDiv = args.outputDiv;
-    var hide = args.hide;
-    // 'editor', 'files', 'evalButton', 'sageMode', 'output', 'computationID', 'messages'
     var code = args.code;
     var evalButtonText = args.evalButtonText;
+    var hide = args.hide;
     var editor = args.editor;
-    
+
+    if (typeof preset !== "undefined") {
+	if (typeof editor === "undefined") {
+	    editor = preset.editor;
+	}
+	if (typeof hide === "undefined") {
+	    hide = preset.hide;
+	} else {
+	    for (var i = 0, i_max = preset.hide.length; i < i_max; i++) {
+		hide.push(preset.hide[i]);
+	    }
+	}
+    }
+
     // default arguments
     if (typeof inputDiv === "undefined") {
 	throw "Must specify an inputDiv"
@@ -292,6 +304,19 @@ singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
 
     return [editor, editorData];
 });
+
+singlecell.presets = {
+    "minimal": {
+	"editor": "static",
+	"hide": ["computationID", "editor", "editorToggle", "files",
+		 "messages", "sageMode"]
+    },
+    "restricted": {
+	"editor": "static",
+	"hide": ["computationID", "editorToggle", "files", "messages",
+		 "sageMode"]
+    }
+}
 
 
 // Make the script root available to jquery
