@@ -60,6 +60,7 @@ singlecell.makeSinglecell = (function(args) {
     var hide = args.hide;
     var editor = args.editor;
     var sageMode = args.sageMode;
+    var replaceOutput = args.replaceOutput;
 
     if (typeof template !== "undefined") {
 	if (typeof evalButtonText === "undefined") {
@@ -77,6 +78,9 @@ singlecell.makeSinglecell = (function(args) {
 	}
 	if (typeof sageMode === "undefined") {
 	    sageMode = template.sageMode;
+	}
+	if (typeof replaceOutput === "undefined") {
+	    replaceOutput = template.replaceOutput;
 	}
     }
 
@@ -111,7 +115,17 @@ singlecell.makeSinglecell = (function(args) {
 	sageMode = true;
     }
 
-    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code, "editor": editor, "sageMode": sageMode};
+    if (typeof replaceOutput === "undefined") {
+	replaceOutput = false;
+    }
+
+    var singlecellInfo = {"inputDiv": inputDiv,
+			  "outputDiv": outputDiv,
+			  "code": code,
+			  "editor": editor,
+			  "replaceOutput": replaceOutput,
+			  "sageMode": sageMode};
+
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
 	// Wait for CodeMirror to load before using the $ function
@@ -157,6 +171,7 @@ singlecell.initCell = (function(singlecellInfo) {
     var inputDiv = $(singlecellInfo.inputDiv);
     var outputDiv = $(singlecellInfo.outputDiv);
     var editor = singlecellInfo.editor;
+    var replaceOutput = singlecellInfo.replaceOutput;
     var sageMode = inputDiv.find(".singlecell_sageModeCheck");
     var textArea = inputDiv.find(".singlecell_commands");
     var files = 0;
@@ -220,6 +235,11 @@ singlecell.initCell = (function(singlecellInfo) {
     
     inputDiv.find(".singlecell_evalButton").click(function() {
 	// TODO: actually make the JSON execute request message here.
+
+	if (replaceOutput) {
+	    inputDiv.find(".singlecell_output").empty();
+	}
+
 	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageModeCheck").attr("checked"));
 	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
 	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
@@ -325,12 +345,14 @@ singlecell.templates = {
     "minimal": {
 	"editor": "static",
 	"hide": ["computationID", "editor", "editorToggle", "files",
-		 "messages", "sageMode"]
+		 "messages", "sageMode"],
+	"replaceOutput": true
     },
     "restricted": {
 	"editor": "static",
 	"hide": ["computationID", "editorToggle", "files", "messages",
-		 "sageMode"]
+		 "sageMode"],
+	"replaceOutput": true
     }
 }
 
