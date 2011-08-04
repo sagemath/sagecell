@@ -342,13 +342,13 @@ singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
 });
 
 singlecell.templates = {
-    "minimal": {
+    "minimal": { // for an evaluate button and nothing else.
 	"editor": "static",
 	"hide": ["computationID", "editor", "editorToggle", "files",
 		 "messages", "sageMode"],
 	"replaceOutput": true
     },
-    "restricted": {
+    "restricted": { // to display/evaluate code that can't be edited.
 	"editor": "static",
 	"hide": ["computationID", "editorToggle", "files", "messages",
 		 "sageMode"],
