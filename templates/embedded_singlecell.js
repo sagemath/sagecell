@@ -61,6 +61,9 @@ singlecell.makeSinglecell = (function(args) {
     var editor = args.editor;
 
     if (typeof preset !== "undefined") {
+	if (typeof evalButtonText === "undefined") {
+	    evalButtonText = preset.evalButtonText;
+	}
 	if (typeof editor === "undefined") {
 	    editor = preset.editor;
 	}
