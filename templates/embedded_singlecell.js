@@ -59,6 +59,7 @@ singlecell.makeSinglecell = (function(args) {
     var evalButtonText = args.evalButtonText;
     var hide = args.hide;
     var editor = args.editor;
+    var sageMode = args.sageMode;
 
     if (typeof template !== "undefined") {
 	if (typeof evalButtonText === "undefined") {
@@ -73,6 +74,9 @@ singlecell.makeSinglecell = (function(args) {
 	    for (var i = 0, i_max = template.hide.length; i < i_max; i++) {
 		hide.push(template.hide[i]);
 	    }
+	}
+	if (typeof sageMode === "undefined") {
+	    sageMode = template.sageMode;
 	}
     }
 
@@ -103,7 +107,11 @@ singlecell.makeSinglecell = (function(args) {
 	evalButtonText = "Evaluate";
     }
     
-    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code, "editor": editor};
+    if (typeof sageMode === "undefined") {
+	sageMode = true;
+    }
+
+    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code, "editor": editor, "sageMode": sageMode};
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
 	// Wait for CodeMirror to load before using the $ function
@@ -149,6 +157,7 @@ singlecell.initCell = (function(singlecellInfo) {
     var inputDiv = $(singlecellInfo.inputDiv);
     var outputDiv = $(singlecellInfo.outputDiv);
     var editor = singlecellInfo.editor;
+    var sageMode = inputDiv.find(".singlecell_sageModeCheck");
     var textArea = inputDiv.find(".singlecell_commands");
     var files = 0;
     var editorData, temp;
@@ -157,14 +166,18 @@ singlecell.initCell = (function(singlecellInfo) {
 	textArea.val(singlecellInfo.code);
     }
 
+    if (! singlecellInfo.sageMode) {
+	sageMode.attr("checked", false);
+    }
+
     try {
 	if (textArea.val().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
 	    textArea.val(sessionStorage.getItem(inputDivName+"_editorValue"));
 	}
 	if (sessionStorage[inputDivName+"_sageModeCheck"]) {
-	    inputDiv.find(".singlecell_sageModeCheck").attr("checked", sessionStorage.getItem(inputDivName+"_sageModeCheck")=="true");
+	    sageMode.attr("checked", sessionStorage.getItem(inputDivName+"_sageModeCheck")=="true");
 	}
-	inputDiv.find(".singlecell_sageModeCheck").change(function(e) {
+	sageMode.change(function(e) {
 	    sessionStorage.setItem(inputDivName+"_sageModeCheck",$(e.target).attr("checked"));
 	});
     } catch(e) {}
