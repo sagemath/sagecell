@@ -244,6 +244,9 @@ singlecell.renderEditor = (function(editor, inputDiv) {
 
     if (editor === "textarea") {
 	editorData = editor;
+    } else if (editor === "static") {
+	editorData = editor;
+	inputDiv.find(".singlecell_commands").attr("readonly", "readonly");
     } else {
 	editor = "codemirror";
 
