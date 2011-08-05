@@ -1253,5 +1253,5 @@ InteractData.Slider.prototype.finishRender = function(location) {
 
 // Initialize jmol
 // TODO: move to a better place
-jmolInitialize('/static/jmol');
-jmolSetCallback("menuFile","/static/jmol/appletweb/SageMenu.mnu");
+jmolInitialize($URL["root"]+'/static/jmol');
+jmolSetCallback("menuFile",$URL["root"]+"/static/jmol/appletweb/SageMenu.mnu");
