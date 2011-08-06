@@ -1,11 +1,15 @@
+.. _embedding:
+
 Embedding Single Cell Instances
 ===============================
 
+.. default-domain:: js
+
 Description
 ^^^^^^^^^^^
-Functionality to embed multiple customized instances of the Single Cell
-in arbitrary webpages. Customizable options include display of messages,
-location of input and output, and file uploads.
+Provides functionality to embed multiple customized instances of the Single Cell
+in arbitrary webpages. Customizable options include location of input and output
+and functionality shown to the user.
 
 Dependencies
 ^^^^^^^^^^^^
@@ -14,93 +18,388 @@ jQuery: http://www.jquery.com
 Basic Usage
 ^^^^^^^^^^^
 
-* Load jQuery
+jQuery is assumed to be loaded in ``<head>`` with ``$`` available.
 
-jQuery is assumed to be loaded in <head> with $ available.
+In ``<head>``, the following lines should be inserted::
 
-* Load embed javascript
+   <script type="text/javascript" src="http://<server>/embedded_singlecell.js"></script>
+   <script type="text/javascript">singlecell.init();</script>
 
-In <head>, the following lines should be inserted::
+where ``<server>`` is the root url of a live Single Cell server. This downloads
+additional required javascript and css libraries and creates a global javascript
+object called ``singlecell``. See the documentation for
+:ref:`singlecell.init() <singlecell.init_embed>` for more configuration options
+upon initialization, including callback functionality.
 
-    <script type="text/javascript" src="http://<server>/embedded_singlecell.js"></script>
-    <script type="text/javascript">singlecell.init();</script>
+Later, the following javascript should be run::
 
-where <server> is the root url of a live single cell server. This gets
-the code to embed the single cell and downloads additional required
-javascript and css files. It also creates a global javascript object called
-singlecell.
+   singlecell.makeSinglecell({inputDiv: "[jQuery selector]"});
 
-* Initialize Single Cell instance
+This creates a basic Single Cell instance at the location matching ``inputDiv``.
+This location must be a unique selector for an HTML ``<div>``. See the
+documentation for :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`
+for more configuration options. This function returns a dictionary containing information necessary to later move portions of or remove the entirety of the Single Cell instance if desired.
 
-In <body>, the user should insert code similar to the following
-(basic example)::
+``singlecell.makeSinglecell()`` can be called multiple times to embed multiple
+Single Cell instances, as long as the input (and output, if specified) locations
+of each instance are unique to the page.
 
-    <script type="text/javascript">
-        singlecell.makeSinglecell();
-    </script>
+To remove a Single Cell instance, the following javascript can be used::
 
-In this case, the page should have a <div> with an id "singlecell" in
-which the single cell is rendered (default option). makeSinglecell() can
-be called multiple times to embed multiple single cell instances, so
-long as customization options are used to set the input and output locations
-of each instance to different locations on the page. The following
-section details customizable options:
+   singlecell.deleteSinglecell(singlecellInfo);
+
+where ``singlecellInfo`` is the dictionary of information returned upon that
+Single Cell instance's creation by ``singlecell.makeSingleCell()``.
+
+Single Cell instances can be safely embedded within HTML forms (even though each
+instance contains form elements) since those form elements are copied to a
+hidden form outside of the embedded context. However, in such a case, it may
+not be optimal for external form submission to include Single Cell elements. To
+prevent this issue, the following javascript can be used before and after form
+submission to move and restore the Single Cell::
+
+   singlecell.moveInputForm(singlecellInfo); // before submission
+   singlecell.restoreInputForm(singlecellInfo); // after submission
+
+where ``singlecellInfo`` is the dictionary of information returned upon that
+Single Cell instance's creation by ``singlecell.makeSingleCell()``.
+
+.. _Customization:
 
 Customization
 ^^^^^^^^^^^^^
 
-The following options are customizable:
+All customization occurs through ``singlecell.makeSinglecell()``, which takes a
+dictionary as its argument. The key/value pairs of this dictionary serve as the
+configuration of the created Single Cell instance. The following options can be
+set when embedding:
 
-* Input (code / files / evaluate button) location
-* Output (output / messages) location
-* Editor type (plain or CodeMirror)
-* Pre-defined editor content
-* Showing editor, toggling of editor type
-* Showing Sage mode checkbox
-* Showing file uploads
-* Showing output
-* Showing messages
-* Showing computation ID
+Input Location
+--------------
 
-Options are passed to singlecell.makeSinglecell() as a dictionary with the following
-form::
+This sets the location of the input elements of a Single Cell, which includes
+the editor, editor toggle, "Sage Mode" selector, file upload selector, and the
+evaluate button::
 
-    {"inputDiv": jQuery selector for input location,
-    "outputDiv": jQuery selector for output location,
-    "code": text string to initialize the code block,
-    "hide": list of strings of elements to hide,
-    "evalButtonText": text string of the "evaluate" button,
-    "editor": text string indicating editor to use (currently, "codemirror" (default) and "textarea" are supported)
+   { ..
+   inputDiv: "jQuery selector, must map to a unique <div> tag"
+   .. }
 
-Parameters are optional; the default behavior of each parameter is as
-follows::
+Output Location
+---------------
 
-    {"inputDiv": "#singlecell",
-    "outputDiv": inputDiv,
-    "hide": [],
-    "code": "",
-    "evalButtonText": "Evaluate",
-    "editor": "codemirror"}
+This sets the location of the output elements of a Single Cell, which includes
+the session output, the computation ID, and server messages::
 
-If the code parameter is not set, the inputDiv is first examined for
-code.  If no code is found there, the javascript attempts to restore
-in the text cell whatever the user had in that particular cell
-before.  If that fails, the code is initialized to an empty string.
+   { ..
+   outputDiv: "jQuery selector, must map to a unique <div> tag"
+   .. }
 
-Potential elements in the "hide" option:
+Code Editor
+-----------
 
-* editor: Hides the editor
-* editorToggle: Hides the CodeMirror / plaintext editor toggle (note that this overlaps with the editor switch, so hiding both editor and editorToggle is redundant. Specifying only the editorToggle switch will only hide the option to toggle the editor type, but leave the specified editor intact)
-* files: Hides the file upload dialog
-* evalButton: Hides the eval button
-* sageMode: Hides the "Sage Mode" checkbox
-* output: Hides the session output
-* computationID: Hides the computation ID log
-* messages: Hides the displayed message logs
+This sets the type of code editor. Available options are "textarea" (plain
+textbox), "static" (plain textbox, but not editable), and "codemirror"
+(default, CodeMirror editor, which provides syntax highlighting and other
+more advanced functionality)::
 
-For example, here is a very simple embedded cell with most things
-turned off and a default piece of code (replace <SERVER> with the
-appropriate address)::
+   { ..
+   editor: "editor type"
+   .. }
+
+
+This sets the initial content of the code editor::
+
+   { ..
+   code: "code"
+   .. }
+
+
+Code editor content can also be set by embedding the code within the input
+``<div>`` tag of the Single Cell::
+
+   <div id="myInputDiv">
+      <script type="text/code">
+      print "Here's some code!"
+      </script>
+   </div>
+
+If the code parameter is not set, the input ``<div>`` is examined for code.
+If no code is found there, the javascript attempts to restore in the editor
+whatever the user had in that particular cell before (using the web browser's
+session storage capabilities). If that fails, the editor is initialized to an
+empty string.
+
+Evaluate button text
+--------------------
+
+This sets the text of the evaluate button::
+
+   { ..
+   evalButtonText: "text"
+   .. }
+
+Sage Mode
+---------
+
+This sets whether the Single Cell can evaluate Sage-specific code::
+
+   { ..
+   sageMode: boolean
+   .. }
+
+Managing subsequent sessions
+----------------------------
+
+This sets whether subsquent session output (future Single Cell evaluations)
+should replace or be displayed alongside  current session output::
+
+   { ..
+   replaceOutput: boolean
+   .. }
+
+Hiding Single Cell elements
+---------------------------
+
+This hides specified parts of the Single Cell using CSS ``display: none``::
+
+   { ..
+   hide: ["element_1", ... , "element_n"]
+   .. }
+
+
+The following input elements can be hidden:
+
+* Editor (``editor``)
+* Editor type toggle (``editorToggle``)
+* Evaluate button (``evalButton``)
+* Sage Mode toggle (``sageMode``)
+
+The following output elements can be hidden:
+
+* Computation ID logging (``computationID``)
+* Message logging (``messages``)
+* Session output (``output``)
+
+.. _Templates:
+
+Templates
+---------
+
+Templates provide an alternative way to set certain Single Cell properties and
+are designed to simplify the process of embedding multiple instances on the
+same page. A template is a javascript dictionary with key/value pairs
+corresponding to desired key/value pairs given to
+``singlecell.makeSinglecell()``.
+
+Within ``singlecell.makeSinglecell()``, a template can be applied with the
+following::
+  
+   { ..
+   template: {template}
+   .. }
+
+The following options can be specified within a template dictionary (see the
+documentation for :ref:`customization <Customization>` for full syntax
+information, as these options mirror what can be given to
+``singlecell.makeSinglecell()``).
+
+* Hiding Single Cell elements::
+
+   { ..
+   hide: ["element_1", .. , "element_n"]
+   .. }
+
+* Editor type::
+
+   { ..
+   editor: "editor type"
+   .. }
+
+* Evaluate button text::
+
+   { ..
+   evalButtonText: "text"
+   .. }
+
+* "Sage Mode"::
+
+   { ..
+   sageMode: boolean
+   .. }
+
+* Replacing or appending subsequent sessions::
+
+   { ..
+   replaceOutput: boolean
+   .. }
+
+There are two built-in templates in ``singlecell.templates`` which are
+designed for common embedding scenarios:
+
+* ``singlecell.templates.minimal``: Prevents editing and display of embedded
+  code, but displays output of that code when the Evaluate button is clicked.
+  Only one output cell is shown at a time (subsequent output replaces previous
+  output)::
+
+    {
+      "editor": "static",
+      "hide": ["computationID","editor","editorToggle","files","messages","sageMode"],
+      "replaceOutput": true
+     }
+
+* ``singlecell.templates.restricted``: Displays code that cannot be edited
+  and displays output of that code when the Evaluate button is clicked. Only
+  one output cell is shown at a time (subsequent output replaces previous
+  output)::
+
+     {
+       "editor": "static",
+       "hide": ["computationID","editorToggle","files","messages","sageMode"],
+       "replaceOutput": true
+     }
+
+Explicit options given to ``singlecell.makeSinglecell()`` override options
+described in a template dictionary, with the exception of ``hide``, in which
+case both the explicit and template options are combined.
+
+
+Module Initialization
+^^^^^^^^^^^^^^^^^^^^^
+
+The embed javascript is initialized with ``singlecell.init()``, which can take a
+callback function as its argument that is executed after all required external
+libraries are loaded.
+
+This allows for chaining the process of embedding initialization and creating
+Single Cell instances::
+
+  $(function() { // load only when the page is loaded
+    var makecells = function() {
+      singlecell.makeSinglecell({
+        inputDiv: "#firstInput",
+	outputDiv: "#firstOutput",
+	template: singlecell.templates.restricted});
+      singlecell.makeSinglecell({
+        inputDiv: "#secondInput",
+	outputDiv: "#secondOutput",
+	template: singlecell.templates.minimal,
+	evalButtonText: "Show Result"});
+    }
+
+    singlecell.init(makecells); // load Single Cell libraries and then
+                                // initialize two Single Cell instances
+
+  });
+
+
+Embedding Javascript Module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Embedding creates a global javascript object named ``singlecell``.
+
+Accessible Methods and Variables
+--------------------------------
+
+.. _singlecell.templates_embed:
+.. attribute:: singlecell.templates
+
+   Built-in embedding templates. See :ref:`templates <Templates>` for more
+   information.
+
+.. _singlecell.init_embed:
+.. function:: singlecell.init(callback)
+
+   Initializes Single Cell embedding capabilities and loads external CSS and
+   Javascript libraries.
+
+   :param Function callback: Callback function to be executed after all external
+     libraries have loaded.
+
+.. _singlecell.makeSinglecell:
+.. function:: singlecell.makeSinglecell(args)
+
+   Constructs a Single Cell instance. This function itself mainly interprets
+   configuration information; the majority of the actual rendering is done by
+   :ref:`singlecell.initCell() <singlecell.initCell>`.
+
+   :param Dict args: Dictionary containing Single Cell configuration information.
+      See :ref:`customization <Customization>` for more information.
+   :returns: Dictionary of Single Cell information used by other methods.
+
+.. _singlecell.deleteSinglecell:
+.. function:: singlecell.deleteSinglecell(singlecellinfo)
+
+   Deletes a Single Cell instance.
+
+   :param Dict singlecell info: Dictionary of Single Cell information returned by
+      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+
+.. _singlecell.moveInputForm:
+.. function:: singlecell.moveInputForm(singlecellinfo)
+
+   Moves form elements of a Single Cell instance outside of that instance's
+   embedding context (most useful in cases where a Single Cell is embedded
+   within an external form which, on submission, should not send Single Cell
+   content).
+
+   :param Dict singlecellinfo: Dictionary of Single Cell information returned by
+      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+
+.. _singlecell.restoreInputForm:
+.. function:: singlecell.restoreInputForm(singlecellinfo)
+
+   Restores the Single Cell form elements moved using
+   :ref:`singlecell.moveInputForm() <singlecell.moveInputForm>` to the Single
+   Cell instance's embedding context.
+
+   :param Dict singlecellinfo: Dictionary of Single Cell information returned by
+      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+
+Internal Methods
+----------------
+
+.. _singlecell.initCell:
+.. function:: singlecell.initCell(singlecellinfo)
+
+  Called by :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+  Renders a Single Cell instance.
+
+  :param Dict singlecellinfo: Dictionary of Single Cell configuration
+    information created by
+    :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+
+.. _singlecell.renderEditor:
+.. function:: singlecell.renderEditor(editor, inputDiv)
+
+   Called by :ref:`singlecell.initCell() <singlecell.initCell>` Renders the
+   code editor for a Single Cell instance.
+
+   :param String editor: Name of editor to be rendered
+   :param inputDiv: jQuery selector corresponding to the location for Single
+      Cell input (where the editor should be created).
+   :returns: ``[editor, editorData]`` where ``editor`` is the name of the
+      rendered editor and ``editorData`` is additional data required to later
+      modify the rendered editor.
+
+.. _singlecell.toggleEditor:
+.. function:: singlecell.toggleEditor(editor, editorData, inputDiv)
+
+   Switches the editor type (triggered upon clicking the Editor toggle link in a
+   Single Cell instance).
+
+   :param String editor: Name of current editor type.
+   :param editorData: Data required to modify the current editor type, as
+      returned by :ref:`singlecell.renderEditor() <singlecell.renderEditor>`.
+   :param inputDiv: jQuery selector corresponding to the location for Single
+      Cell input (where the editor is located).
+
+
+Example
+^^^^^^^
+
+This is a very simple embedded cell with most things turned off and a default
+piece of code (replace ``<SERVER>`` with the appropriate address)::
 
     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
     <html>
