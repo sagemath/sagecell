@@ -98,15 +98,27 @@ the session output, the computation ID, and server messages::
 Code Editor
 -----------
 
-This sets the type of code editor. Available options are "textarea" (plain
-textbox), "static" (plain textbox, but not editable), and "codemirror"
-(default, CodeMirror editor, which provides syntax highlighting and other
-more advanced functionality)::
+This sets the type of code editor::
 
    { ..
    editor: "editor type"
    .. }
 
+Available options are:
+
+* ``codemirror`` - default, CodeMirror editor, which provides syntax
+  highlighting and other more advanced functionality
+
+* ``codemirror-static`` - like ``codemirror``, but not editable
+
+* ``textarea`` - plain textbox
+
+* ``textarea-static`` - like ``textarea``, but not editable
+
+Note that Single Cell editor toggling functionality only switches between the
+group of editors that are editable or static. For instance, ``textarea-static``
+can only become ``codemirror-static``, rather than ``textarea`` or
+``codemirror``.
 
 This sets the initial content of the code editor::
 
@@ -243,7 +255,7 @@ designed for common embedding scenarios:
   output)::
 
     {
-      "editor": "static",
+      "editor": "textarea-static",
       "hide": ["computationID","editor","editorToggle","files","messages","sageMode"],
       "replaceOutput": true
      }
@@ -254,7 +266,7 @@ designed for common embedding scenarios:
   output)::
 
      {
-       "editor": "static",
+       "editor": "codemirror-static",
        "hide": ["computationID","editorToggle","files","messages","sageMode"],
        "replaceOutput": true
      }

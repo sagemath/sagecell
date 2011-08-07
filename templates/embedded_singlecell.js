@@ -292,11 +292,16 @@ singlecell.renderEditor = (function(editor, inputDiv) {
 
     if (editor === "textarea") {
 	editorData = editor;
-    } else if (editor === "static") {
+    } else if (editor === "textarea-static") {
 	editorData = editor;
 	inputDiv.find(".singlecell_commands").attr("readonly", "readonly");
     } else {
-	editor = "codemirror";
+	var readOnly = false;
+	if (editor == "codemirror-static") {
+	    readOnly = true;
+	} else {
+	    editor = "codemirror";
+	}
 
 	editorData = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
 	    mode:"python",
@@ -304,6 +309,7 @@ singlecell.renderEditor = (function(editor, inputDiv) {
 	    tabMode:"shift",
 	    lineNumbers:true,
 	    matchBrackets:true,
+	    readOnly: readOnly,
 	    onKeyEvent: (function(editor, event){
 		if (event.which === 13 && event.shiftKey && event.type === "keypress") {
 		    inputDiv.find(".singlecell_evalButton").click();
@@ -325,17 +331,29 @@ singlecell.renderEditor = (function(editor, inputDiv) {
 });
 
 singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
+    var editable = ["textarea", "codemirror"];
     var temp;
-    
-    if (editor === "codemirror") {
-	editorData.toTextArea();
-	editor = editorData = "textarea";
-    } else {
-	editor = "codemirror";
 
-	temp = this.renderEditor(editor, inputDiv);
-	editor = temp[0];
-	editorData = temp[1];
+    if ($.inArray(editor, editable) !== -1) {
+	if (editor === "codemirror") {
+	    editorData.toTextArea();
+	    editor = editorData = "textarea";
+	} else {
+	    editor = "codemirror";
+	    temp = this.renderEditor(editor, inputDiv);
+	    editorData = temp[1];
+	}
+    } else {
+	if (editor === "codemirror-static") {
+	    editorData.toTextArea();
+	    editor = "textarea-static";
+	    temp = this.renderEditor(editor, inputDiv);
+	    editorData = temp[1];
+	} else {
+	    editor = "codemirror-static";
+	    temp = this.renderEditor(editor, inputDiv);
+	    editorData = temp[1];
+	}
     }
 
     return [editor, editorData];
@@ -343,13 +361,13 @@ singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
 
 singlecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
-	"editor": "static",
+	"editor": "textarea-static",
 	"hide": ["computationID", "editor", "editorToggle", "files",
 		 "messages", "sageMode"],
 	"replaceOutput": true
     },
     "restricted": { // to display/evaluate code that can't be edited.
-	"editor": "static",
+	"editor": "codemirror-static",
 	"hide": ["computationID", "editorToggle", "files", "messages",
 		 "sageMode"],
 	"replaceOutput": true
