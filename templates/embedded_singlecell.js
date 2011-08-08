@@ -46,20 +46,44 @@ var singlecell_dependencies_callback = function() {
 
 
 
-
 singlecell.makeSinglecell = (function(args) {
     if (typeof args === "undefined") {
 	args = {};
     }
-    // Args:
 
+    // Args:
+    var template = args.template;
     var inputDiv = args.inputDiv;
     var outputDiv = args.outputDiv;
-    var hide = args.hide;
-    // 'editor', 'files', 'evalButton', 'sageMode', 'output', 'computationID', 'messages'
     var code = args.code;
     var evalButtonText = args.evalButtonText;
-    
+    var hide = args.hide;
+    var editor = args.editor;
+    var sageMode = args.sageMode;
+    var replaceOutput = args.replaceOutput;
+
+    if (typeof template !== "undefined") {
+	if (typeof evalButtonText === "undefined") {
+	    evalButtonText = template.evalButtonText;
+	}
+	if (typeof editor === "undefined") {
+	    editor = template.editor;
+	}
+	if (typeof hide === "undefined") {
+	    hide = template.hide;
+	} else {
+	    for (var i = 0, i_max = template.hide.length; i < i_max; i++) {
+		hide.push(template.hide[i]);
+	    }
+	}
+	if (typeof sageMode === "undefined") {
+	    sageMode = template.sageMode;
+	}
+	if (typeof replaceOutput === "undefined") {
+	    replaceOutput = template.replaceOutput;
+	}
+    }
+
     // default arguments
     if (typeof inputDiv === "undefined") {
 	throw "Must specify an inputDiv"
@@ -70,15 +94,38 @@ singlecell.makeSinglecell = (function(args) {
     }
 
     if (typeof hide === "undefined") {
-	hide = {};
+	hide = [];
     }
+
+    if (typeof editor === "undefined") {
+	editor = "codemirror";
+    }
+
     if (typeof code === "undefined") {
 	code = $(inputDiv).text();
 	// delete the text
 	$(inputDiv).text("");
     }
+
+    if (typeof evalButtonText === "undefined") {
+	evalButtonText = "Evaluate";
+    }
     
-    var singlecellInfo = {"inputDiv": inputDiv, "outputDiv": outputDiv, "code": code};
+    if (typeof sageMode === "undefined") {
+	sageMode = true;
+    }
+
+    if (typeof replaceOutput === "undefined") {
+	replaceOutput = false;
+    }
+
+    var singlecellInfo = {"inputDiv": inputDiv,
+			  "outputDiv": outputDiv,
+			  "code": code,
+			  "editor": editor,
+			  "replaceOutput": replaceOutput,
+			  "sageMode": sageMode};
+
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
 	// Wait for CodeMirror to load before using the $ function
@@ -97,6 +144,7 @@ singlecell.makeSinglecell = (function(args) {
 		}
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
 		    if (hide[i] === 'editor' || 
+			hide[i] === 'editorToggle' || 
 			hide[i] === 'files' || 
 			hide[i] ==='evalButton' || 
 			hide[i] ==='sageMode') {
@@ -122,55 +170,52 @@ singlecell.initCell = (function(singlecellInfo) {
     var inputDivName = singlecellInfo.inputDiv.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
     var inputDiv = $(singlecellInfo.inputDiv);
     var outputDiv = $(singlecellInfo.outputDiv);
-
-    var editor = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0),{
-	mode:"python",
-	indentUnit:4,
-	tabMode:"shift",
-	lineNumbers:true,
-	matchBrackets:true,
-	onKeyEvent: (function(editor, event){
-	    if (event.which === 13 && event.shiftKey && event.type === "keypress") {
-		inputDiv.find(".singlecell_evalButton").click();
-		event.stop();
-		return true;
-	    }
-	    try {
-		sessionStorage.removeItem(inputDivName+"_editorValue");
-		sessionStorage.setItem(inputDivName+"_editorValue", editor.getValue());
-	    } catch (e) {
-		// if we can't store, don't do anything, e.g. if cookies are blocked
-	    }
-	})
-    });
+    var editor = singlecellInfo.editor;
+    var replaceOutput = singlecellInfo.replaceOutput;
+    var sageMode = inputDiv.find(".singlecell_sageModeCheck");
+    var textArea = inputDiv.find(".singlecell_commands");
+    var files = 0;
+    var editorData, temp;
 
     if (singlecellInfo.code !== undefined) {
-	editor.setValue(singlecellInfo.code);
+	textArea.val(singlecellInfo.code);
+    }
+
+    if (! singlecellInfo.sageMode) {
+	sageMode.attr("checked", false);
     }
 
     try {
-	if (editor.getValue().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
-	    editor.setValue(sessionStorage.getItem(inputDivName+"_editorValue"));
+	if (textArea.val().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
+	    textArea.val(sessionStorage.getItem(inputDivName+"_editorValue"));
 	}
 	if (sessionStorage[inputDivName+"_sageModeCheck"]) {
-	    inputDiv.find(".singlecell_sageModeCheck").attr("checked", sessionStorage.getItem(inputDivName+"_sageModeCheck")=="true");
+	    sageMode.attr("checked", sessionStorage.getItem(inputDivName+"_sageModeCheck")=="true");
 	}
-	inputDiv.find(".singlecell_sageModeCheck").change(function(e) {
+	sageMode.change(function(e) {
 	    sessionStorage.setItem(inputDivName+"_sageModeCheck",$(e.target).attr("checked"));
 	});
     } catch(e) {}
-    editor.focus();
-    
-    var files = 0;
-    
+
+    temp = this.renderEditor(editor, inputDiv);
+    editor = temp[0];
+    editorData = temp[1];
+
     $(document.body).append("<form class='singlecell_form' id='"+inputDivName+"_form'></form>");
     $("#"+inputDivName+"_form").attr({"action": $URL.evaluate,
 				"enctype": "multipart/form-data",
 				"method": "POST"
 			       });
+
+    inputDiv.find(".singlecell_editorToggle").click(function(){
+	temp = singlecell.toggleEditor(editor, editorData, inputDiv);
+	editor = temp[0];
+	editorData = temp[1];
+    });
     inputDiv.find(".singlecell_addFile").click(function(){
-	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove()'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
+	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
 	files++;
+	return false;
     });
     inputDiv.find(".singlecell_clearFiles").click(function() {
 	files = 0;
@@ -190,9 +235,14 @@ singlecell.initCell = (function(singlecellInfo) {
     
     inputDiv.find(".singlecell_evalButton").click(function() {
 	// TODO: actually make the JSON execute request message here.
+
+	if (replaceOutput) {
+	    inputDiv.find(".singlecell_output").empty();
+	}
+
 	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageModeCheck").attr("checked"));
 	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
-	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(editor.getValue()));
+	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
 	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
 	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
 	inputDiv.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputDivName+"_form"));
@@ -236,6 +286,94 @@ singlecell.restoreInputForm = (function(singlecellInfo) {
     $("#singlecell_moved").contents().appendTo(singlecellInfo.inputDiv);
     $("#singlecell_moved").remove();
 });
+
+singlecell.renderEditor = (function(editor, inputDiv) {
+    var editorData;
+
+    if (editor === "textarea") {
+	editorData = editor;
+    } else if (editor === "textarea-static") {
+	editorData = editor;
+	inputDiv.find(".singlecell_commands").attr("readonly", "readonly");
+    } else {
+	var readOnly = false;
+	if (editor == "codemirror-static") {
+	    readOnly = true;
+	} else {
+	    editor = "codemirror";
+	}
+
+	editorData = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
+	    mode:"python",
+	    indentUnit:4,
+	    tabMode:"shift",
+	    lineNumbers:true,
+	    matchBrackets:true,
+	    readOnly: readOnly,
+	    onKeyEvent: (function(editor, event){
+		if (event.which === 13 && event.shiftKey && event.type === "keypress") {
+		    inputDiv.find(".singlecell_evalButton").click();
+		    event.stop();
+		    return true;
+		}
+		editor.save();
+		try {
+		    sessionStorage.removeItem(inputDivName+"_editorValue");
+		    sessionStorage.setItem(inputDivName+"_editorValue", inputDiv.find(".singlecell_commands").val());
+		} catch (e) {
+		    // if we can't store, don't do anything, e.g. if cookies are blocked
+		}
+	    })
+	});
+    }
+
+    return [editor, editorData];
+});
+
+singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
+    var editable = ["textarea", "codemirror"];
+    var temp;
+
+    if ($.inArray(editor, editable) !== -1) {
+	if (editor === "codemirror") {
+	    editorData.toTextArea();
+	    editor = editorData = "textarea";
+	} else {
+	    editor = "codemirror";
+	    temp = this.renderEditor(editor, inputDiv);
+	    editorData = temp[1];
+	}
+    } else {
+	if (editor === "codemirror-static") {
+	    editorData.toTextArea();
+	    editor = "textarea-static";
+	    temp = this.renderEditor(editor, inputDiv);
+	    editorData = temp[1];
+	} else {
+	    editor = "codemirror-static";
+	    temp = this.renderEditor(editor, inputDiv);
+	    editorData = temp[1];
+	}
+    }
+
+    return [editor, editorData];
+});
+
+singlecell.templates = {
+    "minimal": { // for an evaluate button and nothing else.
+	"editor": "textarea-static",
+	"hide": ["computationID", "editor", "editorToggle", "files",
+		 "messages", "sageMode"],
+	"replaceOutput": true
+    },
+    "restricted": { // to display/evaluate code that can't be edited.
+	"editor": "codemirror-static",
+	"hide": ["computationID", "editorToggle", "files", "messages",
+		 "sageMode"],
+	"replaceOutput": true
+    }
+}
+
 
 // Make the script root available to jquery
 $URL={'root': {{ request.url_root|tojson|safe }},
