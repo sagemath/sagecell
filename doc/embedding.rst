@@ -85,6 +85,8 @@ evaluate button::
    inputDiv: "jQuery selector, must map to a unique <div> tag"
    .. }
 
+The inputDiv argument is required and cannot be omitted.
+
 Output Location
 ---------------
 
@@ -94,6 +96,8 @@ the session output, the computation ID, and server messages::
    { ..
    outputDiv: "jQuery selector, must map to a unique <div> tag"
    .. }
+
+If ``outputDiv`` is not specified, it defaults to the same selector as ``inputDiv``.
 
 Code Editor
 -----------
@@ -131,10 +135,21 @@ Code editor content can also be set by embedding the code within the input
 ``<div>`` tag of the Single Cell::
 
    <div id="myInputDiv">
-      <script type="text/code">
-      print "Here's some code!"
+      <script type="text/code">print "Here's some code!"
+   print "Hello World"
       </script>
    </div>
+
+Note that all whitespace is preserved inside of the ``<script>``
+tags.  Since the Python/Sage language is whitespace-sensitive, make
+sure to not indent any lines unless you really want the indentation in
+the code.
+
+.. todo::  
+
+  strip off the first blank line and any beginning
+  whitespace, so that people can easily paste in blocks of code and
+  have it work nicely.
 
 If the code parameter is not set, the input ``<div>`` is examined for code.
 If no code is found there, the javascript attempts to restore in the editor
@@ -163,8 +178,8 @@ This sets whether the Single Cell can evaluate Sage-specific code::
 Managing subsequent sessions
 ----------------------------
 
-This sets whether subsquent session output (future Single Cell evaluations)
-should replace or be displayed alongside  current session output::
+This sets whether subsequent session output (future Single Cell evaluations)
+should replace or be displayed alongside current session output::
 
    { ..
    replaceOutput: boolean
@@ -192,6 +207,11 @@ The following output elements can be hidden:
 * Computation ID logging (``computationID``)
 * Message logging (``messages``)
 * Session output (``output``)
+
+.. todo:: make the Session identifiers on an output cell be hidden.
+   Also, it might be nice to make a more user-friendly way of saying
+   that a session is done, maybe by changing the background color or
+   letting the page author pass in a CSS "style" or maybe a class?
 
 .. _Templates:
 
