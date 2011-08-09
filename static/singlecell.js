@@ -1,2 +1,2 @@
 
-;singlecell_dependencies_callback();
+;singlecell.singlecell_dependencies_callback();

@@ -1,5 +1,7 @@
 
-var singlecell = {};
+(function($) {
+// Make a global singlecell namespace for our functions
+window.singlecell = {};
 
 singlecell.init = (function(callback) {
     var load = function ( config ) {
@@ -37,13 +39,12 @@ singlecell.init = (function(callback) {
     load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
 });
 
-var singlecell_dependencies_callback = function() {
-    singlecell_dependencies=true;     
+singlecell.singlecell_dependencies_callback = (function() {
+    window.singlecell_dependencies=true;
     if (singlecell.init_callback !== undefined) {
 	singlecell.init_callback();
     }
-};
-
+});
 
 
 singlecell.makeSinglecell = (function(args) {
@@ -372,7 +373,7 @@ singlecell.templates = {
 		 "sageMode"],
 	"replaceOutput": true
     }
-}
+};
 
 
 // Make the script root available to jquery
@@ -382,3 +383,4 @@ $URL={'root': {{ request.url_root|tojson|safe }},
           '?callback=?',
       'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
      };
+})(jQuery);
