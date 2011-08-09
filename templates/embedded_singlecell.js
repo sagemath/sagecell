@@ -293,12 +293,12 @@ singlecell.renderEditor = (function(editor, inputDiv) {
 
     if (editor === "textarea") {
 	editorData = editor;
-    } else if (editor === "textarea-static") {
+    } else if (editor === "textarea-readonly") {
 	editorData = editor;
 	inputDiv.find(".singlecell_commands").attr("readonly", "readonly");
     } else {
 	var readOnly = false;
-	if (editor == "codemirror-static") {
+	if (editor == "codemirror-readonly") {
 	    readOnly = true;
 	} else {
 	    editor = "codemirror";
@@ -345,13 +345,13 @@ singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
 	    editorData = temp[1];
 	}
     } else {
-	if (editor === "codemirror-static") {
+	if (editor === "codemirror-readonly") {
 	    editorData.toTextArea();
-	    editor = "textarea-static";
+	    editor = "textarea-readonly";
 	    temp = this.renderEditor(editor, inputDiv);
 	    editorData = temp[1];
 	} else {
-	    editor = "codemirror-static";
+	    editor = "codemirror-readonly";
 	    temp = this.renderEditor(editor, inputDiv);
 	    editorData = temp[1];
 	}
@@ -362,13 +362,13 @@ singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
 
 singlecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
-	"editor": "textarea-static",
+	"editor": "textarea-readonly",
 	"hide": ["computationID", "editor", "editorToggle", "files",
 		 "messages", "sageMode"],
 	"replaceOutput": true
     },
     "restricted": { // to display/evaluate code that can't be edited.
-	"editor": "codemirror-static",
+	"editor": "codemirror-readonly",
 	"hide": ["computationID", "editorToggle", "files", "messages",
 		 "sageMode"],
 	"replaceOutput": true

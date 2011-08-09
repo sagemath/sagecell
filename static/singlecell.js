@@ -1,2 +1,2 @@
 
-;singlecell.singlecell_dependencies_callback();
+;window.singlecell.singlecell_dependencies_callback();

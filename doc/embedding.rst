@@ -113,15 +113,15 @@ Available options are:
 * ``codemirror`` - default, CodeMirror editor, which provides syntax
   highlighting and other more advanced functionality
 
-* ``codemirror-static`` - like ``codemirror``, but not editable
+* ``codemirror-readonly`` - like ``codemirror``, but not editable
 
 * ``textarea`` - plain textbox
 
-* ``textarea-static`` - like ``textarea``, but not editable
+* ``textarea-readonly`` - like ``textarea``, but not editable
 
 Note that Single Cell editor toggling functionality only switches between the
-group of editors that are editable or static. For instance, ``textarea-static``
-can only become ``codemirror-static``, rather than ``textarea`` or
+group of editors that are editable or static. For instance, ``textarea-readonly``
+can only become ``codemirror-readonly``, rather than ``textarea`` or
 ``codemirror``.
 
 This sets the initial content of the code editor::
@@ -275,7 +275,7 @@ designed for common embedding scenarios:
   output)::
 
     {
-      "editor": "textarea-static",
+      "editor": "textarea-readonly",
       "hide": ["computationID","editor","editorToggle","files","messages","sageMode"],
       "replaceOutput": true
      }
@@ -286,7 +286,7 @@ designed for common embedding scenarios:
   output)::
 
      {
-       "editor": "codemirror-static",
+       "editor": "codemirror-readonly",
        "hide": ["computationID","editorToggle","files","messages","sageMode"],
        "replaceOutput": true
      }
