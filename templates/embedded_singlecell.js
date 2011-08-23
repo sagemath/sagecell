@@ -212,6 +212,7 @@ singlecell.initCell = (function(singlecellInfo) {
 	temp = singlecell.toggleEditor(editor, editorData, inputDiv);
 	editor = temp[0];
 	editorData = temp[1];
+	return false;
     });
     inputDiv.find(".singlecell_addFile").click(function(){
 	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
@@ -222,6 +223,7 @@ singlecell.initCell = (function(singlecellInfo) {
 	files = 0;
 	$("#"+inputDivName+"_form").empty();
 	inputDiv.find(".singlecell_fileUpload").empty();
+	return false;
     });
     
     $(".singlecell_selectorButton").live("hover",function(e) {
