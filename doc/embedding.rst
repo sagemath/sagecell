@@ -33,12 +33,15 @@ upon initialization, including callback functionality.
 
 Later, the following javascript should be run::
 
-   singlecell.makeSinglecell({inputDiv: "[jQuery selector]"});
+   singlecell.makeSinglecell({inputLocation: "[jQuery selector]"});
 
-This creates a basic Single Cell instance at the location matching ``inputDiv``.
-This location must be a unique selector for an HTML ``<div>``. See the
-documentation for :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`
-for more configuration options. This function returns a dictionary containing information necessary to later move portions of or remove the entirety of the Single Cell instance if desired.
+This creates a basic Single Cell instance at the location matching
+``inputLocation``. This location must be a unique selector for an HTML element
+in which content can be dynamically placed. See the documentation for
+:ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`
+for more configuration options. This function returns a dictionary containing
+information necessary to later move portions of or remove the entirety of the
+Single Cell instance if desired.
 
 ``singlecell.makeSinglecell()`` can be called multiple times to embed multiple
 Single Cell instances, as long as the input (and output, if specified) locations
@@ -82,10 +85,10 @@ the editor, editor toggle, "Sage Mode" selector, file upload selector, and the
 evaluate button::
 
    { ..
-   inputDiv: "jQuery selector, must map to a unique <div> tag"
+   inputLocation: "jQuery selector, must map to a unique HTML tag"
    .. }
 
-The inputDiv argument is required and cannot be omitted.
+The inputLocation argument is required and cannot be omitted.
 
 Output Location
 ---------------
@@ -94,10 +97,11 @@ This sets the location of the output elements of a Single Cell, which includes
 the session output, the computation ID, and server messages::
 
    { ..
-   outputDiv: "jQuery selector, must map to a unique <div> tag"
+   outputLocation: "jQuery selector, must map to a unique HTML tag"
    .. }
 
-If ``outputDiv`` is not specified, it defaults to the same selector as ``inputDiv``.
+If ``outputLocation`` is not specified, it defaults to the same selector as
+``inputLocation``.
 
 Code Editor
 -----------
@@ -132,7 +136,7 @@ This sets the initial content of the code editor::
 
 
 Code editor content can also be set by embedding the code within the input
-``<div>`` tag of the Single Cell::
+location of the Single Cell::
 
    <div id="myInputDiv">
       <script type="text/code">print "Here's some code!"
@@ -151,7 +155,7 @@ the code.
   whitespace, so that people can easily paste in blocks of code and
   have it work nicely.
 
-If the code parameter is not set, the input ``<div>`` is examined for code.
+If the code parameter is not set, the input location is examined for code.
 If no code is found there, the javascript attempts to restore in the editor
 whatever the user had in that particular cell before (using the web browser's
 session storage capabilities). If that fails, the editor is initialized to an
@@ -309,12 +313,12 @@ Single Cell instances::
   $(function() { // load only when the page is loaded
     var makecells = function() {
       singlecell.makeSinglecell({
-        inputDiv: "#firstInput",
-	outputDiv: "#firstOutput",
+        inputLocation: "#firstInput",
+	outputLocation: "#firstOutput",
 	template: singlecell.templates.restricted});
       singlecell.makeSinglecell({
-        inputDiv: "#secondInput",
-	outputDiv: "#secondOutput",
+        inputLocation: "#secondInput",
+	outputLocation: "#secondOutput",
 	template: singlecell.templates.minimal,
 	evalButtonText: "Show Result"});
     }
@@ -402,20 +406,20 @@ Internal Methods
     :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
 
 .. _singlecell.renderEditor:
-.. function:: singlecell.renderEditor(editor, inputDiv)
+.. function:: singlecell.renderEditor(editor, inputLocation)
 
    Called by :ref:`singlecell.initCell() <singlecell.initCell>` Renders the
    code editor for a Single Cell instance.
 
    :param String editor: Name of editor to be rendered
-   :param inputDiv: jQuery selector corresponding to the location for Single
+   :param inputLocation: jQuery selector corresponding to the location for Single
       Cell input (where the editor should be created).
    :returns: ``[editor, editorData]`` where ``editor`` is the name of the
       rendered editor and ``editorData`` is additional data required to later
       modify the rendered editor.
 
 .. _singlecell.toggleEditor:
-.. function:: singlecell.toggleEditor(editor, editorData, inputDiv)
+.. function:: singlecell.toggleEditor(editor, editorData, inputLocation)
 
    Switches the editor type (triggered upon clicking the Editor toggle link in a
    Single Cell instance).
@@ -423,7 +427,7 @@ Internal Methods
    :param String editor: Name of current editor type.
    :param editorData: Data required to modify the current editor type, as
       returned by :ref:`singlecell.renderEditor() <singlecell.renderEditor>`.
-   :param inputDiv: jQuery selector corresponding to the location for Single
+   :param inputLocation: jQuery selector corresponding to the location for Single
       Cell input (where the editor is located).
 
 
@@ -446,7 +450,7 @@ piece of code (replace ``<SERVER>`` with the appropriate address)::
     $(function() {
         var makecells = function() {
             singlecell.makeSinglecell({
-                inputDiv: '#mysingle',
+                inputLocation: '#mysingle',
                 hide: ['messages', 'computationID', 'files', 'sageMode', 'editor'],
                 evalButtonText: 'Make Live'});
         }
