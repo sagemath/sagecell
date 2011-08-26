@@ -569,7 +569,10 @@ InteractData.Button.prototype.finishRender = function(location) {
 		    $(this).removeClass("ui-state-active");
 		    $(this).parent().find("#"+control_id+"_value").val("true").change();
 		}
-	    }(control_id = this.control_id))
+	    }(control_id = this.control_id)),
+	    "click": function(e) {
+		e.preventDefault();
+	    }
 	})
 	.css("width", this.control["width"]);
 }
@@ -646,7 +649,10 @@ InteractData.ButtonBar.prototype.finishRender = function(location) {
 			$(location).find("#"+control_id+"_value").val(i)
 			    .change();
 		    }
-		}(location = this.location, control_id = this.control_id, i))
+		}(location = this.location, control_id = this.control_id, i)),
+		"click": function(e) {
+		    e.preventDefault();
+		}
 	    });
     }
 }
@@ -1129,7 +1135,10 @@ InteractData.Selector.prototype.finishRender = function(location) {
 			    control_out.find("#"+control_id).val(i).change();
 			}
 		    }
-		}(control_out,i,control_id=this.control_id))
+		}(control_out,i,control_id=this.control_id)),
+		"click": function(e) {
+		    e.preventDefault();
+		}
 	    });
 	}
     }
