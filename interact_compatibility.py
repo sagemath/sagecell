@@ -381,7 +381,17 @@ def selector(values, label=None, default=None,
         selector_type='button'
     else:
         selector_type='list'
-        
+
+    # in the old code, if a selector had a single button, then it was
+    # actually a pushbutton (i.e., it would trigger an update every time
+    # it was pushed)
+    if selector_type=='button' and len(values)==1:
+        if isinstance(values[0], (list,tuple)) and len(values[0])==2:
+            buttonvalue, buttontext=values[0]
+        else:
+            buttonvalue, buttontext=values[0],str(values[0])
+        return Button(value=buttonvalue, text=buttontext, default=buttonvalue, label=label, width=width)
+
     return Selector(values=values, default=default, label=label, selector_type=selector_type,
                     nrows=nrows, ncols=ncols, width=width)
 

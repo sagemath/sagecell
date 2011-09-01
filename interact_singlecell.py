@@ -1101,11 +1101,18 @@ def automatic_control(control, var=None):
     elif isinstance(control, Number):
         C = InputBox(default = control, label = label, raw = True)
     elif isinstance(control, list):
-        if len(control) <= 5:
-            selectortype = "button"
+        if len(control)==1:
+            if isinstance(control[0], (list,tuple)) and len(control[0])==2:
+                buttonvalue, buttontext=control[0]
+            else:
+                buttonvalue, buttontext=control[0],str(control[0])
+            C = Button(value=buttonvalue, text=buttontext, default=buttonvalue, label=label)
         else:
-            selectortype = "list"
-        C = Selector(selector_type = selectortype, default = control[default_value], label = label, values = control)
+            if len(control) <= 5:
+                selectortype = "button"
+            else:
+                selectortype = "list"
+            C = Selector(selector_type = selectortype, default = control[default_value], label = label, values = control)
     elif isinstance(control, GeneratorType):
         values=take(10000,control)
         C = DiscreteSlider(default = values[default_value], values = values, label = label)
