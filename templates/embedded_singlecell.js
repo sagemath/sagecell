@@ -54,8 +54,8 @@ singlecell.makeSinglecell = (function(args) {
 
     // Args:
     var template = args.template;
-    var inputDiv = args.inputDiv;
-    var outputDiv = args.outputDiv;
+    var inputLocation = args.inputLocation;
+    var outputLocation = args.outputLocation;
     var code = args.code;
     var evalButtonText = args.evalButtonText;
     var hide = args.hide;
@@ -86,12 +86,12 @@ singlecell.makeSinglecell = (function(args) {
     }
 
     // default arguments
-    if (typeof inputDiv === "undefined") {
-	throw "Must specify an inputDiv"
+    if (typeof inputLocation === "undefined") {
+	throw "Must specify an inputLocation"
     }
     
-    if (typeof outputDiv === "undefined") {
-	outputDiv = inputDiv;
+    if (typeof outputLocation === "undefined") {
+	outputLocation = inputLocation;
     }
 
     if (typeof hide === "undefined") {
@@ -103,9 +103,9 @@ singlecell.makeSinglecell = (function(args) {
     }
 
     if (typeof code === "undefined") {
-	code = $(inputDiv).text();
+	code = $(inputLocation).text();
 	// delete the text
-	$(inputDiv).text("");
+	$(inputLocation).text("");
     }
 
     if (typeof evalButtonText === "undefined") {
@@ -120,8 +120,8 @@ singlecell.makeSinglecell = (function(args) {
 	replaceOutput = false;
     }
 
-    var singlecellInfo = {"inputDiv": inputDiv,
-			  "outputDiv": outputDiv,
+    var singlecellInfo = {"inputLocation": inputLocation,
+			  "outputLocation": outputLocation,
 			  "code": code,
 			  "editor": editor,
 			  "replaceOutput": replaceOutput,
@@ -138,10 +138,10 @@ singlecell.makeSinglecell = (function(args) {
 	    return false;
 	} else {
 	    $(function() {
-		$(inputDiv).html(body);
-		$(inputDiv+" .singlecell_commands").text(code);
-		if (inputDiv !== outputDiv) {
-		    $(inputDiv+" .singlecell_output, .singlecell_messages").appendTo(outputDiv);
+		$(inputLocation).html(body);
+		$(inputLocation+" .singlecell_commands").text(code);
+		if (inputLocation !== outputLocation) {
+		    $(inputLocation+" .singlecell_output, .singlecell_messages").appendTo(outputLocation);
 		}
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
 		    if (hide[i] === 'editor' || 
@@ -149,15 +149,15 @@ singlecell.makeSinglecell = (function(args) {
 			hide[i] === 'files' || 
 			hide[i] ==='evalButton' || 
 			hide[i] ==='sageMode') {
-			$(inputDiv+" .singlecell_"+hide[i]).css("display", "none");
+			$(inputLocation+" .singlecell_"+hide[i]).css("display", "none");
 		    } else if (hide[i] ==='output' || 
 			       hide[i] ==='computationID' || 
 			       hide[i] ==='messages') {
-			$(outputDiv+" .singlecell_"+hide[i]).css("display", "none");
+			$(outputLocation+" .singlecell_"+hide[i]).css("display", "none");
 		    }
 		}
 		if (evalButtonText !== undefined) {
-		    $(inputDiv+ " .singlecell_evalButton").val(evalButtonText);
+		    $(inputLocation+ " .singlecell_evalButton").val(evalButtonText);
 		}
 		singlecell.initCell(singlecellInfo);
 	    });
@@ -168,13 +168,13 @@ singlecell.makeSinglecell = (function(args) {
 
 singlecell.initCell = (function(singlecellInfo) {
 //Strips all special characters
-    var inputDivName = singlecellInfo.inputDiv.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
-    var inputDiv = $(singlecellInfo.inputDiv);
-    var outputDiv = $(singlecellInfo.outputDiv);
+    var inputLocationName = singlecellInfo.inputLocation.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
+    var inputLocation = $(singlecellInfo.inputLocation);
+    var outputLocation = $(singlecellInfo.outputLocation);
     var editor = singlecellInfo.editor;
     var replaceOutput = singlecellInfo.replaceOutput;
-    var sageMode = inputDiv.find(".singlecell_sageModeCheck");
-    var textArea = inputDiv.find(".singlecell_commands");
+    var sageMode = inputLocation.find(".singlecell_sageModeCheck");
+    var textArea = inputLocation.find(".singlecell_commands");
     var files = 0;
     var editorData, temp;
 
@@ -187,41 +187,43 @@ singlecell.initCell = (function(singlecellInfo) {
     }
 
     try {
-	if (textArea.val().length == 0 && sessionStorage[inputDivName+"_editorValue"]) {
-	    textArea.val(sessionStorage.getItem(inputDivName+"_editorValue"));
+	if (textArea.val().length == 0 && sessionStorage[inputLocationName+"_editorValue"]) {
+	    textArea.val(sessionStorage.getItem(inputLocationName+"_editorValue"));
 	}
-	if (sessionStorage[inputDivName+"_sageModeCheck"]) {
-	    sageMode.attr("checked", sessionStorage.getItem(inputDivName+"_sageModeCheck")=="true");
+	if (sessionStorage[inputLocationName+"_sageModeCheck"]) {
+	    sageMode.attr("checked", sessionStorage.getItem(inputLocationName+"_sageModeCheck")=="true");
 	}
 	sageMode.change(function(e) {
-	    sessionStorage.setItem(inputDivName+"_sageModeCheck",$(e.target).attr("checked"));
+	    sessionStorage.setItem(inputLocationName+"_sageModeCheck",$(e.target).attr("checked"));
 	});
     } catch(e) {}
 
-    temp = this.renderEditor(editor, inputDiv);
+    temp = this.renderEditor(editor, inputLocation);
     editor = temp[0];
     editorData = temp[1];
 
-    $(document.body).append("<form class='singlecell_form' id='"+inputDivName+"_form'></form>");
-    $("#"+inputDivName+"_form").attr({"action": $URL.evaluate,
+    $(document.body).append("<form class='singlecell_form' id='"+inputLocationName+"_form'></form>");
+    $("#"+inputLocationName+"_form").attr({"action": $URL.evaluate,
 				"enctype": "multipart/form-data",
 				"method": "POST"
 			       });
 
-    inputDiv.find(".singlecell_editorToggle").click(function(){
-	temp = singlecell.toggleEditor(editor, editorData, inputDiv);
+    inputLocation.find(".singlecell_editorToggle").click(function(){
+	temp = singlecell.toggleEditor(editor, editorData, inputLocation);
 	editor = temp[0];
 	editorData = temp[1];
+	return false;
     });
-    inputDiv.find(".singlecell_addFile").click(function(){
-	inputDiv.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputDivName+"_file"+files+"' name='file'></div>");
+    inputLocation.find(".singlecell_addFile").click(function(){
+	inputLocation.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputLocationName+"_file"+files+"' name='file'></div>");
 	files++;
 	return false;
     });
-    inputDiv.find(".singlecell_clearFiles").click(function() {
+    inputLocation.find(".singlecell_clearFiles").click(function() {
 	files = 0;
-	$("#"+inputDivName+"_form").empty();
-	inputDiv.find(".singlecell_fileUpload").empty();
+	$("#"+inputLocationName+"_form").empty();
+	inputLocation.find(".singlecell_fileUpload").empty();
+	return false;
     });
     
     $(".singlecell_selectorButton").live("hover",function(e) {
@@ -234,25 +236,25 @@ singlecell.initCell = (function(singlecellInfo) {
 	$(e.target).removeClass("ui-state-focus");
     });
     
-    inputDiv.find(".singlecell_evalButton").click(function() {
+    inputLocation.find(".singlecell_evalButton").click(function() {
 	// TODO: actually make the JSON execute request message here.
 
 	if (replaceOutput) {
-	    inputDiv.find(".singlecell_output").empty();
+	    inputLocation.find(".singlecell_output").empty();
 	}
 
-	var session = new Session(outputDiv, ".singlecell_output", inputDiv.find(".singlecell_sageModeCheck").attr("checked"));
-	inputDiv.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
-	$("#"+inputDivName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
-	$("#"+inputDivName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
-	$("#"+inputDivName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
-	inputDiv.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputDivName+"_form"));
-	inputDiv.find(".singlecell_fileInput").appendTo($("#"+inputDivName+"_form"));
-	$("#"+inputDivName+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
-	inputDiv.append("<iframe style='display:none' name='singlecell_serverResponse_"+session.session_id+"' id='singlecell_serverResponse_"+session.session_id+"'></iframe>");
-	$("#"+inputDivName+"_form").submit();
-	$("#"+inputDivName+"_form").find(".singlecell_fileInput").appendTo(inputDiv.find(".singlecell_fileUpload"));
-	$("#"+inputDivName+"_form").empty();
+	var session = new Session(outputLocation, ".singlecell_output", inputLocation.find(".singlecell_sageModeCheck").attr("checked"));
+	inputLocation.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
+	$("#"+inputLocationName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
+	$("#"+inputLocationName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
+	$("#"+inputLocationName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
+	inputLocation.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputLocationName+"_form"));
+	inputLocation.find(".singlecell_fileInput").appendTo($("#"+inputLocationName+"_form"));
+	$("#"+inputLocationName+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
+	inputLocation.append("<iframe style='display:none' name='singlecell_serverResponse_"+session.session_id+"' id='singlecell_serverResponse_"+session.session_id+"'></iframe>");
+	$("#"+inputLocationName+"_form").submit();
+	$("#"+inputLocationName+"_form").find(".singlecell_fileInput").appendTo(inputLocation.find(".singlecell_fileUpload"));
+	$("#"+inputLocationName+"_form").empty();
 	$("#singlecell_serverResponse_"+session.session_id).load($.proxy(function(event) {
 	    // if the hosts are the same, communication between frames
 	    // is allowed
@@ -274,28 +276,28 @@ singlecell.initCell = (function(singlecellInfo) {
 });
 
 singlecell.deleteSinglecell = (function(singlecellInfo) {
-    $(singlecellInfo.inputDiv).remove();
-    $(singlecellInfo.outputDiv).remove();
+    $(singlecellInfo.inputLocation).remove();
+    $(singlecellInfo.outputLocation).remove();
 });
 
 singlecell.moveInputForm = (function(singlecellInfo) {
     $(document.body).append("<div id='singlecell_moved' style='display:none'></div>");
-    $(singlecellInfo.inputDiv).contents().appendTo("#singlecell_moved");
+    $(singlecellInfo.inputLocation).contents().appendTo("#singlecell_moved");
 });
 
 singlecell.restoreInputForm = (function(singlecellInfo) {
-    $("#singlecell_moved").contents().appendTo(singlecellInfo.inputDiv);
+    $("#singlecell_moved").contents().appendTo(singlecellInfo.inputLocation);
     $("#singlecell_moved").remove();
 });
 
-singlecell.renderEditor = (function(editor, inputDiv) {
+singlecell.renderEditor = (function(editor, inputLocation) {
     var editorData;
 
     if (editor === "textarea") {
 	editorData = editor;
     } else if (editor === "textarea-readonly") {
 	editorData = editor;
-	inputDiv.find(".singlecell_commands").attr("readonly", "readonly");
+	inputLocation.find(".singlecell_commands").attr("readonly", "readonly");
     } else {
 	var readOnly = false;
 	if (editor == "codemirror-readonly") {
@@ -304,7 +306,7 @@ singlecell.renderEditor = (function(editor, inputDiv) {
 	    editor = "codemirror";
 	}
 
-	editorData = CodeMirror.fromTextArea(inputDiv.find(".singlecell_commands").get(0), {
+	editorData = CodeMirror.fromTextArea(inputLocation.find(".singlecell_commands").get(0), {
 	    mode:"python",
 	    indentUnit:4,
 	    tabMode:"shift",
@@ -313,14 +315,14 @@ singlecell.renderEditor = (function(editor, inputDiv) {
 	    readOnly: readOnly,
 	    onKeyEvent: (function(editor, event){
 		if (event.which === 13 && event.shiftKey && event.type === "keypress") {
-		    inputDiv.find(".singlecell_evalButton").click();
+		    inputLocation.find(".singlecell_evalButton").click();
 		    event.stop();
 		    return true;
 		}
 		editor.save();
 		try {
-		    sessionStorage.removeItem(inputDivName+"_editorValue");
-		    sessionStorage.setItem(inputDivName+"_editorValue", inputDiv.find(".singlecell_commands").val());
+		    sessionStorage.removeItem(inputLocationName+"_editorValue");
+		    sessionStorage.setItem(inputLocationName+"_editorValue", inputLocation.find(".singlecell_commands").val());
 		} catch (e) {
 		    // if we can't store, don't do anything, e.g. if cookies are blocked
 		}
@@ -331,7 +333,7 @@ singlecell.renderEditor = (function(editor, inputDiv) {
     return [editor, editorData];
 });
 
-singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
+singlecell.toggleEditor = (function(editor, editorData, inputLocation) {
     var editable = ["textarea", "codemirror"];
     var temp;
 
@@ -341,18 +343,18 @@ singlecell.toggleEditor = (function(editor, editorData, inputDiv) {
 	    editor = editorData = "textarea";
 	} else {
 	    editor = "codemirror";
-	    temp = this.renderEditor(editor, inputDiv);
+	    temp = this.renderEditor(editor, inputLocation);
 	    editorData = temp[1];
 	}
     } else {
 	if (editor === "codemirror-readonly") {
 	    editorData.toTextArea();
 	    editor = "textarea-readonly";
-	    temp = this.renderEditor(editor, inputDiv);
+	    temp = this.renderEditor(editor, inputLocation);
 	    editorData = temp[1];
 	} else {
 	    editor = "codemirror-readonly";
-	    temp = this.renderEditor(editor, inputDiv);
+	    temp = this.renderEditor(editor, inputLocation);
 	    editorData = temp[1];
 	}
     }
