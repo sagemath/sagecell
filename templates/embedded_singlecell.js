@@ -48,84 +48,41 @@ singlecell.singlecell_dependencies_callback = (function() {
 
 
 singlecell.makeSinglecell = (function(args) {
+    var defaults;
+    var settings = {};
+
     if (typeof args === "undefined") {
 	args = {};
     }
 
-    // Args:
-    var template = args.template;
-    var inputLocation = args.inputLocation;
-    var outputLocation = args.outputLocation;
-    var code = args.code;
-    var evalButtonText = args.evalButtonText;
-    var hide = args.hide;
-    var editor = args.editor;
-    var sageMode = args.sageMode;
-    var replaceOutput = args.replaceOutput;
-
-    if (typeof template !== "undefined") {
-	if (typeof evalButtonText === "undefined") {
-	    evalButtonText = template.evalButtonText;
-	}
-	if (typeof editor === "undefined") {
-	    editor = template.editor;
-	}
-	if (typeof hide === "undefined") {
-	    hide = template.hide;
-	} else {
-	    for (var i = 0, i_max = template.hide.length; i < i_max; i++) {
-		hide.push(template.hide[i]);
-	    }
-	}
-	if (typeof sageMode === "undefined") {
-	    sageMode = template.sageMode;
-	}
-	if (typeof replaceOutput === "undefined") {
-	    replaceOutput = template.replaceOutput;
-	}
+    if (args.inputLocation === undefined) {
+	throw "Must specify an inputLocation!";
     }
 
-    // default arguments
-    if (typeof inputLocation === "undefined") {
-	throw "Must specify an inputLocation"
-    }
-    
-    if (typeof outputLocation === "undefined") {
-	outputLocation = inputLocation;
+    if (args.outputLocation === undefined) {
+	args.outputLocation = args.inputLocation;
     }
 
-    if (typeof hide === "undefined") {
-	hide = [];
-    }
-
-    if (typeof editor === "undefined") {
-	editor = "codemirror";
-    }
-
-    if (typeof code === "undefined") {
-	code = $(inputLocation).text();
+    if (args.code === undefined) {
+	args.code = $(args.inputLocation).text();
 	// delete the text
-	$(inputLocation).text("");
+	$(args.inputLocation).text("");
     }
 
-    if (typeof evalButtonText === "undefined") {
-	evalButtonText = "Evaluate";
-    }
-    
-    if (typeof sageMode === "undefined") {
-	sageMode = true;
-    }
+    defaults = {"editor": "codemirror",
+		"evalButtonText": "Evaluate",
+		"hide": [],
+		"replaceOutput": false,
+		"sageMode": true};
 
-    if (typeof replaceOutput === "undefined") {
-	replaceOutput = false;
+    if (typeof(args.template) !== "undefined") {
+	settings = $.extend(settings, defaults, args.template, args)
+	if (args.template.hide !== undefined) {
+	    settings.hide.concat(args.template.hide);
+	}
+    } else {
+	settings = $.extend(settings, defaults, args);
     }
-
-    var singlecellInfo = {"inputLocation": inputLocation,
-			  "outputLocation": outputLocation,
-			  "code": code,
-			  "editor": editor,
-			  "replaceOutput": replaceOutput,
-			  "sageMode": sageMode};
 
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
@@ -138,11 +95,17 @@ singlecell.makeSinglecell = (function(args) {
 	    return false;
 	} else {
 	    $(function() {
+		var hide = settings.hide;
+		var inputLocation = settings.inputLocation;
+		var outputLocation = settings.outputLocation;
+		var evalButtonText = settings.evalButtonText;
+
 		$(inputLocation).html(body);
-		$(inputLocation+" .singlecell_commands").text(code);
+		$(inputLocation+" .singlecell_commands").text(settings.code);
 		if (inputLocation !== outputLocation) {
 		    $(inputLocation+" .singlecell_output, .singlecell_messages").appendTo(outputLocation);
 		}
+		console.log(hide);
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
 		    if (hide[i] === 'editor' || 
 			hide[i] === 'editorToggle' || 
@@ -159,11 +122,11 @@ singlecell.makeSinglecell = (function(args) {
 		if (evalButtonText !== undefined) {
 		    $(inputLocation+ " .singlecell_evalButton").val(evalButtonText);
 		}
-		singlecell.initCell(singlecellInfo);
+		singlecell.initCell(settings);
 	    });
 	}
     }, 100);
-    return singlecellInfo;
+    return settings;
 });
 
 singlecell.initCell = (function(singlecellInfo) {
