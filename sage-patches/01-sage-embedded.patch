@@ -253,7 +253,7 @@ diff -r ded2e3503123 -r b625872ed12b sage/plot/plot3d/base.pyx
 -            tachyon_rt(T.tachyon(), filename+".png", verbosity, True, opts)
 -            ext = "png"
 +            tachyon_rt(T.tachyon(), filename_full, verbosity, True, opts)
-+            if EMBEDDED_MODE['frontend']=='singlecell':
++            if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='singlecell':
 +                msg={}
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename_full]))
@@ -273,7 +273,7 @@ diff -r ded2e3503123 -r b625872ed12b sage/plot/plot3d/base.pyx
 -            f.write('set defaultdirectory "%s"\n' % archive_name)
 -            f.write('script SCRIPT\n')
 -            f.close()
-+            if EMBEDDED_MODE['frontend']=='singlecell':
++            if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='singlecell':
 +                msg={}
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([archive_name]))
