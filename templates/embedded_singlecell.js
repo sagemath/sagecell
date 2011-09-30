@@ -105,7 +105,6 @@ singlecell.makeSinglecell = (function(args) {
 		if (inputLocation !== outputLocation) {
 		    $(inputLocation+" .singlecell_output, .singlecell_messages").appendTo(outputLocation);
 		}
-		console.log(hide);
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
 		    if (hide[i] === 'editor' || 
 			hide[i] === 'editorToggle' || 
