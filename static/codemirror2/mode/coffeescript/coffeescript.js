@@ -1,49 +1,41 @@
-CodeMirror.defineMode("python", function(conf, parserConf) {
+/**
+ * Link to the project's GitHub page:
+ * https://github.com/pickhardt/coffeescript-codemirror-mode
+ */
+CodeMirror.defineMode('coffeescript', function(conf) {
     var ERRORCLASS = 'error';
     
     function wordRegexp(words) {
         return new RegExp("^((" + words.join(")|(") + "))\\b");
     }
     
-    var singleOperators = new RegExp("^[\\+\\-\\*/%&|\\^~<>!]");
+    var singleOperators = new RegExp("^[\\+\\-\\*/%&|\\^~<>!\?]");
     var singleDelimiters = new RegExp('^[\\(\\)\\[\\]\\{\\}@,:`=;\\.]');
-    var doubleOperators = new RegExp("^((==)|(!=)|(<=)|(>=)|(<>)|(<<)|(>>)|(//)|(\\*\\*))");
-    var doubleDelimiters = new RegExp("^((\\+=)|(\\-=)|(\\*=)|(%=)|(/=)|(&=)|(\\|=)|(\\^=))");
-    var tripleDelimiters = new RegExp("^((//=)|(>>=)|(<<=)|(\\*\\*=))");
+    var doubleOperators = new RegExp("^((\->)|(\=>)|(\\+\\+)|(\\+\\=)|(\\-\\-)|(\\-\\=)|(\\*\\*)|(\\*\\=)|(\\/\\/)|(\\/\\=)|(==)|(!=)|(<=)|(>=)|(<>)|(<<)|(>>)|(//))");
+    var doubleDelimiters = new RegExp("^((\\.\\.)|(\\+=)|(\\-=)|(\\*=)|(%=)|(/=)|(&=)|(\\|=)|(\\^=))");
+    var tripleDelimiters = new RegExp("^((\\.\\.\\.)|(//=)|(>>=)|(<<=)|(\\*\\*=))");
     var identifiers = new RegExp("^[_A-Za-z][_A-Za-z0-9]*");
 
-    var wordOperators = wordRegexp(['and', 'or', 'not', 'is', 'in']);
-    var commonkeywords = ['as', 'assert', 'break', 'class', 'continue',
-                          'def', 'del', 'elif', 'else', 'except', 'finally',
-                          'for', 'from', 'global', 'if', 'import',
-                          'lambda', 'pass', 'raise', 'return',
-                          'try', 'while', 'with', 'yield'];
-    var commontypes = ['bool', 'classmethod', 'complex', 'dict', 'enumerate',
-                       'float', 'frozenset', 'int', 'list', 'object',
-                       'property', 'reversed', 'set', 'slice', 'staticmethod',
-                       'str', 'super', 'tuple', 'type'];
-    var py2 = {'types': ['basestring', 'buffer', 'file', 'long', 'unicode',
-                         'xrange'],
-               'keywords': ['exec', 'print']};
-    var py3 = {'types': ['bytearray', 'bytes', 'filter', 'map', 'memoryview',
-                         'open', 'range', 'zip'],
-               'keywords': ['nonlocal']};
+    var wordOperators = wordRegexp(['and', 'or', 'not',
+                                    'is', 'isnt', 'in',
+                                    'instanceof', 'typeof']);
+    var indentKeywords = ['for', 'while', 'loop', 'if', 'unless', 'else',
+                          'switch', 'try', 'catch', 'finally', 'class'];
+    var commonKeywords = ['break', 'by', 'continue', 'debugger', 'delete',
+                          'do', 'in', 'of', 'new', 'return', 'then',
+                          'this', 'throw', 'when', 'until'];
 
-    if (!!parserConf.version && parseInt(parserConf.version, 10) === 3) {
-        commonkeywords = commonkeywords.concat(py3.keywords);
-        commontypes = commontypes.concat(py3.types);
-        var stringPrefixes = new RegExp("^(([rb]|(br))?('{3}|\"{3}|['\"]))", "i");
-    } else {
-        commonkeywords = commonkeywords.concat(py2.keywords);
-        commontypes = commontypes.concat(py2.types);
-        var stringPrefixes = new RegExp("^(([rub]|(ur)|(br))?('{3}|\"{3}|['\"]))", "i");
-    }
-    var keywords = wordRegexp(commonkeywords);
-    var types = wordRegexp(commontypes);
+    var keywords = wordRegexp(indentKeywords.concat(commonKeywords));
 
-    var indentInfo = null;
+    indentKeywords = wordRegexp(indentKeywords);
 
-    // tokenizers
+
+    var stringPrefixes = new RegExp("^('{3}|\"{3}|['\"])");
+    var regexPrefixes = new RegExp("^(/{3}|/)");
+    var commonConstants = ['Infinity', 'NaN', 'undefined', 'null', 'true', 'false', 'on', 'off', 'yes', 'no'];
+    var constants = wordRegexp(commonConstants);
+
+    // Tokenizers
     function tokenBase(stream, state) {
         // Handle scope changes
         if (stream.sol()) {
@@ -51,9 +43,9 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
             if (stream.eatSpace()) {
                 var lineOffset = stream.indentation();
                 if (lineOffset > scopeOffset) {
-                    indentInfo = 'indent';
+                    return 'indent';
                 } else if (lineOffset < scopeOffset) {
-                    indentInfo = 'dedent';
+                    return 'dedent';
                 }
                 return null;
             } else {
@@ -68,57 +60,65 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
         
         var ch = stream.peek();
         
-        // Handle Comments
+        // Handle comments
         if (ch === '#') {
             stream.skipToEnd();
             return 'comment';
         }
         
-        // Handle Number Literals
-        if (stream.match(/^[0-9\.]/, false)) {
+        // Handle number literals
+        if (stream.match(/^-?[0-9\.]/, false)) {
             var floatLiteral = false;
             // Floats
-            if (stream.match(/^\d*\.\d+(e[\+\-]?\d+)?/i)) { floatLiteral = true; }
-            if (stream.match(/^\d+\.\d*/)) { floatLiteral = true; }
-            if (stream.match(/^\.\d+/)) { floatLiteral = true; }
+            if (stream.match(/^-?\d*\.\d+(e[\+\-]?\d+)?/i)) {
+              floatLiteral = true;
+            }
+            if (stream.match(/^-?\d+\.\d*/)) {
+              floatLiteral = true;
+            }
+            if (stream.match(/^-?\.\d+/)) {
+              floatLiteral = true;
+            }
             if (floatLiteral) {
-                // Float literals may be "imaginary"
-                stream.eat(/J/i);
                 return 'number';
             }
             // Integers
             var intLiteral = false;
             // Hex
-            if (stream.match(/^0x[0-9a-f]+/i)) { intLiteral = true; }
-            // Binary
-            if (stream.match(/^0b[01]+/i)) { intLiteral = true; }
-            // Octal
-            if (stream.match(/^0o[0-7]+/i)) { intLiteral = true; }
+            if (stream.match(/^-?0x[0-9a-f]+/i)) {
+              intLiteral = true;
+            }
             // Decimal
-            if (stream.match(/^[1-9]\d*(e[\+\-]?\d+)?/)) {
-                // Decimal literals may be "imaginary"
-                stream.eat(/J/i);
-                // TODO - Can you have imaginary longs?
+            if (stream.match(/^-?[1-9]\d*(e[\+\-]?\d+)?/)) {
                 intLiteral = true;
             }
             // Zero by itself with no other piece of number.
-            if (stream.match(/^0(?![\dx])/i)) { intLiteral = true; }
+            if (stream.match(/^-?0(?![\dx])/i)) {
+              intLiteral = true;
+            }
             if (intLiteral) {
-                // Integer literals may be "long"
-                stream.eat(/L/i);
                 return 'number';
             }
         }
         
-        // Handle Strings
+        // Handle strings
         if (stream.match(stringPrefixes)) {
-            state.tokenize = tokenStringFactory(stream.current());
+            state.tokenize = tokenFactory(stream.current(), 'string');
             return state.tokenize(stream, state);
         }
+        // Handle regex literals
+        if (stream.match(regexPrefixes)) {
+            if (stream.current() != '/' || stream.match(/^.*\//, false)) { // prevent highlight of division
+                state.tokenize = tokenFactory(stream.current(), 'string-2');
+                return state.tokenize(stream, state);
+            } else {
+                stream.backUp(1);
+            }
+        }
         
-        // Handle operators and Delimiters
+        // Handle operators and delimiters
         if (stream.match(tripleDelimiters) || stream.match(doubleDelimiters)) {
-            return null;
+            return 'punctuation';
         }
         if (stream.match(doubleOperators)
             || stream.match(singleOperators)
@@ -126,11 +126,11 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
             return 'operator';
         }
         if (stream.match(singleDelimiters)) {
-            return null;
+            return 'punctuation';
         }
         
-        if (stream.match(types)) {
-            return 'builtin';
+        if (stream.match(constants)) {
+            return 'atom';
         }
         
         if (stream.match(keywords)) {
@@ -146,45 +146,42 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
         return ERRORCLASS;
     }
     
-    function tokenStringFactory(delimiter) {
-        while ('rub'.indexOf(delimiter.charAt(0).toLowerCase()) >= 0) {
-            delimiter = delimiter.substr(1);
-        }
+    function tokenFactory(delimiter, outclass) {
+        var delim_re = new RegExp(delimiter);
         var singleline = delimiter.length == 1;
-        var OUTCLASS = 'string';
         
         return function tokenString(stream, state) {
             while (!stream.eol()) {
-                stream.eatWhile(/[^'"\\]/);
+                stream.eatWhile(/[^'"\/\\]/);
                 if (stream.eat('\\')) {
                     stream.next();
                     if (singleline && stream.eol()) {
-                        return OUTCLASS;
+                        return outclass;
                     }
-                } else if (stream.match(delimiter)) {
+                } else if (stream.match(delim_re)) {
                     state.tokenize = tokenBase;
-                    return OUTCLASS;
+                    return outclass;
                 } else {
-                    stream.eat(/['"]/);
+                    stream.eat(/['"\/]/);
                 }
             }
             if (singleline) {
-                if (parserConf.singleLineStringErrors) {
-                    return ERRORCLASS;
+                if (conf.mode.singleLineStringErrors) {
+                    outclass = ERRORCLASS
                 } else {
                     state.tokenize = tokenBase;
                 }
             }
-            return OUTCLASS;
+            return outclass;
         };
     }
     
     function indent(stream, state, type) {
-        type = type || 'py';
+        type = type || 'coffee';
         var indentUnit = 0;
-        if (type === 'py') {
-            for (var i = 0; i < state.scopes.length; ++i) {
-                if (state.scopes[i].type === 'py') {
+        if (type === 'coffee') {
+            for (var i = 0; i < state.scopes.length; i++) {
+                if (state.scopes[i].type === 'coffee') {
                     indentUnit = state.scopes[i].offset + conf.indentUnit;
                     break;
                 }
@@ -200,7 +197,7 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
     
     function dedent(stream, state) {
         if (state.scopes.length == 1) return;
-        if (state.scopes[0].type === 'py') {
+        if (state.scopes[0].type === 'coffee') {
             var _indent = stream.indentation();
             var _indent_index = -1;
             for (var i = 0; i < state.scopes.length; ++i) {
@@ -223,7 +220,6 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
     }
 
     function tokenLexer(stream, state) {
-        indentInfo = null;
         var style = state.tokenize(stream, state);
         var current = stream.current();
 
@@ -238,32 +234,41 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
             }
         }
         
-        // Handle decorators
+        // Handle properties
         if (current === '@') {
             style = state.tokenize(stream, state);
             current = stream.current();
-            if (style === 'variable'
-                || current === '@staticmethod'
-                || current === '@classmethod') {
-                return 'meta';
+            if (style === 'variable') {
+                return 'variable-2';
             } else {
                 return ERRORCLASS;
             }
         }
         
         // Handle scope changes.
-        if (current === 'pass' || current === 'return') {
+        if (current === 'return') {
             state.dedent += 1;
         }
-        if ((current === ':' && !state.lambda && state.scopes[0].type == 'py')
-            || indentInfo === 'indent') {
+        if (((current === '->' || current === '=>') &&
+                  !state.lambda &&
+                  state.scopes[0].type == 'coffee' &&
+                  stream.peek() === '')
+               || style === 'indent') {
             indent(stream, state);
         }
         var delimiter_index = '[({'.indexOf(current);
         if (delimiter_index !== -1) {
             indent(stream, state, '])}'.slice(delimiter_index, delimiter_index+1));
         }
-        if (indentInfo === 'dedent') {
+        if (indentKeywords.exec(current)){
+            indent(stream, state);
+        }
+        if (current == 'then'){
+            dedent(stream, state);
+        }
+        
+
+        if (style === 'dedent') {
             if (dedent(stream, state)) {
                 return ERRORCLASS;
             }
@@ -274,7 +279,7 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
                 return ERRORCLASS;
             }
         }
-        if (state.dedent > 0 && stream.eol() && state.scopes[0].type == 'py') {
+        if (state.dedent > 0 && stream.eol() && state.scopes[0].type == 'coffee') {
             if (state.scopes.length > 1) state.scopes.shift();
             state.dedent -= 1;
         }
@@ -286,7 +291,7 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
         startState: function(basecolumn) {
             return {
               tokenize: tokenBase,
-              scopes: [{offset:basecolumn || 0, type:'py'}],
+              scopes: [{offset:basecolumn || 0, type:'coffee'}],
               lastToken: null,
               lambda: false,
               dedent: 0
@@ -317,4 +322,4 @@ CodeMirror.defineMode("python", function(conf, parserConf) {
     return external;
 });
 
-CodeMirror.defineMIME("text/x-python", "python");
+CodeMirror.defineMIME('text/x-coffeescript', 'coffeescript');

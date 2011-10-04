@@ -40,7 +40,7 @@
     and style sheet found under <code>lib/</code> in the distribution,
     plus a mode script from one of the <code>mode/</code> directories
     and a theme stylesheet from <code>theme/</code>. (See
-    also <a href="compress.html">the compresion helper</a>.) For
+    also <a href="compress.html">the compression helper</a>.) For
     example:</p>
 
     <pre>&lt;script src="lib/codemirror.js">&lt;/script>
@@ -48,7 +48,7 @@
 &lt;script src="mode/javascript/javascript.js">&lt;/script>
 &lt;link rel="stylesheet" href="theme/default.css"></pre>
 
-    <p>(If you use a them other than <code>default.css</code>, you
+    <p>(If you use a theme other than <code>default.css</code>, you
     also have to specify the
     <a href="#option_theme"><code>theme</code></a> option.) Having
     done this, an editor instance can be created like this:</p>
@@ -190,6 +190,11 @@
       indentation (only works if the mode supports indentation).
       Default is true.</dd>
 
+      <dt id="option_smartHome"><code>smartHome (boolean)</code></dt>
+      <dd>Configures whether the home key takes you to the first
+      non-whitespace character (unless already there) or to the start
+      of the line. On by default.</dd>
+
       <dt id="option_lineNumbers"><code>lineNumbers (boolean)</code></dt>
       <dd>Whether to show line numbers to the left of the editor.</dd>
 
@@ -200,6 +205,10 @@
       <dd>Can be used to force a 'gutter' (empty space on the left of
       the editor) to be shown even when no line numbers are active.
       This is useful for setting <a href="#setMarker">markers</a>.</dd>
+
+      <dt id="option_fixedGutter"><code>fixedGutter (boolean)</code></dt>
+      <dd>When enabled (off by default), this will make the gutter
+      stay visible when the document is scrolled horizontally.</dd>
 
       <dt id="option_readOnly"><code>readOnly (boolean)</code></dt>
       <dd>This disables editing of the editor content by the user.
@@ -219,8 +228,9 @@
       <dt id="option_onGutterClick"><code>onGutterClick (function)</code></dt>
       <dd>When given, will be called whenever the editor gutter (the
       line-number area) is clicked. Will be given the editor instance
-      as first argument, and the (zero-based) number of the line that
-      was clicked as second argument.</dd>
+      as first argument, the (zero-based) number of the line that was
+      clicked as second argument, and the raw <code>mousedown</code>
+      event object as third argument.</dd>
 
       <dt id="option_onFocus"><code>onFocus, onBlur (function)</code></dt>
       <dd>The given functions will be called whenever the editor is
@@ -422,9 +432,12 @@
       both of which hold integers, indicating the amount of stored
       undo and redo operations.</dd>
 
-      <dt id="indentLine"><code>indentLine(line)</code></dt>
+      <dt id="indentLine"><code>indentLine(line, dir)</code></dt>
       <dd>Reset the given line's indentation to the indentation
-      prescribed by the mode.</dd>
+      prescribed by the mode. If the second argument is given,
+      indentation will be increased (if <code>dir</code> is true) or
+      decreased (if false) by an <a href="#option_indentUnit">indent
+      unit</a> instead.</dd>
 
       <dt id="getSearchCursor"><code>getSearchCursor(query, start, caseFold) → cursor</code></dt>
       <dd>Used to implement search/replace
@@ -584,6 +597,8 @@
       element to resize an editor. (You might have to call
       the <a href="#refresh"><code>refresh</code></a> method
       afterwards.)</dd>
+      <dt id="getGutterElement"><code>getGutterElement() → node</code></dt>
+      <dd>Fetches the DOM node that represents the editor gutter.</dd>
 
       <dt id="getStateAfter"><code>getStateAfter(line) → state</code></dt>
       <dd>Returns the mode's parser state, if any, at the end of the
