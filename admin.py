@@ -16,7 +16,10 @@ def get_commands():
             f.write("<pre>")
             f.write("<b>"+str(m.get('timestamp',None))+"</b>")
             f.write("\n")
-            f.write(escape(m['content']['code']))
+            code=m['content']['code']
+            
+            s=escape(code if code is not None else 'None')
+            f.write(s.encode('utf-8'))
             f.write("</pre>")
         f.write("</body></html>")
     
