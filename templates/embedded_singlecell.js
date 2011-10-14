@@ -75,7 +75,7 @@ singlecell.makeSinglecell = (function(args) {
 		"replaceOutput": false,
 		"sageMode": true};
 
-    if (typeof(args.template) !== "undefined") {
+    if (args.template !== undefined) {
 	settings = $.extend(settings, defaults, args.template, args)
 	if (args.template.hide !== undefined) {
 	    settings.hide.concat(args.template.hide);
@@ -118,7 +118,7 @@ singlecell.makeSinglecell = (function(args) {
 			$(outputLocation+" .singlecell_"+hide[i]).css("display", "none");
 		    }
 		}
-		if (evalButtonText !== undefined) {
+		if (typeof(evalButtonText) !== "undefined") {
 		    $(inputLocation+ " .singlecell_evalButton").val(evalButtonText);
 		}
 		singlecell.initCell(settings);
