@@ -119,7 +119,7 @@ Session.prototype.updateQuery = function(new_interval) {
 Session.prototype.sendMsg = function() {
     var code = arguments[0], msg, msg_id;
 
-    if (arguments[1] == undefined){
+    if (arguments[1] === undefined){
 	msg_id = uuid4();
     } else {
 	msg_id = arguments[1];
@@ -166,7 +166,9 @@ Session.prototype.output_id = function(block_id) {
 Session.prototype.output = function(html, block_id, create) {
     // create===false means just pass back the last child of the output_block
     // if we aren't replacing the output block
-    if (create===undefined) {create=true;}
+    if (typeof(create) === "undefined") {
+	create=true;
+    }
     var output_block=$("#"+this.output_id(block_id));
     if (this.replace_output) {
 	output_block.empty();
@@ -199,7 +201,7 @@ Session.prototype.get_output = function() {
 Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     var id=this.session_id;
 
-    if(data!==undefined && data.content!==undefined) {
+    if(typeof(data) !== "undefined" && data.content !== undefined) {
         var content = data.content;
 	for (var i = 0, i_max = content.length; i < i_max; i++) {
             var msg = content[i];
@@ -210,7 +212,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
                 console.warn('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
             }
             this.sequence+=1;
-	    if (parent_id !== undefined && parent_id !== this.lastMessage && this.lastMessage !== null) {
+	    if (typeof(parent_id) !== "undefined" && parent_id !== this.lastMessage && this.lastMessage !== null) {
 		// If another message has been sent to the server since the parent of this one, don't format it for output but log that it was received.
 		// This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
 		this.appendMsg(msg, "Rejected: ");
