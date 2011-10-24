@@ -16,6 +16,11 @@
 //    closures instead of using the prototype property and "new"
 
 
+jQuery.noConflict();
+
+(function($) {
+
+
 /**************************************************************
 * 
 * Session Class
@@ -1206,8 +1211,9 @@ singlecell.InteractData.Slider.prototype.finishRender = function(location) {
 }
 
 
-
 // Initialize jmol
 // TODO: move to a better place
 jmolInitialize($URL["root"]+'/static/jmol');
 jmolSetCallback("menuFile",$URL["root"]+"/static/jmol/appletweb/SageMenu.mnu");
+
+})(jQuery);
