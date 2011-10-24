@@ -376,7 +376,7 @@ singlecell.functions = {
 	return function(text) {
 	    var color, result = "";
 	    text=text.split("\u001b[");
-	    for(i in text) {
+	    for (var i = 0, i_max = text.length; i < i_max; i++) {
 		if(text[i]=="")
 		    continue;
 		color=text[i].substr(0,text[i].indexOf("m")).split(";");

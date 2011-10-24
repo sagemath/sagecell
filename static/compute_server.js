@@ -160,8 +160,8 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream':
-		new_pre = !$('#'+this.output_id(output_block)).children().last().hasClass("singlecell_"+msg.content.name);
-		out=this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block,new_pre);
+		var new_pre = !$('#'+this.output_id(output_block)).children().last().hasClass("singlecell_"+msg.content.name);
+		var out=this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block,new_pre);
 		out.text(out.text()+msg.content.data);
 		break;
 
@@ -303,7 +303,7 @@ singlecell.InteractCell.prototype.init = function (selector, data) {
     for (i in controls) {
 	args["control"] = controls[i];
 	args["name"] = i;
-	control_type = controls[i]["control_type"];
+	var control_type = controls[i]["control_type"];
 
 	if (control_type === "button") {
 	    this.controls[i] = new singlecell.InteractData.Button(args);
@@ -433,7 +433,7 @@ singlecell.InteractCell.prototype.renderCanvas = (function() {
 	var id = "urn_uuid_" + this.interact_id;
 
 	for (var i in this.layout) {
-	    layout_location = this.layout[i]
+	    var layout_location = this.layout[i]
 	    var section = container.find("td.singlecell_interactContainer_"+i);
 	    section.html("<table class='singlecell_interactControls'></table>");
 
@@ -863,7 +863,7 @@ singlecell.InteractData.MultiSlider.prototype.changes = function() {
     input, slider_values = [];
 
     if (this.control["subtype"] === "continuous") {
-	for (i = 0; i < sliders; i ++) {
+	for (var i = 0; i < sliders; i ++) {
 	    input = control_out.find("#"+this.control_id + "_" + i + "_value")
 		.val();
 	    control_out.find("#" + this.control_id + "_" + i)
@@ -871,7 +871,7 @@ singlecell.InteractData.MultiSlider.prototype.changes = function() {
 	    slider_values.push(input);
 	}
     } else {
-	for (i = 0; i < sliders; i ++) {
+	for (var i = 0; i < sliders; i ++) {
 	    slider_values.push(
 		control_out.find("#" + this.control_id + "_" + i + "_index").val()
 	    );
@@ -1075,7 +1075,7 @@ singlecell.InteractData.Selector.prototype.finishRender = function(location) {
 			    control_out.find("#"+control_id).val(i).change();
 			}
 		    }
-		}(control_out,i,control_id=this.control_id)),
+		}(control_out, i, control_id=this.control_id)),
 		"click": function(e) {
 		    e.preventDefault();
 		}
