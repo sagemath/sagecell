@@ -15,65 +15,11 @@
 //    which argues that it is more inefficient to make objects out of
 //    closures instead of using the prototype property and "new"
 
-// Create UUID4-compliant ID
-// Taken from stackoverflow answer here: http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
-function uuid4() {
-    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
-    return uuid.replace(/[xy]/g, function(c) {
-	var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-	return v.toString(16);
-    });
-}
 
-// makeClass - By John Resig (MIT Licensed)
-// see http://ejohn.org/blog/simple-class-instantiation/
-function makeClass(){
-    return function(args){
-	if ( this instanceof arguments.callee ) {
-	    if ( typeof this.init == "function" )
-		this.init.apply( this, args.callee ? args : arguments );
-	} else
-	    return new arguments.callee( arguments );
-    };
-}
+jQuery.noConflict();
 
+(function($) {
 
-
-
-
-/**************************************************************
-* 
-* Colorize Tracebacks
-* 
-**************************************************************/
-
-colorize = (function(){
-    var color_codes = {"30":"black",
-		       "31":"red",
-		       "32":"green",
-		       "33":"goldenrod",
-		       "34":"blue",
-		       "35":"purple",
-		       "36":"darkcyan",
-		       "37":"gray"};
-    return function(text) {
-	var color, result = "";
-	text=text.split("\u001b[");
-	for(i in text) {
-	    if(text[i]=="")
-		continue;
-	    color=text[i].substr(0,text[i].indexOf("m")).split(";");
-	    if(color.length==2) {
-		result+="<span style=\"color:"+color_codes[color[1]];
-		if(color[0]==1)
-		    result+="; font-weight:bold";
-		result+="\">"+text[i].substr(text[i].indexOf("m")+1)+"</span>";
-	    } else
-		result+=text[i].substr(text[i].indexOf("m")+1);
-	}
-	return result;
-    }
-})();
 
 /**************************************************************
 * 
@@ -81,10 +27,10 @@ colorize = (function(){
 * 
 **************************************************************/
 
-var Session = makeClass();
-Session.prototype.init = function (outputDiv, output, sage_mode) {
+singlecell.Session = (singlecell.functions.makeClass());
+singlecell.Session.prototype.init = function(outputDiv, output, sage_mode) {
     this.outputDiv = outputDiv;
-    this.session_id = uuid4();
+    this.session_id = singlecell.functions.uuid4();
     this.sage_mode = sage_mode;
     this.sequence = 0;
     this.poll_interval = 400;
@@ -101,26 +47,26 @@ Session.prototype.init = function (outputDiv, output, sage_mode) {
 }
 
 // Manages querying the webserver for messages
-Session.prototype.setQuery = function() {
+singlecell.Session.prototype.setQuery = function() {
     this.clearQuery();
     this.queryID = setTimeout($.proxy(this, 'get_output'), this.poll_interval);
 }
 
-Session.prototype.clearQuery = function() {
+singlecell.Session.prototype.clearQuery = function() {
     clearTimeout(this.queryID);
 }
 
-Session.prototype.updateQuery = function(new_interval) {
+singlecell.Session.prototype.updateQuery = function(new_interval) {
     this.poll_interval = new_interval;
     this.clearQuery();
     this.setQuery();
 }
 
-Session.prototype.sendMsg = function() {
+singlecell.Session.prototype.sendMsg = function() {
     var code = arguments[0], msg, msg_id;
 
     if (arguments[1] == undefined){
-	msg_id = uuid4();
+	msg_id = singlecell.functions.uuid4();
     } else {
 	msg_id = arguments[1];
     }
@@ -153,17 +99,17 @@ Session.prototype.sendMsg = function() {
 	});
 }
 
-Session.prototype.appendMsg = function(msg, text) {
+singlecell.Session.prototype.appendMsg = function(msg, text) {
     // Append the message to the div of messages
     // Use $.text() so that strings are automatically escaped
     this.outputDiv.find(".singlecell_messages").append(document.createElement('div')).children().last().text(text+JSON.stringify(msg));
 }
 
-Session.prototype.output_id = function(block_id) {
+singlecell.Session.prototype.output_id = function(block_id) {
     return "output_"+(block_id || this.session_id);
 }
 
-Session.prototype.output = function(html, block_id, create) {
+singlecell.Session.prototype.output = function(html, block_id, create) {
     // create===false means just pass back the last child of the output_block
     // if we aren't replacing the output block
     if (create===undefined) {create=true;}
@@ -180,23 +126,23 @@ Session.prototype.output = function(html, block_id, create) {
     return out.children().last();
 }
 
-Session.prototype.write = function(html) {
+singlecell.Session.prototype.write = function(html) {
     this.output(html);
 }
 
-Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
+singlecell.Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
     if (data.computation_id!==this.session_id) {
 	alert("Session id returned and session id sent don't match up");
     }
     this.get_output();
 }
 
-Session.prototype.get_output = function() {
+singlecell.Session.prototype.get_output = function() {
     // POSSIBLE TODO: Have a global object querying the server for a given computation. Right now, it's managed by the session object.
     $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence}, $.proxy(this, 'get_output_success'));
 }
 
-Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
+singlecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     var id=this.session_id;
 
     if(data!==undefined && data.content!==undefined) {
@@ -219,8 +165,8 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream':
-		new_pre = !$('#'+this.output_id(output_block)).children().last().hasClass("singlecell_"+msg.content.name);
-		out=this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block,new_pre);
+		var new_pre = !$('#'+this.output_id(output_block)).children().last().hasClass("singlecell_"+msg.content.name);
+		var out=this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block,new_pre);
 		out.text(out.text()+msg.content.data);
 		break;
 
@@ -254,14 +200,14 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 		break;
 
 	    case 'pyerr':
-		this.output("<pre>"+colorize(msg.content.traceback.join("\n")
+		this.output("<pre>"+singlecell.functions.colorizeTB(msg.content.traceback.join("\n")
 					     .replace(/&/g,"&amp;")
 					     .replace(/</g,"&lt;")+"</pre>"),output_block);
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    this.output("<pre></pre>",output_block).html(colorize(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
+		    this.output("<pre></pre>",output_block).html(singlecell.functions.colorizeTB(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
 		}
 		this.updateQuery(2000);
 		break;
@@ -309,7 +255,7 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 				"<tr><td class='singlecell_interactContainer_bottom_left'></td><td class='singlecell_interactContainer_bottom_center'></td><td class='singlecell_interactContainer_bottom_right'></td></tr></table>", output_block);
 
 		    this.interacts[interact_id] = 1;
-		    new InteractCell("#" + div_id, {
+		    new singlecell.InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
 			'controls': user_msg.content.controls,
@@ -340,9 +286,8 @@ Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
 * 
 **************************************************************/
 
-
-var InteractCell = makeClass();
-InteractCell.prototype.init = function (selector, data) {
+singlecell.InteractCell = (singlecell.functions.makeClass());
+singlecell.InteractCell.prototype.init = function (selector, data) {
     this.element = $(selector);
     this.interact_id = data.interact_id
     this.function_code = data.function_code;
@@ -363,28 +308,28 @@ InteractCell.prototype.init = function (selector, data) {
     for (i in controls) {
 	args["control"] = controls[i];
 	args["name"] = i;
-	control_type = controls[i]["control_type"];
+	var control_type = controls[i]["control_type"];
 
 	if (control_type === "button") {
-	    this.controls[i] = new InteractData.Button(args);
+	    this.controls[i] = new singlecell.InteractData.Button(args);
 	} else if (control_type === "button_bar") {
-	    this.controls[i] = new InteractData.ButtonBar(args);
+	    this.controls[i] = new singlecell.InteractData.ButtonBar(args);
 	} else if (control_type === "checkbox") {
-	    this.controls[i] = new InteractData.Checkbox(args);
+	    this.controls[i] = new singlecell.InteractData.Checkbox(args);
 	} else if (control_type === "color_selector") {
-	    this.controls[i] = new InteractData.ColorSelector(args);
+	    this.controls[i] = new singlecell.InteractData.ColorSelector(args);
 	} else if (control_type === "html_box") {
-	    this.controls[i] = new InteractData.HtmlBox(args);
+	    this.controls[i] = new singlecell.InteractData.HtmlBox(args);
 	} else if (control_type === "input_box") {
-	    this.controls[i] = new InteractData.InputBox(args);
+	    this.controls[i] = new singlecell.InteractData.InputBox(args);
 	} else if (control_type === "input_grid") {
-	    this.controls[i] = new InteractData.InputGrid(args);
+	    this.controls[i] = new singlecell.InteractData.InputGrid(args);
 	} else if (control_type === "multi_slider") {
-	    this.controls[i] = new InteractData.MultiSlider(args);
+	    this.controls[i] = new singlecell.InteractData.MultiSlider(args);
 	} else if (control_type === "selector") {
-	    this.controls[i] = new InteractData.Selector(args);
+	    this.controls[i] = new singlecell.InteractData.Selector(args);
 	} else if (control_type === "slider") {
-	    this.controls[i] = new InteractData.Slider(args);
+	    this.controls[i] = new singlecell.InteractData.Slider(args);
 	}
     }
 
@@ -392,7 +337,7 @@ InteractCell.prototype.init = function (selector, data) {
     this.bindChange(this);
 }
 
-InteractCell.prototype.bindChange = function(interact) {
+singlecell.InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
     var elements = this.controls;
     var events = {};
@@ -443,7 +388,7 @@ InteractCell.prototype.bindChange = function(interact) {
     }
 }
 
-InteractCell.prototype.getChanges = function(interact_update, changed_control, interact_id) {
+singlecell.InteractCell.prototype.getChanges = function(interact_update, changed_control, interact_id) {
     var params = {};
     var controls = interact_update[changed_control];
     var interact_location = $("#interact_"+interact_id);
@@ -459,7 +404,7 @@ InteractCell.prototype.getChanges = function(interact_update, changed_control, i
     return params;
 }
 
-InteractCell.prototype.renderCanvas = (function() {
+singlecell.InteractCell.prototype.renderCanvas = (function() {
     /*
 
       The template is:
@@ -493,7 +438,7 @@ InteractCell.prototype.renderCanvas = (function() {
 	var id = "urn_uuid_" + this.interact_id;
 
 	for (var i in this.layout) {
-	    layout_location = this.layout[i]
+	    var layout_location = this.layout[i]
 	    var section = container.find("td.singlecell_interactContainer_"+i);
 	    section.html("<table class='singlecell_interactControls'></table>");
 
@@ -520,10 +465,10 @@ InteractCell.prototype.renderCanvas = (function() {
 })();
 
 
-var InteractData = {};
+singlecell.InteractData = {};
 
-InteractData.Button = makeClass();
-InteractData.Button.prototype.init = function(args) {
+singlecell.InteractData.Button = singlecell.functions.makeClass();
+singlecell.InteractData.Button.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -534,24 +479,24 @@ InteractData.Button.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.Button.prototype.changeHandlers = function() {
+singlecell.InteractData.Button.prototype.changeHandlers = function() {
     return ["change"];
 };
 
-InteractData.Button.prototype.changes = function() {
+singlecell.InteractData.Button.prototype.changes = function() {
     var control_out = $(this.location).find("#"+this.control_id+"_value")
     var value = control_out.val();
     control_out.val("false");
     return value;
 }
 
-InteractData.Button.prototype.html = function() {
+singlecell.InteractData.Button.prototype.html = function() {
     return "<span class='singlecell_var_"+this.name+"'>"+
 	"<button class='singlecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_button'>"+
 	"<span>"+this.control["text"]+"</span></button><input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"_value' value='false'></span>";
 }
 
-InteractData.Button.prototype.finishRender = function(location) {
+singlecell.InteractData.Button.prototype.finishRender = function(location) {
     this.location = location;
     $(this.location)
 	.delegate("#"+this.control_id+"_button", {
@@ -578,8 +523,8 @@ InteractData.Button.prototype.finishRender = function(location) {
 }
 
 
-InteractData.ButtonBar = makeClass();
-InteractData.ButtonBar.prototype.init = function(args) {
+singlecell.InteractData.ButtonBar = singlecell.functions.makeClass();
+singlecell.InteractData.ButtonBar.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -590,18 +535,18 @@ InteractData.ButtonBar.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.ButtonBar.prototype.changeHandlers = function() {
+singlecell.InteractData.ButtonBar.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-InteractData.ButtonBar.prototype.changes = function() {
+singlecell.InteractData.ButtonBar.prototype.changes = function() {
     var control_out = $(this.location).find("#"+this.control_id+"_value")
     var value = control_out.val();
     control_out.val("false");
     return value;
 }
 
-InteractData.ButtonBar.prototype.html = function() {
+singlecell.InteractData.ButtonBar.prototype.html = function() {
     var nrows = this.control["nrows"],
     ncols = this.control["ncols"],
     value_labels = this.control["value_labels"],
@@ -627,7 +572,7 @@ InteractData.ButtonBar.prototype.html = function() {
     return html_code;
 }
 
-InteractData.ButtonBar.prototype.finishRender = function(location) {
+singlecell.InteractData.ButtonBar.prototype.finishRender = function(location) {
     this.location = location;
     $(this.location).find("."+this.control_id)
 	.css("width", this.control["width"]);
@@ -658,8 +603,8 @@ InteractData.ButtonBar.prototype.finishRender = function(location) {
 }
 
 
-InteractData.Checkbox = makeClass();
-InteractData.Checkbox.prototype.init = function(args) {
+singlecell.InteractData.Checkbox = singlecell.functions.makeClass();
+singlecell.InteractData.Checkbox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -670,11 +615,11 @@ InteractData.Checkbox.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.Checkbox.prototype.changeHandlers = function() {
+singlecell.InteractData.Checkbox.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-InteractData.Checkbox.prototype.changes = function() {
+singlecell.InteractData.Checkbox.prototype.changes = function() {
     var value = $(this.location).find("#"+this.control_id).attr("checked");
     if (value === true) {
 	return "True";
@@ -683,7 +628,7 @@ InteractData.Checkbox.prototype.changes = function() {
     }
 }
 
-InteractData.Checkbox.prototype.html = function() {
+singlecell.InteractData.Checkbox.prototype.html = function() {
     var html="<span class='singlecell_var_"+this.name+"'>"+
 	"<input type='checkbox' class='"+this.control_class+"' id='"+
 	this.control_id+"'"
@@ -694,13 +639,13 @@ InteractData.Checkbox.prototype.html = function() {
     return html
 }
 
-InteractData.Checkbox.prototype.finishRender = function(location) {
+singlecell.InteractData.Checkbox.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-InteractData.ColorSelector = makeClass();
-InteractData.ColorSelector.prototype.init = function(args) {
+singlecell.InteractData.ColorSelector = singlecell.functions.makeClass();
+singlecell.InteractData.ColorSelector.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -711,21 +656,21 @@ InteractData.ColorSelector.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.ColorSelector.prototype.changeHandlers = function() {
+singlecell.InteractData.ColorSelector.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-InteractData.ColorSelector.prototype.changes = function() {
+singlecell.InteractData.ColorSelector.prototype.changes = function() {
     return $(this.location).find("#"+this.control_id+"_value").val();
 }
 
-InteractData.ColorSelector.prototype.html = function() {
+singlecell.InteractData.ColorSelector.prototype.html = function() {
     return "<span class='singlecell_var_"+this.name+"'><input type='text' class='singlecell_colorSelector' id='"+
 	this.control_id+"'><input type='text' class='"+this.control_class+" singlecell_interactValueBox' id='"+
-	this.control_id+"_value' style='border:none' value='"+this.control["default"]+"'><span>";
+	this.control_id+"_value' style='border:none' value='"+this.control["default"]+"' readonly='readonly'><span>";
 }
 
-InteractData.ColorSelector.prototype.finishRender = function(location) {
+singlecell.InteractData.ColorSelector.prototype.finishRender = function(location) {
     this.location = location;
     var default_value = this.control["default"],
     control_out = $(this.location);
@@ -763,8 +708,8 @@ InteractData.ColorSelector.prototype.finishRender = function(location) {
 }
 
 
-InteractData.HtmlBox = makeClass();
-InteractData.HtmlBox.prototype.init = function(args) {
+singlecell.InteractData.HtmlBox = singlecell.functions.makeClass();
+singlecell.InteractData.HtmlBox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -775,26 +720,26 @@ InteractData.HtmlBox.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.HtmlBox.prototype.changeHandlers = function() {
+singlecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
     return [];
 }
 
-InteractData.HtmlBox.prototype.changes = function() {
+singlecell.InteractData.HtmlBox.prototype.changes = function() {
     return $(this.location).find("#"+this.control_id).html();
 }
 
-InteractData.HtmlBox.prototype.html = function() {
+singlecell.InteractData.HtmlBox.prototype.html = function() {
     var html = this.control["value"].replace(/cell:\/\//gi, $URL["root"]+"files/"+this.session_id+'/');
     return "<span class='singlecell_var_"+this.name+"'><div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div></span>";
 }
 
-InteractData.HtmlBox.prototype.finishRender = function(location) {
+singlecell.InteractData.HtmlBox.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-InteractData.InputBox = makeClass();
-InteractData.InputBox.prototype.init = function(args) {
+singlecell.InteractData.InputBox = singlecell.functions.makeClass();
+singlecell.InteractData.InputBox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -805,11 +750,11 @@ InteractData.InputBox.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.InputBox.prototype.changeHandlers = function() {
+singlecell.InteractData.InputBox.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-InteractData.InputBox.prototype.changes = function() {
+singlecell.InteractData.InputBox.prototype.changes = function() {
     var value = $(this.location).find("#"+this.control_id).val(),
     subtype = this.control["subtype"];
 
@@ -820,7 +765,7 @@ InteractData.InputBox.prototype.changes = function() {
     }
 }
 
-InteractData.InputBox.prototype.html = function() {
+singlecell.InteractData.InputBox.prototype.html = function() {
     var subtype = this.control["subtype"];
 
     if (subtype === "textarea") {
@@ -835,13 +780,13 @@ InteractData.InputBox.prototype.html = function() {
     }
 }
 
-InteractData.InputBox.prototype.finishRender = function(location) {
+singlecell.InteractData.InputBox.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-InteractData.InputGrid = makeClass();
-InteractData.InputGrid.prototype.init = function(args) {
+singlecell.InteractData.InputGrid = singlecell.functions.makeClass();
+singlecell.InteractData.InputGrid.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -852,11 +797,11 @@ InteractData.InputGrid.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.InputGrid.prototype.changeHandlers = function() {
+singlecell.InteractData.InputGrid.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-InteractData.InputGrid.prototype.changes = function() {
+singlecell.InteractData.InputGrid.prototype.changes = function() {
     var control_out = $(this.location),
     values = "[";
 
@@ -872,7 +817,7 @@ InteractData.InputGrid.prototype.changes = function() {
     return values;
 }
 
-InteractData.InputGrid.prototype.html = function() {
+singlecell.InteractData.InputGrid.prototype.html = function() {
     var default_values = this.control["default"],
     width = this.control["width"],
     html_code = "<span class='singlecell_var_"+this.name+"'><table><tbody>";
@@ -892,13 +837,13 @@ InteractData.InputGrid.prototype.html = function() {
     return html_code;
 }
 
-InteractData.InputGrid.prototype.finishRender = function(location) {
+singlecell.InteractData.InputGrid.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-InteractData.MultiSlider = makeClass();
-InteractData.MultiSlider.prototype.init = function(args) {
+singlecell.InteractData.MultiSlider = singlecell.functions.makeClass();
+singlecell.InteractData.MultiSlider.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -909,7 +854,7 @@ InteractData.MultiSlider.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.MultiSlider.prototype.changeHandlers = function() {
+singlecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
     var handlers = ["slidestop"];
     if (this.control["subtype"] === "continuous") {
 	handlers.push("change");
@@ -917,13 +862,13 @@ InteractData.MultiSlider.prototype.changeHandlers = function() {
     return handlers;
 }
 
-InteractData.MultiSlider.prototype.changes = function() {
+singlecell.InteractData.MultiSlider.prototype.changes = function() {
     var sliders = this.control["sliders"],
     control_out = $(this.location),
     input, slider_values = [];
 
     if (this.control["subtype"] === "continuous") {
-	for (i = 0; i < sliders; i ++) {
+	for (var i = 0; i < sliders; i ++) {
 	    input = control_out.find("#"+this.control_id + "_" + i + "_value")
 		.val();
 	    control_out.find("#" + this.control_id + "_" + i)
@@ -931,7 +876,7 @@ InteractData.MultiSlider.prototype.changes = function() {
 	    slider_values.push(input);
 	}
     } else {
-	for (i = 0; i < sliders; i ++) {
+	for (var i = 0; i < sliders; i ++) {
 	    slider_values.push(
 		control_out.find("#" + this.control_id + "_" + i + "_index").val()
 	    );
@@ -940,7 +885,7 @@ InteractData.MultiSlider.prototype.changes = function() {
     return "[" + String(slider_values) + "]";
 }
 
-InteractData.MultiSlider.prototype.html = function() {
+singlecell.InteractData.MultiSlider.prototype.html = function() {
     var sliders = this.control["sliders"],
     html_code = "<span class='singlecell_var_"+this.name+"'><div class='" + this.control_class +
 	" singlecell_multiSliderContainer'><span style='whitespace:nowrap'>";
@@ -956,7 +901,7 @@ InteractData.MultiSlider.prototype.html = function() {
     return html_code;
 }
 
-InteractData.MultiSlider.prototype.finishRender = function(location) {
+singlecell.InteractData.MultiSlider.prototype.finishRender = function(location) {
     this.location = location;
 
     var sliders = this.control["sliders"],
@@ -1023,8 +968,8 @@ InteractData.MultiSlider.prototype.finishRender = function(location) {
 }
 
 
-InteractData.Selector = makeClass();
-InteractData.Selector.prototype.init = function(args) {
+singlecell.InteractData.Selector = singlecell.functions.makeClass();
+singlecell.InteractData.Selector.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -1035,15 +980,15 @@ InteractData.Selector.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.Selector.prototype.changeHandlers = function() {
+singlecell.InteractData.Selector.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-InteractData.Selector.prototype.changes = function() {
+singlecell.InteractData.Selector.prototype.changes = function() {
     return String($(this.location).find("#"+this.control_id).val());
 }
 
-InteractData.Selector.prototype.html = function() {
+singlecell.InteractData.Selector.prototype.html = function() {
     var nrows = this.control["nrows"],
     ncols = this.control["ncols"],
     values = this.control["values"],
@@ -1093,7 +1038,7 @@ InteractData.Selector.prototype.html = function() {
     return html_code;
 }
 
-InteractData.Selector.prototype.finishRender = function(location) {
+singlecell.InteractData.Selector.prototype.finishRender = function(location) {
     this.location = location;
 
     var subtype = this.control["subtype"],
@@ -1135,7 +1080,7 @@ InteractData.Selector.prototype.finishRender = function(location) {
 			    control_out.find("#"+control_id).val(i).change();
 			}
 		    }
-		}(control_out,i,control_id=this.control_id)),
+		}(control_out, i, control_id=this.control_id)),
 		"click": function(e) {
 		    e.preventDefault();
 		}
@@ -1145,8 +1090,8 @@ InteractData.Selector.prototype.finishRender = function(location) {
 }
 
 
-InteractData.Slider = makeClass();
-InteractData.Slider.prototype.init = function(args) {
+singlecell.InteractData.Slider = singlecell.functions.makeClass();
+singlecell.InteractData.Slider.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -1157,7 +1102,7 @@ InteractData.Slider.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-InteractData.Slider.prototype.changeHandlers = function() {
+singlecell.InteractData.Slider.prototype.changeHandlers = function() {
     var handlers = ["slidestop"];
     if (this.control["subtype"] === "continuous" || this.control["subtype"] === "continuous_range") {
 	handlers.push("change");
@@ -1165,7 +1110,7 @@ InteractData.Slider.prototype.changeHandlers = function() {
     return handlers;
 }
 
-InteractData.Slider.prototype.changes = function() {
+singlecell.InteractData.Slider.prototype.changes = function() {
     var subtype = this.control["subtype"],
     control_out = $(this.location),
     input;
@@ -1185,14 +1130,14 @@ InteractData.Slider.prototype.changes = function() {
     }
 }
 
-InteractData.Slider.prototype.html = function() {
+singlecell.InteractData.Slider.prototype.html = function() {
     return "<span class='singlecell_var_"+this.name+"' style='whitespace:nowrap'>"+
 	"<span class='" + this.control_class + " singlecell_sliderControl' id='" + this.control_id + "'></span>"+
 	"<input type='text' class='" + this.control_class + " singlecell_interactValueBox' id='" + this.control_id + "_value' style='border:none'>"+
 	"<input type='text' class='" + this.control_class +"' id='" + this.control_id + "_index' style='display:none'></span>";
 }
 
-InteractData.Slider.prototype.finishRender = function(location) {
+singlecell.InteractData.Slider.prototype.finishRender = function(location) {
     this.location = location;
 
     var slider_config = {
@@ -1266,8 +1211,9 @@ InteractData.Slider.prototype.finishRender = function(location) {
 }
 
 
-
 // Initialize jmol
 // TODO: move to a better place
 jmolInitialize($URL["root"]+'/static/jmol');
 jmolSetCallback("menuFile",$URL["root"]+"/static/jmol/appletweb/SageMenu.mnu");
+
+})(jQuery);

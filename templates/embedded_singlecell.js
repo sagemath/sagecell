@@ -204,12 +204,12 @@ singlecell.initCell = (function(singlecellInfo) {
 	if (replaceOutput) {
 	    inputLocation.find(".singlecell_output").empty();
 	}
-
-	var session = new Session(outputLocation, ".singlecell_output", inputLocation.find(".singlecell_sageModeCheck").attr("checked"));
+	
+	var session = new singlecell.Session(outputLocation, ".singlecell_output", inputLocation.find(".singlecell_sageModeCheck").attr("checked"));
 	inputLocation.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
 	$("#"+inputLocationName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
 	$("#"+inputLocationName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
-	$("#"+inputLocationName+"_form").append("<input name='msg_id' value='"+uuid4()+"'>");
+	$("#"+inputLocationName+"_form").append("<input name='msg_id' value='"+singlecell.functions.uuid4()+"'>");
 	inputLocation.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputLocationName+"_form"));
 	inputLocation.find(".singlecell_fileInput").appendTo($("#"+inputLocationName+"_form"));
 	$("#"+inputLocationName+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
@@ -337,6 +337,60 @@ singlecell.templates = {
 		 "sageMode"],
 	"replaceOutput": true
     }
+};
+
+// Various utility functions for the Single Cell Server
+singlecell.functions = {
+    // Create UUID4-compliant ID (based on stackoverflow answer)
+    //http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
+    "uuid4": function() {
+	var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx';
+	return uuid.replace(/[xy]/g, function(c) {
+	    var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+	    return v.toString(16);
+	});
+    },
+
+    // MIT-licensed by John Resig
+    // http://ejohn.org/blog/simple-class-instantiation/)
+    "makeClass": function() {
+	return function(args){
+	    if ( this instanceof arguments.callee ) {
+		if ( typeof this.init == "function" )
+		    this.init.apply( this, args.callee ? args : arguments );
+	    } else
+		return new arguments.callee( arguments );
+	};
+    },
+
+    // Colorize tracebacks
+    "colorizeTB": (function(){
+	var color_codes = {"30":"black",
+			   "31":"red",
+			   "32":"green",
+			   "33":"goldenrod",
+			   "34":"blue",
+			   "35":"purple",
+			   "36":"darkcyan",
+			   "37":"gray"};
+	return function(text) {
+	    var color, result = "";
+	    text=text.split("\u001b[");
+	    for (var i = 0, i_max = text.length; i < i_max; i++) {
+		if(text[i]=="")
+		    continue;
+		color=text[i].substr(0,text[i].indexOf("m")).split(";");
+		if(color.length==2) {
+		    result+="<span style=\"color:"+color_codes[color[1]];
+		    if(color[0]==1)
+			result+="; font-weight:bold";
+		    result+="\">"+text[i].substr(text[i].indexOf("m")+1)+"</span>";
+		} else
+		    result+=text[i].substr(text[i].indexOf("m")+1);
+	    }
+	    return result;
+	}
+    })()
 };
 
 
