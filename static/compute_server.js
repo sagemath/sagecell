@@ -493,24 +493,27 @@ InteractCell.prototype.renderCanvas = (function() {
 	var id = "urn_uuid_" + this.interact_id;
 
 	for (var i in this.layout) {
+
 	    layout_location = this.layout[i]
 	    var section = container.find("td.singlecell_interactContainer_"+i);
 	    section.html("<table class='singlecell_interactControls'></table>");
 
 	    var control_location = section.find(".singlecell_interactControls");
 	    
-	    for (var j = 0, j_max = layout_location.length; j < j_max; j++) { //name in this.layout[i]) {
-		var row = layout_location[j];
+	    for (var j = 0, j_max = layout_location.length; j < j_max; j++) {
+
+		var name = layout_location[j];
 		var row_html = "<tr>";
-		for (var c = 0, c_max = row.length; c < c_max; c++) {
-		    var name = row[c];
-		    var label = this.controls[name]["control"].label;
-		    if (label === null) {
-			label = name;
-		    }
-		    var control_id = id + "_" + name;
-		    row_html+=addControl(label, name, this.controls[name].html(), control_id);
+		
+		var label = this.controls[name]["control"].label;
+
+		if (label === null) {
+		    label = name;
 		}
+
+		var control_id = id + "_" + name;
+		row_html += addControl(label, name, this.controls[name].html(), control_id);
+
 		row_html += "</tr>";
 		control_location.append(row_html);
 		this.controls[name].finishRender(control_location);
