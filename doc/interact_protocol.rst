@@ -142,6 +142,12 @@ If layout is not given, controls will be placed alphabetically in the ``top_cent
 
 For backwards compatibility with the interact layout parameter in the Sage Notebook, ``top`` and ``bottom`` map to ``top_center`` and ``bottom_center``.
 
+Additionally, an experimental layout feature can be used, which allows for nested layouts to be defined. Like a table, this allows for multiple interact controls to be placed on the same row in a given location. The syntax is ::
+
+    layout = {"location_1": [["var_1", "var_2"] ... ["var_n-1", "var_n"]] ... }
+
+In this case, the interact controls will be formatted in columns according to the inner (nested) list, with the outer list determining the row which the controls specified in each nested list will be placed within. This is marked as experimental as not all controls will always work with nested layouts.
+
 Controls
 ^^^^^^^^
 
