@@ -239,19 +239,35 @@ def interact(f, controls=[], update=None, layout=None):
                         raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
             else:
                 raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
-            if "*" in value:
-                value = [n for n in names]
-            elif set(value)-nameset:
-                raise ValueError("Layout variables %s are not interact variables."%repr(list(set(value)-nameset)))
-            for var in value:
-                if var in previous_vars:
-                    error_vars.append(var);
+            if isinstance(value[0], list):
+                if ["*"] in value:
+                    value = [[n] for n in names]
+                elif set(flatten(value))-nameset:
+                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
+                for varlist in value:
+                    for var in varlist:
+                        if var in previous_vars:
+                            error_vars.append(var);
+                    if error_vars:
+                        raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
+                    previous_vars.extend(varlist)
+                sanitized_layout[key] = value
+
+            else:
+                if "*" in value:
+                    value = [n for n in names]
+                elif set(value)-nameset:
+                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(value)-nameset)))
+                for var in value:
+                    if var in previous_vars:
+                        error_vars.append(var);
             
-            if error_vars:
-                raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
-            previous_vars.extend(value)
-            sanitized_layout[key] = value
-        layout = sanitized_layout
+                if error_vars:
+                    raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
+                previous_vars.extend(value)
+                sanitized_layout[key] = value
+
+            layout = sanitized_layout
     else:
         layout["top_center"] = [n for n in names]
 

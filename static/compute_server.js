@@ -166,7 +166,7 @@ Session.prototype.output_id = function(block_id) {
 Session.prototype.output = function(html, block_id, create) {
     // create===false means just pass back the last child of the output_block
     // if we aren't replacing the output block
-    if (create===undefined) {create=true;}
+    if (typeof(create)==="undefined") {create=true;}
     var output_block=$("#"+this.output_id(block_id));
     if (this.replace_output) {
 	output_block.empty();
@@ -502,18 +502,29 @@ InteractCell.prototype.renderCanvas = (function() {
 	    
 	    for (var j = 0, j_max = layout_location.length; j < j_max; j++) {
 
-		var name = layout_location[j];
+		var row = layout_location[j];
 		var row_html = "<tr>";
-		
-		var label = this.controls[name]["control"].label;
+		var name = row;
 
-		if (label === null) {
-		    label = name;
+		var control_html = function(info,name) {
+		    var label = info.controls[name]["control"].label;
+		    if (label === null) {
+			label = name;
+		    }
+		    var control_id = id + "_" + name;
+		    return addControl(label, name, info.controls[name].html(), control_id);
+		};
+
+		if (typeof(row)==="object") {
+		    for (var c = 0, c_max = row.length; c < c_max; c++) {
+			name = row[c];
+			row_html += control_html(this,name);
+		    }
+		} else {
+		    row_html += control_html(this,name);
 		}
 
-		var control_id = id + "_" + name;
-		row_html += addControl(label, name, this.controls[name].html(), control_id);
-
+	
 		row_html += "</tr>";
 		control_location.append(row_html);
 		this.controls[name].finishRender(control_location);
