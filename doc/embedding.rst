@@ -18,8 +18,7 @@ jQuery: http://www.jquery.com
 Basic Usage
 ^^^^^^^^^^^
 
-jQuery is assumed to be loaded in ``<head>`` with ``$`` available.
-
+jQuery is assumed to be loaded in ``<head>``. 
 In ``<head>``, the following lines should be inserted::
 
    <script type="text/javascript" src="http://<server>/embedded_singlecell.js"></script>
@@ -327,108 +326,6 @@ Single Cell instances::
                                 // initialize two Single Cell instances
 
   });
-
-
-Embedding Javascript Module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Embedding creates a global javascript object named ``singlecell``.
-
-Accessible Methods and Variables
---------------------------------
-
-.. _singlecell.templates_embed:
-.. attribute:: singlecell.templates
-
-   Built-in embedding templates. See :ref:`templates <Templates>` for more
-   information.
-
-.. _singlecell.init_embed:
-.. function:: singlecell.init(callback)
-
-   Initializes Single Cell embedding capabilities and loads external CSS and
-   Javascript libraries.
-
-   :param Function callback: Callback function to be executed after all external
-     libraries have loaded.
-
-.. _singlecell.makeSinglecell:
-.. function:: singlecell.makeSinglecell(args)
-
-   Constructs a Single Cell instance. This function itself mainly interprets
-   configuration information; the majority of the actual rendering is done by
-   :ref:`singlecell.initCell() <singlecell.initCell>`.
-
-   :param Dict args: Dictionary containing Single Cell configuration information.
-      See :ref:`customization <Customization>` for more information.
-   :returns: Dictionary of Single Cell information used by other methods.
-
-.. _singlecell.deleteSinglecell:
-.. function:: singlecell.deleteSinglecell(singlecellinfo)
-
-   Deletes a Single Cell instance.
-
-   :param Dict singlecell info: Dictionary of Single Cell information returned by
-      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
-
-.. _singlecell.moveInputForm:
-.. function:: singlecell.moveInputForm(singlecellinfo)
-
-   Moves form elements of a Single Cell instance outside of that instance's
-   embedding context (most useful in cases where a Single Cell is embedded
-   within an external form which, on submission, should not send Single Cell
-   content).
-
-   :param Dict singlecellinfo: Dictionary of Single Cell information returned by
-      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
-
-.. _singlecell.restoreInputForm:
-.. function:: singlecell.restoreInputForm(singlecellinfo)
-
-   Restores the Single Cell form elements moved using
-   :ref:`singlecell.moveInputForm() <singlecell.moveInputForm>` to the Single
-   Cell instance's embedding context.
-
-   :param Dict singlecellinfo: Dictionary of Single Cell information returned by
-      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
-
-Internal Methods
-----------------
-
-.. _singlecell.initCell:
-.. function:: singlecell.initCell(singlecellinfo)
-
-  Called by :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
-  Renders a Single Cell instance.
-
-  :param Dict singlecellinfo: Dictionary of Single Cell configuration
-    information created by
-    :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
-
-.. _singlecell.renderEditor:
-.. function:: singlecell.renderEditor(editor, inputLocation)
-
-   Called by :ref:`singlecell.initCell() <singlecell.initCell>` Renders the
-   code editor for a Single Cell instance.
-
-   :param String editor: Name of editor to be rendered
-   :param inputLocation: jQuery selector corresponding to the location for Single
-      Cell input (where the editor should be created).
-   :returns: ``[editor, editorData]`` where ``editor`` is the name of the
-      rendered editor and ``editorData`` is additional data required to later
-      modify the rendered editor.
-
-.. _singlecell.toggleEditor:
-.. function:: singlecell.toggleEditor(editor, editorData, inputLocation)
-
-   Switches the editor type (triggered upon clicking the Editor toggle link in a
-   Single Cell instance).
-
-   :param String editor: Name of current editor type.
-   :param editorData: Data required to modify the current editor type, as
-      returned by :ref:`singlecell.renderEditor() <singlecell.renderEditor>`.
-   :param inputLocation: jQuery selector corresponding to the location for Single
-      Cell input (where the editor is located).
 
 
 Example
