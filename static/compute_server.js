@@ -153,17 +153,24 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
             var msg = content[i];
 	    var parent_id = msg.parent_header.msg_id;
 	    var output_block = msg.output_block;
-            if(msg.sequence!==this.sequence) {
-                //TODO: Make a big warning sign
-                console.warn('sequence is out of order; I think it should be '+this.sequence+', but server claims it is '+msg.sequence);
+
+            if (msg.sequence !== this.sequence) {
+		// If the sequence number is off (typically because of delays
+		// in receiving messages, log that it was received but don't
+		// output it. Instead, wait to output until the server catches
+		// up; this should prevent multiple outputs from appearing.
+		this.appendMsg(msg, "Rejected Sequence: ");
+                console.warn('Sequence is out of order; client thinks it should be '+this.sequence+', but server claims it is '+msg.sequence);
+		continue;
             }
-            this.sequence+=1;
+            this.sequence += 1;
 	    if (typeof(parent_id) !== "undefined" && parent_id !== this.lastMessage && this.lastMessage !== null) {
 		// If another message has been sent to the server since the parent of this one, don't format it for output but log that it was received.
 		// This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
 		this.appendMsg(msg, "Rejected: ");
 		continue;
 	    }
+
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream':
