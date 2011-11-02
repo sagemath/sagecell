@@ -187,6 +187,11 @@ singlecell.initCell = (function(singlecellInfo) {
 	inputLocation.find(".singlecell_fileUpload").empty();
 	return false;
     });
+
+    $(".singlecell_sageMode").find("label").live("click",function(e) {
+	var location = $(this).parent().find("input");
+	location.attr("checked", !location.attr("checked"));
+    });
     
     $(".singlecell_selectorButton").live("hover",function(e) {
 	$(e.target).toggleClass("ui-state-hover");
