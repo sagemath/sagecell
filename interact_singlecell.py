@@ -226,7 +226,11 @@ def interact(f, controls=[], update=None, layout=None):
         # sanitize input
         layout_values = set(["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center", "top", "bottom"])
         sanitized_layout = {}
+        previous_vars = []
+
         for key,value in layout.items():
+            error_vars = []
+
             if key in layout_values:
                 if key in ("top", "bottom"):
                     oldkey=key
@@ -235,14 +239,37 @@ def interact(f, controls=[], update=None, layout=None):
                         raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
             else:
                 raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
-            if "*" in flatten(value):
-                value = [[n] for n in names]
-            elif set(flatten(value))-nameset:
-                raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
-            sanitized_layout[key] = value
-        layout = sanitized_layout
+            if isinstance(value[0], list):
+                if ["*"] in value:
+                    value = [[n] for n in names]
+                elif set(flatten(value))-nameset:
+                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
+                for varlist in value:
+                    for var in varlist:
+                        if var in previous_vars:
+                            error_vars.append(var);
+                    if error_vars:
+                        raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
+                    previous_vars.extend(varlist)
+                sanitized_layout[key] = value
+
+            else:
+                if "*" in value:
+                    value = [n for n in names]
+                elif set(value)-nameset:
+                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(value)-nameset)))
+                for var in value:
+                    if var in previous_vars:
+                        error_vars.append(var);
+            
+                if error_vars:
+                    raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
+                previous_vars.extend(value)
+                sanitized_layout[key] = value
+
+            layout = sanitized_layout
     else:
-        layout["top_center"] = [[n] for n in names]
+        layout["top_center"] = [n for n in names]
 
     from sys import _sage_messages as MESSAGE, maxint
     from random import randrange
