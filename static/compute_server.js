@@ -243,7 +243,7 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		    this.replace_output = false;
 		    break;
 		case "session_end":
-		    this.output("<div class='singlecell_done'>Session "+id+ " done</div>",output_block);
+		    this.output("<div class='singlecell_done'>Session <span class='singlecell_sessionTitle'>"+id+ "</span> done</div>",output_block);
 		    // Unbinds interact change handlers
 		    for (var i in this.eventHandlers) {
 			for (var j in this.eventHandlers[i]) {

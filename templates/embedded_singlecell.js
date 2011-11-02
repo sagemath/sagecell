@@ -114,7 +114,9 @@ singlecell.makeSinglecell = (function(args) {
 			$(inputLocation+" .singlecell_"+hide[i]).css("display", "none");
 		    } else if (hide[i] ==='output' || 
 			       hide[i] ==='computationID' || 
-			       hide[i] ==='messages') {
+			       hide[i] ==='messages' ||
+		               hide[i] ==='done' ||
+		               hide[i] ==='sessionTitle') {
 			$(outputLocation+" .singlecell_"+hide[i]).css("display", "none");
 		    }
 		}
@@ -333,13 +335,13 @@ singlecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
 	"editor": "textarea-readonly",
 	"hide": ["computationID", "editor", "editorToggle", "files",
-		 "messages", "sageMode"],
+		 "messages", "sageMode", "sessionTitle"],
 	"replaceOutput": true
     },
     "restricted": { // to display/evaluate code that can't be edited.
 	"editor": "codemirror-readonly",
 	"hide": ["computationID", "editorToggle", "files", "messages",
-		 "sageMode"],
+		 "sageMode", "sessionTitle"],
 	"replaceOutput": true
     }
 };
