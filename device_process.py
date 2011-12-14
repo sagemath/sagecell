@@ -357,7 +357,8 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                 msg_queue=manager.Queue()
                 args=(session, msg_queue, resource_limits, keys[1])
                 sessions[session]={'messages': msg_queue,
-                                   'worker': pool.apply_async(worker,args)}
+                                   'worker': pool.apply_async(worker,args),
+                                   'parent_header': X['header']}
             # send execution request down the queue.
             sessions[session]['messages'].put(('exec',X))
             log("sent execution request", device_id+' '+session)
@@ -405,7 +406,7 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
             # request, not at the end of a session
             msg={'content': {"msg_type":"session_end"},
                  "header":{"msg_id":unicode(uuid.uuid4())},
-                 "parent_header":{"session":session},
+                 "parent_header":sessions[session]['parent_header'],
                  "msg_type":"extension",
                  "sequence":sequence[session]}
             new_messages.append(msg)
