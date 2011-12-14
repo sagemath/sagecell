@@ -402,15 +402,12 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                 continue
          # delete the output that I'm finished with
         for session in finished:
-            # this message should be sent at the end of an execution
-            # request, not at the end of a session
             msg={'content': {"msg_type":"session_end"},
                  "header":{"msg_id":unicode(uuid.uuid4())},
                  "parent_header":sessions[session]['parent_header'],
                  "msg_type":"extension",
                  "sequence":sequence[session]}
             new_messages.append(msg)
-            # should send back an execution_state: idle message too
             del sequence[session]
             del sessions[session]
         if len(new_messages)>0:
@@ -574,6 +571,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                                                           #"user_expressions":{},
                                                           #"user_variables":{}
                                                           })
+                # technically should send back an execution_state: idle message too
 
             except:
 
