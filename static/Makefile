@@ -9,10 +9,9 @@ all.min.js: codemirror2/lib/codemirror.js codemirror2/mode/python/python.js jmol
 	cat singlecell.js >> all.js
 	../minifiers/jsmin < all.js > all.min.js
 
-all.min.css: codemirror2/lib/codemirror.css codemirror2/theme/default.css  stylesheet.css
+all.min.css: codemirror2/lib/codemirror.css stylesheet.css
 	echo '' > all.css
 	cat 'codemirror2/lib/codemirror.css' >> all.css
-	cat 'codemirror2/theme/default.css' >> all.css
 	# We can't include the following in our file because they have references to their image directories
 	# so instead, we include them as separate CSS links.
 	#cat 'jqueryui/css/sage/jquery-ui-1.8.13.custom.css' >> all.css
