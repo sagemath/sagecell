@@ -283,7 +283,7 @@ singlecell.renderEditor = (function(editor, inputLocation) {
 	    matchBrackets:true,
 	    readOnly: readOnly,
 	    onKeyEvent: (function(editor, event){
-		if (event.which === 13 && event.shiftKey && event.type === "keypress") {
+		if (event.keyCode === 13 && event.shiftKey && event.type === "keyup") {
 		    inputLocation.find(".singlecell_evalButton").click();
 		    event.stop();
 		    return true;
