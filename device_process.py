@@ -82,6 +82,9 @@ from sage.server.support import help
 from sagenb.misc.support import automatic_names
 sage.misc.session.init()
 
+# Ensure unique random state after forking
+set_random_seed()
+
 #try:
 #    attach(os.path.join(os.environ['DOT_SAGE'], 'init.sage'))
 #except (KeyError, IOError):
