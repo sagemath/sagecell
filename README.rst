@@ -23,8 +23,8 @@ web server that can drastically increase your capabilities over the
 built-in Python web server.  There are lots of other WSGI servers you
 could use as well.
 
-These instructions assume that Sage is installed and that it can
-be run using the command ``sage``.
+These instructions assume that Sage (version 4.7.2+) is installed and that it
+can be run using the command ``sage``. Earlier versions of Sage are not compatible.
 
 Dependencies
 ------------
