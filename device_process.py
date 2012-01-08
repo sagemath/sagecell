@@ -576,14 +576,10 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
             except:
 
                 (etype, evalue, etb) = sys.exc_info()
-                err = ""
 
-                if enable_sage: # Ipython 0.9.1
-                    import ultraTB_09 # Modified version of Sage's IPython's ultraTB library to achieve traceback output compatibility with 0.11
-                    err = ultraTB_09.VerboseTB(include_vars = 0, tb_offset=1)
-                else: # Ipython 0.10
-                    import ultraTB_10 # Modified version of ultraTB that shipped with IPython 0.10 to acheive traceback output compatibility with 0.11
-                    err = ultraTB_10.VerboseTB(include_vars = 0, tb_offset=1)
+                # Modified version of ultraTB from IPython 0.10 with IPython 0.11 tracebacks
+                import ultraTB_10
+                err = ultraTB_10.VerboseTB(include_vars = 0, tb_offset=1)
                 
                 # Using IPython 0.11 - change code to: import IPython.core.ultratb
                 # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
