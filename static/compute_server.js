@@ -34,7 +34,7 @@ singlecell.Session.prototype.init = function(outputDiv, output, sage_mode) {
     this.sage_mode = sage_mode;
     this.sequence = 0;
     this.poll_interval = 400;
-    this.lastMessage = null;
+    this.lastMessage = {};
     this.sessionContinue = true;
     this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div><div id="session_'+this.session_id+'_files" class="singlecell_sessionFilesTitle">Session Files:</div><div id="output_files_'+this.session_id+'" class="singlecell_sessionFiles"></div></div>');
     this.session_title=$('#session_'+this.session_id+'_title');
@@ -63,13 +63,19 @@ singlecell.Session.prototype.updateQuery = function(new_interval) {
 }
 
 singlecell.Session.prototype.sendMsg = function() {
-    var code = arguments[0], msg, msg_id;
+    var code = arguments[0];
+    var msg, msg_id, interact_id;
 
     if (arguments[1] === undefined){
 	msg_id = singlecell.functions.uuid4();
     } else {
 	msg_id = arguments[1];
     }
+
+    if (arguments[2] !== undefined) {
+	interact_id = arguments[2];
+    }
+
     msg = {"parent_header": {},
 	   "header": {"msg_id": msg_id,
 		      //"username": "",
@@ -82,7 +88,11 @@ singlecell.Session.prototype.sendMsg = function() {
 		       //"user_expressions": {}
 		      }
 	  };
-    this.lastMessage = msg_id;
+
+    this.lastMessage[interact_id] = msg_id;
+
+    console.log("Updated last message: "+interact_id+" "+msg_id);
+
     this.appendMsg(msg, "*******SEND: ");
     /* We need to make a proxy object; see
        http://api.jquery.com/bind/#comment-74776862 or
@@ -162,11 +172,14 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		continue;
             }
             this.sequence += 1;
-	    if (typeof(parent_id) !== "undefined" && parent_id !== this.lastMessage && this.lastMessage !== null) {
+	    if (typeof(parent_id) !== "undefined" && !$.isEmptyObject(this.lastMessage) && parent_id !== this.lastMessage[output_block] && output_block !== null) {
+		console.log("rejected message: "+output_block+" "+this.lastMessage[output_block]);
 		// If another message has been sent to the server since the parent of this one, don't format it for output but log that it was received.
 		// This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
 		this.appendMsg(msg, "Rejected: ");
 		continue;
+	    } else if (parent_id === this.lastMessage[output_block]) {
+		this.replace_output = true;
 	    }
 
             // Handle each stream type.  This should probably be separated out into different functions.
@@ -385,7 +398,7 @@ singlecell.InteractCell.prototype.bindChange = function(interact) {
 		}
 		code += "))";
 
-		interact.session.sendMsg(code, interact.msg_id);
+		interact.session.sendMsg(code, interact.msg_id, interact.interact_id);
 		interact.session.replace_output=true;
 	    } else {
 		parentSpan.parent().addClass("singlecell_dirtyControl");
