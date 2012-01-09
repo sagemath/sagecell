@@ -91,8 +91,6 @@ singlecell.Session.prototype.sendMsg = function() {
 
     this.lastMessage[interact_id] = msg_id;
 
-    console.log("Updated last message: "+interact_id+" "+msg_id);
-
     this.appendMsg(msg, "*******SEND: ");
     /* We need to make a proxy object; see
        http://api.jquery.com/bind/#comment-74776862 or
@@ -173,7 +171,6 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
             }
             this.sequence += 1;
 	    if (typeof(parent_id) !== "undefined" && !$.isEmptyObject(this.lastMessage) && parent_id !== this.lastMessage[output_block] && output_block !== null) {
-		console.log("rejected message: "+output_block+" "+this.lastMessage[output_block]);
 		// If another message has been sent to the server since the parent of this one, don't format it for output but log that it was received.
 		// This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
 		this.appendMsg(msg, "Rejected: ");
