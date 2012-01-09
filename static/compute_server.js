@@ -28,10 +28,12 @@ jQuery.noConflict();
 **************************************************************/
 
 singlecell.Session = (singlecell.functions.makeClass());
-singlecell.Session.prototype.init = function(outputDiv, output, sage_mode) {
+singlecell.Session.prototype.init = function(outputDiv, output, sage_mode,
+					    hideDynamic) {
     this.outputDiv = outputDiv;
     this.session_id = singlecell.functions.uuid4();
     this.sage_mode = sage_mode;
+    this.hideDynamic = hideDynamic;
     this.sequence = 0;
     this.poll_interval = 400;
     this.lastMessage = null;
@@ -44,6 +46,11 @@ singlecell.Session.prototype.init = function(outputDiv, output, sage_mode) {
     this.eventHandlers = {};
     this.interacts = {};
     this.setQuery();
+
+    for (var i = 0; i < this.hideDynamic.length; i++) {
+	this.outputDiv.find(this.hideDynamic[i]).css("display","none");
+    }
+
 }
 
 // Manages querying the webserver for messages
@@ -243,7 +250,10 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		    this.replace_output = false;
 		    break;
 		case "session_end":
-		    this.output("<div class='singlecell_done'>Session <span class='singlecell_sessionTitle'>"+id+ "</span> done</div>",output_block);
+		    if (! $.inArray(".singlecell_done", this.hideDynamic)) {
+			this.output("<div class='singlecell_done'>Session "+id+ " done</div>", output_block);
+		    }
+
 		    // Unbinds interact change handlers
 		    for (var i in this.eventHandlers) {
 			for (var j in this.eventHandlers[i]) {
