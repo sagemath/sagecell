@@ -472,6 +472,9 @@ class InputGrid(InteractControl):
 
         if not isinstance(default, list):
             self.default = self.default_return = [[default for _ in range(self.ncols)] for _ in range(self.nrows)]
+        # Allows 1-row input grids to use non-nested lists for default values
+        elif not all(type(entry) == list for entry in default):
+            self.default = self.default_return = [[default[i * self.ncols + j] for j in range(self.ncols)] for i in range(self.nrows)]
         else:
             self.default = self.default_return = default
 
