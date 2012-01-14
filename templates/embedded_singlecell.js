@@ -84,6 +84,8 @@ singlecell.makeSinglecell = (function(args) {
 	settings = $.extend(settings, defaults, args);
     }
 
+    settings.hideDynamic = [];
+
     var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
     setTimeout(function() {
 	// Wait for CodeMirror to load before using the $ function
@@ -106,18 +108,21 @@ singlecell.makeSinglecell = (function(args) {
 		    $(inputLocation+" .singlecell_output, .singlecell_messages").appendTo(outputLocation);
 		}
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
-		    if (hide[i] === 'editor' || 
-			hide[i] === 'editorToggle' || 
-			hide[i] === 'files' || 
-			hide[i] ==='evalButton' || 
-			hide[i] ==='sageMode') {
+		    if (hide[i] === 'editor' ||
+			hide[i] === 'editorToggle' ||
+			hide[i] === 'files' ||
+			hide[i] === 'evalButton' ||
+			hide[i] === 'sageMode') {
 			$(inputLocation+" .singlecell_"+hide[i]).css("display", "none");
-		    } else if (hide[i] ==='output' || 
-			       hide[i] ==='computationID' || 
-			       hide[i] ==='messages' ||
-		               hide[i] ==='done' ||
-		               hide[i] ==='sessionTitle') {
+		    } else if (hide[i] === 'output' ||
+			       hide[i] === 'computationID' ||
+			       hide[i] === 'messages') {
 			$(outputLocation+" .singlecell_"+hide[i]).css("display", "none");
+		    } else if (hide[i] === 'sessionTitle' ||
+			       hide[i] === 'done' ||
+			       hide[i] === 'sessionFiles' ||
+			       hide[i] === 'sessionFilesTitle') {
+			settings.hideDynamic.push(".singlecell_"+hide[i]);
 		    }
 		}
 		if (typeof(evalButtonText) !== "undefined") {
@@ -137,6 +142,7 @@ singlecell.initCell = (function(singlecellInfo) {
     var outputLocation = $(singlecellInfo.outputLocation);
     var editor = singlecellInfo.editor;
     var replaceOutput = singlecellInfo.replaceOutput;
+    var hideDynamic = singlecellInfo.hideDynamic;
     var sageMode = inputLocation.find(".singlecell_sageModeCheck");
     var textArea = inputLocation.find(".singlecell_commands");
     var files = 0;
@@ -212,7 +218,7 @@ singlecell.initCell = (function(singlecellInfo) {
 	    inputLocation.find(".singlecell_output").empty();
 	}
 	
-	var session = new singlecell.Session(outputLocation, ".singlecell_output", inputLocation.find(".singlecell_sageModeCheck").attr("checked"));
+	var session = new singlecell.Session(outputLocation, ".singlecell_output", inputLocation.find(".singlecell_sageModeCheck").attr("checked"), hideDynamic);
 	inputLocation.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
 	$("#"+inputLocationName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
 	$("#"+inputLocationName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
@@ -335,13 +341,14 @@ singlecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
 	"editor": "textarea-readonly",
 	"hide": ["computationID", "editor", "editorToggle", "files",
-		 "messages", "sageMode", "sessionTitle"],
+		 "messages", "sageMode", "sessionTitle", "done",
+		 "sessionFilesTitle"],
 	"replaceOutput": true
     },
     "restricted": { // to display/evaluate code that can't be edited.
 	"editor": "codemirror-readonly",
 	"hide": ["computationID", "editorToggle", "files", "messages",
-		 "sageMode", "sessionTitle"],
+		 "sageMode", "sessionTitle", "done", "sessionFilesTitle"],
 	"replaceOutput": true
     }
 };

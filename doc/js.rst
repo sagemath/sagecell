@@ -147,11 +147,14 @@ Session Class
 ^^^^^^^^^^^^^
 
 .. _Session:
-.. class:: singlecell.Session(selector)
+.. class:: singlecell.Session(outputLocation, selector, sageMode, hideDynamic)
 
     Manages Single Cell functionality for a given cell, including client-server communication and displaying and rendering output.
 
-    :param String selector: JQuery selector for overall session output.
+    :param Object outputLocation: jQuery object for output location
+    :param String selector: JQuery selector for overall session output
+    :param Bool sageMode: whether Sage Mode is toggled
+    :param Object hideDynamic: output elements that should be dynamically hidden
 
 Session Functions
 _________________
