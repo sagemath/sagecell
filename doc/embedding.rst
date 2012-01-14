@@ -210,6 +210,10 @@ The following output elements can be hidden:
 * Computation ID logging (``computationID``)
 * Message logging (``messages``)
 * Session output (``output``)
+* Session title (``sessionTitle``)
+* Session end message (``done``)
+* Session files label (``sessionFilesTitle``)
+* Session files (``sessionFiles``)
 
 .. todo:: make the Session identifiers on an output cell be hidden.
    Also, it might be nice to make a more user-friendly way of saying
@@ -279,7 +283,7 @@ designed for common embedding scenarios:
 
     {
       "editor": "textarea-readonly",
-      "hide": ["computationID","editor","editorToggle","files","messages","sageMode"],
+      "hide": ["computationID","editor","editorToggle","files","messages","sageMode", "sessionTitle", "done", "sessionFilesTitle"],
       "replaceOutput": true
      }
 
@@ -290,7 +294,7 @@ designed for common embedding scenarios:
 
      {
        "editor": "codemirror-readonly",
-       "hide": ["computationID","editorToggle","files","messages","sageMode"],
+       "hide": ["computationID","editorToggle","files","messages","sageMode","sessionTitle","done","sessionFilesTitle"],
        "replaceOutput": true
      }
 
