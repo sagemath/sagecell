@@ -683,7 +683,7 @@ singlecell.InteractData.Checkbox.prototype.changeHandlers = function() {
 }
 
 singlecell.InteractData.Checkbox.prototype.changes = function() {
-    var value = $(this.location).find("#"+this.control_id).attr("checked");
+    var value = $(this.location).find("#"+this.control_id).prop("checked");
     if (value === true) {
 	return "True";
     } else {
@@ -1116,7 +1116,7 @@ singlecell.InteractData.Selector.prototype.finishRender = function(location) {
 	control_out.delegate("."+this.control_id, "mousedown", (function(control_out, control_id){
 	    return function(e) {
 		var etarget = $(e.target);
-		if (! etarget.attr("checked")) {
+		if (! etarget.prop("checked")) {
 		    control_out.find("#"+control_id).val(etarget.val()).change();
 		}
 	    }
