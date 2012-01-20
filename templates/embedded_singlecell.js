@@ -289,10 +289,17 @@ singlecell.renderEditor = (function(editor, inputLocation) {
 	    matchBrackets:true,
 	    readOnly: readOnly,
 	    onKeyEvent: (function(editor, event){
-		if (event.keyCode === 13 && event.shiftKey && event.type === "keyup") {
-		    inputLocation.find(".singlecell_evalButton").click();
-		    event.stop();
-		    return true;
+		if (event.keyCode === 13 && event.shiftKey && (event.type === "keydown" || event.type === "keypress")) {
+		    if (event.type === "keydown") {
+			inputLocation.find(".singlecell_evalButton").click();
+			event.stop();
+			return true;
+		    } else {
+			// some browsers still have a keypress event which we need to stop
+			// so that the text does not get mangled
+			event.stop()
+			return true;
+		    }
 		}
 		editor.save();
 		try {
