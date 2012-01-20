@@ -195,7 +195,8 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		continue;
             }
             this.sequence += 1;
-	    if (typeof(parent_id) !== "undefined" && !$.isEmptyObject(this.lastMessage) && parent_id !== this.lastMessage[output_block] && output_block !== null) {
+	    if (typeof(parent_id) !== "undefined" && !$.isEmptyObject(this.lastMessage) && parent_id !== this.lastMessage[output_block] 
+		&& output_block !== null && output_block !== undefined) {
 		// If another message has been sent to the server since the parent of this one, don't format it for output but log that it was received.
 		// This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
 		this.appendMsg(msg, "Rejected: ");
