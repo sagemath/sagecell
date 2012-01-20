@@ -230,7 +230,7 @@ singlecell.initCell = (function(singlecellInfo) {
 	$("#"+inputLocationName+"_form").submit();
 	$("#"+inputLocationName+"_form").find(".singlecell_fileInput").appendTo(inputLocation.find(".singlecell_fileUpload"));
 	$("#"+inputLocationName+"_form").empty();
-	$("#singlecell_serverResponse_"+session.session_id).load($.proxy(function(event) {
+	$("#singlecell_serverResponse_"+session.session_id).load(function(event) {
 	    // if the hosts are the same, communication between frames
 	    // is allowed
 	    // Instead of using a try/except block, we use an if to work 
@@ -244,7 +244,7 @@ singlecell.initCell = (function(singlecellInfo) {
 		}
 	    }
 	    $("#singlecell_serverResponse_"+session.session_id).unbind();
-	}), session);
+	});
 	return false;
     });
     return singlecellInfo;
