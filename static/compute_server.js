@@ -35,7 +35,9 @@ singlecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     this.sage_mode = sage_mode;
     this.hideDynamic = hideDynamic;
     this.sequence = 0;
-    this.poll_interval = 400;
+    this.polling_times = {'active': 250, 'inactive': 2000};
+    this.poll_interval = this.polling_times.active;
+    this.last_update = (new Date).getTime();
     this.lastMessage = {};
     this.sessionContinue = true;
     this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div><div id="session_'+this.session_id+'_files" class="singlecell_sessionFilesTitle">Session Files:</div><div id="output_files_'+this.session_id+'" class="singlecell_sessionFiles"></div></div>');
@@ -56,7 +58,13 @@ singlecell.Session.prototype.init = function(outputDiv, output, sage_mode,
 // Manages querying the webserver for messages
 singlecell.Session.prototype.setQuery = function() {
     this.clearQuery();
-    this.queryID = setTimeout($.proxy(this, 'get_output'), this.poll_interval);
+    var now =  (new Date).getTime();
+    var delta = now-this.last_update;
+    if (delta < this.poll_interval) {
+	this.queryID = setTimeout($.proxy(this, 'get_output'), this.poll_interval-delta);
+    } else {
+	this.queryID = setTimeout($.proxy(this, 'get_output'), 0);
+    }
 }
 
 singlecell.Session.prototype.clearQuery = function() {
@@ -72,6 +80,10 @@ singlecell.Session.prototype.updateQuery = function(new_interval) {
 singlecell.Session.prototype.sendMsg = function() {
     var code = arguments[0];
     var msg, msg_id, interact_id;
+
+    if (!this.sessionContinue) {
+	return false;
+    }
 
     if (arguments[1] === undefined){
 	msg_id = singlecell.functions.uuid4();
@@ -108,10 +120,15 @@ singlecell.Session.prototype.sendMsg = function() {
     $.post($URL.evaluate, {message: JSON.stringify(msg)}, function(){}, 'jsonp')
 	.success($.proxy( this, 'send_computation_success' ))
 	.error(function(jqXHR, textStatus, errorThrown) {
-	    console.warn(jqXHR); 
-	    console.warn(textStatus); 
+	    console.warn(jqXHR);
+	    console.warn(textStatus);
 	    console.warn(errorThrown);
 	});
+    // Pretend like we just got an update, so that we don't request a new update
+    // immediately (since it will probably take a little bit of time for the server
+    // to get the request and respond)
+    this.last_update=(new Date).getTime();
+    this.updateQuery(this.polling_times.active);
 }
 
 singlecell.Session.prototype.appendMsg = function(msg, text) {
@@ -149,10 +166,11 @@ singlecell.Session.prototype.send_computation_success = function(data, textStatu
     if (data.computation_id!==this.session_id) {
 	alert("Session id returned and session id sent don't match up");
     }
-    this.get_output();
+    this.setQuery();
 }
 
 singlecell.Session.prototype.get_output = function() {
+    this.last_update = (new Date).getTime();
     // POSSIBLE TODO: Have a global object querying the server for a given computation. Right now, it's managed by the session object.
     $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence}, $.proxy(this, 'get_output_success'));
 }
@@ -233,7 +251,7 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		    // copied from the pyerr case
 		    this.output("<pre></pre>",output_block).html(singlecell.functions.colorizeTB(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
 		}
-		this.updateQuery(2000);
+		this.updateQuery(this.polling_times.inactive);
 		break;
 
 	    case 'extension':
@@ -384,6 +402,10 @@ singlecell.InteractCell.prototype.bindChange = function(interact) {
     for (var i in events) {
 	this.session.eventHandlers[id][i] = events[i];
 	$(id).live(i, function(e){
+	    if (!interact.session.sessionContinue) {
+		// If the session ended, don't try to send more messages
+		return false;
+	    }
 	    var parentSpan = $(e.target).parentsUntil("span[class^='singlecell_var_']");
 	    if (parentSpan.length === 0) {
 		parentSpan = $(e.target).parent();
