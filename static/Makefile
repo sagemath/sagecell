@@ -1,10 +1,12 @@
 all: ../minifiers/jsmin all.min.js all.min.css
 
-all.min.js: codemirror2/lib/codemirror.js codemirror2/mode/python/python.js jmol/appletweb/Jmol.js jqueryui/js/jquery-ui-1.8.17.custom.min.js colorpicker/js/colorpicker.js compute_server.js singlecell.js ../minifiers/jsmin
+all.min.js: codemirror2/lib/codemirror.js codemirror2/mode/python/python.js jmol/appletweb/Jmol.js jqueryui/js/jquery-ui-1.8.17.custom.min.js jquery.ui.touch-punch.min.js colorpicker/js/colorpicker.js compute_server.js singlecell.js ../minifiers/jsmin 
 	echo '' > all.js
 	cat codemirror2/lib/codemirror.js codemirror2/mode/python/python.js >> all.js
 	cat jmol/appletweb/Jmol.js >> all.js
-	cat jqueryui/js/jquery-ui-1.8.17.custom.min.js colorpicker/js/colorpicker.js >> all.js
+	cat jqueryui/js/jquery-ui-1.8.17.custom.min.js >> all.js
+	cat jquery.ui.touch-punch.min.js >> all.js
+	cat colorpicker/js/colorpicker.js >> all.js
 	cat compute_server.js >> all.js
 	cat singlecell.js >> all.js
 	../minifiers/jsmin < all.js > all.min.js
