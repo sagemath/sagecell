@@ -279,7 +279,7 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		    this.replace_output = false;
 		    break;
 		case "session_end":
-		    if (! $.inArray(".singlecell_done", this.hideDynamic)) {
+		    if ($.inArray(".singlecell_done", this.hideDynamic) === -1) {
 			this.output("<div class='singlecell_done'>Session "+id+ " done</div>", output_block);
 		    }
 
