@@ -115,17 +115,14 @@ variables will not be preserved inside the Sage shell). ::
 Single Cell Server
 ^^^^^^^^^^^^^^^^^^
 
-The repository for this software is on GitHub, under the name
-`simple-python-db-compute
-<https://www.github.com/jasongrout/simple-python-db-compute>`_.
-Either download the `tarball
-<https://www.github.com/jasongrout/simple-python-db-compute/tarball/master>`_,
-extract the contents into ``$SERVER``, and rename the directory to
-``single-cell-server``; or use git to clone
-the code::
+The repository for this software is on GitHub, under the name `sagecell
+<https://github.com/sagemath/sagecell>`_. Either download the `tarball
+<https://github.com/sagemath/sagecell/tarball/master>`_, extract the
+contents into ``$SERVER``, and rename the directory to
+``single-cell-server``; or use git to clone the code::
 
     cd $SERVER
-    git clone git://www.github.com/jasongrout/simple-python-db-compute.git single-cell-server
+    git clone git://github.com/sagemath/sagecell.git single-cell-server
 
 MongoDB
 ^^^^^^^
@@ -330,4 +327,3 @@ License
 
 See the file "LICENSE.txt" for terms & conditions for usage and a
 DISCLAIMER OF ALL WARRANTIES.
-
