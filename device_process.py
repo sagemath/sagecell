@@ -346,7 +346,7 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
             session=X['header']['session']
             if session not in sessions:
                 # session has not been set up yet
-                log("evaluating '%s'"%X['content']['code'], device_id+' '+session)
+                log("evaluating %r"%X['content']['code'], device_id+' '+session)
                 while not db.create_secret(session=session):
                     time.sleep(0.1)
 
@@ -540,7 +540,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         CONFIG.EMBEDDED_MODE["sage_mode"] =  sage_mode = msg['content']['sage_mode']
         if enable_sage and sage_mode:
             from sage.misc.preparser import preparse_file
-            code = user_code_sage + "\n" + preparse_file(msg['content']['code'].encode())
+            code = user_code_sage + "\n" + preparse_file(msg['content']['code'].encode('utf8'))
         elif sage_mode:
             code = "print 'NOTE: Sage Mode is unavailable, which may cause errors if using Sage-specific syntax.'\n" + user_code + msg['content']['code']
         else:
@@ -548,7 +548,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         code = displayhook_hack(code)
         # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
         code += '\n'
-        log("Executing: %s"%code)
+        log("Executing: %r"%code)
         output_handler.set_parent_header(msg['header'])
         old_files=dict([(f,os.stat(f).st_mtime) for f in os.listdir(os.getcwd())])
         if 'files' in msg['content']:
@@ -628,7 +628,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         if len(file_list)>0:
             output_handler.message_queue.message('files', {'files': file_list})
 
-        log("Done executing code: %s"%code)
+        log("Done executing code: %r"%code)
     upload_send.send_bytes(json.dumps({'msg_type': 'end_session'}))
     file_upload_process.join()
 
