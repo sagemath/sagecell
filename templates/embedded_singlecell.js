@@ -289,6 +289,7 @@ singlecell.renderEditor = (function(editor, inputLocation) {
 	    matchBrackets:true,
 	    readOnly: readOnly,
 	    extraKeys: {'Shift-Enter': (function(editor) {
+		editor.save()
 		inputLocation.find(".singlecell_evalButton").click();})},
 	    onKeyEvent: (function(editor, event){
 		editor.save();
