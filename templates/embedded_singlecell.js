@@ -288,19 +288,9 @@ singlecell.renderEditor = (function(editor, inputLocation) {
 	    lineNumbers:true,
 	    matchBrackets:true,
 	    readOnly: readOnly,
+	    extraKeys: {'Shift-Enter': (function(editor) {
+		inputLocation.find(".singlecell_evalButton").click();})},
 	    onKeyEvent: (function(editor, event){
-		if (event.keyCode === 13 && event.shiftKey && (event.type === "keydown" || event.type === "keypress")) {
-		    if (event.type === "keydown") {
-			inputLocation.find(".singlecell_evalButton").click();
-			event.stop();
-			return true;
-		    } else {
-			// some browsers still have a keypress event which we need to stop
-			// so that the text does not get mangled
-			event.stop()
-			return true;
-		    }
-		}
 		editor.save();
 		try {
 		    sessionStorage.removeItem(inputLocationName+"_editorValue");
