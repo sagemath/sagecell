@@ -343,7 +343,7 @@ piece of code (replace ``<SERVER>`` with the appropriate address)::
       <head>
         <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
         <meta name="viewport" content="width=device-width">
-        <title>Simple Compute Server</title>
+        <title>Sage Cell Server</title>
         <script type="text/javascript" src="http://localhost:8080/static/jquery-1.5.min.js"></script>
         <script type="text/javascript" src="http://localhost:8080/embedded_singlecell.js"></script>
 

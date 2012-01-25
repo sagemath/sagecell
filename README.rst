@@ -1,6 +1,6 @@
 .. highlight:: bash
 
-This is a demo of a 3-component Python compute service,
+This is a demo of a 3-component Sage computation service,
 using MongoDB.
 
 Installation
@@ -31,7 +31,7 @@ Dependencies
 
 In the following instructions, ``$SERVER`` refers to the directory
 containing all of the software (for example, it might be
-``/var/singlecellserver``).
+``/var/sagecellserver``).
 
 Build dependencies
 ^^^^^^^^^^^^^^^^^^
@@ -112,20 +112,17 @@ variables will not be preserved inside the Sage shell). ::
     exit
 
 
-Single Cell Server
-^^^^^^^^^^^^^^^^^^
+Sage Cell Server
+^^^^^^^^^^^^^^^^
 
-The repository for this software is on GitHub, under the name
-`simple-python-db-compute
-<https://www.github.com/jasongrout/simple-python-db-compute>`_.
-Either download the `tarball
-<https://www.github.com/jasongrout/simple-python-db-compute/tarball/master>`_,
-extract the contents into ``$SERVER``, and rename the directory to
-``single-cell-server``; or use git to clone
-the code::
+The repository for this software is on GitHub, under the name `sagecell
+<https://github.com/sagemath/sagecell>`_. Either download the `tarball
+<https://github.com/sagemath/sagecell/tarball/master>`_, extract the
+contents into ``$SERVER``, and rename the directory to
+``sage-cell-server``; or use git to clone the code::
 
     cd $SERVER
-    git clone git://www.github.com/jasongrout/simple-python-db-compute.git single-cell-server
+    git clone git://github.com/sagemath/sagecell.git sage-cell-server
 
 MongoDB
 ^^^^^^^
@@ -247,19 +244,18 @@ nginx
 
     $SERVER/nginx-1.0.4/install/sbin/nginx
 
-Single Cell Server
-^^^^^^^^^^^^^^^^^^
+Sage Cell Server
+^^^^^^^^^^^^^^^^
 
 First, minify CSS and JavaScript files (this is required)::
 
     cd $SERVER/static
     make
 
-The only thing left now is to configure and start the single-cell
-compute server.  The server will automatically launch a number
-of workers via passwordless SSH into an untrusted account (i.e., an
-account with heavy restrictions; this account will be executing
-arbitrary user code).
+The only thing left now is to configure and start the Sage cell server.
+The server will automatically launch a number of workers via
+passwordless SSH into an untrusted account (i.e., an account with heavy
+restrictions; this account will be executing arbitrary user code).
 
 .. warning::
 
@@ -290,9 +286,9 @@ arbitrary user code).
    fully automatically.
 
 3. Create a configuration file
-   ``$SERVER/single-cell-server/singlecell_config.py`` by copying and
+   ``$SERVER/sage-cell-server/singlecell_config.py`` by copying and
    modifying
-   ``$SERVER/single-cell-server/singlecell_config.py.default``.  The
+   ``$SERVER/sage-cell-server/singlecell_config.py.default``.  The
    ``mongo_uri`` should be set to
    ``mongodb://<SINGLECELL_USER>:<SINGLECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
    If you will be running the server using Sage, replace the line
@@ -304,11 +300,11 @@ arbitrary user code).
 
           chmod 600 singlecell_config.py
 
-4. Start uWSGI. The ``-p 50`` means that uWSGI will  launch 50 workers
+4. Start uWSGI. The ``-p 50`` means that uWSGI will launch 50 workers
    to handle incoming requests.  Adjust this to suit your needs. ::
 
        sage -sh
-       cd $SERVER/single-cell-server
+       cd $SERVER/sage-cell-server
        ../uwsgi-0.9.8.1/uwsgi -s /tmp/uwsgi.sock -w web_server:app -p 50 -M
 
 5. Start up the trusted server. Replace ``<UNTRUSTED_USER>@localhost``
@@ -316,13 +312,13 @@ arbitrary user code).
    number of workers (``-w``) to meet your needs. Add the argument
    ``-q`` to minimize the number of log messages. ::
 
-       cd $SERVER/single-cell-server/
+       cd $SERVER/sage-cell-server/
        sage -python trusted_db.py -w 50 --untrusted-account untrusted@localhost
 
    When you want to shut down the server, just press Ctrl-C. This should
    automatically clean up the worker processes.
 
-6. Go to ``http://localhost:<SERVER_PORT>`` to use the single-cell server.
+6. Go to ``http://localhost:<SERVER_PORT>`` to use the Sage cell server.
 
 
 License
@@ -330,4 +326,3 @@ License
 
 See the file "LICENSE.txt" for terms & conditions for usage and a
 DISCLAIMER OF ALL WARRANTIES.
-
