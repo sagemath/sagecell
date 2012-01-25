@@ -59,7 +59,7 @@ arguments whose values are determined by the state of the interact controls.
 
 The controls of an interact can be defined in two ways:
 
-* In the arguments of the :func:`~interact_singlecell.interact` function::
+* In the arguments of the :func:`~interact_sagecell.interact` function::
 
     @interact([("name1", control1), ("name2", control2)])
     def f(**kwargs):
@@ -74,7 +74,7 @@ The controls of an interact can be defined in two ways:
 The ``name``\ s above are the names of the argument through which the inner
 function (here ``f``) will be passed the value of the control. The
 ``control``\ s are objects representing interact controls: either instances
-of subclasses of :class:`~interact_singlecell.InteractControl` (see
+of subclasses of :class:`~interact_sagecell.InteractControl` (see
 :ref:`controls`) or objects using the
 :ref:`Autoguessing Syntax <autoguessing-syntax>`.
 
@@ -87,10 +87,10 @@ default configurations and print the sum of their values::
 
 If Sage Mode is not enabled or if Sage libraries cannot be imported, the
 previous code must be prefaced with
-``from interact_singlecell import *`` to run. Sage already reserves
+``from interact_sagecell import *`` to run. Sage already reserves
 part of the user namespace (such as the decorator @interact), so the
-singlecell replaces the Sage decorator with its own version. In contrast,
-since the singlecell can also run and interpret stock python code, the
+sagecell replaces the Sage decorator with its own version. In contrast,
+since the sagecell can also run and interpret stock python code, the
 goal is to avoid cluttering the user namespace, so the prefacing import
 statement must be explicit.
 
@@ -151,54 +151,54 @@ In this case, the interact controls will be formatted in columns according to th
 Controls
 ^^^^^^^^
 
-.. autoclass:: interact_singlecell.InteractControl
+.. autoclass:: interact_sagecell.InteractControl
 
-.. autoclass:: interact_singlecell.Checkbox
+.. autoclass:: interact_sagecell.Checkbox
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.InputBox
+.. autoclass:: interact_sagecell.InputBox
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.InputGrid
+.. autoclass:: interact_sagecell.InputGrid
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.Selector
+.. autoclass:: interact_sagecell.Selector
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.DiscreteSlider
+.. autoclass:: interact_sagecell.DiscreteSlider
    :show-inheritance:
    :no-members:
 
-.. autoclass:: interact_singlecell.ContinuousSlider
+.. autoclass:: interact_sagecell.ContinuousSlider
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.MultiSlider
+.. autoclass:: interact_sagecell.MultiSlider
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.ColorSelector
+.. autoclass:: interact_sagecell.ColorSelector
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.Button
+.. autoclass:: interact_sagecell.Button
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.ButtonBar
+.. autoclass:: interact_sagecell.ButtonBar
     :show-inheritance:
     :no-members:
 
 
-.. autoclass:: interact_singlecell.HtmlBox
+.. autoclass:: interact_sagecell.HtmlBox
     :show-inheritance:
     :no-members:
 
-.. autoclass:: interact_singlecell.UpdateButton
+.. autoclass:: interact_sagecell.UpdateButton
     :show-inheritance:
     :no-members:
 
@@ -235,7 +235,7 @@ Interact Protocol
 
 Here we give a rough definition of what happens to get an interact working.
 
-USER types into SINGLE-CELL::
+USER types into SAGECELL::
 
     @interact
     def f(n = continuous_slider(interval = (1,20), stepsize = 1)):
@@ -373,11 +373,11 @@ Interact Backend
 This script is responsible for interpreting interact definitions and 
 sending interact messages to the client.
 
-.. autofunction:: interact_singlecell.automatic_control
+.. autofunction:: interact_sagecell.automatic_control
 
-.. autofunction:: interact_singlecell.interact
+.. autofunction:: interact_sagecell.interact
 
-.. autofunction:: interact_singlecell.decorator_defaults
+.. autofunction:: interact_sagecell.decorator_defaults
 
 Interact Frontend
 -----------------
@@ -395,5 +395,5 @@ compatibility with the old interact system.
 Interact Module
 ---------------
 
-.. automodule:: interact_singlecell
+.. automodule:: interact_sagecell
 

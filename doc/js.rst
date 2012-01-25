@@ -20,125 +20,125 @@ MathJax: http://www.mathjax.org/
 Embedding Module
 ^^^^^^^^^^^^^^^^
 
-Embedding into any page creates a global Javascript object named ``singlecell`` and a variable named ``singlecell_dependencies``.
+Embedding into any page creates a global Javascript object named ``sagecell`` and a variable named ``sagecell_dependencies``.
 
 
 Accessible Methods and Variables
 ________________________________
 
 
-.. _singlecell.templates_embed:
-.. attribute:: singlecell.templates
+.. _sagecell.templates_embed:
+.. attribute:: sagecell.templates
 
    Built-in embedding templates. See :ref:`templates <Templates>` in the
    Embedding documentation for more information.
 
-.. _singlecell.init_embed:
-.. function:: singlecell.init(callback)
+.. _sagecell.init_embed:
+.. function:: sagecell.init(callback)
 
-   Initializes Single Cell embedding capabilities and loads external CSS and
+   Initializes Sage Cell embedding capabilities and loads external CSS and
    Javascript libraries.
 
    :param Function callback: Callback function to be executed after all external
      libraries have loaded.
 
-.. _singlecell.makeSinglecell:
-.. function:: singlecell.makeSinglecell(args)
+.. _sagecell.makeSagecell:
+.. function:: sagecell.makeSagecell(args)
 
-   Constructs a Single Cell instance. This function itself mainly interprets
+   Constructs a Sage Cell instance. This function itself mainly interprets
    configuration information; the majority of the actual rendering is done by
-   :ref:`singlecell.initCell() <singlecell.initCell>`.
+   :ref:`sagecell.initCell() <sagecell.initCell>`.
 
-   :param Dict args: Dictionary containing Single Cell configuration information.
+   :param Dict args: Dictionary containing Sage Cell configuration information.
       See :ref:`customization <Customization>` for more information.
-   :returns: Dictionary of Single Cell information used by other methods.
+   :returns: Dictionary of Sage Cell information used by other methods.
 
-.. _singlecell.deleteSinglecell:
-.. function:: singlecell.deleteSinglecell(singlecellinfo)
+.. _sagecell.deleteSagecell:
+.. function:: sagecell.deleteSagecell(sagecellinfo)
 
-   Deletes a Single Cell instance.
+   Deletes a Sage Cell instance.
 
-   :param Dict singlecell info: Dictionary of Single Cell information returned by
-      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+   :param Dict sagecell info: Dictionary of Sage Cell information returned by
+      :ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`.
 
-.. _singlecell.moveInputForm:
-.. function:: singlecell.moveInputForm(singlecellinfo)
+.. _sagecell.moveInputForm:
+.. function:: sagecell.moveInputForm(sagecellinfo)
 
-   Moves form elements of a Single Cell instance outside of that instance's
-   embedding context (most useful in cases where a Single Cell is embedded
-   within an external form which, on submission, should not send Single Cell
+   Moves form elements of a Sage Cell instance outside of that instance's
+   embedding context (most useful in cases where a Sage Cell is embedded
+   within an external form which, on submission, should not send Sage Cell
    content).
 
-   :param Dict singlecellinfo: Dictionary of Single Cell information returned by
-      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+   :param Dict sagecellinfo: Dictionary of Sage Cell information returned by
+      :ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`.
 
-.. _singlecell.restoreInputForm:
-.. function:: singlecell.restoreInputForm(singlecellinfo)
+.. _sagecell.restoreInputForm:
+.. function:: sagecell.restoreInputForm(sagecellinfo)
 
-   Restores the Single Cell form elements moved using
-   :ref:`singlecell.moveInputForm() <singlecell.moveInputForm>` to the Single
+   Restores the Sage Cell form elements moved using
+   :ref:`sagecell.moveInputForm() <sagecell.moveInputForm>` to the Sage
    Cell instance's embedding context.
 
-   :param Dict singlecellinfo: Dictionary of Single Cell information returned by
-      :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+   :param Dict sagecellinfo: Dictionary of Sage Cell information returned by
+      :ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`.
 
 Internal Methods
 ________________
 
 
-.. _singlecell.initCell:
-.. function:: singlecell.initCell(singlecellinfo)
+.. _sagecell.initCell:
+.. function:: sagecell.initCell(sagecellinfo)
 
-  Called by :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
-  Renders a Single Cell instance.
+  Called by :ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`.
+  Renders a Sage Cell instance.
 
-  :param Dict singlecellinfo: Dictionary of Single Cell configuration
+  :param Dict sagecellinfo: Dictionary of Sage Cell configuration
     information created by
-    :ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`.
+    :ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`.
 
-.. _singlecell.renderEditor:
-.. function:: singlecell.renderEditor(editor, inputLocation)
+.. _sagecell.renderEditor:
+.. function:: sagecell.renderEditor(editor, inputLocation)
 
-   Called by :ref:`singlecell.initCell() <singlecell.initCell>` Renders the
-   code editor for a Single Cell instance.
+   Called by :ref:`sagecell.initCell() <sagecell.initCell>` Renders the
+   code editor for a Sage Cell instance.
 
    :param String editor: Name of editor to be rendered
-   :param inputLocation: jQuery selector corresponding to the location for Single
+   :param inputLocation: jQuery selector corresponding to the location for Sage
       Cell input (where the editor should be created).
    :returns: ``[editor, editorData]`` where ``editor`` is the name of the
       rendered editor and ``editorData`` is additional data required to later
       modify the rendered editor.
 
-.. _singlecell.toggleEditor:
-.. function:: singlecell.toggleEditor(editor, editorData, inputLocation)
+.. _sagecell.toggleEditor:
+.. function:: sagecell.toggleEditor(editor, editorData, inputLocation)
 
    Switches the editor type (triggered upon clicking the Editor toggle link in a
-   Single Cell instance).
+   Sage Cell instance).
 
    :param String editor: Name of current editor type.
    :param editorData: Data required to modify the current editor type, as
-      returned by :ref:`singlecell.renderEditor() <singlecell.renderEditor>`.
-   :param inputLocation: jQuery selector corresponding to the location for Single
+      returned by :ref:`sagecell.renderEditor() <sagecell.renderEditor>`.
+   :param inputLocation: jQuery selector corresponding to the location for Sage
       Cell input (where the editor is located).
 
 
 Utility Functions
 ^^^^^^^^^^^^^^^^^
 
-These functions serve a variety of repeated purposes throughout the Single Cell Server and are located in the object ``singlecell.functions``.
+These functions serve a variety of repeated purposes throughout the Sage Cell Server and are located in the object ``sagecell.functions``.
 
 .. _uuid4:
-.. function:: singlecell.functions.uuid4()
+.. function:: sagecell.functions.uuid4()
     
     Creates a UUID4-compliant identifier as specified in `RFC 4122 <http://tools.ietf.org/html/rfc4122.html>`_. `CC-by-SA-licensed <http://creativecommons.org/licenses/by-sa/2.5/>`_ from `StackOverflow <http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript>`_ contributers.
 
 .. _makeClass:
-.. function:: singlecell.functions.makeClass()
+.. function:: sagecell.functions.makeClass()
 
     Generic class constructor to instantiate objects. `MIT-licensed <http://www.opensource.org/licenses/mit-license.php>`_ by `John Resig <http://ejohn.org/blog/simple-class-instantiation/>`_. 
 
 .. _colorize:
-.. function:: singlecell.functions.colorize()
+.. function:: sagecell.functions.colorize()
 
     Colorizes error tracebacks formatted with `IPython <http://ipython.scipy.org>`_'s ultraTB library.
 
@@ -147,9 +147,9 @@ Session Class
 ^^^^^^^^^^^^^
 
 .. _Session:
-.. class:: singlecell.Session(outputLocation, selector, sageMode, hideDynamic)
+.. class:: sagecell.Session(outputLocation, selector, sageMode, hideDynamic)
 
-    Manages Single Cell functionality for a given cell, including client-server communication and displaying and rendering output.
+    Manages Sage Cell functionality for a given cell, including client-server communication and displaying and rendering output.
 
     :param Object outputLocation: jQuery object for output location
     :param String selector: JQuery selector for overall session output
@@ -277,7 +277,7 @@ InteractCell Class
 ^^^^^^^^^^^^^^^^^^
 
 .. _InteractCell:
-.. class:: singlecell.InteractCell(selector, data)
+.. class:: sagecell.InteractCell(selector, data)
 
     Manages the configuration, display, and state of an interact control.
     See :doc:`interact_protocol` for more details.
@@ -360,9 +360,9 @@ ______________________
 InteractData Object
 ^^^^^^^^^^^^^^^^^^^
 
-Contains classes and functions providing control over rendering, updating, monitoring, and extracting data from each type of interact control. Located at ``singlecell.InteractData``. See :doc:`interact_protocol` for details on specific interact controls.
+Contains classes and functions providing control over rendering, updating, monitoring, and extracting data from each type of interact control. Located at ``sagecell.InteractData``. See :doc:`interact_protocol` for details on specific interact controls.
 
-Each type of control (Button, Checkbox, etc.) is a separate value within the InteractData object instantiated as a class. For instance, ``singlecell.InteractData.Button`` is the class referring to a Button control. Each class must contain the following methods:
+Each type of control (Button, Checkbox, etc.) is a separate value within the InteractData object instantiated as a class. For instance, ``sagecell.InteractData.Button`` is the class referring to a Button control. Each class must contain the following methods:
 
 .. _InteractData.init:
 .. function:: InteractData.control.init(args)

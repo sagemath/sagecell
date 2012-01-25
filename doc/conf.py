@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Python Compute Server documentation build configuration file, created by
+# Sage Cell Server documentation build configuration file, created by
 # sphinx-quickstart on Fri May 13 22:12:46 2011.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -42,7 +42,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Python Compute Server'
+project = u'Sage Cell Server'
 copyright = u'2011, Jason Grout, Ira Hanson, Alex Kramer, William Stein'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -166,7 +166,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'PythonComputeServerdoc'
+htmlhelp_basename = 'SagecellServerdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -180,7 +180,7 @@ htmlhelp_basename = 'PythonComputeServerdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PythonComputeServer.tex', u'Python Compute Server Documentation',
+  ('index', 'SagecellServer.tex', u'Sage Cell Server Documentation',
    u'Jason Grout, Ira Hanson, Alex Kramer, William Stein', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pythoncomputeserver', u'Python Compute Server Documentation',
+    ('index', 'sagecellserver', u'Sage Cell Server Documentation',
      [u'Jason Grout, Ira Hanson, Alex Kramer, William Stein'], 1)
 ]
 
