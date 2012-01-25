@@ -1,6 +1,6 @@
 mongo_config={
     'mongo_uri': 'mongodb://localhost',
-    'mongo_db': 'singlecelldb'
+    'mongo_db': 'sagecelldb'
     }
 
 web_server_config={

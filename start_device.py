@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-import singlecell_config
+import sagecell_config
 
-options=singlecell_config.device_config
+options=sagecell_config.device_config
 python=options.pop('python')
 
 command=python+' trusted_db.py '

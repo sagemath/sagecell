@@ -13,8 +13,8 @@ from ip_receiver import IPReceiver
 from werkzeug import secure_filename
 
 
-import singlecell_config
-MAX_FILES = singlecell_config.flask_config['max_files']
+import sagecell_config
+MAX_FILES = sagecell_config.flask_config['max_files']
 
 app = Flask(__name__)
 
@@ -215,7 +215,7 @@ def tabComplete(db,fs):
 @get_db
 def config(db, fs):
     #TODO: reload this module to get the most current configuration
-    import singlecell_config as c
+    import sagecell_config as c
     
     s=''
     s+='webserver={\n'
@@ -250,9 +250,9 @@ def config(db, fs):
 
     return Response(s, content_type='text/plain')
 
-@app.route("/embedded_singlecell.js")
+@app.route("/embedded_sagecell.js")
 def embedded():
-    return Response(render_template("embedded_singlecell.js"),
+    return Response(render_template("embedded_sagecell.js"),
                     content_type='text/javascript')
 
 if __name__ == "__main__":

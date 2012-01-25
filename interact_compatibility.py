@@ -3,7 +3,7 @@ This module defines a backwards-compatible API for interact controls from the fi
 
 """
 
-from interact_singlecell import *
+from interact_sagecell import *
 
 """
 text_control: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.text_control

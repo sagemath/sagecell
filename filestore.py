@@ -74,9 +74,9 @@ import pymongo
 from pymongo.objectid import ObjectId
 
 try:
-    from singlecell_config import mongo_config
+    from sagecell_config import mongo_config
 except ImportError:
-    # we may not be able to import singlecell_config if we are untrusted
+    # we may not be able to import sagecell_config if we are untrusted
     mongo_config=None
 
 class FileStoreMongo(FileStore):

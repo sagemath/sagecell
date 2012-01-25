@@ -1,9 +1,9 @@
 
 (function($) {
-// Make a global singlecell namespace for our functions
-window.singlecell = {};
+// Make a global sagecell namespace for our functions
+window.sagecell = {};
 
-singlecell.init = (function(callback) {
+sagecell.init = (function(callback) {
     var load = function ( config ) {
 	// We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag 
 	// being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
@@ -18,7 +18,7 @@ singlecell.init = (function(callback) {
 	document.getElementsByTagName("head")[0].appendChild(script);
     };
 
-    singlecell.init_callback = callback
+    sagecell.init_callback = callback
 
     // many stylesheets that have been smashed together into all.min.css
     $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
@@ -39,15 +39,15 @@ singlecell.init = (function(callback) {
     load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
 });
 
-singlecell.singlecell_dependencies_callback = (function() {
-    window.singlecell_dependencies=true;
-    if (singlecell.init_callback !== undefined) {
-	singlecell.init_callback();
+sagecell.sagecell_dependencies_callback = (function() {
+    window.sagecell_dependencies=true;
+    if (sagecell.init_callback !== undefined) {
+	sagecell.init_callback();
     }
 });
 
 
-singlecell.makeSinglecell = (function(args) {
+sagecell.makeSagecell = (function(args) {
     var defaults;
     var settings = {};
 
@@ -86,13 +86,13 @@ singlecell.makeSinglecell = (function(args) {
 
     settings.hideDynamic = [];
 
-    var body = {% filter tojson %}{% include "singlecell.html" %}{% endfilter %};
+    var body = {% filter tojson %}{% include "sagecell.html" %}{% endfilter %};
     setTimeout(function() {
 	// Wait for CodeMirror to load before using the $ function
 	// Could we use MathJax Queues for this?
 	// We have to do something special here since Codemirror is loaded dynamically,
 	// so it may not be ready even though the page is loaded and ready.
-	if (typeof singlecell_dependencies === "undefined") {
+	if (typeof sagecell_dependencies === "undefined") {
 	    setTimeout(arguments.callee, 100);
 	    return false;
 	} else {
@@ -103,9 +103,9 @@ singlecell.makeSinglecell = (function(args) {
 		var evalButtonText = settings.evalButtonText;
 
 		$(inputLocation).html(body);
-		$(inputLocation+" .singlecell_commands").text(settings.code);
+		$(inputLocation+" .sagecell_commands").text(settings.code);
 		if (inputLocation !== outputLocation) {
-		    $(inputLocation+" .singlecell_output, .singlecell_messages").appendTo(outputLocation);
+		    $(inputLocation+" .sagecell_output, .sagecell_messages").appendTo(outputLocation);
 		}
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
 		    if (hide[i] === 'editor' ||
@@ -113,46 +113,46 @@ singlecell.makeSinglecell = (function(args) {
 			hide[i] === 'files' ||
 			hide[i] === 'evalButton' ||
 			hide[i] === 'sageMode') {
-			$(inputLocation+" .singlecell_"+hide[i]).css("display", "none");
+			$(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
 		    } else if (hide[i] === 'output' ||
 			       hide[i] === 'computationID' ||
 			       hide[i] === 'messages') {
-			$(outputLocation+" .singlecell_"+hide[i]).css("display", "none");
+			$(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
 		    } else if (hide[i] === 'sessionTitle' ||
 			       hide[i] === 'done' ||
 			       hide[i] === 'sessionFiles' ||
 			       hide[i] === 'sessionFilesTitle') {
-			settings.hideDynamic.push(".singlecell_"+hide[i]);
+			settings.hideDynamic.push(".sagecell_"+hide[i]);
 		    }
 		}
 		if (typeof(evalButtonText) !== "undefined") {
-		    $(inputLocation+ " .singlecell_evalButton").val(evalButtonText);
+		    $(inputLocation+ " .sagecell_evalButton").val(evalButtonText);
 		}
-		singlecell.initCell(settings);
+		sagecell.initCell(settings);
 	    });
 	}
     }, 100);
     return settings;
 });
 
-singlecell.initCell = (function(singlecellInfo) {
+sagecell.initCell = (function(sagecellInfo) {
 //Strips all special characters
-    var inputLocationName = singlecellInfo.inputLocation.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
-    var inputLocation = $(singlecellInfo.inputLocation);
-    var outputLocation = $(singlecellInfo.outputLocation);
-    var editor = singlecellInfo.editor;
-    var replaceOutput = singlecellInfo.replaceOutput;
-    var hideDynamic = singlecellInfo.hideDynamic;
-    var sageMode = inputLocation.find(".singlecell_sageModeCheck");
-    var textArea = inputLocation.find(".singlecell_commands");
+    var inputLocationName = sagecellInfo.inputLocation.replace(/[\!\"\#\$\%\&\'\(\)\*\+\,\.\/\:\;\\<\=\>\?\@\[\\\]\^\`\{\|\}\~\s]/gmi, "");
+    var inputLocation = $(sagecellInfo.inputLocation);
+    var outputLocation = $(sagecellInfo.outputLocation);
+    var editor = sagecellInfo.editor;
+    var replaceOutput = sagecellInfo.replaceOutput;
+    var hideDynamic = sagecellInfo.hideDynamic;
+    var sageMode = inputLocation.find(".sagecell_sageModeCheck");
+    var textArea = inputLocation.find(".sagecell_commands");
     var files = 0;
     var editorData, temp;
 
-    if (singlecellInfo.code !== undefined) {
-	textArea.val(singlecellInfo.code);
+    if (sagecellInfo.code !== undefined) {
+	textArea.val(sagecellInfo.code);
     }
 
-    if (! singlecellInfo.sageMode) {
+    if (! sagecellInfo.sageMode) {
 	sageMode.attr("checked", false);
     }
 
@@ -172,107 +172,107 @@ singlecell.initCell = (function(singlecellInfo) {
     editor = temp[0];
     editorData = temp[1];
 
-    $(document.body).append("<form class='singlecell_form' id='"+inputLocationName+"_form'></form>");
+    $(document.body).append("<form class='sagecell_form' id='"+inputLocationName+"_form'></form>");
     $("#"+inputLocationName+"_form").attr({"action": $URL.evaluate,
 				"enctype": "multipart/form-data",
 				"method": "POST"
 			       });
 
-    inputLocation.find(".singlecell_editorToggle").click(function(){
-	temp = singlecell.toggleEditor(editor, editorData, inputLocation);
+    inputLocation.find(".sagecell_editorToggle").click(function(){
+	temp = sagecell.toggleEditor(editor, editorData, inputLocation);
 	editor = temp[0];
 	editorData = temp[1];
 	return false;
     });
-    inputLocation.find(".singlecell_addFile").click(function(){
-	inputLocation.find(".singlecell_fileUpload").append("<div class='singlecell_fileInput'><a class='singlecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputLocationName+"_file"+files+"' name='file'></div>");
+    inputLocation.find(".sagecell_addFile").click(function(){
+	inputLocation.find(".sagecell_fileUpload").append("<div class='sagecell_fileInput'><a class='sagecell_removeFile' href='#' style='text-decoration:none' onClick='$(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputLocationName+"_file"+files+"' name='file'></div>");
 	files++;
 	return false;
     });
-    inputLocation.find(".singlecell_clearFiles").click(function() {
+    inputLocation.find(".sagecell_clearFiles").click(function() {
 	files = 0;
 	$("#"+inputLocationName+"_form").empty();
-	inputLocation.find(".singlecell_fileUpload").empty();
+	inputLocation.find(".sagecell_fileUpload").empty();
 	return false;
     });
 
-    $(".singlecell_sageMode").find("label").live("click",function(e) {
+    $(".sagecell_sageMode").find("label").live("click",function(e) {
 	var location = $(this).parent().find("input");
 	location.attr("checked", !location.attr("checked"));
     });
     
-    $(".singlecell_selectorButton").live("hover",function(e) {
+    $(".sagecell_selectorButton").live("hover",function(e) {
 	$(e.target).toggleClass("ui-state-hover");
     });
-    $(".singlecell_selectorButton").live("focus",function(e) {
+    $(".sagecell_selectorButton").live("focus",function(e) {
 	$(e.target).toggleClass("ui-state-focus");
     });
-    $(".singlecell_selectorButton").live("blur",function(e) {
+    $(".sagecell_selectorButton").live("blur",function(e) {
 	$(e.target).removeClass("ui-state-focus");
     });
     
-    inputLocation.find(".singlecell_evalButton").click(function() {
+    inputLocation.find(".sagecell_evalButton").click(function() {
 	// TODO: actually make the JSON execute request message here.
 
 	if (replaceOutput) {
-	    inputLocation.find(".singlecell_output").empty();
+	    inputLocation.find(".sagecell_output").empty();
 	}
 	
-	var session = new singlecell.Session(outputLocation, ".singlecell_output", inputLocation.find(".singlecell_sageModeCheck").attr("checked"), hideDynamic);
-	inputLocation.find(".singlecell_computationID").append("<div>"+session.session_id+"</div>");
+	var session = new sagecell.Session(outputLocation, ".sagecell_output", inputLocation.find(".sagecell_sageModeCheck").attr("checked"), hideDynamic);
+	inputLocation.find(".sagecell_computationID").append("<div>"+session.session_id+"</div>");
 	$("#"+inputLocationName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
 	$("#"+inputLocationName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
-	$("#"+inputLocationName+"_form").append("<input name='msg_id' value='"+singlecell.functions.uuid4()+"'>");
-	inputLocation.find(".singlecell_sageModeCheck").clone().appendTo($("#"+inputLocationName+"_form"));
-	inputLocation.find(".singlecell_fileInput").appendTo($("#"+inputLocationName+"_form"));
-	$("#"+inputLocationName+"_form").attr("target", "singlecell_serverResponse_"+session.session_id);
-	inputLocation.append("<iframe style='display:none' name='singlecell_serverResponse_"+session.session_id+"' id='singlecell_serverResponse_"+session.session_id+"'></iframe>");
+	$("#"+inputLocationName+"_form").append("<input name='msg_id' value='"+sagecell.functions.uuid4()+"'>");
+	inputLocation.find(".sagecell_sageModeCheck").clone().appendTo($("#"+inputLocationName+"_form"));
+	inputLocation.find(".sagecell_fileInput").appendTo($("#"+inputLocationName+"_form"));
+	$("#"+inputLocationName+"_form").attr("target", "sagecell_serverResponse_"+session.session_id);
+	inputLocation.append("<iframe style='display:none' name='sagecell_serverResponse_"+session.session_id+"' id='sagecell_serverResponse_"+session.session_id+"'></iframe>");
 	$("#"+inputLocationName+"_form").submit();
-	$("#"+inputLocationName+"_form").find(".singlecell_fileInput").appendTo(inputLocation.find(".singlecell_fileUpload"));
+	$("#"+inputLocationName+"_form").find(".sagecell_fileInput").appendTo(inputLocation.find(".sagecell_fileUpload"));
 	$("#"+inputLocationName+"_form").empty();
-	$("#singlecell_serverResponse_"+session.session_id).load(function(event) {
+	$("#sagecell_serverResponse_"+session.session_id).load(function(event) {
 	    // if the hosts are the same, communication between frames
 	    // is allowed
 	    // Instead of using a try/except block, we use an if to work 
 	    // around a bug in Webkit documented at
 	    // http://code.google.com/p/chromium/issues/detail?id=17325
 	    if ($URL.root === (location.protocol+'//'+location.host+'/')) {
-		var server_response = $("#singlecell_serverResponse_"+session.session_id).contents().find("body").html();
+		var server_response = $("#sagecell_serverResponse_"+session.session_id).contents().find("body").html();
 		if (server_response !== "") {
 		    session.output(server_response);
 		    session.clearQuery();
 		}
 	    }
-	    $("#singlecell_serverResponse_"+session.session_id).unbind();
+	    $("#sagecell_serverResponse_"+session.session_id).unbind();
 	});
 	return false;
     });
-    return singlecellInfo;
+    return sagecellInfo;
 });
 
-singlecell.deleteSinglecell = (function(singlecellInfo) {
-    $(singlecellInfo.inputLocation).remove();
-    $(singlecellInfo.outputLocation).remove();
+sagecell.deleteSagecell = (function(sagecellInfo) {
+    $(sagecellInfo.inputLocation).remove();
+    $(sagecellInfo.outputLocation).remove();
 });
 
-singlecell.moveInputForm = (function(singlecellInfo) {
-    $(document.body).append("<div id='singlecell_moved' style='display:none'></div>");
-    $(singlecellInfo.inputLocation).contents().appendTo("#singlecell_moved");
+sagecell.moveInputForm = (function(sagecellInfo) {
+    $(document.body).append("<div id='sagecell_moved' style='display:none'></div>");
+    $(sagecellInfo.inputLocation).contents().appendTo("#sagecell_moved");
 });
 
-singlecell.restoreInputForm = (function(singlecellInfo) {
-    $("#singlecell_moved").contents().appendTo(singlecellInfo.inputLocation);
-    $("#singlecell_moved").remove();
+sagecell.restoreInputForm = (function(sagecellInfo) {
+    $("#sagecell_moved").contents().appendTo(sagecellInfo.inputLocation);
+    $("#sagecell_moved").remove();
 });
 
-singlecell.renderEditor = (function(editor, inputLocation) {
+sagecell.renderEditor = (function(editor, inputLocation) {
     var editorData;
 
     if (editor === "textarea") {
 	editorData = editor;
     } else if (editor === "textarea-readonly") {
 	editorData = editor;
-	inputLocation.find(".singlecell_commands").attr("readonly", "readonly");
+	inputLocation.find(".sagecell_commands").attr("readonly", "readonly");
     } else {
 	var readOnly = false;
 	if (editor == "codemirror-readonly") {
@@ -281,7 +281,7 @@ singlecell.renderEditor = (function(editor, inputLocation) {
 	    editor = "codemirror";
 	}
 
-	editorData = CodeMirror.fromTextArea(inputLocation.find(".singlecell_commands").get(0), {
+	editorData = CodeMirror.fromTextArea(inputLocation.find(".sagecell_commands").get(0), {
 	    mode:"python",
 	    indentUnit:4,
 	    tabMode:"shift",
@@ -290,12 +290,12 @@ singlecell.renderEditor = (function(editor, inputLocation) {
 	    readOnly: readOnly,
 	    extraKeys: {'Shift-Enter': (function(editor) {
 		editor.save()
-		inputLocation.find(".singlecell_evalButton").click();})},
+		inputLocation.find(".sagecell_evalButton").click();})},
 	    onKeyEvent: (function(editor, event){
 		editor.save();
 		try {
 		    sessionStorage.removeItem(inputLocationName+"_editorValue");
-		    sessionStorage.setItem(inputLocationName+"_editorValue", inputLocation.find(".singlecell_commands").val());
+		    sessionStorage.setItem(inputLocationName+"_editorValue", inputLocation.find(".sagecell_commands").val());
 		} catch (e) {
 		    // if we can't store, don't do anything, e.g. if cookies are blocked
 		}
@@ -306,7 +306,7 @@ singlecell.renderEditor = (function(editor, inputLocation) {
     return [editor, editorData];
 });
 
-singlecell.toggleEditor = (function(editor, editorData, inputLocation) {
+sagecell.toggleEditor = (function(editor, editorData, inputLocation) {
     var editable = ["textarea", "codemirror"];
     var temp;
 
@@ -335,7 +335,7 @@ singlecell.toggleEditor = (function(editor, editorData, inputLocation) {
     return [editor, editorData];
 });
 
-singlecell.templates = {
+sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
 	"editor": "textarea-readonly",
 	"hide": ["computationID", "editor", "editorToggle", "files",
@@ -352,7 +352,7 @@ singlecell.templates = {
 };
 
 // Various utility functions for the Single Cell Server
-singlecell.functions = {
+sagecell.functions = {
     // Create UUID4-compliant ID (based on stackoverflow answer)
     //http://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid-in-javascript
     "uuid4": function() {

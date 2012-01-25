@@ -27,11 +27,11 @@ jQuery.noConflict();
 * 
 **************************************************************/
 
-singlecell.Session = (singlecell.functions.makeClass());
-singlecell.Session.prototype.init = function(outputDiv, output, sage_mode,
+sagecell.Session = (sagecell.functions.makeClass());
+sagecell.Session.prototype.init = function(outputDiv, output, sage_mode,
 					    hideDynamic) {
     this.outputDiv = outputDiv;
-    this.session_id = singlecell.functions.uuid4();
+    this.session_id = sagecell.functions.uuid4();
     this.sage_mode = sage_mode;
     this.hideDynamic = hideDynamic;
     this.sequence = 0;
@@ -40,7 +40,7 @@ singlecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     this.last_update = (new Date).getTime();
     this.lastMessage = {};
     this.sessionContinue = true;
-    this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div><div id="session_'+this.session_id+'_files" class="singlecell_sessionFilesTitle">Session Files:</div><div id="output_files_'+this.session_id+'" class="singlecell_sessionFiles"></div></div>');
+    this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="sagecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="sagecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="sagecell_sessionOutput"></div><div id="session_'+this.session_id+'_files" class="sagecell_sessionFilesTitle">Session Files:</div><div id="output_files_'+this.session_id+'" class="sagecell_sessionFiles"></div></div>');
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output=false;
     this.lock_output=false;
@@ -56,7 +56,7 @@ singlecell.Session.prototype.init = function(outputDiv, output, sage_mode,
 }
 
 // Manages querying the webserver for messages
-singlecell.Session.prototype.setQuery = function() {
+sagecell.Session.prototype.setQuery = function() {
     this.clearQuery();
     var now =  (new Date).getTime();
     var delta = now-this.last_update;
@@ -67,17 +67,17 @@ singlecell.Session.prototype.setQuery = function() {
     }
 }
 
-singlecell.Session.prototype.clearQuery = function() {
+sagecell.Session.prototype.clearQuery = function() {
     clearTimeout(this.queryID);
 }
 
-singlecell.Session.prototype.updateQuery = function(new_interval) {
+sagecell.Session.prototype.updateQuery = function(new_interval) {
     this.poll_interval = new_interval;
     this.clearQuery();
     this.setQuery();
 }
 
-singlecell.Session.prototype.sendMsg = function() {
+sagecell.Session.prototype.sendMsg = function() {
     var code = arguments[0];
     var msg, msg_id, interact_id;
 
@@ -86,7 +86,7 @@ singlecell.Session.prototype.sendMsg = function() {
     }
 
     if (arguments[1] === undefined){
-	msg_id = singlecell.functions.uuid4();
+	msg_id = sagecell.functions.uuid4();
     } else {
 	msg_id = arguments[1];
     }
@@ -131,17 +131,17 @@ singlecell.Session.prototype.sendMsg = function() {
     this.updateQuery(this.polling_times.active);
 }
 
-singlecell.Session.prototype.appendMsg = function(msg, text) {
+sagecell.Session.prototype.appendMsg = function(msg, text) {
     // Append the message to the div of messages
     // Use $.text() so that strings are automatically escaped
-    this.outputDiv.find(".singlecell_messages").append(document.createElement('div')).children().last().text(text+JSON.stringify(msg));
+    this.outputDiv.find(".sagecell_messages").append(document.createElement('div')).children().last().text(text+JSON.stringify(msg));
 }
 
-singlecell.Session.prototype.output_id = function(block_id) {
+sagecell.Session.prototype.output_id = function(block_id) {
     return "output_"+(block_id || this.session_id);
 }
 
-singlecell.Session.prototype.output = function(html, block_id, create) {
+sagecell.Session.prototype.output = function(html, block_id, create) {
     // create===false means just pass back the last child of the output_block
     // if we aren't replacing the output block
     if (typeof(create)==="undefined") {create=true;}
@@ -158,24 +158,24 @@ singlecell.Session.prototype.output = function(html, block_id, create) {
     return out.children().last();
 }
 
-singlecell.Session.prototype.write = function(html) {
+sagecell.Session.prototype.write = function(html) {
     this.output(html);
 }
 
-singlecell.Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
+sagecell.Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
     if (data.computation_id!==this.session_id) {
 	alert("Session id returned and session id sent don't match up");
     }
     this.setQuery();
 }
 
-singlecell.Session.prototype.get_output = function() {
+sagecell.Session.prototype.get_output = function() {
     this.last_update = (new Date).getTime();
     // POSSIBLE TODO: Have a global object querying the server for a given computation. Right now, it's managed by the session object.
     $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence}, $.proxy(this, 'get_output_success'));
 }
 
-singlecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
+sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
     var id=this.session_id;
 
     if(typeof(data) !== "undefined" && data.content !== undefined) {
@@ -208,20 +208,20 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
             // Handle each stream type.  This should probably be separated out into different functions.
 	    switch(msg.msg_type) {
 	    case 'stream':
-		var new_pre = !$('#'+this.output_id(output_block)).children().last().hasClass("singlecell_"+msg.content.name);
-		var out=this.output("<pre class='singlecell_"+msg.content.name+"'></pre>",output_block,new_pre);
+		var new_pre = !$('#'+this.output_id(output_block)).children().last().hasClass("sagecell_"+msg.content.name);
+		var out=this.output("<pre class='sagecell_"+msg.content.name+"'></pre>",output_block,new_pre);
 		out.text(out.text()+msg.content.data);
 		break;
 
 	    case 'pyout':
-                this.output("<pre class='singlecell_pyout'></pre>",output_block).text(msg.content.data['text/plain']);
+                this.output("<pre class='sagecell_pyout'></pre>",output_block).text(msg.content.data['text/plain']);
 		break;
 
 	    case 'display_data':
 		var filepath=$URL['root']+'files/'+id+'/', html;
 
                 if(msg.content.data['image/svg+xml']!==undefined) {
-                    this.output('<embed  class="singlecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
+                    this.output('<embed  class="sagecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
 		}
                 if(msg.content.data['text/html']!==undefined) {
 		    html = msg.content.data['text/html'].replace(/cell:\/\//gi, filepath);
@@ -243,14 +243,14 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		break;
 
 	    case 'pyerr':
-		this.output("<pre>"+singlecell.functions.colorizeTB(msg.content.traceback.join("\n")
+		this.output("<pre>"+sagecell.functions.colorizeTB(msg.content.traceback.join("\n")
 					     .replace(/&/g,"&amp;")
 					     .replace(/</g,"&lt;")+"</pre>"),output_block);
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    this.output("<pre></pre>",output_block).html(singlecell.functions.colorizeTB(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
+		    this.output("<pre></pre>",output_block).html(sagecell.functions.colorizeTB(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
 		}
 		this.updateQuery(this.polling_times.inactive);
 		break;
@@ -279,8 +279,8 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		    this.replace_output = false;
 		    break;
 		case "session_end":
-		    if ($.inArray(".singlecell_done", this.hideDynamic) === -1) {
-			this.output("<div class='singlecell_done'>Session "+id+ " done</div>", output_block);
+		    if ($.inArray(".sagecell_done", this.hideDynamic) === -1) {
+			this.output("<div class='sagecell_done'>Session "+id+ " done</div>", output_block);
 		    }
 
 		    // Unbinds interact change handlers
@@ -295,13 +295,13 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		case "interact_prepare":
 		    var interact_id = user_msg.content.interact_id;
 		    var div_id = "interact_" + interact_id;
-		    this.output("<table class='singlecell_interactContainer' id='"+div_id+"'>"+
-				"<tr><td class='singlecell_interactContainer_top_left'></td><td class='singlecell_interactContainer_top_center'></td><td class='singlecell_interactContainer_top_right'></td></tr>"+
-				"<tr><td class='singlecell_interactContainer_left'></td><td class='singlecell_interactOutput'><div id='output_"+interact_id+"'></div></td><td class='singlecell_interactContainer_right'></tr>"+
-				"<tr><td class='singlecell_interactContainer_bottom_left'></td><td class='singlecell_interactContainer_bottom_center'></td><td class='singlecell_interactContainer_bottom_right'></td></tr></table>", output_block);
+		    this.output("<table class='sagecell_interactContainer' id='"+div_id+"'>"+
+				"<tr><td class='sagecell_interactContainer_top_left'></td><td class='sagecell_interactContainer_top_center'></td><td class='sagecell_interactContainer_top_right'></td></tr>"+
+				"<tr><td class='sagecell_interactContainer_left'></td><td class='sagecell_interactOutput'><div id='output_"+interact_id+"'></div></td><td class='sagecell_interactContainer_right'></tr>"+
+				"<tr><td class='sagecell_interactContainer_bottom_left'></td><td class='sagecell_interactContainer_bottom_center'></td><td class='sagecell_interactContainer_bottom_right'></td></tr></table>", output_block);
 
 		    this.interacts[interact_id] = 1;
-		    new singlecell.InteractCell("#" + div_id, {
+		    new sagecell.InteractCell("#" + div_id, {
 			'interact_id': interact_id,
 			'layout': user_msg.content.layout,
 			'controls': user_msg.content.controls,
@@ -317,7 +317,7 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 	// need to mathjax the entire output, since output_block could just be part of the output
 	// TODO: this is really too much, as it typesets *all* of the session outputs
 	// TODO: the session object really should have it's own output DOM element
-	var output = this.outputDiv.find(".singlecell_output").get(0);
+	var output = this.outputDiv.find(".sagecell_output").get(0);
 	MathJax.Hub.Queue(["Typeset",MathJax.Hub, output]);
 	MathJax.Hub.Queue([function () {$(output).find(".math").removeClass('math');}]);
     }
@@ -332,8 +332,8 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 * 
 **************************************************************/
 
-singlecell.InteractCell = (singlecell.functions.makeClass());
-singlecell.InteractCell.prototype.init = function (selector, data) {
+sagecell.InteractCell = (sagecell.functions.makeClass());
+sagecell.InteractCell.prototype.init = function (selector, data) {
     this.element = $(selector);
     this.interact_id = data.interact_id
     this.function_code = data.function_code;
@@ -357,25 +357,25 @@ singlecell.InteractCell.prototype.init = function (selector, data) {
 	var control_type = controls[i]["control_type"];
 
 	if (control_type === "button") {
-	    this.controls[i] = new singlecell.InteractData.Button(args);
+	    this.controls[i] = new sagecell.InteractData.Button(args);
 	} else if (control_type === "button_bar") {
-	    this.controls[i] = new singlecell.InteractData.ButtonBar(args);
+	    this.controls[i] = new sagecell.InteractData.ButtonBar(args);
 	} else if (control_type === "checkbox") {
-	    this.controls[i] = new singlecell.InteractData.Checkbox(args);
+	    this.controls[i] = new sagecell.InteractData.Checkbox(args);
 	} else if (control_type === "color_selector") {
-	    this.controls[i] = new singlecell.InteractData.ColorSelector(args);
+	    this.controls[i] = new sagecell.InteractData.ColorSelector(args);
 	} else if (control_type === "html_box") {
-	    this.controls[i] = new singlecell.InteractData.HtmlBox(args);
+	    this.controls[i] = new sagecell.InteractData.HtmlBox(args);
 	} else if (control_type === "input_box") {
-	    this.controls[i] = new singlecell.InteractData.InputBox(args);
+	    this.controls[i] = new sagecell.InteractData.InputBox(args);
 	} else if (control_type === "input_grid") {
-	    this.controls[i] = new singlecell.InteractData.InputGrid(args);
+	    this.controls[i] = new sagecell.InteractData.InputGrid(args);
 	} else if (control_type === "multi_slider") {
-	    this.controls[i] = new singlecell.InteractData.MultiSlider(args);
+	    this.controls[i] = new sagecell.InteractData.MultiSlider(args);
 	} else if (control_type === "selector") {
-	    this.controls[i] = new singlecell.InteractData.Selector(args);
+	    this.controls[i] = new sagecell.InteractData.Selector(args);
 	} else if (control_type === "slider") {
-	    this.controls[i] = new singlecell.InteractData.Slider(args);
+	    this.controls[i] = new sagecell.InteractData.Slider(args);
 	}
     }
 
@@ -383,7 +383,7 @@ singlecell.InteractCell.prototype.init = function (selector, data) {
     this.bindChange(this);
 }
 
-singlecell.InteractCell.prototype.bindChange = function(interact) {
+sagecell.InteractCell.prototype.bindChange = function(interact) {
     var id = ".urn_uuid_" + this.interact_id;
     var elements = this.controls;
     var events = {};
@@ -407,13 +407,13 @@ singlecell.InteractCell.prototype.bindChange = function(interact) {
 		// If the session ended, don't try to send more messages
 		return false;
 	    }
-	    var parentSpan = $(e.target).parentsUntil("span[class^='singlecell_var_']");
+	    var parentSpan = $(e.target).parentsUntil("span[class^='sagecell_var_']");
 	    if (parentSpan.length === 0) {
 		parentSpan = $(e.target).parent();
 	    } else {
 		parentSpan = parentSpan.parent();
 	    }
-	    var changedControl = parentSpan.attr("class").replace("singlecell_var_",""); // Get changed variable name
+	    var changedControl = parentSpan.attr("class").replace("sagecell_var_",""); // Get changed variable name
 
 	    if (interact.update[changedControl] !== undefined) {
 		var changes = interact.getChanges(interact.update, changedControl, interact.interact_id);
@@ -431,14 +431,14 @@ singlecell.InteractCell.prototype.bindChange = function(interact) {
 		interact.session.sendMsg(code, interact.msg_id, interact.interact_id);
 		interact.session.replace_output=true;
 	    } else {
-		parentSpan.parent().addClass("singlecell_dirtyControl");
+		parentSpan.parent().addClass("sagecell_dirtyControl");
 	    }
 	    return false;
 	});
     }
 }
 
-singlecell.InteractCell.prototype.getChanges = function(interact_update, changed_control, interact_id) {
+sagecell.InteractCell.prototype.getChanges = function(interact_update, changed_control, interact_id) {
     var params = {};
     var controls = interact_update[changed_control];
     var interact_location = $("#interact_"+interact_id);
@@ -446,15 +446,15 @@ singlecell.InteractCell.prototype.getChanges = function(interact_update, changed
     for (var i = 0, i_max = controls.length; i < i_max; i++) {
 	params[controls[i]] = this.controls[controls[i]].changes();
 	interact_location
-	    .find("span[class^='singlecell_var_"+controls[i]+"']")
+	    .find("span[class^='sagecell_var_"+controls[i]+"']")
 	    .parent()
-	    .removeClass("singlecell_dirtyControl");
+	    .removeClass("sagecell_dirtyControl");
     }
 
     return params;
 }
 
-singlecell.InteractCell.prototype.renderCanvas = (function() {
+sagecell.InteractCell.prototype.renderCanvas = (function() {
     /*
 
       The template is:
@@ -489,10 +489,10 @@ singlecell.InteractCell.prototype.renderCanvas = (function() {
 
 	for (var i in this.layout) {
 	    var layout_location = this.layout[i]
-	    var section = container.find("td.singlecell_interactContainer_"+i);
-	    section.html("<table class='singlecell_interactControls'></table>");
+	    var section = container.find("td.sagecell_interactContainer_"+i);
+	    section.html("<table class='sagecell_interactControls'></table>");
 
-	    var control_location = section.find(".singlecell_interactControls");
+	    var control_location = section.find(".sagecell_interactControls");
 	    
 	    for (var j = 0, j_max = layout_location.length; j < j_max; j++) {
 
@@ -528,10 +528,10 @@ singlecell.InteractCell.prototype.renderCanvas = (function() {
 })();
 
 
-singlecell.InteractData = {};
+sagecell.InteractData = {};
 
-singlecell.InteractData.Button = singlecell.functions.makeClass();
-singlecell.InteractData.Button.prototype.init = function(args) {
+sagecell.InteractData.Button = sagecell.functions.makeClass();
+sagecell.InteractData.Button.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -542,24 +542,24 @@ singlecell.InteractData.Button.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.Button.prototype.changeHandlers = function() {
+sagecell.InteractData.Button.prototype.changeHandlers = function() {
     return ["change"];
 };
 
-singlecell.InteractData.Button.prototype.changes = function() {
+sagecell.InteractData.Button.prototype.changes = function() {
     var control_out = $(this.location).find("#"+this.control_id+"_value")
     var value = control_out.val();
     control_out.val("false");
     return value;
 }
 
-singlecell.InteractData.Button.prototype.html = function() {
-    return "<span class='singlecell_var_"+this.name+"'>"+
-	"<button class='singlecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_button'>"+
+sagecell.InteractData.Button.prototype.html = function() {
+    return "<span class='sagecell_var_"+this.name+"'>"+
+	"<button class='sagecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_button'>"+
 	"<span>"+this.control["text"]+"</span></button><input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"_value' value='false'></span>";
 }
 
-singlecell.InteractData.Button.prototype.finishRender = function(location) {
+sagecell.InteractData.Button.prototype.finishRender = function(location) {
     this.location = location;
     $(this.location)
 	.delegate("#"+this.control_id+"_button", {
@@ -586,8 +586,8 @@ singlecell.InteractData.Button.prototype.finishRender = function(location) {
 }
 
 
-singlecell.InteractData.ButtonBar = singlecell.functions.makeClass();
-singlecell.InteractData.ButtonBar.prototype.init = function(args) {
+sagecell.InteractData.ButtonBar = sagecell.functions.makeClass();
+sagecell.InteractData.ButtonBar.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -598,29 +598,29 @@ singlecell.InteractData.ButtonBar.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.ButtonBar.prototype.changeHandlers = function() {
+sagecell.InteractData.ButtonBar.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-singlecell.InteractData.ButtonBar.prototype.changes = function() {
+sagecell.InteractData.ButtonBar.prototype.changes = function() {
     var control_out = $(this.location).find("#"+this.control_id+"_value")
     var value = control_out.val();
     control_out.val("false");
     return value;
 }
 
-singlecell.InteractData.ButtonBar.prototype.html = function() {
+sagecell.InteractData.ButtonBar.prototype.html = function() {
     var nrows = this.control["nrows"],
     ncols = this.control["ncols"],
     value_labels = this.control["value_labels"],
-    html_code = "<span class='singlecell_var_"+this.name+"'>",
+    html_code = "<span class='sagecell_var_"+this.name+"'>",
     inner_table = "<table><tbody>";
 
     for (var r = 0, i = 0; r < nrows; r ++) {
 	inner_table += "<tr>";
 	for (var c = 0; c < ncols; c ++, i++) {
 	    inner_table += "<td><button class='"+this.control_id+
-		" singlecell_button ui-widget ui-state-default ui-corner-all'"+
+		" sagecell_button ui-widget ui-state-default ui-corner-all'"+
 		" id='"+this.control_id+"_"+i+"'><span>"+value_labels[i]+
 		"</span></button></td>";
 	}
@@ -635,7 +635,7 @@ singlecell.InteractData.ButtonBar.prototype.html = function() {
     return html_code;
 }
 
-singlecell.InteractData.ButtonBar.prototype.finishRender = function(location) {
+sagecell.InteractData.ButtonBar.prototype.finishRender = function(location) {
     this.location = location;
     $(this.location).find("."+this.control_id)
 	.css("width", this.control["width"]);
@@ -666,8 +666,8 @@ singlecell.InteractData.ButtonBar.prototype.finishRender = function(location) {
 }
 
 
-singlecell.InteractData.Checkbox = singlecell.functions.makeClass();
-singlecell.InteractData.Checkbox.prototype.init = function(args) {
+sagecell.InteractData.Checkbox = sagecell.functions.makeClass();
+sagecell.InteractData.Checkbox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -678,11 +678,11 @@ singlecell.InteractData.Checkbox.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.Checkbox.prototype.changeHandlers = function() {
+sagecell.InteractData.Checkbox.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-singlecell.InteractData.Checkbox.prototype.changes = function() {
+sagecell.InteractData.Checkbox.prototype.changes = function() {
     var value = $(this.location).find("#"+this.control_id).prop("checked");
     if (value === true) {
 	return "True";
@@ -691,8 +691,8 @@ singlecell.InteractData.Checkbox.prototype.changes = function() {
     }
 }
 
-singlecell.InteractData.Checkbox.prototype.html = function() {
-    var html="<span class='singlecell_var_"+this.name+"'>"+
+sagecell.InteractData.Checkbox.prototype.html = function() {
+    var html="<span class='sagecell_var_"+this.name+"'>"+
 	"<input type='checkbox' class='"+this.control_class+"' id='"+
 	this.control_id+"'"
     if(this.control["default"]) {
@@ -702,13 +702,13 @@ singlecell.InteractData.Checkbox.prototype.html = function() {
     return html
 }
 
-singlecell.InteractData.Checkbox.prototype.finishRender = function(location) {
+sagecell.InteractData.Checkbox.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-singlecell.InteractData.ColorSelector = singlecell.functions.makeClass();
-singlecell.InteractData.ColorSelector.prototype.init = function(args) {
+sagecell.InteractData.ColorSelector = sagecell.functions.makeClass();
+sagecell.InteractData.ColorSelector.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -719,21 +719,21 @@ singlecell.InteractData.ColorSelector.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.ColorSelector.prototype.changeHandlers = function() {
+sagecell.InteractData.ColorSelector.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-singlecell.InteractData.ColorSelector.prototype.changes = function() {
+sagecell.InteractData.ColorSelector.prototype.changes = function() {
     return $(this.location).find("#"+this.control_id+"_value").val();
 }
 
-singlecell.InteractData.ColorSelector.prototype.html = function() {
-    return "<span class='singlecell_var_"+this.name+"'><input type='text' class='singlecell_colorSelector' id='"+
-	this.control_id+"'><input type='text' class='"+this.control_class+" singlecell_interactValueBox' id='"+
+sagecell.InteractData.ColorSelector.prototype.html = function() {
+    return "<span class='sagecell_var_"+this.name+"'><input type='text' class='sagecell_colorSelector' id='"+
+	this.control_id+"'><input type='text' class='"+this.control_class+" sagecell_interactValueBox' id='"+
 	this.control_id+"_value' style='border:none' value='"+this.control["default"]+"' readonly='readonly'><span>";
 }
 
-singlecell.InteractData.ColorSelector.prototype.finishRender = function(location) {
+sagecell.InteractData.ColorSelector.prototype.finishRender = function(location) {
     this.location = location;
     var default_value = this.control["default"],
     control_out = $(this.location);
@@ -771,8 +771,8 @@ singlecell.InteractData.ColorSelector.prototype.finishRender = function(location
 }
 
 
-singlecell.InteractData.HtmlBox = singlecell.functions.makeClass();
-singlecell.InteractData.HtmlBox.prototype.init = function(args) {
+sagecell.InteractData.HtmlBox = sagecell.functions.makeClass();
+sagecell.InteractData.HtmlBox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -783,26 +783,26 @@ singlecell.InteractData.HtmlBox.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
+sagecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
     return [];
 }
 
-singlecell.InteractData.HtmlBox.prototype.changes = function() {
+sagecell.InteractData.HtmlBox.prototype.changes = function() {
     return $(this.location).find("#"+this.control_id).html();
 }
 
-singlecell.InteractData.HtmlBox.prototype.html = function() {
+sagecell.InteractData.HtmlBox.prototype.html = function() {
     var html = this.control["value"].replace(/cell:\/\//gi, $URL["root"]+"files/"+this.session_id+'/');
-    return "<span class='singlecell_var_"+this.name+"'><div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div></span>";
+    return "<span class='sagecell_var_"+this.name+"'><div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div></span>";
 }
 
-singlecell.InteractData.HtmlBox.prototype.finishRender = function(location) {
+sagecell.InteractData.HtmlBox.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-singlecell.InteractData.InputBox = singlecell.functions.makeClass();
-singlecell.InteractData.InputBox.prototype.init = function(args) {
+sagecell.InteractData.InputBox = sagecell.functions.makeClass();
+sagecell.InteractData.InputBox.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -813,11 +813,11 @@ singlecell.InteractData.InputBox.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.InputBox.prototype.changeHandlers = function() {
+sagecell.InteractData.InputBox.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-singlecell.InteractData.InputBox.prototype.changes = function() {
+sagecell.InteractData.InputBox.prototype.changes = function() {
     var value = $(this.location).find("#"+this.control_id).val(),
     subtype = this.control["subtype"];
 
@@ -828,28 +828,28 @@ singlecell.InteractData.InputBox.prototype.changes = function() {
     }
 }
 
-singlecell.InteractData.InputBox.prototype.html = function() {
+sagecell.InteractData.InputBox.prototype.html = function() {
     var subtype = this.control["subtype"];
 
     if (subtype === "textarea") {
-	return "<span class='singlecell_var_"+this.name+"'><textarea class='"+
+	return "<span class='sagecell_var_"+this.name+"'><textarea class='"+
 	    this.control_class+"' id='"+this.control_id+"' rows='"+
 	    this.control["height"]+"' cols='"+this.control["width"]+
 	    "'>"+this.control["default"]+"</textarea></span>";
     } else if (subtype === "input") {
-	return "<span class='singlecell_var_"+this.name+"'><input type='text' class='"+
+	return "<span class='sagecell_var_"+this.name+"'><input type='text' class='"+
 	    this.control_class+"' id='"+this.control_id+"' size="+
 	    this.control["width"]+" value='"+this.control["default"]+"'></span>";
     }
 }
 
-singlecell.InteractData.InputBox.prototype.finishRender = function(location) {
+sagecell.InteractData.InputBox.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-singlecell.InteractData.InputGrid = singlecell.functions.makeClass();
-singlecell.InteractData.InputGrid.prototype.init = function(args) {
+sagecell.InteractData.InputGrid = sagecell.functions.makeClass();
+sagecell.InteractData.InputGrid.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -860,11 +860,11 @@ singlecell.InteractData.InputGrid.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.InputGrid.prototype.changeHandlers = function() {
+sagecell.InteractData.InputGrid.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-singlecell.InteractData.InputGrid.prototype.changes = function() {
+sagecell.InteractData.InputGrid.prototype.changes = function() {
     var control_out = $(this.location),
     values = "[";
 
@@ -880,10 +880,10 @@ singlecell.InteractData.InputGrid.prototype.changes = function() {
     return values;
 }
 
-singlecell.InteractData.InputGrid.prototype.html = function() {
+sagecell.InteractData.InputGrid.prototype.html = function() {
     var default_values = this.control["default"],
     width = this.control["width"],
-    html_code = "<span class='singlecell_var_"+this.name+"'><table><tbody>";
+    html_code = "<span class='sagecell_var_"+this.name+"'><table><tbody>";
 
     for (var r = 0, r_max = this.control["nrows"]; r < r_max; r ++) {
 	html_code += "<tr>";
@@ -900,13 +900,13 @@ singlecell.InteractData.InputGrid.prototype.html = function() {
     return html_code;
 }
 
-singlecell.InteractData.InputGrid.prototype.finishRender = function(location) {
+sagecell.InteractData.InputGrid.prototype.finishRender = function(location) {
     this.location = location;
 }
 
 
-singlecell.InteractData.MultiSlider = singlecell.functions.makeClass();
-singlecell.InteractData.MultiSlider.prototype.init = function(args) {
+sagecell.InteractData.MultiSlider = sagecell.functions.makeClass();
+sagecell.InteractData.MultiSlider.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -917,7 +917,7 @@ singlecell.InteractData.MultiSlider.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
+sagecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
     var handlers = ["slidestop"];
     if (this.control["subtype"] === "continuous") {
 	handlers.push("change");
@@ -925,7 +925,7 @@ singlecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
     return handlers;
 }
 
-singlecell.InteractData.MultiSlider.prototype.changes = function() {
+sagecell.InteractData.MultiSlider.prototype.changes = function() {
     var sliders = this.control["sliders"],
     control_out = $(this.location),
     input, slider_values = [];
@@ -948,15 +948,15 @@ singlecell.InteractData.MultiSlider.prototype.changes = function() {
     return "[" + String(slider_values) + "]";
 }
 
-singlecell.InteractData.MultiSlider.prototype.html = function() {
+sagecell.InteractData.MultiSlider.prototype.html = function() {
     var sliders = this.control["sliders"],
-    html_code = "<span class='singlecell_var_"+this.name+"'><div class='" + this.control_class +
-	" singlecell_multiSliderContainer'><span style='whitespace:nowrap'>";
+    html_code = "<span class='sagecell_var_"+this.name+"'><div class='" + this.control_class +
+	" sagecell_multiSliderContainer'><span style='whitespace:nowrap'>";
 
     for (var i = 0; i < sliders; i ++) {
 	html_code = html_code +
-	    "<span class='singlecell_multiSliderControl' id='"+this.control_id+"_"+i+"'></span>"+
-	    "<input type='text' class='"+this.control_id+" singlecell_interactValueBox' id='"+this.control_id+"_"+i+"_value' style='border:none'>"+
+	    "<span class='sagecell_multiSliderControl' id='"+this.control_id+"_"+i+"'></span>"+
+	    "<input type='text' class='"+this.control_id+" sagecell_interactValueBox' id='"+this.control_id+"_"+i+"_value' style='border:none'>"+
 	    "<input type='text' class='"+this.control_id+"' id='"+this.control_id+"_"+i+"_index' style='display:none'>";
     }
     html_code = html_code + "</span></div></span>";
@@ -964,7 +964,7 @@ singlecell.InteractData.MultiSlider.prototype.html = function() {
     return html_code;
 }
 
-singlecell.InteractData.MultiSlider.prototype.finishRender = function(location) {
+sagecell.InteractData.MultiSlider.prototype.finishRender = function(location) {
     this.location = location;
 
     var sliders = this.control["sliders"],
@@ -1031,8 +1031,8 @@ singlecell.InteractData.MultiSlider.prototype.finishRender = function(location) 
 }
 
 
-singlecell.InteractData.Selector = singlecell.functions.makeClass();
-singlecell.InteractData.Selector.prototype.init = function(args) {
+sagecell.InteractData.Selector = sagecell.functions.makeClass();
+sagecell.InteractData.Selector.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -1043,22 +1043,22 @@ singlecell.InteractData.Selector.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.Selector.prototype.changeHandlers = function() {
+sagecell.InteractData.Selector.prototype.changeHandlers = function() {
     return ["change"];
 }
 
-singlecell.InteractData.Selector.prototype.changes = function() {
+sagecell.InteractData.Selector.prototype.changes = function() {
     return String($(this.location).find("#"+this.control_id).val());
 }
 
-singlecell.InteractData.Selector.prototype.html = function() {
+sagecell.InteractData.Selector.prototype.html = function() {
     var nrows = this.control["nrows"],
     ncols = this.control["ncols"],
     values = this.control["values"],
     value_labels = this.control["value_labels"],
     default_index = this.control["default"],
     subtype = this.control["subtype"],
-    html_code = "<span class='singlecell_var_"+this.name+"'>",
+    html_code = "<span class='sagecell_var_"+this.name+"'>",
     inner_table;
 
     if (subtype === "list") {
@@ -1088,7 +1088,7 @@ singlecell.InteractData.Selector.prototype.html = function() {
 	for (var r = 0, i = 0; r < nrows; r ++) {
 	    inner_table += "<tr>";
 	    for (var c = 0; c < ncols; c ++, i ++) {
-		inner_table += "<td><button class='"+this.control_id+" singlecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_"+i+"'><span><div>"+value_labels[i]+"</div></span></button></td>";
+		inner_table += "<td><button class='"+this.control_id+" sagecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_"+i+"'><span><div>"+value_labels[i]+"</div></span></button></td>";
 	    }
 	    inner_table += "</tr>";
 	}
@@ -1101,7 +1101,7 @@ singlecell.InteractData.Selector.prototype.html = function() {
     return html_code;
 }
 
-singlecell.InteractData.Selector.prototype.finishRender = function(location) {
+sagecell.InteractData.Selector.prototype.finishRender = function(location) {
     this.location = location;
 
     var subtype = this.control["subtype"],
@@ -1153,8 +1153,8 @@ singlecell.InteractData.Selector.prototype.finishRender = function(location) {
 }
 
 
-singlecell.InteractData.Slider = singlecell.functions.makeClass();
-singlecell.InteractData.Slider.prototype.init = function(args) {
+sagecell.InteractData.Slider = sagecell.functions.makeClass();
+sagecell.InteractData.Slider.prototype.init = function(args) {
     this.control = args["control"];
     this.interact_id = args["interact_id"];
     this.location = "*";
@@ -1165,7 +1165,7 @@ singlecell.InteractData.Slider.prototype.init = function(args) {
     this.control_id = this.control_class + "_" + this.name;
 }
 
-singlecell.InteractData.Slider.prototype.changeHandlers = function() {
+sagecell.InteractData.Slider.prototype.changeHandlers = function() {
     var handlers = ["slidestop"];
     if (this.control["subtype"] === "continuous" || this.control["subtype"] === "continuous_range") {
 	handlers.push("change");
@@ -1173,7 +1173,7 @@ singlecell.InteractData.Slider.prototype.changeHandlers = function() {
     return handlers;
 }
 
-singlecell.InteractData.Slider.prototype.changes = function() {
+sagecell.InteractData.Slider.prototype.changes = function() {
     var subtype = this.control["subtype"],
     control_out = $(this.location),
     input;
@@ -1193,14 +1193,14 @@ singlecell.InteractData.Slider.prototype.changes = function() {
     }
 }
 
-singlecell.InteractData.Slider.prototype.html = function() {
-    return "<span class='singlecell_var_"+this.name+"' style='whitespace:nowrap'>"+
-	"<span class='" + this.control_class + " singlecell_sliderControl' id='" + this.control_id + "'></span>"+
-	"<input type='text' class='" + this.control_class + " singlecell_interactValueBox' id='" + this.control_id + "_value' style='border:none'>"+
+sagecell.InteractData.Slider.prototype.html = function() {
+    return "<span class='sagecell_var_"+this.name+"' style='whitespace:nowrap'>"+
+	"<span class='" + this.control_class + " sagecell_sliderControl' id='" + this.control_id + "'></span>"+
+	"<input type='text' class='" + this.control_class + " sagecell_interactValueBox' id='" + this.control_id + "_value' style='border:none'>"+
 	"<input type='text' class='" + this.control_class +"' id='" + this.control_id + "_index' style='display:none'></span>";
 }
 
-singlecell.InteractData.Slider.prototype.finishRender = function(location) {
+sagecell.InteractData.Slider.prototype.finishRender = function(location) {
     this.location = location;
 
     var slider_config = {

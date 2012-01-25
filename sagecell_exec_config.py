@@ -4,7 +4,7 @@ Configuration file for code execution. Used to set variables so that the backend
 """
 
 
-EMBEDDED_MODE = {"frontend":"singlecell",
+EMBEDDED_MODE = {"frontend":"sagecell",
                  "enable_sage":False,
                  "sage_mode":False}
 

@@ -207,8 +207,8 @@ MongoDB
      environment so that the environment is trusted.
 
    Set up an admin user, authenticate, then set up a user for the
-   ``singlecelldb`` database.  Since we include the
-   ``<SINGLECELL_USER>`` and ``<SINGLECELL_PASSWORD>`` in a URL later,
+   ``sagecelldb`` database.  Since we include the
+   ``<SAGECELL_USER>`` and ``<SAGECELL_PASSWORD>`` in a URL later,
    it's helpful if neither of them contain any of ``%:/@`` (any
    length of password with letters and numbers would be okay).  ::
 
@@ -216,8 +216,8 @@ MongoDB
       > use admin
       > db.addUser("<ADMIN_USER>", "<ADMIN_PASSWORD>")
       > db.auth("<ADMIN_USER>", "<ADMIN_PASSWORD>")
-      > use singlecelldb
-      > db.addUser("<SINGLECELL_USER>", "<SINGLECELL_PASSWORD>")
+      > use sagecelldb
+      > db.addUser("<SAGECELL_USER>", "<SAGECELL_PASSWORD>")
       > quit()
 
 nginx
@@ -286,19 +286,19 @@ restrictions; this account will be executing arbitrary user code).
    fully automatically.
 
 3. Create a configuration file
-   ``$SERVER/sage-cell-server/singlecell_config.py`` by copying and
+   ``$SERVER/sage-cell-server/sagecell_config.py`` by copying and
    modifying
-   ``$SERVER/sage-cell-server/singlecell_config.py.default``.  The
+   ``$SERVER/sage-cell-server/sagecell_config.py.default``.  The
    ``mongo_uri`` should be set to
-   ``mongodb://<SINGLECELL_USER>:<SINGLECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
+   ``mongodb://<SAGECELL_USER>:<SAGECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
    If you will be running the server using Sage, replace the line
    ``python='python'`` with ``python='sage -python'``.
 
-  .. warning:: Make the ``singlecell_config.py`` file *only* readable by
+  .. warning:: Make the ``sagecell_config.py`` file *only* readable by
       the trusted account, not by the untrusted account, since it
       contains the password to the database::
 
-          chmod 600 singlecell_config.py
+          chmod 600 sagecell_config.py
 
 4. Start uWSGI. The ``-p 50`` means that uWSGI will launch 50 workers
    to handle incoming requests.  Adjust this to suit your needs. ::

@@ -1,13 +1,13 @@
 .. _embedding:
 
-Embedding Single Cell Instances
-===============================
+Embedding Sage Cell Instances
+=============================
 
 .. default-domain:: js
 
 Description
 ^^^^^^^^^^^
-Provides functionality to embed multiple customized instances of the Single Cell
+Provides functionality to embed multiple customized instances of the Sage Cell
 in arbitrary webpages. Customizable options include location of input and output
 and functionality shown to the user.
 
@@ -21,65 +21,65 @@ Basic Usage
 jQuery is assumed to be loaded in ``<head>``. 
 In ``<head>``, the following lines should be inserted::
 
-   <script type="text/javascript" src="http://<server>/embedded_singlecell.js"></script>
-   <script type="text/javascript">singlecell.init();</script>
+   <script type="text/javascript" src="http://<server>/embedded_sagecell.js"></script>
+   <script type="text/javascript">sagecell.init();</script>
 
-where ``<server>`` is the root url of a live Single Cell server. This downloads
+where ``<server>`` is the root url of a live Sage Cell server. This downloads
 additional required javascript and css libraries and creates a global javascript
-object called ``singlecell``. See the documentation for
-:ref:`singlecell.init() <singlecell.init_embed>` for more configuration options
+object called ``sagecell``. See the documentation for
+:ref:`sagecell.init() <sagecell.init_embed>` for more configuration options
 upon initialization, including callback functionality.
 
 Later, the following javascript should be run::
 
-   singlecell.makeSinglecell({inputLocation: "[jQuery selector]"});
+   sagecell.makeSagecell({inputLocation: "[jQuery selector]"});
 
-This creates a basic Single Cell instance at the location matching
+This creates a basic Sage Cell instance at the location matching
 ``inputLocation``. This location must be a unique selector for an HTML element
 in which content can be dynamically placed. See the documentation for
-:ref:`singlecell.makeSinglecell() <singlecell.makeSinglecell>`
+:ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`
 for more configuration options. This function returns a dictionary containing
 information necessary to later move portions of or remove the entirety of the
-Single Cell instance if desired.
+Sage Cell instance if desired.
 
-``singlecell.makeSinglecell()`` can be called multiple times to embed multiple
-Single Cell instances, as long as the input (and output, if specified) locations
+``sagecell.makeSagecell()`` can be called multiple times to embed multiple
+Sage Cell instances, as long as the input (and output, if specified) locations
 of each instance are unique to the page.
 
-To remove a Single Cell instance, the following javascript can be used::
+To remove a Sage Cell instance, the following javascript can be used::
 
-   singlecell.deleteSinglecell(singlecellInfo);
+   sagecell.deleteSagecell(sagecellInfo);
 
-where ``singlecellInfo`` is the dictionary of information returned upon that
-Single Cell instance's creation by ``singlecell.makeSingleCell()``.
+where ``sagecellInfo`` is the dictionary of information returned upon that
+Sage Cell instance's creation by ``sagecell.makeSagecell()``.
 
-Single Cell instances can be safely embedded within HTML forms (even though each
+Sage Cell instances can be safely embedded within HTML forms (even though each
 instance contains form elements) since those form elements are copied to a
 hidden form outside of the embedded context. However, in such a case, it may
-not be optimal for external form submission to include Single Cell elements. To
+not be optimal for external form submission to include Sage Cell elements. To
 prevent this issue, the following javascript can be used before and after form
-submission to move and restore the Single Cell::
+submission to move and restore the Sage Cell::
 
-   singlecell.moveInputForm(singlecellInfo); // before submission
-   singlecell.restoreInputForm(singlecellInfo); // after submission
+   sagecell.moveInputForm(sagecellInfo); // before submission
+   sagecell.restoreInputForm(sagecellInfo); // after submission
 
-where ``singlecellInfo`` is the dictionary of information returned upon that
-Single Cell instance's creation by ``singlecell.makeSingleCell()``.
+where ``sagecellInfo`` is the dictionary of information returned upon that
+Sage Cell instance's creation by ``sagecell.makeSagecell()``.
 
 .. _Customization:
 
 Customization
 ^^^^^^^^^^^^^
 
-All customization occurs through ``singlecell.makeSinglecell()``, which takes a
+All customization occurs through ``sagecell.makeSagecell()``, which takes a
 dictionary as its argument. The key/value pairs of this dictionary serve as the
-configuration of the created Single Cell instance. The following options can be
+configuration of the created Sage Cell instance. The following options can be
 set when embedding:
 
 Input Location
 --------------
 
-This sets the location of the input elements of a Single Cell, which includes
+This sets the location of the input elements of a Sage Cell, which includes
 the editor, editor toggle, "Sage Mode" selector, file upload selector, and the
 evaluate button::
 
@@ -92,7 +92,7 @@ The inputLocation argument is required and cannot be omitted.
 Output Location
 ---------------
 
-This sets the location of the output elements of a Single Cell, which includes
+This sets the location of the output elements of a Sage Cell, which includes
 the session output, the computation ID, and server messages::
 
    { ..
@@ -122,7 +122,7 @@ Available options are:
 
 * ``textarea-readonly`` - like ``textarea``, but not editable
 
-Note that Single Cell editor toggling functionality only switches between the
+Note that Sage Cell editor toggling functionality only switches between the
 group of editors that are editable or static. For instance, ``textarea-readonly``
 can only become ``codemirror-readonly``, rather than ``textarea`` or
 ``codemirror``.
@@ -135,7 +135,7 @@ This sets the initial content of the code editor::
 
 
 Code editor content can also be set by embedding the code within the input
-location of the Single Cell::
+location of the Sage Cell::
 
    <div id="myInputDiv">
       <script type="text/code">print "Here's some code!"
@@ -172,7 +172,7 @@ This sets the text of the evaluate button::
 Sage Mode
 ---------
 
-This sets whether the Single Cell can evaluate Sage-specific code::
+This sets whether the Sage Cell can evaluate Sage-specific code::
 
    { ..
    sageMode: boolean
@@ -181,17 +181,17 @@ This sets whether the Single Cell can evaluate Sage-specific code::
 Managing subsequent sessions
 ----------------------------
 
-This sets whether subsequent session output (future Single Cell evaluations)
+This sets whether subsequent session output (future Sage Cell evaluations)
 should replace or be displayed alongside current session output::
 
    { ..
    replaceOutput: boolean
    .. }
 
-Hiding Single Cell elements
+Hiding Sage Cell elements
 ---------------------------
 
-This hides specified parts of the Single Cell using CSS ``display: none``::
+This hides specified parts of the Sage Cell using CSS ``display: none``::
 
    { ..
    hide: ["element_1", ... , "element_n"]
@@ -225,13 +225,13 @@ The following output elements can be hidden:
 Templates
 ---------
 
-Templates provide an alternative way to set certain Single Cell properties and
+Templates provide an alternative way to set certain Sage Cell properties and
 are designed to simplify the process of embedding multiple instances on the
 same page. A template is a javascript dictionary with key/value pairs
 corresponding to desired key/value pairs given to
-``singlecell.makeSinglecell()``.
+``sagecell.makeSagecell()``.
 
-Within ``singlecell.makeSinglecell()``, a template can be applied with the
+Within ``sagecell.makeSagecell()``, a template can be applied with the
 following::
   
    { ..
@@ -241,9 +241,9 @@ following::
 The following options can be specified within a template dictionary (see the
 documentation for :ref:`customization <Customization>` for full syntax
 information, as these options mirror what can be given to
-``singlecell.makeSinglecell()``).
+``sagecell.makeSagecell()``).
 
-* Hiding Single Cell elements::
+* Hiding Sage Cell elements::
 
    { ..
    hide: ["element_1", .. , "element_n"]
@@ -273,10 +273,10 @@ information, as these options mirror what can be given to
    replaceOutput: boolean
    .. }
 
-There are two built-in templates in ``singlecell.templates`` which are
+There are two built-in templates in ``sagecell.templates`` which are
 designed for common embedding scenarios:
 
-* ``singlecell.templates.minimal``: Prevents editing and display of embedded
+* ``sagecell.templates.minimal``: Prevents editing and display of embedded
   code, but displays output of that code when the Evaluate button is clicked.
   Only one output cell is shown at a time (subsequent output replaces previous
   output)::
@@ -287,7 +287,7 @@ designed for common embedding scenarios:
       "replaceOutput": true
      }
 
-* ``singlecell.templates.restricted``: Displays code that cannot be edited
+* ``sagecell.templates.restricted``: Displays code that cannot be edited
   and displays output of that code when the Evaluate button is clicked. Only
   one output cell is shown at a time (subsequent output replaces previous
   output)::
@@ -298,7 +298,7 @@ designed for common embedding scenarios:
        "replaceOutput": true
      }
 
-Explicit options given to ``singlecell.makeSinglecell()`` override options
+Explicit options given to ``sagecell.makeSagecell()`` override options
 described in a template dictionary, with the exception of ``hide``, in which
 case both the explicit and template options are combined.
 
@@ -306,28 +306,28 @@ case both the explicit and template options are combined.
 Module Initialization
 ^^^^^^^^^^^^^^^^^^^^^
 
-The embed javascript is initialized with ``singlecell.init()``, which can take a
+The embed javascript is initialized with ``sagecell.init()``, which can take a
 callback function as its argument that is executed after all required external
 libraries are loaded.
 
 This allows for chaining the process of embedding initialization and creating
-Single Cell instances::
+Sage Cell instances::
 
   $(function() { // load only when the page is loaded
     var makecells = function() {
-      singlecell.makeSinglecell({
+      sagecell.makeSagecell({
         inputLocation: "#firstInput",
 	outputLocation: "#firstOutput",
-	template: singlecell.templates.restricted});
-      singlecell.makeSinglecell({
+	template: sagecell.templates.restricted});
+      sagecell.makeSagecell({
         inputLocation: "#secondInput",
 	outputLocation: "#secondOutput",
-	template: singlecell.templates.minimal,
+	template: sagecell.templates.minimal,
 	evalButtonText: "Show Result"});
     }
 
-    singlecell.init(makecells); // load Single Cell libraries and then
-                                // initialize two Single Cell instances
+    sagecell.init(makecells); // load Sage Cell libraries and then
+                                // initialize two Sage Cell instances
 
   });
 
@@ -345,22 +345,22 @@ piece of code (replace ``<SERVER>`` with the appropriate address)::
         <meta name="viewport" content="width=device-width">
         <title>Sage Cell Server</title>
         <script type="text/javascript" src="http://localhost:8080/static/jquery-1.5.min.js"></script>
-        <script type="text/javascript" src="http://localhost:8080/embedded_singlecell.js"></script>
+        <script type="text/javascript" src="http://localhost:8080/embedded_sagecell.js"></script>
 
         <script>
     $(function() {
         var makecells = function() {
-            singlecell.makeSinglecell({
-                inputLocation: '#mysingle',
+            sagecell.makeSagecell({
+                inputLocation: '#mycell',
                 hide: ['messages', 'computationID', 'files', 'sageMode', 'editor'],
                 evalButtonText: 'Make Live'});
         }
-        singlecell.init(makecells);
+        sagecell.init(makecells);
     })</script>
 
      </head>
       <body>
-        <div id="mysingle"><script type="text/code">
+        <div id="mycell"><script type="text/code">
     @interact
     def _(a=(1,10)):
           print factorial(a)

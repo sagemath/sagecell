@@ -12,7 +12,7 @@ import traceback
 
 from timing_util import timing, json, json_request
 
-from singlecell import Session
+from sagecell import Session
 
 code="""
 print 'beginning...'
