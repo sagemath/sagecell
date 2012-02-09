@@ -438,6 +438,27 @@ class InputBox(InteractControl):
                 'raw':self.raw,
                 'label':self.label}
 
+# The old Input box had an adapter like this, which evaluated arguments in the right context
+# in other words, the input box contents are evaluated in context of the globals of the defining
+# function.
+#
+#         if self.__type is None:
+#             return sage_eval(value, globs)
+#         elif self.__type is str:
+#             return value
+#         elif self.__type is Color:
+#             try:
+#                 return Color(value)
+#             except ValueError:
+#                 try:
+#                     return Color('#' + value)
+#                 except ValueError:
+#                     print "Invalid color '%s', using default Color()" % value
+#                     return Color()
+#         else:
+#             return self.__type(sage_eval(value, globs))
+
+
 class InputGrid(InteractControl):
     """
     An input grid control
