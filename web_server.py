@@ -255,6 +255,12 @@ def embedded():
     return Response(render_template("embedded_sagecell.js"),
                     content_type='text/javascript')
 
+#purely for backwards compatibility
+@app.route("/embedded_singlecell.js")
+def embedded():
+    return Response(render_template("embedded_sagecell.js"),
+                    content_type='text/javascript')
+
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
     # sometime in the summer of 2011, and then we can move this to use argparse.

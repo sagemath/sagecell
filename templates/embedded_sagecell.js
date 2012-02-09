@@ -413,4 +413,8 @@ $URL={'root': {{ request.url_root|tojson|safe }},
           '?callback=?',
       'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
      };
+
+// Purely for backwards compability
+window.singlecell=window.sagecell;
+window.singlecell.makeSinglecell=window.singlecell.makeSagecell;
 })(jQuery);
