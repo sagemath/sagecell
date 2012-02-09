@@ -41,12 +41,13 @@ should take care of most or all of them::
 ØMQ
 ^^^
 
-Download ØMQ and build it in ``$SERVER/zeromq-2.1.11/install/``::
+Download ØMQ and build it in ``$SERVER/zeromq/install/``::
 
     cd $SERVER
     wget http://download.zeromq.org/zeromq-2.1.11.tar.gz
     tar -xzvf zeromq-2.1.11.tar.gz
-    cd zeromq-2.1.11
+    ln -s zeromq-2.1.11 zeromq
+    cd zeromq
     ./configure --prefix=`pwd`/install && make install
 
 MongoDB
@@ -59,12 +60,13 @@ contents to the ``$SERVER`` directory.
 nginx
 ^^^^^
 
-Download nginx and build it in ``$SERVER/nginx-1.0.11/install/``::
+Download nginx and build it in ``$SERVER/nginx/install/``::
 
     cd $SERVER
     wget http://www.nginx.org/download/nginx-1.0.11.tar.gz
     tar -xzvf nginx-1.0.11.tar.gz
-    cd nginx-1.0.11
+    ln -s nginx-1.0.11 nginx
+    cd nginx
     ./configure --prefix=`pwd`/install && make install
 
 uWSGI
@@ -74,18 +76,18 @@ These instructions are based on `these instructions
 <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_.  We don't
 want to require libxml2 (it appears to be only for the config files),
 so we'll make our own build configuration that doesn't support XML build
-files.  Also note that any version of uwsgi before 0.9.8 will not build
-with gcc-4.6.
+files.
 
 #. Get uWSGI::
 
     cd $SERVER
     wget http://projects.unbit.it/downloads/uwsgi-1.0.11.tar.gz
     tar -xzvf uwsgi-1.0.11.tar.gz
+    ln -s uwsgi-1.0.11 uwsgi
 
 #. Change the configuration file to set ``xml = false``::
 
-    cd uwsgi-1.0.11/buildconf
+    cd uwsgi/buildconf
     cp default.ini sagecell.ini
     # edit myproject.ini to make the xml line read: xml = false
     cd ..
@@ -97,21 +99,16 @@ with gcc-4.6.
 Python packages
 ^^^^^^^^^^^^^^^
 
-Install the required Python packages. Note that we upgrade setuptools
-since the version that comes with Sage is too old for the most recent
-version of PyMongo.
-
-The ``sudo`` in the first line is not required if Sage is not installed
-in a protected directory. In the penultimate line, replace ``$SERVER``
-with the same directory name that it represented above (environmental
-variables will not be preserved inside the Sage shell). ::
+Install the required Python packages. In the penultimate line, replace
+``$SERVER`` with the same directory name that it represented above
+(environmental variables will not be preserved inside the Sage
+shell). ::
 
     sudo sage -sh # install into Sage's python
     easy_install pip # install a better installer than easy_install
-    pip install --upgrade setuptools # need upgrade for pymongo
     pip install flask
     pip install pymongo
-    pip install pyzmq --install-option="--zmq=$SERVER/zeromq-2.1.7/install"
+    pip install pyzmq --install-option="--zmq=$SERVER/zeromq/install"
     exit
 
 
@@ -155,7 +152,7 @@ make a symbolic link from the ``/static`` directory over to the
 appropriate Jmol directory in the Sage notebook::
 
     cd $SERVER/sagecell/static
-    ln -s $SAGE_ROOT/sage/devel/sagenb/sagenb/data/jmol .
+    ln -s $SAGE_ROOT/local/share/jmol .
 
 MathJax
 ^^^^^^^
@@ -227,7 +224,7 @@ MongoDB
 nginx
 ^^^^^
 
-#. Make the ``$SERVER/nginx-1.0.4/install/conf/nginx.conf`` file have
+#. Make the ``$SERVER/nginx/install/conf/nginx.conf`` file have
    only one server entry, as shown here (delete all the others).
    ``<SERVER_PORT>`` should be whatever port you plan to expose to
    the public (should be different from ``<MONGODB_PORT>``). ::
@@ -245,7 +242,7 @@ nginx
 
 #. Start nginx::
 
-    $SERVER/nginx-1.0.4/install/sbin/nginx
+    $SERVER/nginx/install/sbin/nginx
 
 Sage Cell Server
 ^^^^^^^^^^^^^^^^
@@ -305,7 +302,7 @@ restrictions; this account will be executing arbitrary user code).
 
 4. Create a symbolic link to uWSGI in $SERVER::
 
-      ln -s $SERVER/uwsgi-1.0.2.1/uwsgi $SERVER/sagecell/uwsgi
+      ln -s $SERVER/uwsgi/uwsgi $SERVER/sagecell/uwsgi
 
 5. Start the webserver::
 
