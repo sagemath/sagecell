@@ -34,7 +34,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
          """
 -        print self.table_str(x, header=header)
 +        from sage.misc.misc import EMBEDDED_MODE
-+        output_stream = self.table_str(x, header=header)
++        output_string = self.table_str(x, header=header)
 +        if EMBEDDED_MODE:
 +            if EMBEDDED_MODE['frontend']=='notebook':
 +                print "<html>"+output_string+"</html>"
