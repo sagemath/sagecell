@@ -46,8 +46,8 @@ from util import log
 import json
 from json import dumps, loads
 from hashlib import sha1
-import interact_singlecell
-import singlecell_exec_config as CONFIG
+import interact_sagecell
+import sagecell_exec_config as CONFIG
 
 try:
     import sage
@@ -61,8 +61,8 @@ import sys
 sys._sage_messages=MESSAGE
 sys._sage_upload_file_pipe=_file_upload_send
 def _update_interact(id, control_vals):
-    import interact_singlecell
-    interact_info = interact_singlecell._INTERACTS[id]
+    import interact_sagecell
+    interact_info = interact_sagecell._INTERACTS[id]
     kwargs = interact_info["state"].copy()
     controls = interact_info["controls"]
     for var,value in control_vals.items():
@@ -71,7 +71,7 @@ def _update_interact(id, control_vals):
         if c.preserve_state:
             interact_info["state"][var]=kwargs[var]
 
-    interact_singlecell._INTERACTS[id]["function"](control_vals=kwargs)
+    interact_sagecell._INTERACTS[id]["function"](control_vals=kwargs)
 """
 
 user_code_sage="""
@@ -91,12 +91,12 @@ set_random_seed()
 #    pass
 
 
-# singlecell specific code:
-from interact_singlecell import * # override the interact functionality
+# sagecell specific code:
+from interact_sagecell import * # override the interact functionality
 from interact_compatibility import * # override the interact functionality
 import sage.misc.misc
-import singlecell_exec_config
-sage.misc.misc.EMBEDDED_MODE=singlecell_exec_config.EMBEDDED_MODE
+import sagecell_exec_config
+sage.misc.misc.EMBEDDED_MODE=sagecell_exec_config.EMBEDDED_MODE
 """+user_code
 
 class QueueOut(StringIO.StringIO):
@@ -560,7 +560,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         with output_handler as MESSAGE:
             try:
                 locals={'MESSAGE': MESSAGE,
-                        'interact_singlecell': interact_singlecell,
+                        'interact_sagecell': interact_sagecell,
                         '_file_upload_send': upload_send}
                 if enable_sage and sage_mode:
                     locals['sage'] = sage
@@ -614,7 +614,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         new_files=file_parent.recv()
         old_files.update(new_files)
         # TODO: security implications here calling something that the user had access to.
-        timeout=max(0,min(float(interact_singlecell.__single_cell_timeout__), MAX_TIMEOUT))
+        timeout=max(0,min(float(interact_sagecell.__sage_cell_timeout__), MAX_TIMEOUT))
 
         file_list=[]
         for filename in os.listdir(os.getcwd()):

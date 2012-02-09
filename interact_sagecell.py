@@ -75,11 +75,11 @@ Recursively nested interact::
 
 """
 
-import singlecell_exec_config as CONFIG
+import sagecell_exec_config as CONFIG
 
 _INTERACTS={}
 
-__single_cell_timeout__=0
+__sage_cell_timeout__=0
 
 from functools import wraps
 
@@ -304,8 +304,8 @@ def interact(f, controls=[], update=None, layout=None):
                                    'controls':dict(zip(names,[c.message() for c in controls])),
                                    'update':update,
                                    'layout':layout})
-    global __single_cell_timeout__
-    __single_cell_timeout__=60
+    global __sage_cell_timeout__
+    __sage_cell_timeout__=60
     adapted_f(control_vals=state.copy())
     return f
 

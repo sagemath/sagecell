@@ -16,7 +16,7 @@ class TestWebReplies:
 
     def test_front_page(self):
         rv = self.app.get('/')
-        assert '<title>Simple Compute Server</title>' in rv.data
+        assert '<title>Sage Cell Server</title>' in rv.data
     
     def test_config(self):
         rv = self.app.get('/config')

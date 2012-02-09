@@ -1,9 +1,10 @@
 import sys
 
 try:
-    from singlecell_config import LOGGING
+    from sagecell_config import LOGGING
 except ImportError:
-    # the untrusted user will probably not have access to the singlecell_config file
+    # the untrusted user will probably not have access to the sagecell_config
+    # file
     LOGGING=True
 
 def log(message, key=' '):
@@ -14,6 +15,6 @@ import os
 DEFAULT_DIR=''
 
 def write_process_id(prefix=None):
-    with open(DEFAULT_DIR+prefix+'single-cell-pid.%d'%os.getpid(),'w') as f:
+    with open(DEFAULT_DIR+prefix+'sage-cell-pid.%d'%os.getpid(),'w') as f:
         f.write('%d %d %d\n'%(os.getpid(), os.getpgid(0), os.getppid()))
 
