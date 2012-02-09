@@ -19,8 +19,7 @@ We depend on the following packages:
 * `nginx <http://www.nginx.org/>`_
 * `uWSGI <http://projects.unbit.it/uwsgi/>`_
 
-These instructions assume that Sage (version 4.7.2+) is installed and that it
-can be run using the command ``sage``. Earlier versions of Sage are not compatible.
+These instructions assume Sage 5.0.beta1 is installed.
 
 Dependencies
 ------------
