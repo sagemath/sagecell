@@ -17,7 +17,7 @@ diff -r ded2e3503123 sage/misc/html.py
              if EMBEDDED_MODE['frontend']=='notebook':
                  print "<html><font color='black'>%s</font></html>"%t
 +                return ''
-             elif EMBEDDED_MODE['frontend']=='singlecell':
+             elif EMBEDDED_MODE['frontend']=='sagecell':
 +                import sys
                  sys._sage_messages.message_queue.display({'text/html':"<font color='black'>%s</font>"%t})
 -        return ''
@@ -73,7 +73,7 @@ diff -r ded2e3503123 sage/misc/html.py
 +        if EMBEDDED_MODE:
 +            if EMBEDDED_MODE['frontend']=='notebook':
 +                print "<html>"+output_string+"</html>"
-+            elif EMBEDDED_MODE['frontend']=='singlecell':
++            elif EMBEDDED_MODE['frontend']=='sagecell':
 +                import sys
 +                sys._sage_messages.message_queue.display({'text/html':output_string})
  
@@ -130,7 +130,7 @@ diff -r ded2e3503123 sage/misc/latex.py
          if jsMath_okay:
 -            print JSMath().eval(objects, mode=mode)  # put comma at end of line?
 +            jsmath_expr = str(JSMath().eval(objects, mode=mode))
-+            if EMBEDDED_MODE['frontend']=='singlecell':
++            if EMBEDDED_MODE['frontend']=='sagecell':
 +                mathexpr=jsmath_expr.replace('<html>','').replace('</html>','')
 +                import sys
 +                sys._sage_messages.message_queue.display({'text/html':mathexpr})
@@ -144,7 +144,7 @@ diff -r ded2e3503123 sage/misc/latex.py
              png(objects, os.path.join(base_dir, png_file),
                  debug=debug, engine=engine)
 -            print '<html><img src="%s"></html>'%png_link  # put comma at end of line?
-+            if EMBEDDED_MODE['frontend']=='singlecell':
++            if EMBEDDED_MODE['frontend']=='sagecell':
 +                import sys
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([png_file]))
@@ -164,7 +164,7 @@ diff -r ded2e3503123 sage/plot/animate.py
              try:
                  check_call(cmd, shell=True)
 +                import sage.misc.misc as misc
-+                if misc.EMBEDDED_MODE and misc.EMBEDDED_MODE['frontend']=='singlecell':
++                if misc.EMBEDDED_MODE and misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                    import json #TODO: be smart about which json
 +                    import sys
 +                    sys._sage_upload_file_pipe.send_bytes(json.dumps([savefile]))
@@ -208,7 +208,7 @@ diff -r ded2e3503123 sage/plot/plot.py
 -            if linkmode == True:
 -                return "<img src='cell://%s'>" % kwds['filename']
 +
-+            if misc.EMBEDDED_MODE['frontend']=='singlecell':
++            if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
 +                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
@@ -217,7 +217,7 @@ diff -r ded2e3503123 sage/plot/plot.py
 +                return "<img src='cell://%s'>"%filename
              else:
 -                html("<img src='cell://%s'>" % kwds['filename'])
-+                if misc.EMBEDDED_MODE['frontend']=='singlecell':
++                if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                    msg={'text/filename': filename}
 +                    sys._sage_messages.message_queue.display(msg)
 +                else:
@@ -289,7 +289,7 @@ diff -r ded2e3503123 sage/plot/plot.py
 +
 +        if misc.EMBEDDED_MODE: # JASON TODO
              self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
-+            if misc.EMBEDDED_MODE['frontend']=='singlecell':
++            if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json
 +                import sys
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
@@ -323,7 +323,7 @@ diff -r ded2e3503123 sage/plot/plot3d/base.pyx
 -            tachyon_rt(T.tachyon(), filename+".png", verbosity, True, opts)
 -            ext = "png"
 +            tachyon_rt(T.tachyon(), filename_full, verbosity, True, opts)
-+            if EMBEDDED_MODE['frontend']=='singlecell':
++            if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='sagecell':
 +                msg={}
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename_full]))
@@ -343,7 +343,7 @@ diff -r ded2e3503123 sage/plot/plot3d/base.pyx
 -            f.write('set defaultdirectory "%s"\n' % archive_name)
 -            f.write('script SCRIPT\n')
 -            f.close()
-+            if EMBEDDED_MODE['frontend']=='singlecell':
++            if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='sagecell':
 +                msg={}
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([archive_name]))
@@ -366,7 +366,7 @@ diff -r ded2e3503123 sage/plot/plot3d/tachyon.py
          if sage.misc.misc.EMBEDDED_MODE:
              filename = sage.misc.misc.graphics_filename()
              self.save(filename, verbose=verbose, extra_opts=extra_opts)
-+            if sage.misc.misc.EMBEDDED_MODE['frontend']=='singlecell':
++            if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json
 +                import sys
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))

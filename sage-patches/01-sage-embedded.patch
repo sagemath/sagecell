@@ -286,7 +286,7 @@ diff -r 2a2abbcad325 sage/misc/html.py
 +        if EMBEDDED_MODE:
 +            if EMBEDDED_MODE['frontend']=='notebook':
 +                print "<html><font color='black'>%s</font></html>"%t
-+            elif EMBEDDED_MODE['frontend']=='singlecell':
++            elif EMBEDDED_MODE['frontend']=='sagecell':
 +                sys._sage_messages.message_queue.display({'text/html':"<font color='black'>%s</font>"%t})
          return ''
  
@@ -365,7 +365,7 @@ diff -r 2a2abbcad325 sage/misc/misc.py
  
  LOCAL_IDENTIFIER = '%s.%s'%(HOSTNAME , os.getpid())
  
-+# EMBEDDED_MODE is a dictionary.  If Sage is embedded, this dictionary is non-empty and EMBEDDED_MODE['frontend']='notebook' or 'singlecell'.  In the case of singlecell, another option will be set, EMBEDDED_MODE['sage']=True/False, which specifies whether the sage-mode is active or not.
++# EMBEDDED_MODE is a dictionary.  If Sage is embedded, this dictionary is non-empty and EMBEDDED_MODE['frontend']='notebook' or 'sagecell'.  In the case of sagecell, another option will be set, EMBEDDED_MODE['sage']=True/False, which specifies whether the sage-mode is active or not.
 +EMBEDDED_MODE={}
 +
  if not os.path.exists(SAGE_ROOT):
