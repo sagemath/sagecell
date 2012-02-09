@@ -11,17 +11,13 @@ We depend on the following packages:
 * `Flask <http://flask.pocoo.org/>`_
 * `MongoDB <http://www.mongodb.org/>`_
 * `PyMongo <http://api.mongodb.org/python/current/>`_
-  (at least version 0.10.1, which is newer than the version
-  packaged in Ubuntu!)
+  (at least version 1.10.1, which is newer than the version
+  packaged in some Ubuntu releases)
 * `ØMQ <http://www.zeromq.org/>`_
 * `pyzmq <http://www.zeromq.org/bindings:python>`_
 * `MathJax <http://www.mathjax.org/>`_
-
-Optionally, you can also use `nginx <http://www.nginx.org/>`_
-and `uWSGI <http://projects.unbit.it/uwsgi/>`_ to have a multithreaded
-web server that can drastically increase your capabilities over the
-built-in Python web server.  There are lots of other WSGI servers you
-could use as well.
+* `nginx <http://www.nginx.org/>`_
+* `uWSGI <http://projects.unbit.it/uwsgi/>`_
 
 These instructions assume that Sage is installed and that it can
 be run using the command ``sage``.
@@ -31,7 +27,7 @@ Dependencies
 
 In the following instructions, ``$SERVER`` refers to the directory
 containing all of the software (for example, it might be
-``/var/sagecellserver``).
+``/var/sagecellsystem``).
 
 Build dependencies
 ^^^^^^^^^^^^^^^^^^
@@ -45,23 +41,30 @@ should take care of most or all of them::
 ØMQ
 ^^^
 
-Download ØMQ and build it in ``$SERVER/zeromq-2.1.7/install/``::
+Download ØMQ and build it in ``$SERVER/zeromq-2.1.11/install/``::
 
     cd $SERVER
-    wget http://download.zeromq.org/zeromq-2.1.7.tar.gz
-    tar -xzvf zeromq-2.1.7.tar.gz
-    cd zeromq-2.1.7
+    wget http://download.zeromq.org/zeromq-2.1.11.tar.gz
+    tar -xzvf zeromq-2.1.11.tar.gz
+    cd zeromq-2.1.11
     ./configure --prefix=`pwd`/install && make install
+
+MongoDB
+^^^^^^^
+
+Download the appropriate version of MongoDB from
+`here <http://www.mongodb.org/downloads>`_ and extract the
+contents to the ``$SERVER`` directory.
 
 nginx
 ^^^^^
 
-Download nginx and build it in ``$SERVER/nginx-1.0.4/install/``::
+Download nginx and build it in ``$SERVER/nginx-1.0.11/install/``::
 
     cd $SERVER
-    wget http://www.nginx.org/download/nginx-1.0.4.tar.gz
-    tar -xzvf nginx-1.0.4.tar.gz
-    cd nginx-1.0.4
+    wget http://www.nginx.org/download/nginx-1.0.11.tar.gz
+    tar -xzvf nginx-1.0.11.tar.gz
+    cd nginx-1.0.11
     ./configure --prefix=`pwd`/install && make install
 
 uWSGI
@@ -69,7 +72,7 @@ uWSGI
 
 These instructions are based on `these instructions
 <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_.  We don't
-want to require libxml2 (it's just for the config files, I believe),
+want to require libxml2 (it appears to be only for the config files),
 so we'll make our own build configuration that doesn't support XML build
 files.  Also note that any version of uwsgi before 0.9.8 will not build
 with gcc-4.6.
@@ -77,19 +80,19 @@ with gcc-4.6.
 #. Get uWSGI::
 
     cd $SERVER
-    wget http://projects.unbit.it/downloads/uwsgi-0.9.8.1.tar.gz
-    tar -xzvf uwsgi-0.9.8.1.tar.gz
+    wget http://projects.unbit.it/downloads/uwsgi-1.0.11.tar.gz
+    tar -xzvf uwsgi-1.0.11.tar.gz
 
 #. Change the configuration file to set ``xml = false``::
 
-    cd uwsgi-0.9.8.1/buildconf
-    cp default.ini myproject.ini
+    cd uwsgi-1.0.11/buildconf
+    cp default.ini sagecell.ini
     # edit myproject.ini to make the xml line read: xml = false
     cd ..
 
 #. Build uWSGI::
 
-    sage -python uwsgiconfig.py --build myproject
+    sage -python uwsgiconfig.py --build sagecell
 
 Python packages
 ^^^^^^^^^^^^^^^
@@ -115,14 +118,16 @@ variables will not be preserved inside the Sage shell). ::
 Sage Cell Server
 ^^^^^^^^^^^^^^^^
 
-The repository for this software is on GitHub, under the name `sagecell
-<https://github.com/sagemath/sagecell>`_. Either download the `tarball
-<https://github.com/sagemath/sagecell/tarball/master>`_, extract the
-contents into ``$SERVER``, and rename the directory to
-``sage-cell-server``; or use git to clone the code::
+The repository for this software is on GitHub, under the name
+`sagecell <https://www.github.com/sagemath/sagecell>`_.
+
+Either download the `tarball
+<https://github.com/sagemath/sagecell/tarball/master>`_ and
+extract the contents of the contained folder into ``$SERVER/sagecell``,
+or use git to clone the code::
 
     cd $SERVER
-    git clone git://github.com/sagemath/sagecell.git sage-cell-server
+    git clone git://www.github.com/sagecell/sagecell.git sagecell
 
 MongoDB
 ^^^^^^^
@@ -138,7 +143,7 @@ Sage
 Several patches enable Sage to take advantage of the enhanced protocol
 for communicating graphical displays.  In order to patch Sage, apply
 the patches to your Sage installation found in the ``sage-patches``
-directory.  Apply them in numeric order.  I suggest using Mercurial
+directory.  Apply them in numeric order.  We suggest using Mercurial
 Queues so that it is easy to back out the patches if needed.  After
 applying the patches, rebuild Sage with ``sage -b``.
 
@@ -149,7 +154,7 @@ applet must be installed in order to see these.  It is sufficient to
 make a symbolic link from the ``/static`` directory over to the
 appropriate Jmol directory in the Sage notebook::
 
-    cd $SERVER/static
+    cd $SERVER/sagecell/static
     ln -s $SAGE_ROOT/sage/devel/sagenb/sagenb/data/jmol .
 
 MathJax
@@ -158,8 +163,7 @@ MathJax
 MathJax is used for typesetting complex expressions. Due to its size, it
 cannot be included in the repository, so it must be
 `downloaded <http://www.mathjax.org/download/>`_ and installed
-separately to $SERVER/static/mathjax/.
-
+separately to $SERVER/sagecell/static/mathjax/.
 
 Configuration and Running
 -------------------------
@@ -239,7 +243,6 @@ nginx
         }
     }
 
-
 #. Start nginx::
 
     $SERVER/nginx-1.0.4/install/sbin/nginx
@@ -249,7 +252,7 @@ Sage Cell Server
 
 First, minify CSS and JavaScript files (this is required)::
 
-    cd $SERVER/static
+    cd $SERVER/sagecell/static
     make
 
 The only thing left now is to configure and start the Sage cell server.
@@ -286,9 +289,9 @@ restrictions; this account will be executing arbitrary user code).
    fully automatically.
 
 3. Create a configuration file
-   ``$SERVER/sage-cell-server/sagecell_config.py`` by copying and
+   ``$SERVER/sagecell/sagecell_config.py`` by copying and
    modifying
-   ``$SERVER/sage-cell-server/sagecell_config.py.default``.  The
+   ``$SERVER/sagecell/sagecell_config.py.default``.  The
    ``mongo_uri`` should be set to
    ``mongodb://<SAGECELL_USER>:<SAGECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
    If you will be running the server using Sage, replace the line
@@ -300,26 +303,31 @@ restrictions; this account will be executing arbitrary user code).
 
           chmod 600 sagecell_config.py
 
-4. Start uWSGI. The ``-p 50`` means that uWSGI will launch 50 workers
-   to handle incoming requests.  Adjust this to suit your needs. ::
+4. Create a symbolic link to uWSGI in $SERVER::
+
+      ln -s $SERVER/uwsgi-1.0.2.1/uwsgi $SERVER/sagecell/uwsgi
+
+5. Start the webserver::
 
        sage -sh
-       cd $SERVER/sage-cell-server
-       ../uwsgi-0.9.8.1/uwsgi -s /tmp/uwsgi.sock -w web_server:app -p 50 -M
+       cd $SERVER/sagecell
+       ./start_web.py
 
-5. Start up the trusted server. Replace ``<UNTRUSTED_USER>@localhost``
-   below with the SSH address for the untrusted account. Adjust the
-   number of workers (``-w``) to meet your needs. Add the argument
-   ``-q`` to minimize the number of log messages. ::
+   If there are errors, you may need to change permissions of
+   /tmp/uwsgi.sock::
+   
+       chmod 777 /tmp/uwsgi.sock
 
-       cd $SERVER/sage-cell-server/
-       sage -python trusted_db.py -w 50 --untrusted-account untrusted@localhost
+6. Start the trusted server::
+
+       sage -sh
+       cd $SERVER/sagecell
+       ./start_device.py
 
    When you want to shut down the server, just press Ctrl-C. This should
    automatically clean up the worker processes.
 
-6. Go to ``http://localhost:<SERVER_PORT>`` to use the Sage cell server.
-
+7. Go to ``http://localhost:<SERVER_PORT>`` to use the Sage Cell server.
 
 License
 =======
