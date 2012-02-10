@@ -114,8 +114,8 @@ shell). ::
 Sage Cell Server
 ^^^^^^^^^^^^^^^^
 
-The repository for this software is on GitHub, under the name
-`sagecell <https://www.github.com/sagemath/sagecell>`_.
+The repository for this software is in the `sagemath/sagecell
+<https://github.com/sagemath/sagecell>`_ repository on Github.
 
 Either download the `tarball
 <https://github.com/sagemath/sagecell/tarball/master>`_ and
@@ -123,7 +123,7 @@ extract the contents of the contained folder into ``$SERVER/sagecell``,
 or use git to clone the code::
 
     cd $SERVER
-    git clone git://www.github.com/sagecell/sagecell.git sagecell
+    git clone git://github.com/sagecell/sagecell.git sagecell
 
 MongoDB
 ^^^^^^^
@@ -299,7 +299,7 @@ restrictions; this account will be executing arbitrary user code).
 
           chmod 600 sagecell_config.py
 
-4. Create a symbolic link to uWSGI in $SERVER::
+4. Create a symbolic link to uWSGI in ``$SERVER/sagecell``::
 
       ln -s $SERVER/uwsgi/uwsgi $SERVER/sagecell/uwsgi
 
