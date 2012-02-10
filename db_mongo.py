@@ -20,7 +20,7 @@ import db
 import pymongo.objectid
 from pymongo.objectid import ObjectId
 from pymongo import ASCENDING, DESCENDING
-from singlecell_config import mongo_config
+from sagecell_config import mongo_config
 from util import log
 
 class DB(db.DB):

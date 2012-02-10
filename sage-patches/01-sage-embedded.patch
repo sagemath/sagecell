@@ -2,133 +2,72 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent 2a2abbcad325ccca9399981ceddf5897eb467e64
+# Parent 91d23918f03dbbfe5ffa91d4f9517193ba63be4b
 imported patch embedded.patch
 
-diff -r 2a2abbcad325 sage/databases/database.py
---- a/sage/databases/database.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/databases/database.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -315,35 +315,6 @@
+diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
+--- a/sage/databases/sql_db.py
++++ b/sage/databases/sql_db.py
+@@ -352,6 +352,7 @@
+     global p
+     p = 0
+     def row_str(row, html):
++        #TODO: 
+         f = 0
+         global p
+         cur_str = []
+@@ -359,10 +360,7 @@
+             if index in pcol_index:
+                 if html:
+                     plot = pcol_map[p%len(pcol_map)](row[index])
+-                    plot.save('%d.png'%p, figsize=[1,1])
+-                    field_val = '     <td bgcolor=white align=center> ' \
+-                        + '%s <br> <img src="cell://%d.png"> '%(row[index],p) \
+-                        + '</td>\n'
++                    field_val = plot.show(figsize=[1,1])
+                     p += 1
+                 else:
+                     raise NotImplementedError('Cannot display plot on ' \
+@@ -376,26 +374,19 @@
+                     f += 1
+                 else:
+                     field_val = row[index]
+-                if html:
+-                    field_val = '     <td bgcolor=white align=center> ' \
+-                        + str(field_val) + ' </td>\n'
+-                else:
++                if not html:
+                     field_val = str(field_val).ljust(max_field_size)
+             cur_str.append(field_val)
+-        return ' '.join(cur_str)
++        if html:
++            return cur_str
++        else:
++            return ' '.join(cur_str)
+ 
+-    from sage.server.support import EMBEDDED_MODE
+-    if EMBEDDED_MODE or (kwds.has_key('html_table') and kwds['html_table']):
++    import sage.misc.misc as misc    
++    if misc.EMBEDDED_MODE or (kwds.has_key('html_table') and kwds['html_table']):
+         # Notebook Version
+-        ret = '<html><!--notruncate-->\n'
+-        ret += '  <table bgcolor=lightgrey cellpadding=0>\n'
+-        ret += '    <tr>\n      <td bgcolor=white align=center> '
+-        ret += (' </td>\n      <td bgcolor=white ' \
+-               + 'align=center> ').join(col_titles)
+-        ret += ' </td>\n    </tr>\n'
+-        ret += '\n'.join(['    <tr>\n ' + row_str(row, True) + '    </tr>' \
+-               for row in cur])
+-        ret += '\n  </table>\n</html>'
++        import html
++        ret = html.table_str([row_str(row,True) for row in cur], header=col_titles)
      else:
-         return func_str
- 
--def _apply_plot(func, x, fig_num, figsize=[1,1], with_label=True,**kwds):
--    """
--    Saves a representative plot to be drawn in the database output.  
--    Allows passing of plot keywords.  Data x is assumed to be an 
--    identifier for the object's plotting function.  For an example of 
--    use, see the GenericSQLQuery show function.
--    
--    INPUT:
--        func -- the function that plots the object
--        x -- the data to pass to plotting function
--        fig_num -- integer used to save plot data
--        with_label -- whether or not to print data x with picture
--        **kwds -- plotting keywords are allowed
--        
--    EXAMPLES:
--        sage: from sage.databases.database import _apply_plot
--        sage: def p(graph6):
--        ...     g = Graph(str(graph6))
--        ...     return g.plot(layout='circular', vertex_size=30, vertex_labels=False)
--        sage: _apply_plot(p, 'C?', 0) # not tested
--        '<td bgcolor=white align=center>C?<br><img src="cell://0.png"></td>'
--    """
--    p = func(x)
--    p.save('%d.png'%fig_num, figsize=figsize)
--    if with_label:
--        return '<td bgcolor=white align=center>%s<br><img src="cell://%d.png"></td>'%(x,fig_num)
--    else:
--        return '<td bgcolor=white align=center><img src="cell://%d.png"></td>'%fig_num
--    
- class GenericSQLQuery(SageObject):
- 
-     def __init__(self, database, query_string, param_tuple=None):
-@@ -745,33 +716,33 @@
-                     col_titles[i] = relabel_cols[col_titles[i]]
-                 except KeyError:
-                     continue
--            
--        from sage.server.support import EMBEDDED_MODE
--        if EMBEDDED_MODE:
-+        import sage.misc.misc as misc    
-+        if misc.EMBEDDED_MODE:
-             # Notebook Version
--            print '<html><!--notruncate--><table bgcolor=lightgrey cellpadding=0><tr>'
-+            rows=[]
-+            r=[]
-             for col in col_titles:
--                print '<td bgcolor=white align=center> ' + col + ' </td>'
--            print '</tr>'
-+                r.append(col)
-+            rows.append(r)
-             p = 0
-             for row in cur:
-+                r=[]
-                 f = 0
--                print '<tr>'
-                 for index in range(len(col_titles)):
-                     if index in fcol_index:
-                         if id_col_index is not None:
--                            print _apply_format(format_cols[fcol_titles[f]], row[index], True, row[id_col_index])
-+                            r.append(_apply_format(format_cols[fcol_titles[f]], row[index], False, row[id_col_index]))
-                         else:
--                            print _apply_format(format_cols[fcol_titles[f]], row[index], True)
-+                            r.append(_apply_format(format_cols[fcol_titles[f]], row[index], False))
-                         f += 1
-                     elif index in pcol_index:
--                        print _apply_plot(plot_cols[pcol_titles[p%len(pcol_titles)]], row[index], p)
-+                        r.append(plot_cols[pcol_titles[p%len(pcol_titles)]](row[index]).show(figsize=[1,1]))
-                         p += 1
-                     else:
--                        print '<td bgcolor=white align=center> ' + str(row[index]) + ' </td>'
--                print '</tr>'
--            print '</table></html>'
--
-+                        print r.append(str(row[index]))
-+                rows.append(r)
-+            from sage.misc.html import html
-+            html.table(rows, header=True)
-         else:
-             # Command Prompt Version
-             for col in col_titles:
-@@ -1755,21 +1726,22 @@
-         except:
-             raise RuntimeError('Failure to fetch data.')
-         
--        from sage.server.support import EMBEDDED_MODE
--        if EMBEDDED_MODE or html_table:
-+        import sage.misc.misc as misc    
-+        if misc.EMBEDDED_MODE or html_table:
-             # Notebook Version
--            print '<html><!--notruncate--><table bgcolor=lightgrey cellpadding=0><tr>'
-+            import html
-+            rows=[]
-+            r=[]
-             for des in cur.description:
--                print '<td bgcolor=white align=center> ' + des[0] + ' </td>'
--            print '</tr>'
-+                r.append(des[0])
-+            rows.append(r)
-             field_indices = range(len(cur.description))
-             for row in cur:
--                print '<tr>'
-+                r=[]
-                 for index in field_indices:
--                    print '<td bgcolor=white align=center> ' + str(row[index]) + ' </td>'
--                print '</tr>'
--            print '</table></html>'
--
-+                    r.append(str(row[index]))
-+                rows.append(r)
-+            html.table(rows,header=True)
-         else:
-             # Command Prompt Version
-             for des in cur.description:
-diff -r 2a2abbcad325 sage/graphs/graph_editor.py
---- a/sage/graphs/graph_editor.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/graphs/graph_editor.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -19,8 +19,6 @@
+         # Command Prompt Version
+         ret = ' '.join([col.ljust(max_field_size) for col in col_titles])
+diff --git a/sage/graphs/graph_editor.py b/sage/graphs/graph_editor.py
+--- a/sage/graphs/graph_editor.py
++++ b/sage/graphs/graph_editor.py
+@@ -18,8 +18,6 @@
  from sage.misc.html import html
  
  import sagenb.notebook.interact
@@ -137,7 +76,7 @@ diff -r 2a2abbcad325 sage/graphs/graph_editor.py
  
  def graph_to_js(g):
      """
-@@ -104,8 +102,9 @@
+@@ -103,8 +101,9 @@
      """
      if graph is None:
          graph = graphs.CompleteGraph(2)
@@ -149,10 +88,10 @@ diff -r 2a2abbcad325 sage/graphs/graph_editor.py
          return "This graph editor only runs in the Sage notebook."
  
      graph.layout(save_pos = True, **layout_options)
-diff -r 2a2abbcad325 sage/interfaces/maxima_abstract.py
---- a/sage/interfaces/maxima_abstract.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/interfaces/maxima_abstract.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -159,7 +159,9 @@
+diff --git a/sage/interfaces/maxima_abstract.py b/sage/interfaces/maxima_abstract.py
+--- a/sage/interfaces/maxima_abstract.py
++++ b/sage/interfaces/maxima_abstract.py
+@@ -158,7 +158,9 @@
              ...
          """
          cmd = 'maxima --very-quiet -r "%s(%s);" '%(command, s)
@@ -163,19 +102,19 @@ diff -r 2a2abbcad325 sage/interfaces/maxima_abstract.py
              cmd += '< /dev/null'
  
          if redirect:
-diff -r 2a2abbcad325 sage/interfaces/r.py
---- a/sage/interfaces/r.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/interfaces/r.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -208,7 +208,7 @@
+diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
+--- a/sage/interfaces/r.py
++++ b/sage/interfaces/r.py
+@@ -212,7 +212,7 @@
  
  from keyword import iskeyword
  from expect import Expect, ExpectElement, ExpectFunction, FunctionElement
--from sage.misc.misc import DOT_SAGE, UNAME
-+from sage.misc.misc import EMBEDDED_MODE, DOT_SAGE, UNAME
+-from sage.misc.misc import DOT_SAGE
++from sage.misc.misc import EMBEDDED_MODE, DOT_SAGE
  from sage.misc.latex import LatexExpr
- import pexpect
- from random import randrange
-@@ -358,7 +358,6 @@
+ import re
+ import sage.rings.integer
+@@ -360,7 +360,6 @@
          if "TRUE" not in s+t:
              raise RuntimeError, "R was not compiled with PNG support"
  
@@ -183,7 +122,7 @@ diff -r 2a2abbcad325 sage/interfaces/r.py
          if EMBEDDED_MODE:
              self.setwd('"%s"'%os.path.abspath('.'))
          return RFunction(self, 'png')(*args, **kwds)
-@@ -691,8 +690,7 @@
+@@ -698,8 +697,7 @@
              This is similar to typing r.command?. 
          """
          s = self.eval('help("%s")'%command).strip()     # ?cmd is only an unsafe shortcut
@@ -193,7 +132,7 @@ diff -r 2a2abbcad325 sage/interfaces/r.py
              s = s.replace('_\x08','')
          return HelpExpression(s)
  
-@@ -1002,7 +1000,6 @@
+@@ -1009,7 +1007,6 @@
          """
          # We have to define this to override the plot function defined in the
          # superclass.
@@ -201,10 +140,10 @@ diff -r 2a2abbcad325 sage/interfaces/r.py
          if EMBEDDED_MODE:
              self.setwd('"%s"'%os.path.abspath('.'))
          RFunction(self, 'plot')(*args, **kwds)
-diff -r 2a2abbcad325 sage/matrix/matrix0.pyx
---- a/sage/matrix/matrix0.pyx	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/matrix/matrix0.pyx	Fri Aug 19 18:01:16 2011 -0700
-@@ -1803,7 +1803,7 @@
+diff --git a/sage/matrix/matrix0.pyx b/sage/matrix/matrix0.pyx
+--- a/sage/matrix/matrix0.pyx
++++ b/sage/matrix/matrix0.pyx
+@@ -1818,7 +1818,7 @@
  
          Note that size-zero subdivisions are ignored in the notebook::
              
@@ -213,7 +152,7 @@ diff -r 2a2abbcad325 sage/matrix/matrix0.pyx
              sage: latex(B)
              \left(\begin{array}{rr}
              \left(\begin{array}{rrr}
-@@ -1820,7 +1820,7 @@
+@@ -1835,7 +1835,7 @@
              0
              \end{array}\right)
              \end{array}\right)
@@ -222,7 +161,7 @@ diff -r 2a2abbcad325 sage/matrix/matrix0.pyx
          """
          latex = sage.misc.latex.latex
          matrix_delimiters = latex.matrix_delimiters()
-@@ -1840,7 +1840,9 @@
+@@ -1855,7 +1855,9 @@
          # jsmath doesn't know the command \hline, so have to do things
          # differently (and not as attractively) in embedded mode:
          # construct an array with a subarray for each block.
@@ -233,10 +172,10 @@ diff -r 2a2abbcad325 sage/matrix/matrix0.pyx
              for r in range(len(row_divs)+1):
                  s = ""
                  for c in range(len(col_divs)+1):
-diff -r 2a2abbcad325 sage/misc/hg.py
---- a/sage/misc/hg.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/hg.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -40,7 +40,7 @@
+diff --git a/sage/misc/hg.py b/sage/misc/hg.py
+--- a/sage/misc/hg.py
++++ b/sage/misc/hg.py
+@@ -73,7 +73,7 @@
  import os, shutil
  
  from   viewer import browser
@@ -245,39 +184,39 @@ diff -r 2a2abbcad325 sage/misc/hg.py
  from   remote_file import get_remote_file as get_remote_file0
  from   sage.server.misc import print_open_msg
  from   subprocess import Popen
-@@ -67,7 +67,7 @@
-     
-     Return cat if embedded in the notebook, and less otherwise.
+@@ -112,7 +112,7 @@
+         '--config pager.pager=cat'
+         sage: sage.server.support.EMBEDDED_MODE=False
      """
 -    if embedded():
 +    if EMBEDDED_MODE:
-         return 'cat'
+         return '--config pager.pager=cat'
      else:
-         return 'less'
-@@ -604,7 +604,7 @@
-         -  ``verbose`` - (bool, default: False) If true, the
-            list of changed files and full commit message is shown.
+         return '--config pager.pager="LESS=\'R\' less"'
+@@ -852,7 +852,7 @@
+             cd ... && sage --hg log   --config pager.pager="LESS='R' less"
+             ...
          """
 -        if embedded() and limit is None:
 +        if EMBEDDED_MODE and limit is None:
              limit = 20
          options = ''
          if branches:
-@@ -1112,7 +1112,7 @@
-            If you create new files you should first add them with the
-            add method.
+@@ -1504,7 +1504,7 @@
+             sage: hg_sage.commit('hg.py', comment='miscellaneous fixes') # not tested
+             cd ... && sage --hg commit -m "miscellaneous fixes" hg.py
          """
 -        if embedded() and comment is None:
 +        if EMBEDDED_MODE and comment is None:
              raise RuntimeError, "You're using the Sage notebook, so you *must* explicitly specify the comment in the commit command."
          if diff:
              self.diff(files)
-diff -r 2a2abbcad325 sage/misc/html.py
---- a/sage/misc/html.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/html.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -168,7 +168,14 @@
+diff --git a/sage/misc/html.py b/sage/misc/html.py
+--- a/sage/misc/html.py
++++ b/sage/misc/html.py
+@@ -166,7 +166,14 @@
              t += s[:i] + '<span class="math">%s</span>'%\
-                      latex(sage_eval(s[6+i:j], locals=locals)).replace('\\texttt','\\hbox')
+                      latex(sage_eval(s[6+i:j], locals=locals))
              s = s[j+7:] 
 -        print "<html><font color='black'>%s</font></html>"%t
 +
@@ -291,10 +230,87 @@ diff -r 2a2abbcad325 sage/misc/html.py
          return ''
  
      def table(self, x, header = False):
-diff -r 2a2abbcad325 sage/misc/interpreter.py
---- a/sage/misc/interpreter.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/interpreter.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -421,10 +421,6 @@
+@@ -233,7 +240,7 @@
+             </table>
+             </div>
+             </html>
+-
++ 
+             sage: html.table([(x,n(sin(x), digits=2)) for x in [0..3]], header = ["$x$", "$\sin(x)$"])
+             <html>
+             <div class="notruncate">
+@@ -265,9 +272,13 @@
+             </html>
+ 
+         """
++        print self.table_str(x, header=header)
++
++    def table_str(self, x, header):
+         import types
+         from sage.misc.all import latex
+         from itertools import cycle
++        ret = ""
+         if isinstance(x, types.GeneratorType):
+             x = list(x)
+         if isinstance(x, (list, tuple)):
+@@ -275,24 +286,25 @@
+             if rows > 0:
+                 # if the table has less then 100 rows, don't truncate the output in the notebook
+                 if rows <= 100:
+-                    print "<html>\n<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>"
++                    ret += "<html>\n<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>"
+                 else:
+-                    print "<html>\n<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>"
++                    ret += "<html>\n<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>"
+                 
+                 if header is True:
+                     header=x[0]
+                     x = list(x[1:])
+ 
+                 if header is not False:
+-                    print "<tr>"
+-                    self._table_columns(header, True)
+-                    print "</tr>"
++                    ret += "<tr>"
++                    ret += self._table_columns(header, True)
++                    ret += "</tr>"
+ 
+                 for row_class, row in zip(cycle(["row-a", "row-b"]), x):
+-                    print "<tr class =\"%s\">" % row_class
+-                    self._table_columns(row, False)
+-                    print "</tr>"
+-                print "</tbody>\n</table>\n</div>\n</html>"
++                    ret += "<tr class =\"%s\">" % row_class
++                    ret += self._table_columns(row, False)
++                    ret += "</tr>"
++                ret += "</tbody>\n</table>\n</div>\n</html>"
++        return ret
+ 
+     def _table_columns(self, row, header=False):
+         r"""
+@@ -315,13 +327,15 @@
+         elif not isinstance(row, (list, tuple)):
+             row = [row]
+ 
++        ret = ""
+         for column in xrange(len(row)):
+             if isinstance(row[column], Graphics):
+-                print column_tag % row[column].show(linkmode = True)
++                ret += column_tag % row[column].show(linkmode = True)
+             elif isinstance(row[column], str):
+-                print column_tag % math_parse(row[column])
++                ret += column_tag % math_parse(row[column])
+             else:
+-                print column_tag % ('<span class="math">%s</span>' % latex(row[column]))
++                ret += column_tag % ('<span class="math">%s</span>' % latex(row[column]))
++        return ret
+ 
+     def iframe(self, url, height=400, width=800):
+         r"""
+diff --git a/sage/misc/interpreter.py b/sage/misc/interpreter.py
+--- a/sage/misc/interpreter.py
++++ b/sage/misc/interpreter.py
+@@ -424,10 +424,6 @@
      return InteractiveShell._prefilter(self, block2, continuation)
  
  
@@ -305,28 +321,27 @@ diff -r 2a2abbcad325 sage/misc/interpreter.py
  ipython_prefilter = InteractiveShell.prefilter
  do_preparse=True
  def preparser(on=True):
-diff -r 2a2abbcad325 sage/misc/latex.py
---- a/sage/misc/latex.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/latex.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -23,8 +23,6 @@
- #                  http://www.gnu.org/licenses/
+diff --git a/sage/misc/latex.py b/sage/misc/latex.py
+--- a/sage/misc/latex.py
++++ b/sage/misc/latex.py
+@@ -16,8 +16,6 @@
  #*****************************************************************************
+ 
  
 -EMBEDDED_MODE = False
 -
- COMMON_HEADER='\\usepackage{amsmath}\n\\usepackage{amssymb}\n\\usepackage{amsfonts}\n\\usepackage{graphicx}\n\\pagestyle{empty}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n'
- 
- LATEX_HEADER='\\documentclass{article}\n' + COMMON_HEADER + '\\oddsidemargin 0.0in\n\\evensidemargin 0.0in\n\\textwidth 6.45in\n\\topmargin 0.0in\n\\headheight 0.0in\n\\headsep 0.0in\n\\textheight 9.0in\n'
-@@ -38,7 +36,7 @@
+ COMMON_HEADER = \
+ r'''\usepackage{amsmath}
+ \usepackage{amssymb}
+@@ -56,6 +54,7 @@
  
  from misc import tmp_dir, graphics_filename
  import sage_eval
--from sage.misc.misc import SAGE_DOC
-+from sage.misc.misc import SAGE_DOC, EMBEDDED_MODE
++from sage.misc.misc import EMBEDDED_MODE
  from sage.misc.sage_ostools import have_program
- from sage.misc.cachefunc import cached_method
+ from sage.misc.cachefunc import cached_function, cached_method
  
-@@ -1814,12 +1812,12 @@
+@@ -1943,12 +1942,12 @@
  
      EXAMPLES::
  
@@ -341,7 +356,7 @@ diff -r 2a2abbcad325 sage/misc/latex.py
  
      TESTS::
  
-@@ -2061,14 +2059,14 @@
+@@ -2187,14 +2186,14 @@
  
          sage: sage.misc.latex.print_or_typeset(3)
          3
@@ -358,20 +373,24 @@ diff -r 2a2abbcad325 sage/misc/latex.py
          sage: sys.displayhook = TEMP
      """
      import sys
-diff -r 2a2abbcad325 sage/misc/misc.py
---- a/sage/misc/misc.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/misc.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -46,6 +46,9 @@
+diff --git a/sage/misc/misc.py b/sage/misc/misc.py
+--- a/sage/misc/misc.py
++++ b/sage/misc/misc.py
+@@ -46,6 +46,13 @@
  
  LOCAL_IDENTIFIER = '%s.%s'%(HOSTNAME , os.getpid())
  
-+# EMBEDDED_MODE is a dictionary.  If Sage is embedded, this dictionary is non-empty and EMBEDDED_MODE['frontend']='notebook' or 'sagecell'.  In the case of sagecell, another option will be set, EMBEDDED_MODE['sage']=True/False, which specifies whether the sage-mode is active or not.
++# EMBEDDED_MODE is a dictionary.  If Sage is embedded, this dictionary
++# is non-empty and EMBEDDED_MODE['frontend']='notebook' or 'sagecell'.
++# In the case of sagecell, another option will be set,
++# EMBEDDED_MODE['sage']=True/False, which specifies whether the
++# sage-mode is active or not.
 +EMBEDDED_MODE={}
 +
- if not os.path.exists(SAGE_ROOT):
-     os.makedirs(SAGE_ROOT)
- 
-@@ -2103,19 +2106,6 @@
+ def sage_makedirs(dir):
+     """
+     Python version of ``mkdir -p``: try to create a directory, and also
+@@ -2133,19 +2140,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -391,9 +410,9 @@ diff -r 2a2abbcad325 sage/misc/misc.py
  
  #################################################################
  # Deprecation
-diff -r 2a2abbcad325 sage/misc/pager.py
---- a/sage/misc/pager.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/pager.py	Fri Aug 19 18:01:16 2011 -0700
+diff --git a/sage/misc/pager.py b/sage/misc/pager.py
+--- a/sage/misc/pager.py
++++ b/sage/misc/pager.py
 @@ -15,12 +15,11 @@
  # Any code in sage that uses a pager should use this pager.
  
@@ -408,19 +427,19 @@ diff -r 2a2abbcad325 sage/misc/pager.py
      if EMBEDDED_MODE:
          return cat
      else:
-diff -r 2a2abbcad325 sage/misc/sagedoc.py
---- a/sage/misc/sagedoc.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/sagedoc.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -24,7 +24,7 @@
+diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
+--- a/sage/misc/sagedoc.py
++++ b/sage/misc/sagedoc.py
+@@ -25,7 +25,7 @@
+ import os, re, sys
  import pydoc
- from subprocess import Popen, PIPE
  from sage.misc.viewer import browser
 -from sage.misc.misc import SAGE_DOC, tmp_dir
 +from sage.misc.misc import EMBEDDED_MODE, SAGE_DOC, tmp_dir
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
  
-@@ -653,7 +653,6 @@
+@@ -728,7 +728,6 @@
      if not interact:
          return results
  
@@ -428,7 +447,7 @@ diff -r 2a2abbcad325 sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1239,7 +1238,6 @@
+@@ -1313,7 +1312,6 @@
              raise OSError, """The document '%s' does not exist.  Please build it
  with 'sage -docbuild %s html --jsmath' and try again.""" %(name, name)
  
@@ -436,9 +455,9 @@ diff -r 2a2abbcad325 sage/misc/sagedoc.py
          if EMBEDDED_MODE:
              os.system(browser() + " " + url)
          else:
-diff -r 2a2abbcad325 sage/misc/sageinspect.py
---- a/sage/misc/sageinspect.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/sageinspect.py	Fri Aug 19 18:01:16 2011 -0700
+diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
+--- a/sage/misc/sageinspect.py
++++ b/sage/misc/sageinspect.py
 @@ -128,7 +128,6 @@
  import functools
  import os
@@ -447,7 +466,7 @@ diff -r 2a2abbcad325 sage/misc/sageinspect.py
  
  def isclassinstance(obj):
      r"""
-@@ -1124,7 +1123,8 @@
+@@ -1133,7 +1132,8 @@
          # sometimes s contains "*args" or "**keywds", and the
          # asterisks confuse ReST/sphinx/docutils, so escape them:
          # change * to \*, and change ** to \**.
@@ -457,7 +476,7 @@ diff -r 2a2abbcad325 sage/misc/sageinspect.py
              s = s.replace('**', '\\**')  # replace ** with \**
              t = ''
              while True:  # replace * with \*
-@@ -1241,13 +1241,14 @@
+@@ -1250,13 +1250,14 @@
      - extensions by Nick Alexander
      """
      import sage.misc.sagedoc
@@ -473,9 +492,9 @@ diff -r 2a2abbcad325 sage/misc/sageinspect.py
  
      # If there is a Cython embedded position, it needs to be stripped
      pos = _extract_embedded_position(s)
-diff -r 2a2abbcad325 sage/misc/session.pyx
---- a/sage/misc/session.pyx	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/session.pyx	Fri Aug 19 18:01:16 2011 -0700
+diff --git a/sage/misc/session.pyx b/sage/misc/session.pyx
+--- a/sage/misc/session.pyx
++++ b/sage/misc/session.pyx
 @@ -65,7 +65,7 @@
  cdef caller_locals = __builtin__.locals
  
@@ -503,9 +522,9 @@ diff -r 2a2abbcad325 sage/misc/session.pyx
          if not os.path.exists(name):
              nm = '../../data/' + name
              if not nm.endswith('.sobj'): nm += '.sobj'
-diff -r 2a2abbcad325 sage/misc/trace.py
---- a/sage/misc/trace.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/misc/trace.py	Fri Aug 19 18:01:16 2011 -0700
+diff --git a/sage/misc/trace.py b/sage/misc/trace.py
+--- a/sage/misc/trace.py
++++ b/sage/misc/trace.py
 @@ -65,13 +65,13 @@
      
      We test what happens in notebook embedded mode::
@@ -523,10 +542,10 @@ diff -r 2a2abbcad325 sage/misc/trace.py
      if EMBEDDED_MODE:
          raise NotImplementedError, "the trace command is not implemented in the Sage notebook; you must use the command line."
  
-diff -r 2a2abbcad325 sage/plot/animate.py
---- a/sage/plot/animate.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/plot/animate.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -21,7 +21,7 @@
+diff --git a/sage/plot/animate.py b/sage/plot/animate.py
+--- a/sage/plot/animate.py
++++ b/sage/plot/animate.py
+@@ -20,7 +20,7 @@
  from sage.structure.sage_object import SageObject
  
  import plot
@@ -535,7 +554,7 @@ diff -r 2a2abbcad325 sage/plot/animate.py
  import sage.misc.viewer
  
  class Animation(SageObject):
-@@ -430,7 +430,7 @@
+@@ -451,7 +451,7 @@
              self.gif(savefile=filename, delay=delay, iterations=iterations)
              return
          
@@ -544,21 +563,21 @@ diff -r 2a2abbcad325 sage/plot/animate.py
              self.gif(delay = delay, iterations = iterations)
          else:
              filename = sage.misc.misc.tmp_filename() + '.gif'
-diff -r 2a2abbcad325 sage/plot/plot.py
---- a/sage/plot/plot.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/plot/plot.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -318,7 +318,7 @@
+diff --git a/sage/plot/plot.py b/sage/plot/plot.py
+--- a/sage/plot/plot.py
++++ b/sage/plot/plot.py
+@@ -337,7 +337,7 @@
  ALLOWED_EXTENSIONS = ['.eps', '.pdf', '.png', '.ps', '.sobj', '.svg']
- DEFAULT_FIGSIZE=(6, 3.70820393249937)
+ #DEFAULT_FIGSIZE=(6, 3.70820393249937)
  DEFAULT_DPI = 100
 -EMBEDDED_MODE = False
 +from sage.misc.misc import EMBEDDED_MODE
  DOCTEST_MODE = False
  import sage.misc.misc
  from sage.misc.misc import srange
-diff -r 2a2abbcad325 sage/plot/plot3d/base.pyx
---- a/sage/plot/plot3d/base.pyx	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/plot/plot3d/base.pyx	Fri Aug 19 18:01:16 2011 -0700
+diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
+--- a/sage/plot/plot3d/base.pyx
++++ b/sage/plot/plot3d/base.pyx
 @@ -821,7 +821,7 @@
          return box_min, box_max
  
@@ -568,7 +587,7 @@ diff -r 2a2abbcad325 sage/plot/plot3d/base.pyx
          if EMBEDDED_MODE:
              s = 6
          else:
-@@ -1067,7 +1067,8 @@
+@@ -1075,7 +1075,8 @@
          else:
              filename = sage.misc.misc.tmp_filename()
  
@@ -578,10 +597,10 @@ diff -r 2a2abbcad325 sage/plot/plot3d/base.pyx
          ext = None
  
          # Tachyon resolution options
-diff -r 2a2abbcad325 sage/plot/plot3d/tachyon.py
---- a/sage/plot/plot3d/tachyon.py	Thu Aug 11 12:52:48 2011 +0000
-+++ b/sage/plot/plot3d/tachyon.py	Fri Aug 19 18:01:16 2011 -0700
-@@ -316,7 +316,7 @@
+diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
+--- a/sage/plot/plot3d/tachyon.py
++++ b/sage/plot/plot3d/tachyon.py
+@@ -315,7 +315,7 @@
              filename = sage.misc.misc.graphics_filename()
              self.save(SAGE_TMP + '/test.png', verbose=verbose, extra_opts=extra_opts)
              return

@@ -235,7 +235,7 @@ exit
 if __name__=='__main__':
     # We cannot use argparse until Sage's python is upgraded.
     from optparse import OptionParser
-    import singlecell_config
+    import sagecell_config
     parser=OptionParser(description="Starts a connection between a trusted and an untrusted process.")
     parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use on trusted side")
     parser.add_option("-w", "--workers", type=int, default=1, dest="workers", help="Number of workers to start.")
@@ -244,13 +244,13 @@ if __name__=='__main__':
     parser.add_option("--untrusted-account", dest="untrusted_account", 
                       help="untrusted account; should be something you can ssh into without a password", default="")
     parser.add_option("--untrusted-python", dest="untrusted_python",
-                      default=singlecell_config.device_config['untrusted-python'], 
+                      default=sagecell_config.device_config['untrusted-python'], 
                       help="the path to the Python the untrusted user should use")
     parser.add_option("--untrusted-cpu", dest="untrusted_cpu", type=float,
-                      default=singlecell_config.device_config.get('untrusted-cpu',-1), 
+                      default=sagecell_config.device_config.get('untrusted-cpu',-1), 
                       help="CPU time (seconds) allotted to each session")
     parser.add_option("--untrusted-mem", dest="untrusted_mem", type=float,
-                      default=singlecell_config.device_config.get('untrusted-mem',-1), 
+                      default=sagecell_config.device_config.get('untrusted-mem',-1), 
                       help="Memory (MB) allotted to each session")
     parser.add_option("-q", "--quiet", action="store_true", dest="quiet", help="Turn off most logging")
 

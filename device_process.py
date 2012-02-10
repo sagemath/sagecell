@@ -46,8 +46,8 @@ from util import log
 import json
 from json import dumps, loads
 from hashlib import sha1
-import interact_singlecell
-import singlecell_exec_config as CONFIG
+import interact_sagecell
+import sagecell_exec_config as CONFIG
 
 try:
     import sage
@@ -61,8 +61,8 @@ import sys
 sys._sage_messages=MESSAGE
 sys._sage_upload_file_pipe=_file_upload_send
 def _update_interact(id, control_vals):
-    import interact_singlecell
-    interact_info = interact_singlecell._INTERACTS[id]
+    import interact_sagecell
+    interact_info = interact_sagecell._INTERACTS[id]
     kwargs = interact_info["state"].copy()
     controls = interact_info["controls"]
     for var,value in control_vals.items():
@@ -71,7 +71,7 @@ def _update_interact(id, control_vals):
         if c.preserve_state:
             interact_info["state"][var]=kwargs[var]
 
-    interact_singlecell._INTERACTS[id]["function"](control_vals=kwargs)
+    interact_sagecell._INTERACTS[id]["function"](control_vals=kwargs)
 """
 
 user_code_sage="""
@@ -91,12 +91,12 @@ set_random_seed()
 #    pass
 
 
-# singlecell specific code:
-from interact_singlecell import * # override the interact functionality
+# sagecell specific code:
+from interact_sagecell import * # override the interact functionality
 from interact_compatibility import * # override the interact functionality
 import sage.misc.misc
-import singlecell_exec_config
-sage.misc.misc.EMBEDDED_MODE=singlecell_exec_config.EMBEDDED_MODE
+import sagecell_exec_config
+sage.misc.misc.EMBEDDED_MODE=sagecell_exec_config.EMBEDDED_MODE
 """+user_code
 
 class QueueOut(StringIO.StringIO):
@@ -409,6 +409,7 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                  "header":{"msg_id":unicode(uuid.uuid4())},
                  "parent_header":sessions[session]['parent_header'],
                  "msg_type":"extension",
+                 "output_block":None,
                  "sequence":sequence[session]}
             new_messages.append(msg)
             del sequence[session]
@@ -560,7 +561,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         with output_handler as MESSAGE:
             try:
                 locals={'MESSAGE': MESSAGE,
-                        'interact_singlecell': interact_singlecell,
+                        'interact_sagecell': interact_sagecell,
                         '_file_upload_send': upload_send}
                 if enable_sage and sage_mode:
                     locals['sage'] = sage
@@ -579,14 +580,10 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
             except:
 
                 (etype, evalue, etb) = sys.exc_info()
-                err = ""
 
-                if enable_sage: # Ipython 0.9.1
-                    import ultraTB_09 # Modified version of Sage's IPython's ultraTB library to achieve traceback output compatibility with 0.11
-                    err = ultraTB_09.VerboseTB(include_vars = 0, tb_offset=1)
-                else: # Ipython 0.10
-                    import ultraTB_10 # Modified version of ultraTB that shipped with IPython 0.10 to acheive traceback output compatibility with 0.11
-                    err = ultraTB_10.VerboseTB(include_vars = 0, tb_offset=1)
+                # Modified version of ultraTB from IPython 0.10 with IPython 0.11 tracebacks
+                import ultraTB_10
+                err = ultraTB_10.VerboseTB(include_vars = 0, tb_offset=1)
                 
                 # Using IPython 0.11 - change code to: import IPython.core.ultratb
                 # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
@@ -614,7 +611,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         new_files=file_parent.recv()
         old_files.update(new_files)
         # TODO: security implications here calling something that the user had access to.
-        timeout=max(0,min(float(interact_singlecell.__single_cell_timeout__), MAX_TIMEOUT))
+        timeout=max(0,min(float(interact_sagecell.__sage_cell_timeout__), MAX_TIMEOUT))
 
         file_list=[]
         for filename in os.listdir(os.getcwd()):

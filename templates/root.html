@@ -3,14 +3,14 @@
   <head>
     <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
     <meta name="viewport" content="width=device-width">
-    <title>Simple Compute Server</title>
+    <title>Sage Cell Server</title>
     <script type="text/javascript" src="../static/jquery-1.7.1.min.js"></script>
-    <script type="text/javascript" src="./embedded_singlecell.js"></script>
+    <script type="text/javascript" src="./embedded_sagecell.js"></script>
 
-    <script>$(function() {singlecell.init(function ()
-  {singlecell.makeSinglecell({inputLocation: '#singlecell'});});})</script>
+    <script>$(function() {sagecell.init(function ()
+  {sagecell.makeSagecell({inputLocation: '#sagecell'});});})</script>
   </head>
   <body>
-    <div id="singlecell"><script type="text/code"></script></div>
+    <div id="sagecell"><script type="text/code"></script></div>
   </body>
 </html>

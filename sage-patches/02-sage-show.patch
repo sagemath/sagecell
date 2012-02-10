@@ -2,13 +2,13 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1311809242 25200
 # Node ID f67d7039d959b56d5b611b5979375b95dbe69398
-# Parent ded2e3503123bc406860bdebec41a1800d75b596
+# Parent 41f1edc3d5a617a3dae69be65149fc72d36405f9
 [mq]: show.patch
 
-diff -r ded2e3503123 sage/misc/html.py
---- a/sage/misc/html.py	Fri Jul 01 12:43:53 2011 -0500
-+++ b/sage/misc/html.py	Fri Aug 19 19:20:35 2011 -0700
-@@ -170,13 +170,17 @@
+diff --git a/sage/misc/html.py b/sage/misc/html.py
+--- a/sage/misc/html.py
++++ b/sage/misc/html.py
+@@ -168,13 +168,17 @@
              s = s[j+7:] 
  
          from sage.misc.misc import EMBEDDED_MODE
@@ -28,48 +28,13 @@ diff -r ded2e3503123 sage/misc/html.py
  
      def table(self, x, header = False):
          r""" 
-@@ -279,29 +283,40 @@
-         from itertools import cycle
-         if isinstance(x, types.GeneratorType):
-             x = list(x)
-+
-+        s=[] # list of strings
-         if isinstance(x, (list, tuple)):
-             rows = len(x)
-             if rows > 0:
-                 # if the table has less then 100 rows, don't truncate the output in the notebook
-                 if rows <= 100:
--                    print "<html>\n<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>"
-+                    s.append("<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>")
-                 else:
--                    print "<html>\n<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>"
--                
-+                    s.append("<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>")
-+
-                 if header is True:
-                     header=x[0]
-                     x = list(x[1:])
+@@ -272,13 +276,20 @@
+             </html>
  
-                 if header is not False:
--                    print "<tr>"
--                    self._table_columns(header, True)
--                    print "</tr>"
-+                    s.append("<tr>")
-+                    s.append(self._table_columns(header, True))
-+                    s.append("</tr>")
- 
-                 for row_class, row in zip(cycle(["row-a", "row-b"]), x):
--                    print "<tr class =\"%s\">" % row_class
--                    self._table_columns(row, False)
--                    print "</tr>"
--                print "</tbody>\n</table>\n</div>\n</html>"
-+                    s.append("<tr class =\"%s\">" % row_class)
-+                    s.append(self._table_columns(row, False))
-+                    s.append("</tr>")
-+                s.append("</tbody>\n</table>\n</div>\n</html>")
-+        output_string = "".join(s)
-+
+         """
+-        print self.table_str(x, header=header)
 +        from sage.misc.misc import EMBEDDED_MODE
++        output_string = self.table_str(x, header=header)
 +        if EMBEDDED_MODE:
 +            if EMBEDDED_MODE['frontend']=='notebook':
 +                print "<html>"+output_string+"</html>"
@@ -77,60 +42,71 @@ diff -r ded2e3503123 sage/misc/html.py
 +                import sys
 +                sys._sage_messages.message_queue.display({'text/html':output_string})
  
-     def _table_columns(self, row, header = False):
+     def table_str(self, x, header):
+         import types
+         from sage.misc.all import latex
+         from itertools import cycle
+-        ret = ""
++        ret=[] # list of strings
+         if isinstance(x, types.GeneratorType):
+             x = list(x)
+         if isinstance(x, (list, tuple)):
+@@ -286,25 +297,25 @@
+             if rows > 0:
+                 # if the table has less then 100 rows, don't truncate the output in the notebook
+                 if rows <= 100:
+-                    ret += "<html>\n<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>"
++                    ret.append("<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>")
+                 else:
+-                    ret += "<html>\n<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>"
++                    ret.append("<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>")
+                 
+                 if header is True:
+                     header=x[0]
+                     x = list(x[1:])
+ 
+                 if header is not False:
+-                    ret += "<tr>"
+-                    ret += self._table_columns(header, True)
+-                    ret += "</tr>"
++                    ret.append("<tr>")
++                    ret.append(self._table_columns(header, True))
++                    ret.append("</tr>")
+ 
+                 for row_class, row in zip(cycle(["row-a", "row-b"]), x):
+-                    ret += "<tr class =\"%s\">" % row_class
+-                    ret += self._table_columns(row, False)
+-                    ret += "</tr>"
+-                ret += "</tbody>\n</table>\n</div>\n</html>"
+-        return ret
++                    ret.append("<tr class =\"%s\">" % row_class)
++                    ret.append(self._table_columns(row, False))
++                    ret.append("</tr>")
++                ret.append("</tbody>\n</table>\n</div>")
++        return "".join(ret)
+ 
+     def _table_columns(self, row, header=False):
          r"""
-@@ -320,6 +335,7 @@
-             sage: html._table_columns([Primes])
-             <td><span class="math">\hbox{<class 'sage.sets.primes.Primes'>}</span></td>
-         """
-+        rowstring=[]
-         if header == False:
-             column_tag = "<td>%s</td>"
-         else:
-@@ -334,12 +350,13 @@
- 
-         for column in xrange(len(row)):
-             if isinstance(row[column], Graphics):
--                print column_tag % row[column].show(linkmode = True)
-+                rowstring.append(column_tag % row[column].show(linkmode = True))
-             elif isinstance(row[column], str):
--                print column_tag % math_parse(row[column])
-+                rowstring.append(column_tag % math_parse(row[column]))
-             else:
--                print column_tag % ('<span class="math">' 
-+                rowstring.append(column_tag % ('<span class="math">' 
-                                     + latex(row[column]).replace('\\texttt','\\hbox') 
--                                    + '</span>')
-+                                    + '</span>'))
-+        return "".join(rowstring)
- 
- html = HTML()
-diff -r ded2e3503123 sage/misc/latex.py
---- a/sage/misc/latex.py	Fri Jul 01 12:43:53 2011 -0500
-+++ b/sage/misc/latex.py	Fri Aug 19 19:20:35 2011 -0700
-@@ -37,6 +37,7 @@
- from misc import tmp_dir, graphics_filename
- import sage_eval
- from sage.misc.misc import SAGE_DOC, EMBEDDED_MODE
-+import sage.misc.misc as misc
- from sage.misc.sage_ostools import have_program
- from sage.misc.cachefunc import cached_method
- 
-@@ -1830,6 +1831,7 @@
-         'pdf'
- 
-     """
-+    from sage.misc.misc import EMBEDDED_MODE
-     if isinstance(objects, LatexExpr):
-         s = str(objects)
-     else:
-@@ -1848,7 +1850,13 @@
+diff --git a/sage/misc/latex.py b/sage/misc/latex.py
+--- a/sage/misc/latex.py
++++ b/sage/misc/latex.py
+@@ -1967,7 +1967,8 @@
+         latex_options = {}
+     s = _latex_file_(objects, title=title, sep=sep, tiny=tiny, debug=debug, **latex_options)
+     # notebook
+-    if EMBEDDED_MODE and viewer is None:
++    import sage.misc.misc as misc
++    if misc.EMBEDDED_MODE and viewer is None:
+         jsMath_okay = True
+         for t in latex.jsmath_avoid_list():
+             if s.find(t) != -1:
+@@ -1975,7 +1976,13 @@
              if not jsMath_okay:
                  break
          if jsMath_okay:
 -            print JSMath().eval(objects, mode=mode)  # put comma at end of line?
 +            jsmath_expr = str(JSMath().eval(objects, mode=mode))
-+            if EMBEDDED_MODE['frontend']=='sagecell':
++            if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                mathexpr=jsmath_expr.replace('<html>','').replace('</html>','')
 +                import sys
 +                sys._sage_messages.message_queue.display({'text/html':mathexpr})
@@ -139,12 +115,12 @@ diff -r ded2e3503123 sage/misc/latex.py
          else:
              if pdflatex is True:
                  engine = "pdflatex"
-@@ -1859,7 +1867,15 @@
+@@ -1986,7 +1993,15 @@
              png_link = "cell://" + png_file
              png(objects, os.path.join(base_dir, png_file),
                  debug=debug, engine=engine)
 -            print '<html><img src="%s"></html>'%png_link  # put comma at end of line?
-+            if EMBEDDED_MODE['frontend']=='sagecell':
++            if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import sys
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([png_file]))
@@ -156,10 +132,10 @@ diff -r ded2e3503123 sage/misc/latex.py
          return
      # command line or notebook with viewer
      if pdflatex:
-diff -r ded2e3503123 sage/plot/animate.py
---- a/sage/plot/animate.py	Fri Jul 01 12:43:53 2011 -0500
-+++ b/sage/plot/animate.py	Fri Aug 19 19:20:35 2011 -0700
-@@ -362,6 +362,15 @@
+diff --git a/sage/plot/animate.py b/sage/plot/animate.py
+--- a/sage/plot/animate.py
++++ b/sage/plot/animate.py
+@@ -386,6 +386,15 @@
              from subprocess import check_call, CalledProcessError
              try:
                  check_call(cmd, shell=True)
@@ -175,12 +151,12 @@ diff -r ded2e3503123 sage/plot/animate.py
                  if show_path:
                      print "Animation saved to file %s." % savefile
              except (CalledProcessError, OSError):
-diff -r ded2e3503123 sage/plot/plot.py
---- a/sage/plot/plot.py	Fri Jul 01 12:43:53 2011 -0500
-+++ b/sage/plot/plot.py	Fri Aug 19 19:20:35 2011 -0700
-@@ -318,10 +318,10 @@
+diff --git a/sage/plot/plot.py b/sage/plot/plot.py
+--- a/sage/plot/plot.py
++++ b/sage/plot/plot.py
+@@ -337,10 +337,10 @@
  ALLOWED_EXTENSIONS = ['.eps', '.pdf', '.png', '.ps', '.sobj', '.svg']
- DEFAULT_FIGSIZE=(6, 3.70820393249937)
+ #DEFAULT_FIGSIZE=(6, 3.70820393249937)
  DEFAULT_DPI = 100
 -from sage.misc.misc import EMBEDDED_MODE
 -DOCTEST_MODE = False
@@ -191,7 +167,7 @@ diff -r ded2e3503123 sage/plot/plot.py
  DOCTEST_MODE_FILE = os.path.join(sage.misc.misc.SAGE_TMP, 'test.png')
  SHOW_DEFAULT = True
  
-@@ -1717,17 +1717,29 @@
+@@ -1770,17 +1770,29 @@
  
          # This option should not be passed on to save().
          linkmode = kwds.pop('linkmode', False)
@@ -225,11 +201,12 @@ diff -r ded2e3503123 sage/plot/plot.py
          else:
              kwds.setdefault('filename', sage.misc.misc.tmp_filename() + '.png')
              self.save(**kwds)
-@@ -2437,29 +2449,34 @@
+@@ -2486,41 +2498,47 @@
          options.update(kwds)
          dpi = options.pop('dpi')
          transparent = options.pop('transparent')
 +        format = options.pop('format', None)
+         fig_tight = options.pop('fig_tight')
          
          if filename is None:
              filename = options.pop('filename')
@@ -242,28 +219,18 @@ diff -r ded2e3503123 sage/plot/plot.py
 -                             + "', '".join(ALLOWED_EXTENSIONS) + "'!")
 -        elif ext in ['', '.sobj']:
 -            SageObject.save(self, filename)
--        else:
--            figure = self.matplotlib(**options)
--            # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension. 
--            # matplotlib looks at the file extension to see what the renderer should be.
--            # The default is FigureCanvasAgg for PNG's because this is by far the most
--            # common type of files rendered, like in the notebook, for example.
--            # if the file extension is not '.png', then matplotlib will handle it.
--            from matplotlib.backends.backend_agg import FigureCanvasAgg
--            figure.set_canvas(FigureCanvasAgg(figure))
--            figure.savefig(filename, dpi=dpi, bbox_inches='tight',
--                           transparent=transparent)
-+        if isinstance(filename, str):
++
++
++        if isinstance(filename, basestring):
 +            ext = os.path.splitext(filename)[1].lower()
-+            
 +            if format is None:
-+                # guess the format from the extension
++                # guess the format from the extension, so make sure that the extension
++                # is allowed
 +                if ext not in ALLOWED_EXTENSIONS:
 +                    raise ValueError("allowed file extensions for images are '"
 +                                     + "', '".join(ALLOWED_EXTENSIONS) + "'!")
-+                elif ext in ('', '.sobj'):
++                elif ext in ['', '.sobj']:
 +                    SageObject.save(self, filename)
-+                    return
 +
 +        figure = self.matplotlib(**options)
 +        # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension. 
@@ -273,12 +240,44 @@ diff -r ded2e3503123 sage/plot/plot.py
 +        # if the file extension is not '.png', then matplotlib will handle it.
 +        from matplotlib.backends.backend_agg import FigureCanvasAgg
 +        figure.set_canvas(FigureCanvasAgg(figure))
-+        figure.savefig(filename, dpi=dpi, bbox_inches='tight',
-+                       transparent=transparent, format=format)
++        # this messes up the aspect ratio!
++        #figure.canvas.mpl_connect('draw_event', pad_for_tick_labels)
++
++        # tight_layout adjusts the *subplot* parameters so ticks aren't cut off, etc.
++        figure.tight_layout()
++
++        if fig_tight is True:
++            figure.savefig(filename, dpi=dpi, bbox_inches='tight',
++                bbox_extra_artists=self.__bbox_extra_artists,
++                transparent=transparent)
+         else:
+-            figure = self.matplotlib(**options)
+-            # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension. 
+-            # matplotlib looks at the file extension to see what the renderer should be.
+-            # The default is FigureCanvasAgg for PNG's because this is by far the most
+-            # common type of files rendered, like in the notebook, for example.
+-            # if the file extension is not '.png', then matplotlib will handle it.
+-            from matplotlib.backends.backend_agg import FigureCanvasAgg
+-            figure.set_canvas(FigureCanvasAgg(figure))
+-            # this messes up the aspect ratio!
+-            #figure.canvas.mpl_connect('draw_event', pad_for_tick_labels)
+-            
+-            # tight_layout adjusts the *subplot* parameters so ticks aren't cut off, etc.
+-            figure.tight_layout()
+-
+-            if fig_tight is True:
+-                figure.savefig(filename, dpi=dpi, bbox_inches='tight',
+-                    bbox_extra_artists=self.__bbox_extra_artists,
+-                    transparent=transparent)
+-            else:
+-                figure.savefig(filename, dpi=dpi,
+-                           transparent=transparent)
++            figure.savefig(filename, dpi=dpi,
++                       transparent=transparent)
  
- 
- _SelectiveFormatterClass = None
-@@ -3705,11 +3722,20 @@
+ #Currently not used - see comment immediately above about 
+ #figure.canvas.mpl_connect('draw_event', pad_for_tick_labels)
+@@ -3872,11 +3890,20 @@
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
              return
@@ -302,10 +301,10 @@ diff -r ded2e3503123 sage/plot/plot.py
          self._render(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
          os.system('%s %s 2>/dev/null 1>/dev/null &'%(
                           sage.misc.viewer.browser(), filename))
-diff -r ded2e3503123 sage/plot/plot3d/base.pyx
---- a/sage/plot/plot3d/base.pyx	Fri Jul 01 12:43:53 2011 -0500
-+++ b/sage/plot/plot3d/base.pyx	Fri Aug 19 19:20:35 2011 -0700
-@@ -1069,6 +1069,7 @@
+diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
+--- a/sage/plot/plot3d/base.pyx
++++ b/sage/plot/plot3d/base.pyx
+@@ -1077,6 +1077,7 @@
  
          from sage.plot.plot import DOCTEST_MODE
          from sage.misc.misc import EMBEDDED_MODE
@@ -313,7 +312,7 @@ diff -r ded2e3503123 sage/plot/plot3d/base.pyx
          ext = None
  
          # Tachyon resolution options
-@@ -1082,9 +1083,18 @@
+@@ -1090,9 +1091,18 @@
              opts = '-res %s %s'%(figsize[0]*100, figsize[1]*100)
  
          if DOCTEST_MODE or viewer=='tachyon' or (viewer=='java3d' and EMBEDDED_MODE):
@@ -334,15 +333,16 @@ diff -r ded2e3503123 sage/plot/plot3d/base.pyx
              import sage.misc.viewer
              viewer_app = sage.misc.viewer.browser()
  
-@@ -1117,11 +1127,19 @@
+@@ -1128,16 +1138,25 @@
              T.export_jmol(archive_name, force_reload=EMBEDDED_MODE, zoom=zoom*100, **kwds)
              viewer_app = os.path.join(sage.misc.misc.SAGE_LOCAL, "bin/jmol")
  
 -            # We need a script to load the file
--            f = open(filename + '.jmol', 'w')
--            f.write('set defaultdirectory "%s"\n' % archive_name)
--            f.write('script SCRIPT\n')
--            f.close()
+-            f = open(filename + '.'+ext, 'w')
+-            if EMBEDDED_MODE:
+-                import sagenb
+-                path = "cells/%s/%s" %(sagenb.notebook.interact.SAGE_CELL_ID, archive_name)
++
 +            if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='sagecell':
 +                msg={}
 +                import json #TODO: be smart about which json
@@ -350,19 +350,28 @@ diff -r ded2e3503123 sage/plot/plot3d/base.pyx
 +                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
 +                msg['application/x-jmol']=archive_name
 +                sys._sage_messages.message_queue.display(msg)
-+            else:
+             else:
+-                path = archive_name
+-            f.write('set defaultdirectory "%s"\n' %path) 
+-            f.write('script SCRIPT\n')
+-            f.close()
 +                # We need a script to load the file
-+                f = open(filename + '.jmol', 'w')
-+                f.write('set defaultdirectory "%s"\n' % archive_name)
++                if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='notebook':
++                        import sagenb
++                        path = "cells/%s/%s" %(sagenb.notebook.interact.SAGE_CELL_ID, archive_name)
++                else:
++                    path = archive_name
++                f = open(filename + '.'+ext, 'w')
++                f.write('set defaultdirectory "%s"\n' %path) 
 +                f.write('script SCRIPT\n')
 +                f.close()
  
          if viewer == 'canvas3d':
              T = self._prepare_for_tachyon(frame, axes, frame_aspect_ratio, aspect_ratio, zoom)
-diff -r ded2e3503123 sage/plot/plot3d/tachyon.py
---- a/sage/plot/plot3d/tachyon.py	Fri Jul 01 12:43:53 2011 -0500
-+++ b/sage/plot/plot3d/tachyon.py	Fri Aug 19 19:20:35 2011 -0700
-@@ -319,6 +319,13 @@
+diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
+--- a/sage/plot/plot3d/tachyon.py
++++ b/sage/plot/plot3d/tachyon.py
+@@ -318,6 +318,13 @@
          if sage.misc.misc.EMBEDDED_MODE:
              filename = sage.misc.misc.graphics_filename()
              self.save(filename, verbose=verbose, extra_opts=extra_opts)
