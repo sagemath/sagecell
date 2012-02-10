@@ -335,8 +335,9 @@ Sage Cell instances::
 Example
 ^^^^^^^
 
-This is a very simple embedded cell with most things turned off and a default
-piece of code (replace ``<SERVER>`` with the appropriate address)::
+This is a very simple embedded cell with most things turned off and a
+default piece of code (you can replace ``aleph.sagemath.org`` with a
+different Sage Cell server, if you like)::
 
     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
     <html>
@@ -344,15 +345,15 @@ piece of code (replace ``<SERVER>`` with the appropriate address)::
         <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
         <meta name="viewport" content="width=device-width">
         <title>Sage Cell Server</title>
-        <script type="text/javascript" src="http://localhost:8080/static/jquery-1.5.min.js"></script>
-        <script type="text/javascript" src="http://localhost:8080/embedded_sagecell.js"></script>
+        <script type="text/javascript" src="http://aleph.sagemath.org/static/jquery.min.js"></script>
+        <script type="text/javascript" src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
 
         <script>
     $(function() {
         var makecells = function() {
             sagecell.makeSagecell({
                 inputLocation: '#mycell',
-                hide: ['messages', 'computationID', 'files', 'sageMode', 'editor'],
+                template: sagecell.templates.minimal,
                 evalButtonText: 'Make Live'});
         }
         sagecell.init(makecells);
