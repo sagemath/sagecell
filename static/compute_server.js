@@ -42,7 +42,7 @@ singlecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     this.sessionContinue = true;
     this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="singlecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="singlecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="singlecell_sessionOutput"></div><div id="session_'+this.session_id+'_files" class="singlecell_sessionFilesTitle">Session Files:</div><div id="output_files_'+this.session_id+'" class="singlecell_sessionFiles"></div></div>');
     this.session_title=$('#session_'+this.session_id+'_title');
-    this.replace_output=false;
+    this.replace_output={null: false}
     this.lock_output=false;
     this.files = {};
     this.eventHandlers = {};
@@ -146,9 +146,9 @@ singlecell.Session.prototype.output = function(html, block_id, create) {
     // if we aren't replacing the output block
     if (typeof(create)==="undefined") {create=true;}
     var output_block=$("#"+this.output_id(block_id));
-    if (this.replace_output) {
+    if (this.replace_output[block_id]) {
 	output_block.empty();
-	this.replace_output=false;
+	this.replace_output[block_id]=false;
 	create=true;
     }
     out = output_block
@@ -201,8 +201,6 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		// This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
 		this.appendMsg(msg, "Rejected: ");
 		continue;
-	    } else if (parent_id === this.lastMessage[output_block]) {
-		this.replace_output = true;
 	    }
 
             // Handle each stream type.  This should probably be separated out into different functions.
@@ -259,8 +257,8 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		var user_msg=msg.content;
 		switch(user_msg.msg_type) {
 		case "files":
-		    this.replace_output = true;
 		    output_block = "files_"+this.session_id;
+		    this.replace_output[output_block] = true;
 		    var files = user_msg.content.files;
 		    var html="<div>\n";
 		    for(var j = 0, j_max = files.length; j < j_max; j++) {
@@ -276,7 +274,6 @@ singlecell.Session.prototype.get_output_success = function(data, textStatus, jqX
 		    }
 		    html+="</div>";
 		    this.output(html,output_block).effect("pulsate", {times:1}, 500);
-		    this.replace_output = false;
 		    break;
 		case "session_end":
 		    if ($.inArray(".singlecell_done", this.hideDynamic) === -1) {
@@ -429,7 +426,7 @@ singlecell.InteractCell.prototype.bindChange = function(interact) {
 		code += "))";
 
 		interact.session.sendMsg(code, interact.msg_id, interact.interact_id);
-		interact.session.replace_output=true;
+		interact.session.replace_output[interact.interact_id]=true;
 	    } else {
 		parentSpan.parent().addClass("singlecell_dirtyControl");
 	    }
