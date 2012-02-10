@@ -409,6 +409,7 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                  "header":{"msg_id":unicode(uuid.uuid4())},
                  "parent_header":sessions[session]['parent_header'],
                  "msg_type":"extension",
+                 "output_block":None,
                  "sequence":sequence[session]}
             new_messages.append(msg)
             del sequence[session]
