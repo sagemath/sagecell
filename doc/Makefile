@@ -14,10 +14,6 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
 
-# This will only work if you have automatic logins to sage.math.washington.edu set up
-upload: $(BUILDDIR)/html
-	scp -r $(BUILDDIR)/html sage.math.washington.edu:sagecell
-
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -37,6 +33,10 @@ help:
 	@echo "  changes    to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
+
+# This will only work if you have automatic logins to sage.math.washington.edu set up
+upload: $(BUILDDIR)/html
+	scp -r $(BUILDDIR)/html/* sage.math.washington.edu:sagecell/
 
 clean:
 	-rm -rf $(BUILDDIR)/*
