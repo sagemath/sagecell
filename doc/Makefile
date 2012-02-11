@@ -14,6 +14,11 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
 
+# This will only work if you have automatic logins to sage.math.washington.edu set up
+upload: $(BUILDDIR)/html
+	scp -r $(BUILDDIR)/html sage.math.washington.edu:sagecell
+
+
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
