@@ -12,6 +12,7 @@ Contents:
     :maxdepth: 2
 
     README
+    embedding
     db
     trusted_db
     web_server
@@ -20,7 +21,6 @@ Contents:
     interact_protocol
     timing
     js
-    embedding
 
 .. automodule:: misc
     :members:
