@@ -235,7 +235,7 @@ Within ``sagecell.makeSagecell()``, a template can be applied with the
 following::
   
    { ..
-   template: {template}
+   template: template_name
    .. }
 
 The following options can be specified within a template dictionary (see the
