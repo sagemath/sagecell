@@ -11,7 +11,7 @@ import uuid
 import zmq
 from ip_receiver import IPReceiver
 from werkzeug import secure_filename
-
+from urllib import quote, quote_plus
 
 import sagecell_config
 MAX_FILES = sagecell_config.flask_config['max_files']
@@ -24,8 +24,6 @@ fs=None
 xreq=None
 messages=[]
 sysargs=None
-
-jQuery_current='jquery-1.5.min.js'
 
 def print_exception(f):
     """
@@ -68,12 +66,25 @@ def jsonify_with_callback(callback, *args, **kwargs):
         return jsonify(*args, **kwargs)
     else:
         return Response(callback+'('+json.dumps(kwargs)+')',
-
                         mimetype='text/javascript')
 
 @app.route("/")
 def root():
-    return render_template('root.html');
+    options={}
+    if 'c' in request.values:
+        options['code']=request.values['c']
+    elif 'z' in request.values:
+        import zlib, base64
+        try:
+            z=request.values['z']
+            options['code']=zlib.decompress(base64.urlsafe_b64decode(z.encode('ascii')))
+        except Exception as e:
+            options['code']="# Error decompressing code: %s"%e
+    if 'code' in options:
+        if isinstance(options['code'], unicode):
+            options['code']=options['code'].encode('utf8')
+        options['code']=quote(options['code'])
+    return render_template('root.html', **options)
 
 @app.route("/eval", methods=['GET','POST'])
 @get_db
@@ -132,7 +143,14 @@ def evaluate(db,fs):
                        }
         log("Received Request: %s"%(message))
         db.new_input_message(message)
-    return ""
+        c=quote_plus(code.encode('utf8'))
+        if len(c)<50:
+            link='c=%s'%c
+        else:
+            import zlib, base64
+            z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
+            link='z=%s'%z
+        return '<a href="/?%s">Permalink</a>'%link
 
 @app.route("/output_poll")
 @print_exception

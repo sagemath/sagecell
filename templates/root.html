@@ -4,11 +4,11 @@
     <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
     <meta name="viewport" content="width=device-width">
     <title>Sage Cell Server</title>
-    <script type="text/javascript" src="../static/jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="../static/jquery.min.js"></script>
     <script type="text/javascript" src="./embedded_sagecell.js"></script>
 
     <script>$(function() {sagecell.init(function ()
-  {sagecell.makeSagecell({inputLocation: '#sagecell'});});})</script>
+  {sagecell.makeSagecell({inputLocation: '#sagecell' {% if code %}, code: decodeURIComponent('{{code}}') {% endif %} }); });});</script>
   </head>
   <body>
     <div id="sagecell"><script type="text/code"></script></div>
