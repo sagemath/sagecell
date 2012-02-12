@@ -150,7 +150,7 @@ def evaluate(db,fs):
             import zlib, base64
             z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
             params['z']=z
-        url = url_for('root', **params)
+        url = url_for('root', _external=True, **params)
         return '<a href="%s">Permalink</a> (<a href="%s">Shortened</a>)'%(url, tinyurl(url))
 
 from urllib import urlencode, urlopen
