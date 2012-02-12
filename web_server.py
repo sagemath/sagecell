@@ -151,7 +151,14 @@ def evaluate(db,fs):
             z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
             params['z']=z
         url = url_for('root', _external=True, **params)
-        return '<a href="%s">Permalink</a> (<a href="%s">Shortened</a>)'%(url, tinyurl(url))
+        returnlink = '<a href="%s">Permalink</a>'%url
+        try:
+            shorturl = tinyurl(url)
+            returnlink += ' (<a href="%s">Shortened</a>)'%shorturl
+        except:
+            pass
+            
+        return returnlink
 
 from urllib import urlencode, urlopen
 from json import loads
