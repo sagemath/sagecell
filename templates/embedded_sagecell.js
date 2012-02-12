@@ -240,7 +240,9 @@ sagecell.initCell = (function(sagecellInfo) {
 		var server_response = $("#sagecell_serverResponse_"+session.session_id).contents().find("body").html();
 		if (server_response !== "") {
 		    session.output(server_response);
-		    session.clearQuery();
+                    if (server_response.indexOf("Permalink")===-1) {
+                        session.clearQuery();
+                    }
 		}
 	    }
 	    $("#sagecell_serverResponse_"+session.session_id).unbind();
