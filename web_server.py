@@ -143,14 +143,28 @@ def evaluate(db,fs):
                        }
         log("Received Request: %s"%(message))
         db.new_input_message(message)
-        c=quote_plus(code.encode('utf8'))
-        if len(c)<50:
-            link='c=%s'%c
+        params={}
+        if len(urlencode({'c': code.encode('utf8')}))<50:
+            params['c']=code
         else:
             import zlib, base64
             z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
-            link='z=%s'%z
-        return '<a href="/?%s">Permalink</a>'%link
+            params['z']=z
+        url = url_for('root', **params)
+        return '<a href="%s">Permalink</a> (<a href="%s">Shortened</a>)'%(url, tinyurl(url))
+
+from urllib import urlencode, urlopen
+from json import loads
+
+def GooGL(url):
+    params = urlencode({'security_token': None, 'url': url})
+    f = urlopen('http://goo.gl/api/shorten', params)
+    return loads(f.read())['short_url']
+
+def tinyurl(url):
+    params = urlencode({'url':url})
+    f = urlopen('http://tinyurl.com/api-create.php', params)
+    return f.read()
 
 @app.route("/output_poll")
 @print_exception
