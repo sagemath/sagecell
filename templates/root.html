@@ -7,8 +7,10 @@
     <script type="text/javascript" src="../static/jquery.min.js"></script>
     <script type="text/javascript" src="./embedded_sagecell.js"></script>
 
-    <script>$(function() {sagecell.init(function ()
-  {sagecell.makeSagecell({inputLocation: '#sagecell' {% if code %}, code: decodeURIComponent('{{code}}') {% endif %} }); });});</script>
+    <script>$(function() {sagecell.init(function () {
+               sagecell.makeSagecell({inputLocation: '#sagecell', 
+                 hide: ["computationID", "messages", "sessionTitle"]
+                 {% if code %}, code: decodeURIComponent('{{code}}') {% endif %} }); });});</script>
   </head>
   <body>
     <div id="sagecell"><script type="text/code"></script></div>
