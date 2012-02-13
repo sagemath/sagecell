@@ -51,18 +51,17 @@ def __old_make_values_list(vmin, vmax, step_size):
                         vals.append(vmax)
                 except (ValueError, TypeError):
                     pass
-                
-        #Is the list of values is small (len<=50), use the whole list.
-        #Otherwise, use part of the list.
-        if len(vals) == 0:
-            return_values = [0]   
-        elif(len(vals)<=500):
-            return_values = vals
-        else:
-            vlen = (len(vals)-1)/499.0
-            return_values = [vals[(int)(i*vlen)] for i in range(500)]
-
-        return return_values
+    
+    #If the list of values is small, use the whole list.
+    #Otherwise, use evenly spaced values in the list.
+    if len(vals) == 0:
+        return_values = [0]
+    elif(len(vals)<=500):
+        return_values = vals
+    else:
+        vlen = (len(vals)-1)/499.0
+        return_values = [vals[(int)(i*vlen)] for i in range(500)]
+    return return_values
 
 
 
