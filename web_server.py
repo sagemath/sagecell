@@ -2,7 +2,7 @@
 Flask web server for frontend
 """
 
-from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json, Response, abort
+from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json, Response, abort, make_response
 import mimetypes
 from time import time, sleep
 from functools import wraps
@@ -289,10 +289,24 @@ def config(db, fs):
 
     return Response(s, content_type='text/plain')
 
+from hashlib import sha1
+
+_embedded_sagecell_cache = None
 @app.route("/embedded_sagecell.js")
 def embedded():
-    return Response(render_template("embedded_sagecell.js"),
-                    content_type='text/javascript')
+    global _embedded_sagecell_cache
+    if _embedded_sagecell_cache is None:
+        data = Response(render_template("embedded_sagecell.js"),
+                        content_type='text/javascript')
+        _embedded_sagecell_cache = (data, sha1(repr(data)).hexdigest())
+    data,datahash = _embedded_sagecell_cache
+    if request.environ.get('HTTP_IF_NONE_MATCH', None) == datahash:
+        response = make_response('',304)
+    else:
+        response = make_response(data)
+        response.headers['Content-Type'] = 'text/javascript; charset=utf-8'
+        response.headers['Etag']=datahash
+    return response
 
 #purely for backwards compatibility
 @app.route("/embedded_singlecell.js")
