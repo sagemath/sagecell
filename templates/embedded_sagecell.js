@@ -116,10 +116,12 @@ sagecell.makeSagecell = (function(args) {
 			$(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
 		    } else if (hide[i] === 'output' ||
 			       hide[i] === 'computationID' ||
-			       hide[i] === 'messages') {
+			       hide[i] === 'messages' ||
+                               hide[i] === 'sessionTitle') {
 			$(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
-		    } else if (hide[i] === 'sessionTitle' ||
-			       hide[i] === 'done' ||
+                        $('head').append("<style type='text/css'> "+outputLocation+" .sagecell_"+hide[i]+ "{display: none;} </style>");
+
+		    } else if (hide[i] === 'done' ||
 			       hide[i] === 'sessionFiles' ||
 			       hide[i] === 'sessionFilesTitle') {
 			settings.hideDynamic.push(".sagecell_"+hide[i]);

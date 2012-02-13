@@ -277,7 +277,7 @@ sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR
 		    break;
 		case "session_end":
 		    if ($.inArray(".sagecell_done", this.hideDynamic) === -1) {
-			this.output("<div class='sagecell_done'>Session "+id+ " done</div>", output_block);
+			this.output("<div class='sagecell_done'>Session <span class='sagecell_sessionTitle'>"+id+ "</span> done</div>", output_block);
 		    }
 
 		    // Unbinds interact change handlers
