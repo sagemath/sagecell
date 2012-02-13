@@ -296,9 +296,8 @@ def embedded():
 
 #purely for backwards compatibility
 @app.route("/embedded_singlecell.js")
-def embedded():
-    return Response(render_template("embedded_sagecell.js"),
-                    content_type='text/javascript')
+def embedded_old():
+    return redirect(url_for('embedded'), 301)
 
 if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
