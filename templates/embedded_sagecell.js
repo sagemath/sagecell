@@ -72,7 +72,7 @@ sagecell.makeSagecell = (function(args) {
     defaults = {"editor": "codemirror",
 		"evalButtonText": "Evaluate",
 		"hide": [],
-		"replaceOutput": false,
+		"replaceOutput": true,
 		"sageMode": true};
 
     if (args.template !== undefined) {
@@ -186,6 +186,12 @@ sagecell.initCell = (function(sagecellInfo) {
 	editorData = temp[1];
 	return false;
     });
+
+    inputLocation.find(".sagecell_advancedTitle").click(function() {
+        inputLocation.find('.sagecell_advancedFields').slideToggle();
+        return false;
+    });
+
     inputLocation.find(".sagecell_addFile").click(function(){
 	inputLocation.find(".sagecell_fileUpload").append("<div class='sagecell_fileInput'><a class='sagecell_removeFile' href='#' style='text-decoration:none' onClick='jQuery(this).parent().remove(); return false;'>[-]</a>&nbsp;&nbsp;&nbsp;<input type='file' id='"+inputLocationName+"_file"+files+"' name='file'></div>");
 	files++;
@@ -241,8 +247,10 @@ sagecell.initCell = (function(sagecellInfo) {
 	    if ($URL.root === (location.protocol+'//'+location.host+'/')) {
 		var server_response = $("#sagecell_serverResponse_"+session.session_id).contents().find("body").html();
 		if (server_response !== "") {
-		    session.output(server_response);
-                    if (server_response.indexOf("Permalink")===-1) {
+                    if (server_response.indexOf("Permalink")>=0) {
+		        session.output(server_response+"<br/>");
+                    } else {
+		        session.output(server_response);
                         session.clearQuery();
                     }
 		}

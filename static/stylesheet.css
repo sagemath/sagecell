@@ -9,18 +9,26 @@
 .error {color: red}
 .stderr {color: red}
 .colorpicker {z-index: 10} /* So that sliders, etc. don't appear on top of it */
-.CodeMirror {border: 1px solid black;}
+.CodeMirror {border: 1px solid;}
 /* resizable */
 /* .CodeMirror-scroll {height: auto; overflow-y: auto; overflow-x: auto; min-height: 10ex; max-height: 60ex;}  */
 /* not resizeable */
 .CodeMirror-scroll {height: 200px}
 .sagecell_done {color: red}
-.sagecell_sessionOutput {border: 2px solid black; padding: 5px; overflow-x: auto}
+.sagecell_sessionOutput {border: 2px solid; padding: 5px; overflow-x: auto}
 .sagecell_sessionFiles {padding-bottom: 1.0em;}
 .sagecell_interactContainer {padding: 15px 5px 5px 5px}
 .sagecell_interactOutput {border-left: 2px solid blue; padding: 5px; overflow-x: auto}
 .sagecell_interactValueBox {font-family: monospace} /* Required since dynamic input box size is determined by monospaced fonts */
 .sagecell_dirtyControl {border-left: 2px solid red;}
-.sagecell_commands {width: 100%; height: 200px; border: 1px solid black; font-family: monospace; font-size: 10pt;}
+.sagecell_commands {width: 100%; height: 200px; border: 1px solid; font-family: monospace; font-size: 10pt;}
 .sagecell_editor {line-height: 13px; padding-bottom: 1em;}
-.sagecell_editorToggle {float: right; padding-top: 1em;}
+.sagecell_editorToggle {float: right; margin: 2px; padding: 5px 5px 5px 5px; border: 1px solid;}
+.sagecell_evalButton { font-size: 150%;
+                       background-color: transparent;
+                       border: 1px solid;
+                       padding: 0 2px 0 2px;
+                       margin-bottom: 1em;
+                     }
+.sagecell_advancedFrame {border: 1px solid; padding: 0.2em; display: inline-block;margin-left: 3em; vertical-align: top;}
+.sagecell_advancedTitle {border-bottom: 1px solid;}
