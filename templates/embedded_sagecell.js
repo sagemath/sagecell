@@ -167,17 +167,22 @@ sagecell.initCell = (function(sagecellInfo) {
 	sageMode.attr("checked", false);
     }
 
+    /* Saving the state and restoring it seems more confusing than necessary for new users.
+       There also seems to be a bug; if the sage mode checkbox is unchecked, it seems that it defaults to that
+       from then on.
     try {
-	if (textArea.val().length == 0 && sessionStorage[inputLocationName+"_editorValue"]) {
+	if (textArea.val().length == 0 && sessionStorage[inputLocationName+"_editorValue"]!== undefined) {
 	    textArea.val(sessionStorage.getItem(inputLocationName+"_editorValue"));
 	}
-	if (sessionStorage[inputLocationName+"_sageModeCheck"]) {
-	    sageMode.attr("checked", sessionStorage.getItem(inputLocationName+"_sageModeCheck")=="true");
+	if (sessionStorage[inputLocationName+"_sageModeCheck"]!==undefined) {
+	    sageMode.attr("checked", sessionStorage.getItem(inputLocationName+"_sageModeCheck")===true);
 	}
 	sageMode.change(function(e) {
-	    sessionStorage.setItem(inputLocationName+"_sageModeCheck",$(e.target).attr("checked"));
+	    sessionStorage.setItem(inputLocationName+"_sageModeCheck",$(e.target).attr("checked")==="checked");
 	});
     } catch(e) {}
+    */
+
 
     temp = this.renderEditor(editor, inputLocation);
     editor = temp[0];
@@ -314,12 +319,14 @@ sagecell.renderEditor = (function(editor, inputLocation) {
 		inputLocation.find(".sagecell_evalButton").click();})},
 	    onKeyEvent: (function(editor, event){
 		editor.save();
+                /* Saving state and restoring it seems more confusing for new users, so we're commenting it out for now.
 		try {
 		    sessionStorage.removeItem(inputLocationName+"_editorValue");
 		    sessionStorage.setItem(inputLocationName+"_editorValue", inputLocation.find(".sagecell_commands").val());
 		} catch (e) {
 		    // if we can't store, don't do anything, e.g. if cookies are blocked
 		}
+                */
 	    })
 	});
     }
