@@ -68,8 +68,11 @@ def jsonify_with_callback(callback, *args, **kwargs):
         return Response(callback+'('+json.dumps(kwargs)+')',
                         mimetype='text/javascript')
 
+import string
+_VALID_QUERY_CHARS=set(string.letters+string.digits+'-')
 @app.route("/")
-def root():
+@get_db
+def root(db,fs):
     options={}
     if 'c' in request.values:
         options['code']=request.values['c']
@@ -80,6 +83,8 @@ def root():
             options['code']=zlib.decompress(base64.urlsafe_b64decode(z.encode('ascii')))
         except Exception as e:
             options['code']="# Error decompressing code: %s"%e
+    elif 'q' in request.values and set(request.values['q']).issubset(_VALID_QUERY_CHARS):
+        options['code']=db.get_input_message_by_shortened(request.values['q'])
     if 'code' in options:
         if isinstance(options['code'], unicode):
             options['code']=options['code'].encode('utf8')
@@ -127,6 +132,7 @@ def evaluate(db,fs):
             if bool(request.form.get("sage_mode")) is True:
                 sage_mode = True
 
+            shortened = str(uuid.uuid4())
             message = {"parent_header": {},
                        "header": {"msg_id": request.form.get("msg_id"),
                                   "username": "",
@@ -139,7 +145,8 @@ def evaluate(db,fs):
                                    "sage_mode": sage_mode,
                                    "user_variables": [],
                                    "user_expressions": {}
-                                   }
+                                   },
+                        "shortened": shortened
                        }
         log("Received Request: %s"%(message))
         db.new_input_message(message)
@@ -151,20 +158,17 @@ def evaluate(db,fs):
             z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
             params['z']=z
         url = url_for('root', _external=True, **params)
+        shorturl = url_for('root', _external=True, q=shortened)
         returnlink = '<a href="%s">Permalink</a>'%url
-        try:
-            shorturl = tinyurl(url)
-            returnlink += ' (<a href="%s">Shortened</a>)'%shorturl
-        except:
-            pass
-            
+        returnlink += ' (<a href="%s">Shortened temporary link</a>)'%shorturl
         return returnlink
 
 from urllib import urlencode, urlopen
 from json import loads
 
 def GooGL(url):
-    params = urlencode({'security_token': None, 'url': url})
+    # Note: we need to get an API key to do this legally
+    params = urlencode({'security_token': None, 'longURL': url})
     f = urlopen('http://goo.gl/api/shorten', params)
     return loads(f.read())['short_url']
 

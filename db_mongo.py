@@ -22,6 +22,7 @@ from pymongo.objectid import ObjectId
 from pymongo import ASCENDING, DESCENDING
 from sagecell_config import mongo_config
 from util import log
+import uuid
 
 class DB(db.DB):
     """
@@ -37,10 +38,13 @@ class DB(db.DB):
         self.database.sessions.ensure_index([('session', ASCENDING)])
         self.database.input_messages.ensure_index([('device', ASCENDING)])
         self.database.input_messages.ensure_index([('evaluated',ASCENDING)])
+        self.database.input_messages.ensure_index([('shortened',ASCENDING)])
         self.database.messages.ensure_index([('parent_header.session', ASCENDING)])
 
     def new_input_message(self, msg):
         # look up device; None means a device has not yet been assigned
+        # Note that this makes it easy for an attacker to inject messages into a session
+        # if they can snoop the session ID
         doc=self.database.sessions.find_one({'session':msg['header']['session']}, 
                                         {'device': 1})
         if doc is None:
@@ -52,7 +56,17 @@ class DB(db.DB):
         import datetime
         msg['timestamp']=datetime.datetime.utcnow()
         self.database.input_messages.insert(msg)
-    
+
+    def get_input_message_by_shortened(self, shortened):
+        """
+        Retrieve the input code for a shortened field
+        """
+        doc=self.database.input_messages.find_one({'shortened': shortened}, {'content.code': 1})
+        if doc is not None:
+            return doc['content']['code']
+        else:
+            return ""
+
     def get_input_messages(self, device, limit=None):
         """
         See :meth:`db.DB.get_input_messages`
