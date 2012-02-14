@@ -107,6 +107,7 @@ sagecell.makeSagecell = (function(args) {
 		if (inputLocation !== outputLocation) {
 		    $(inputLocation+" .sagecell_output, .sagecell_messages").appendTo(outputLocation);
 		}
+                hideAdvanced={};
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
 		    if (hide[i] === 'editor' ||
 			hide[i] === 'editorToggle' ||
@@ -114,6 +115,11 @@ sagecell.makeSagecell = (function(args) {
 			hide[i] === 'evalButton' ||
 			hide[i] === 'sageMode') {
 			$(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
+                        // TODO: make the advancedFrame an option to hide, then delete
+                        // this hideAdvanced hack
+                        if (hide[i] === 'files' || hide[i] === 'sageMode') {
+                            hideAdvanced[hide[i]]=true;
+                        }
 		    } else if (hide[i] === 'output' ||
 			       hide[i] === 'computationID' ||
 			       hide[i] === 'messages' ||
@@ -127,6 +133,9 @@ sagecell.makeSagecell = (function(args) {
 			settings.hideDynamic.push(".sagecell_"+hide[i]);
 		    }
 		}
+                if (hideAdvanced.files === true && hideAdvanced.sageMode === true) {
+		    $(inputLocation+" .sagecell_advancedFrame").css("display", "none");
+                }
 		if (typeof(evalButtonText) !== "undefined") {
 		    $(inputLocation+ " .sagecell_evalButton").val(evalButtonText);
 		}
