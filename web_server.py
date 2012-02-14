@@ -79,8 +79,12 @@ def root(db,fs):
     elif 'z' in request.values:
         import zlib, base64
         try:
-            z=request.values['z']
-            options['code']=zlib.decompress(base64.urlsafe_b64decode(z.encode('ascii')))
+            z=request.values['z'].encode('ascii')
+            # we allow the user to strip off the = padding at the end
+            # so that the URL doesn't have to have any escaping
+            # here we add back the = padding if we need it
+            z+='='*((4-(len(z)%4))%4)
+            options['code']=zlib.decompress(base64.urlsafe_b64decode(z))
         except Exception as e:
             options['code']="# Error decompressing code: %s"%e
     elif 'q' in request.values and set(request.values['q']).issubset(_VALID_QUERY_CHARS):
