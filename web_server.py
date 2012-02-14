@@ -154,17 +154,16 @@ def evaluate(db,fs):
                        }
         log("Received Request: %s"%(message))
         db.new_input_message(message)
-        params={}
+        import zlib, base64
+        z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
+        zipurl = url_for('root', _external=True, z=z)
         if len(urlencode({'c': code.encode('utf8')}))<100:
-            params['c']=code
+            codeurl = url_for('root', _external=True, c=code)
         else:
-            import zlib, base64
-            z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
-            params['z']=z
-        url = url_for('root', _external=True, **params)
-        shorturl = url_for('root', _external=True, q=shortened)
-        returnlink = '<a href="%s">Permalink</a>'%url
-        returnlink += ' (<a href="%s">Shortened temporary link</a>)'%shorturl
+            codeurl=zipurl
+
+        queryurl = url_for('root', _external=True, q=shortened)
+        returnlink = '<a href="%s">Permalink</a> (<a href="%s">Alternate permalink</a>; <a href="%s">Shortened temporary link</a>)'%(codeurl, zipurl, queryurl)
         return returnlink
 
 from urllib import urlencode, urlopen
