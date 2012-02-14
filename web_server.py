@@ -144,7 +144,7 @@ def evaluate(db,fs):
         log("Received Request: %s"%(message))
         db.new_input_message(message)
         params={}
-        if len(urlencode({'c': code.encode('utf8')}))<50:
+        if len(urlencode({'c': code.encode('utf8')}))<100:
             params['c']=code
         else:
             import zlib, base64
