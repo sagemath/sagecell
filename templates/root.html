@@ -6,12 +6,24 @@
     <title>Sage Cell Server</title>
     <script type="text/javascript" src="../static/jquery.min.js"></script>
     <script type="text/javascript" src="./embedded_sagecell.js"></script>
-
     <script>$(function() {sagecell.init(function () {
                sagecell.makeSagecell({inputLocation: '#sagecell', 
                  hide: ["computationID", "messages", "sessionTitle"]
                  {% if code %}, code: decodeURIComponent('{{code}}') {% endif %} }); });});</script>
-  </head>
+<style type="text/css">
+.sagecell_evalButton {
+font-size: 150%;
+background-color: transparent;
+//border: 1px solid;
+//padding: 0 2px 0 2px;
+}
+
+// .CodeMirror-scroll {height: auto; overflow-y: auto; overflow-x: auto; min-height: 3ex; max-height: 60ex;}
+//.CodeMirror-scroll {/* Slightly shorter input box */
+//    height: 100px;
+//}
+</style>
+</head>
   <body>
     <div id="sagecell"><script type="text/code"></script></div>
   </body>
