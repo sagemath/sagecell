@@ -142,6 +142,11 @@
       <dd>How many spaces a block (whatever that means in the edited
       language) should be indented. The default is 2.</dd>
 
+      <dt id="option_smartIndent"><code>smartIndent (boolean)</code></dt>
+      <dd>Whether to use the context-sensitive indentation that the
+      mode provides (or just indent the same as the line before).
+      Defaults to true.</dd>
+
       <dt id="option_tabSize"><code>tabSize (integer)</code></dt>
       <dd>The width of a tab character. Defaults to 4.</dd>
 
@@ -194,20 +199,24 @@
       stay visible when the document is scrolled horizontally.</dd>
 
       <dt id="option_readOnly"><code>readOnly (boolean)</code></dt>
-      <dd>This disables editing of the editor content by the user.</dd>
+      <dd>This disables editing of the editor content by the user. If
+      the special value <code>"nocursor"</code> is given (instead of
+      simply <code>true</code>), focusing of the editor is also
+      disallowed.</dd>
 
       <dt id="option_onChange"><code>onChange (function)</code></dt>
       <dd>When given, this function will be called every time the
       content of the editor is changed. It will be given the editor
-      instance as first argument, and an <code>{from, to, newText,
-      next}</code> object containing information about the changes
+      instance as first argument, and an <code>{from, to, text, next}</code>
+      object containing information about the changes
       that occurred as second argument. <code>from</code>
       and <code>to</code> are the positions (in the pre-change
       coordinate system) where the change started and
-      ended. <code>newText</code> is an array of strings representing
-      the text that replaced the changed range (split by line). If
-      multiple changes happened during a single operation, the object
-      will have a <code>next</code> property pointing to another
+      ended (for example, it might be <code>{ch:0, line:18}</code> if the
+      position is at line #19, at the first character. <code>text</code> is an
+      array of strings representing the text that replaced the changed range
+      (split by line). If multiple changes happened during a single operation,
+      the object will have a <code>next</code> property pointing to another
       change object (which may point to another, etc).</dd>
 
       <dt id="option_onCursorActivity"><code>onCursorActivity (function)</code></dt>
@@ -401,6 +410,10 @@
 
       <dt id="focus"><code>focus()</code></dt>
       <dd>Give the editor focus.</dd>
+      <dt id="scrollTo"><code>scrollTo(x, y)</code></dt>
+      <dd>Scroll the editor to a given (pixel) position. Both
+      arguments may be left as <code>null</code>
+      or <code>undefined</code> to have no effect.</dd>
 
       <dt id="setOption"><code>setOption(option, value)</code></dt>
       <dd>Change the configuration of the editor. <code>option</code>

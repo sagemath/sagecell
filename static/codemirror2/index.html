@@ -35,19 +35,22 @@
     <h2 style="margin-top: 0">Supported modes:</h2>
 
     <ul>
-      <li><a href="mode/clike/index.html">C, Java, C#, and similar</a></li>
+      <li><a href="mode/clike/index.html">C, C++, Java, and similar</a></li>
       <li><a href="mode/clojure/index.html">Clojure</a></li>
       <li><a href="mode/coffeescript/index.html">CoffeeScript</a></li>
       <li><a href="mode/css/index.html">CSS</a></li>
       <li><a href="mode/diff/index.html">diff</a></li>
+      <li><a href="mode/go/index.html">Go</a></li>
       <li><a href="mode/groovy/index.html">Groovy</a></li>
       <li><a href="mode/haskell/index.html">Haskell</a></li>
       <li><a href="mode/htmlembedded/index.html">HTML embedded scripts</a></li>
       <li><a href="mode/htmlmixed/index.html">HTML mixed-mode</a></li>
       <li><a href="mode/javascript/index.html">JavaScript</a></li>
       <li><a href="mode/jinja2/index.html">Jinja2</a></li>
+      <li><a href="mode/less/index.html">LESS</a></li>
       <li><a href="mode/lua/index.html">Lua</a></li>
       <li><a href="mode/markdown/index.html">Markdown</a> (<a href="mode/gfm/index.html">Github-flavour</a>)</li>
+      <li><a href="mode/mysql/index.html">MySQL</a></li>
       <li><a href="mode/ntriples/index.html">NTriples</a></li>
       <li><a href="mode/pascal/index.html">Pascal</a></li>
       <li><a href="mode/perl/index.html">Perl</a></li>
@@ -65,6 +68,7 @@
       <li><a href="mode/stex/index.html">sTeX, LaTeX</a></li>
       <li><a href="mode/tiddlywiki/index.html">Tiddlywiki</a></li>
       <li><a href="mode/velocity/index.html">Velocity</a></li>
+      <li><a href="mode/verilog/index.html">Verilog</a></li>
       <li><a href="mode/xml/index.html">XML/HTML</a> (<a href="mode/xmlpure/index.html">alternative XML</a>)</li>
       <li><a href="mode/yaml/index.html">YAML</a></li>
     </ul>
@@ -105,6 +109,9 @@
       <li><a href="http://webglplayground.net/">WebGL playground</a></li>
       <li><a href="http://ql.io/">ql.io</a> (http API query helper)</li>
       <li><a href="http://elm-lang.org/Examples.elm">Elm language examples</a></li>
+      <li><a href="http://bluegriffon.org/">BlueGriffon</a> (HTML editor)</li>
+      <li><a href="http://www.jshint.com/">JSHint</a> (JS linter)</li>
+      <li><a href="http://kl1p.com/cmtest/1">kl1p</a> (paste service)</li>
      </ul>
 
   </div></div>
@@ -217,6 +224,21 @@
   </p>
 
   <h2>Releases:</h2>
+
+  <p class="rel">27-01-2012: <a href="http://codemirror.net/codemirror-2.21.zip">Version 2.21</a>:</p>
+
+  <ul class="rel-note">
+    <li>Added <a href="mode/less/index.html">LESS</a>, <a href="mode/mysql/index.html">MySQL</a>,
+    <a href="mode/go/index.html">Go</a>, and <a href="mode/verilog/index.html">Verilog</a> modes.</li>
+    <li>Add <a href="doc/manual.html#option_smartIndent"><code>smartIndent</code></a>
+    option.</li>
+    <li>Support a cursor in <a href="doc/manual.html#option_readOnly"><code>readOnly</code></a>-mode.</li>
+    <li>Support assigning multiple styles to a token.</li>
+    <li>Use a new approach to drawing the selection.</li>
+    <li>Add <a href="doc/manual.html#scrollTo"><code>scrollTo</code></a> method.</li>
+    <li>Allow undo/redo events to span non-adjacent lines.</li>
+    <li>Lots and lots of bugfixes.</li>
+  </ul>
 
   <p class="rel">20-12-2011: <a href="http://codemirror.net/codemirror-2.2.zip">Version 2.2</a>:</p>
 
