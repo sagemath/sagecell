@@ -242,6 +242,7 @@ sagecell.initCell = (function(sagecellInfo) {
 	
 	var session = new sagecell.Session(outputLocation, ".sagecell_output", inputLocation.find(".sagecell_sageModeCheck").attr("checked"), hideDynamic);
 	inputLocation.find(".sagecell_computationID").append("<div>"+session.session_id+"</div>");
+        if (editorData.save !== undefined) {editorData.save();}
 	$("#"+inputLocationName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
 	$("#"+inputLocationName+"_form").append("<input name='session_id' value='"+session.session_id+"'>");
 	$("#"+inputLocationName+"_form").append("<input name='msg_id' value='"+sagecell.functions.uuid4()+"'>");
