@@ -1,4 +1,5 @@
 import sys
+from time import time
 
 try:
     from sagecell_config import LOGGING
@@ -9,7 +10,7 @@ except ImportError:
 
 def log(message, key=' '):
     if LOGGING:
-        sys.__stderr__.write("%s\t: %s\n"%(key, message))
+        sys.__stderr__.write("%s:\t%s\t: %s\n"%(time(), key, message))
 
 import os
 DEFAULT_DIR=''
