@@ -53,6 +53,13 @@ try:
     import sage
     import sage.all
     CONFIG.EMBEDDED_MODE["enable_sage"] = enable_sage = True
+    # The first plot takes about 2 seconds to generate (presumably
+    # because lots of things, like matplotlib, are imported).  We plot
+    # something here so that worker processes don't have this overhead
+    # (I think what is happening is that we are priming the import
+    # cache here).  After this fix, worker processes' first plot takes
+    # something like 0.6 seconds (instead of 2 seconds).
+    sage.all.plot(lambda x: x, (0,1)).save(StringIO.StringIO())
 except ImportError as e:
     CONFIG.EMBEDDED_MODE["enable_sage"] = enable_sage = False
 
