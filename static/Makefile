@@ -1,7 +1,7 @@
 all: ../minifiers/jsmin all.min.js all.min.css
 
 all.min.js: all.js
-	rm all.min.js
+	rm -f all.min.js
 	../minifiers/jsmin < all.js > all.min.js
 
 
@@ -23,7 +23,7 @@ all.min.css: codemirror2/lib/codemirror.css stylesheet.css
 	#cat 'jqueryui/css/sage/jquery-ui-1.8.17.custom.css' >> all.css
 	#cat 'colorpicker/css/colorpicker.css' >> all.css
 	cat 'stylesheet.css' >> all.css
-	rm all.min.css
+	rm -f all.min.css
 	python ../minifiers/cssmin/src/cssmin.py < all.css > all.min.css
 
 jsmin: ../minifiers/jsmin.c
