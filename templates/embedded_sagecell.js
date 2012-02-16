@@ -233,7 +233,7 @@ sagecell.initCell = (function(sagecellInfo) {
 	$(e.target).removeClass("ui-state-focus");
     });
     
-    inputLocation.find(".sagecell_evalButton").click(function() {
+    sagecellInfo.submit = function() {
 	// TODO: actually make the JSON execute request message here.
 
 	if (replaceOutput) {
@@ -273,7 +273,9 @@ sagecell.initCell = (function(sagecellInfo) {
 	    $("#sagecell_serverResponse_"+session.session_id).unbind();
 	});
 	return false;
-    });
+    };
+
+    inputLocation.find(".sagecell_evalButton").click(sagecellInfo.submit);
     return sagecellInfo;
 });
 
