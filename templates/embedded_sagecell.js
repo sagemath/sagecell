@@ -109,7 +109,8 @@ sagecell.makeSagecell = (function(args) {
 		}
                 hideAdvanced={};
 		for (var i = 0, i_max = hide.length; i < i_max; i++) {
-		    if (hide[i] === 'editor' ||
+		    if (hide[i] === 'computationID' ||
+			hide[i] === 'editor' ||
 			hide[i] === 'editorToggle' ||
 			hide[i] === 'files' ||
 			hide[i] === 'evalButton' ||
@@ -121,7 +122,6 @@ sagecell.makeSagecell = (function(args) {
                             hideAdvanced[hide[i]]=true;
                         }
 		    } else if (hide[i] === 'output' ||
-			       hide[i] === 'computationID' ||
 			       hide[i] === 'messages' ||
                                hide[i] === 'sessionTitle') {
 			$(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
@@ -237,7 +237,7 @@ sagecell.initCell = (function(sagecellInfo) {
 	// TODO: actually make the JSON execute request message here.
 
 	if (replaceOutput) {
-	    inputLocation.find(".sagecell_output").empty();
+	    outputLocation.find(".sagecell_output").empty();
 	}
 	
 	var session = new sagecell.Session(outputLocation, ".sagecell_output", inputLocation.find(".sagecell_sageModeCheck").attr("checked"), hideDynamic);
