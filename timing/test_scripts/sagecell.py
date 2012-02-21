@@ -41,7 +41,10 @@ class Session:
         """
         result=urlopen(request).read()
         if result:
-            return loads(result)
+            try:
+                return loads(result)
+            except ValueError:
+                return result
         else:
             return result
                                     

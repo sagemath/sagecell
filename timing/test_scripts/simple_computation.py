@@ -5,7 +5,6 @@ import json
 from random import random
 from time import sleep, time
 import sys
-import numpy
 from multiprocessing import Pool
 import contextlib
 import traceback
@@ -29,7 +28,7 @@ class Transaction(object):
         response_times=[]
         a=int(random()*self.MAXRAND)
         b=int(random()*self.MAXRAND)
-        code='print %d+%d'%(a,b)
+        code=json.dumps('print %d+%d'%(a,b))
         s=Session(self.BASE_URL)
         request=s.prepare_execution_request(code)
         sequence=0
@@ -62,6 +61,16 @@ class Transaction(object):
 __all__=['Transaction']
 
 if __name__ == '__main__':
-    trans = Transaction()
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Run simple additionc computation.')
+    parser.add_argument('--base_url', default='http://localhost:8080',
+                        help='the base url for the sage server')
+    parser.add_argument('-q','--quiet', dest='quiet', action='store_true')
+
+    args = parser.parse_args()
+
+    trans = Transaction(base_url=args.base_url)
     trans.run()
-    print trans.custom_timers
+    if not args.quiet:
+        print trans.custom_timers
