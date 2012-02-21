@@ -293,9 +293,11 @@ if __name__=='__main__':
         print "echo %s >> %s_copy"%(keys[1],filename)
         print cmd
     else:
-        with open(filename,"wb") as f:
+        # we use os.open so we can specify the file permissions
+        with os.fdopen(os.open(filename, os.O_WRONLY|os.O_EXCL|os.O_CREAT, 0600), 'w') as f:
             f.write('\n'.join(keys))
-        Popen(["scp",filename,sysargs.untrusted_account+":"+filename+"_copy"],stdin=PIPE,stdout=PIPE).wait()
+        # transferred with -p to keep the restrictive permissions
+        Popen(["scp","-p",filename,sysargs.untrusted_account+":"+filename+"_copy"],stdin=PIPE,stdout=PIPE).wait()
         os.remove(filename)
         p=Popen(["ssh", sysargs.untrusted_account],stdin=PIPE)
         p.stdin.write(cmd)
