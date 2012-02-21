@@ -1,16 +1,38 @@
+# Set the path to Sage here:
+sage=''
+
+if sage=='':
+   import os
+   sage=os.environ('SAGE_ROOT')
+
+python=sage+' -python'
+
+# MONGODB
 mongo_config={
     'mongo_uri': 'mongodb://localhost',
     'mongo_db': 'sagecelldb'
     }
 
-web_server_config={
+
+# WEB SERVER
+webserver='python'
+#webserver='twistd'
+#webserver='uwsgi'
+
+#twistd=sage+' -twistd'
+twistd_config={
+    'port': 8080,
+}
+
+uwsgi='./uwsgi'
+uwsgi_config={
     'processes': 50,
     'listen': 500,
     'disable-logging': '',
     'socket': '/tmp/uwsgi.sock',
     }
 
-python='python'
+# DEVICE
 device_config={
     'workers': 100,
     'quiet': '',
