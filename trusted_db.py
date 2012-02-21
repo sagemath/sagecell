@@ -269,26 +269,34 @@ if __name__=='__main__':
     signal.signal(signal.SIGINT, signal_handler)
 
     cwd=os.getcwd()
-    # TODO: make this a temporary file using python's (or the shell's) tempfile stuff
-    filename="/tmp/sage_shared_key%i"
+    # We pass the key using a file to address security issues
+    # see, for example, http://hub.opensolaris.org/bin/view/Community+Group+arc/passwords-cli
+    #
+    # TODO: use normal temp file tools to do this; the tricky thing is that we need a temp file on
+    # the target system as well.
+    #import tempfile
+    #keyfile=tempfile.NamedTemporaryFile(delete=False)
+    #filename=keyfile.name+"%i"
+    import uuid
+    filename="/tmp/%s"%uuid.uuid4()
     options=dict(cwd=cwd, workers=sysargs.workers, db_port=db_loop.port, fs_port=fs_loop.port,
                  quiet='-q' if sysargs.quiet or util.LOGGING is False else '',
                  untrusted_python=sysargs.untrusted_python,
                  untrusted_cpu=sysargs.untrusted_cpu,
-                 untrusted_mem=sysargs.untrusted_mem)
+                 untrusted_mem=sysargs.untrusted_mem,
+                 keyfile=filename+"_copy")
     cmd="""cd %(cwd)s
-%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --cpu %(untrusted_cpu)f --mem %(untrusted_mem)f --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i %(quiet)s\n"""%options
+%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --cpu %(untrusted_cpu)f --mem %(untrusted_mem)f --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i --keyfile %(keyfile)s %(quiet)s\n"""%options
     if sysargs.print_cmd:
         print
-        for i in (0,1):
-            print "echo -n %s > %s_copy"%(keys[i],filename%i)
+        print "echo %s > %s_copy"%(keys[0],filename)
+        print "echo %s >> %s_copy"%(keys[1],filename)
         print cmd
     else:
-        for i in (0,1):
-            with open(filename%i,"wb") as f:
-                f.write(keys[i])
-            Popen(["scp",filename%i,sysargs.untrusted_account+":"+filename%i+"_copy"],stdin=PIPE,stdout=PIPE).wait()
-        os.remove(filename%i)
+        with open(filename,"wb") as f:
+            f.write('\n'.join(keys))
+        Popen(["scp",filename,sysargs.untrusted_account+":"+filename+"_copy"],stdin=PIPE,stdout=PIPE).wait()
+        os.remove(filename)
         p=Popen(["ssh", sysargs.untrusted_account],stdin=PIPE)
         p.stdin.write(cmd)
         p.stdin.flush()

@@ -763,6 +763,7 @@ if __name__ == "__main__":
     parser.add_option("--mem", type=float, default=-1,
                       dest="memory_limit",
                       help="Memory (MB) allotted to each session (hard limit)")
+    parser.add_option("--keyfile", dest="keyfile")
     parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
     (sysargs, args) = parser.parse_args()
 
@@ -783,12 +784,10 @@ if __name__ == "__main__":
 
     outQueue=RawQueue()
 
-    filename="/tmp/sage_shared_key%i_copy"
-    keys=[None,None]
-    for i in (0,1):
-        with open(filename%i,"rb") as f:
-            keys[i]=f.read()
-        os.remove(filename%i)
+    filename=sysargs.keyfile
+    with open(filename,"rb") as f:
+        keys=[s.rstrip() for s in f.readlines()]
+    os.remove(filename)
 
     import misc
     db, fs = misc.select_db(sysargs)
