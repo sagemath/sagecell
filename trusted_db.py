@@ -192,14 +192,35 @@ def signal_handler(signal, frame):
     """
     A cleanup function that runs when the user presses Ctrl+C
     """
+    print "Shutting down in response to signal ", signal
     from signal import SIGKILL
-    # TODO: should we be nicer and send a gentler signal first?
-    os.kill(db_loop.process.pid, SIGKILL)
-    os.wait()
-    os.kill(fs_loop.process.pid, SIGKILL)
-    os.wait()
+
+    # TODO: handle the case where ctrl-c is pressed twice better
+    # that's what this shutting_down variable is about
+    global shutting_down
+    if shutting_down:
+        print "already shutting down"
+        return
+    else:
+        print "setting shutdown"
+        shutting_down=True
+
+    print "Cleaning up device"
     cleanup_device(device=db_loop.device_id(), pgid=db_loop.pgid())
-    
+    print "Killing db and fs loops"
+    for p in (db_loop.process, fs_loop.process):
+        pid=p.pid
+        print "Killing process %d"%p.pid
+        p.terminate()
+        # Just in case, SIGKILL it
+        try:
+            os.kill(pid, SIGKILL)
+            os.waitpid(pid, os.WNOHANG)
+        except OSError as e:
+            print e
+    print "Exiting"
+    sys.exit(0)
+
 
 def cleanup_device(device, pgid):
     """
@@ -208,29 +229,27 @@ def cleanup_device(device, pgid):
     :arg str device: the device ID
     :arg int pgid: the process group ID associated with the device
     """
-    # TODO: handle the case where ctrl-c is pressed twice better
-    # that's what this shutting_down variable is about
-    global shutting_down
-    if shutting_down:
-        return
-    else:
-        shutting_down=True
-
     # exit process, but first, kill the device I just started
     # TODO: security implications: we're killing a pg id that the untrusted side sent us
     # however, we are making sure we ssh into that account first, so it can only affect things from that account
     print "Shutting down device...",
     cmd="""
-python -c 'import os,signal; os.killpg(%d,signal.SIGKILL)'
+python -c 'import os,signal,time
+os.killpg(%d,signal.SIGTERM)
+time.sleep(2)
+try:
+    os.killpg(%d,signal.SIGKILL)
+except:
+    pass
+'
 exit
-"""%int(pgid)
+"""%(pgid,pgid)
     p=Popen(["ssh", sysargs.untrusted_account],stdin=PIPE)
     p.stdin.write(cmd)
     p.stdin.flush()
     p.wait()
     db.delete_device(device=device)
-    print "done",
-    sys.exit(0)
+    print "done"
 
 if __name__=='__main__':
     # We cannot use argparse until Sage's python is upgraded.
@@ -267,7 +286,8 @@ if __name__=='__main__':
     db_loop=MessageLoop(db, keys[0])
     fs_loop=MessageLoop(fs, keys[1], isFS=True)
     signal.signal(signal.SIGINT, signal_handler)
-
+    signal.signal(signal.SIGTERM, signal_handler)
+    print "PID: ", os.getpid()
     cwd=os.getcwd()
     # We pass the key using a file to address security issues
     # see, for example, http://hub.opensolaris.org/bin/view/Community+Group+arc/passwords-cli
@@ -309,4 +329,7 @@ if __name__=='__main__':
     try:
         db_loop.process.join()
     except:
-        cleanup_device(device=db_loop.device_id(), pgid=db_loop.pgid())
+        print "IN EXCEPT"
+        signal_handler(signal.SIGTERM,None)
+        print "Done"
+    sys.exit(0)
