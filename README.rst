@@ -16,10 +16,9 @@ We depend on the following packages:
 * `ØMQ <http://www.zeromq.org/>`_
 * `pyzmq <http://www.zeromq.org/bindings:python>`_
 * `MathJax <http://www.mathjax.org/>`_
-* `nginx <http://www.nginx.org/>`_
-* `uWSGI <http://projects.unbit.it/uwsgi/>`_
 
-These instructions assume Sage 5.0.beta1 is installed.
+
+These instructions assume Sage 5.0.beta4 is installed.
 
 Dependencies
 ------------
@@ -35,7 +34,7 @@ The builds below have their own dependences, which you will have to
 install before successfully configuring them. On Ubuntu, this command
 should take care of most or all of them::
 
-    sudo apt-get install uuid-dev libpcre3-dev zlib1g-dev openssh-server
+    sudo apt-get install uuid-dev zlib1g-dev openssh-server
 
 Sage
 ^^^^
@@ -64,52 +63,10 @@ Download the appropriate version of MongoDB from
 `here <http://www.mongodb.org/downloads>`_ and extract the
 contents to the ``$SERVER`` directory.
 
-nginx
-^^^^^
-
-Download nginx and build it in ``$SERVER/nginx/install/``::
-
-    cd $SERVER
-    wget http://www.nginx.org/download/nginx-1.0.12.tar.gz
-    tar -xzvf nginx-1.0.12.tar.gz
-    ln -s nginx-1.0.12 nginx
-    cd nginx
-    ./configure --prefix=`pwd`/install --without-http_rewrite_module && make install
-
-uWSGI
-^^^^^
-
-These instructions are based on `these instructions
-<http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_.  We don't
-want to require libxml2 (it appears to be only for the config files),
-so we'll make our own build configuration that doesn't support XML build
-files.
-
-#. Get uWSGI::
-
-    cd $SERVER
-    wget http://projects.unbit.it/downloads/uwsgi-latest.tar.gz
-    tar -xzvf uwsgi-latest.tar.gz
-    ln -s uwsgi-1* uwsgi
-
-#. Change the configuration file to set ``xml = false``::
-
-    cd uwsgi/buildconf
-    cp default.ini sagecell.ini
-    # edit myproject.ini to make the xml line read: xml = false
-    cd ..
-
-#. Build uWSGI::
-
-    sage -python uwsgiconfig.py --build sagecell
-
 Python packages
 ^^^^^^^^^^^^^^^
 
-Install the required Python packages. In the penultimate line, replace
-``$SERVER`` with the same directory name that it represented above
-(environmental variables will not be preserved inside the Sage
-shell). ::
+Install the required Python packages. ::
 
     sudo sage -sh # install into Sage's python
     easy_install pip # install a better installer than easy_install
@@ -136,10 +93,12 @@ or use git to clone the code::
 MongoDB
 ^^^^^^^
 
-Download the appropriate version of MongoDB from
-`here <http://www.mongodb.org/downloads>`_ and extract the
-contents to the ``$SERVER`` directory.
+Download the appropriate version of MongoDB from `here
+<http://www.mongodb.org/downloads>`_ and extract the contents to the
+``$SERVER`` directory.  Then make a symbolic link named
+``mongodb-bin`` to the installation directory::
 
+    ln -s $SERVER/mongodb-linux-x86_64-2.0.2 $SERVER/mongodb-bin
 
 Sage
 ^^^^
@@ -150,7 +109,17 @@ the patches to your Sage installation found in the
 ``$SERVER/sagecell/sage-patches`` directory.  Apply them in numeric
 order.  We suggest using Mercurial Queues so that it is easy to back
 out the patches if needed.  After applying the patches, rebuild Sage
-with ``sage -b``.
+with ``sage -b``. ::
+
+  sage -sh
+  cd $SAGE_ROOT/devel/sage/
+  hg qimport $SERVER/sagecell/sage-patches/01-sage-embedded.patch
+  hg qpush
+  hg qimport $SERVER/sagecell/sage-patches/02-sage-show.patch
+  hg qpush
+  exit
+  sage -b
+
 
 Jmol
 ^^^^
@@ -168,7 +137,7 @@ MathJax
 MathJax is used for typesetting complex expressions. Due to its size, it
 cannot be included in the repository, so it must be
 `downloaded <http://www.mathjax.org/download/>`_ and installed
-separately to $SERVER/sagecell/static/mathjax/.
+separately to ``$SERVER/sagecell/static/mathjax/``.
 
 Configuration and Running
 -------------------------
@@ -203,7 +172,7 @@ MongoDB
    appropriate)::
 
     cd $SERVER/mongodb/
-    $SERVER/mongodb-linux-x86_64-1.8.2/bin/mongod -f mongodb.conf
+    $SERVER/mongodb-bin/bin/mongod -f mongodb.conf
 
 #. Now you need to set up usernames and passwords for database access,
    if the database is running on a shared server.
@@ -219,38 +188,17 @@ MongoDB
    ``sagecelldb`` database.  Since we include the
    ``<SAGECELL_USER>`` and ``<SAGECELL_PASSWORD>`` in a URL later,
    it's helpful if neither of them contain any of ``%:/@`` (any
-   length of password with letters and numbers would be okay).  ::
+   length of password with letters and numbers would be okay).  Change
+   ``<ADMIN_USER>``, ``<ADMIN_PASSWORD>``, ``<SAGECELL_USER>``, and
+   ``<SAGECELL_PASSWORD>``, and ``<MONGODB_PORT>`` to appropriate values::
 
-      $SERVER/mongodb-linux-x86_64-1.8.2/bin/mongo --port <MONGODB_PORT> # start up mongo client
+      $SERVER/mongodb-bin/bin/mongo --port <MONGODB_PORT> # start up mongo client
       > use admin
       > db.addUser("<ADMIN_USER>", "<ADMIN_PASSWORD>")
       > db.auth("<ADMIN_USER>", "<ADMIN_PASSWORD>")
       > use sagecelldb
       > db.addUser("<SAGECELL_USER>", "<SAGECELL_PASSWORD>")
       > quit()
-
-nginx
-^^^^^
-
-#. Make the ``$SERVER/nginx/install/conf/nginx.conf`` file have
-   only one server entry, as shown here (delete all the others).
-   ``<SERVER_PORT>`` should be whatever port you plan to expose to
-   the public (should be different from ``<MONGODB_PORT>``). ::
-
-    server {
-        listen <SERVER_PORT>;
-        server_name localhost;
-        charset utf-8;
-        client_max_body_size 4M; # Maximum file upload size of 4MB
-        location / {
-            uwsgi_pass unix:/tmp/uwsgi.sock;
-            include uwsgi_params;
-        }
-    }
-
-#. Start nginx::
-
-    $SERVER/nginx/install/sbin/nginx
 
 Sage Cell Server
 ^^^^^^^^^^^^^^^^
@@ -277,9 +225,9 @@ restrictions; this account will be executing arbitrary user code).
     These instructions assume that the locked-down account is on the
     same computer as the server.
 
-1. Install OpenSSH if it is not already installed.
+#. Install OpenSSH if it is not already installed.
 
-2. Create a new restricted user account and enable passwordless SSH
+#. Create a new restricted user account and enable passwordless SSH
    from your account to the restricted account::
 
      sudo adduser <UNTRUSTED_USER>
@@ -293,37 +241,34 @@ restrictions; this account will be executing arbitrary user code).
    once, but there should be a way to store the key and log in
    fully automatically.
 
-3. Create a configuration file
+#. Create a configuration file
    ``$SERVER/sagecell/sagecell_config.py`` by copying and
    modifying
-   ``$SERVER/sagecell/sagecell_config.py.default``.  The
-   ``mongo_uri`` should be set to
-   ``mongodb://<SAGECELL_USER>:<SAGECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
-   If you will be running the server using Sage, replace the line
-   ``python='python'`` with ``python='sage -python'``.
+   ``$SERVER/sagecell/sagecell_config.py.default`` and make the
+   following changes:
 
-  .. warning:: Make the ``sagecell_config.py`` file *only* readable by
+   * The ``mongo_uri`` variable should be set to
+     ``mongodb://<SAGECELL_USER>:<SAGECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
+   
+   * If you do not use Sage or ``sage -sh`` to start the scripts, the
+     ``sage`` variable should be set to point to the sage executable.
+     If you will not be running the server using Sage, define the
+     ``python`` and other variables in the config file appropriately
+     to not use the ``sage`` variable.
+
+   .. warning:: Make the ``sagecell_config.py`` file *only* readable by
       the trusted account, not by the untrusted account, since it
       contains the password to the database::
 
           chmod 600 sagecell_config.py
 
-4. Create a symbolic link to uWSGI in ``$SERVER/sagecell``::
-
-      ln -s $SERVER/uwsgi/uwsgi $SERVER/sagecell/uwsgi
-
-5. Start the webserver::
+#. Start the webserver::
 
        sage -sh
        cd $SERVER/sagecell
        ./start_web.py
 
-   If there are errors, you may need to change permissions of
-   /tmp/uwsgi.sock::
-   
-       chmod 777 /tmp/uwsgi.sock
-
-6. Start the trusted server::
+#. Start the trusted server::
 
        sage -sh
        cd $SERVER/sagecell
@@ -332,10 +277,97 @@ restrictions; this account will be executing arbitrary user code).
    When you want to shut down the server, just press Ctrl-C. This should
    automatically clean up the worker processes.
 
-7. Go to ``http://localhost:<SERVER_PORT>`` to use the Sage Cell server.
+#. Go to ``http://localhost:8080`` to use the Sage Cell server.
+
+Optional Installation
+=====================
+
+You can use ``nginx`` and ``uwsgi`` to get a more capable webserver.
+
+nginx
+-----
+
+First, install the ``libpcre3-dev`` library (if on Ubuntu).  This
+makes it so that when nginx is a reverse proxy, it can rewrite the
+headers so that the absolute URLs work out correctly. ::
+
+    sudo apt-get install libpcre3-dev
+
+Download nginx and build it in ``$SERVER/nginx/install/``::
+
+    cd $SERVER
+    wget http://www.nginx.org/download/nginx-1.0.12.tar.gz
+    tar -xzvf nginx-1.0.12.tar.gz
+    ln -s nginx-1.0.12 nginx
+    cd nginx
+    ./configure --prefix=`pwd`/install --without-http_rewrite_module && make install
+
+
+
+Make the ``$SERVER/nginx/install/conf/nginx.conf`` file have
+only one server entry, as shown here (delete all the others).
+``<SERVER_PORT>`` should be whatever port you plan to expose to
+the public (should be different from ``<MONGODB_PORT>``). ::
+
+    server {
+        listen <SERVER_PORT>;
+        server_name localhost;
+        charset utf-8;
+        client_max_body_size 4M; # Maximum file upload size of 4MB
+        location / {
+            uwsgi_pass unix:/tmp/uwsgi.sock;
+            include uwsgi_params;
+        }
+    }
+
+Start nginx::
+
+    $SERVER/nginx/install/sbin/nginx
+
+
+uWSGI
+-----
+
+These instructions are based on `these instructions
+<http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_.  We don't
+want to require libxml2 (it appears to be only for the config files),
+so we'll make our own build configuration that doesn't support XML build
+files.
+
+#. Get uWSGI::
+
+    cd $SERVER
+    wget http://projects.unbit.it/downloads/uwsgi-latest.tar.gz
+    tar -xzvf uwsgi-latest.tar.gz
+    ln -s uwsgi-1* uwsgi
+
+#. Change the configuration file to set ``xml = false``::
+
+    cd uwsgi/buildconf
+    cp default.ini sagecell.ini
+    # edit myproject.ini to make the xml line read: xml = false
+    cd ..
+
+#. Build uWSGI::
+
+    sage -python uwsgiconfig.py --build sagecell
+
+#. Create a symbolic link to uWSGI in ``$SERVER/sagecell``::
+
+      ln -s $SERVER/uwsgi/uwsgi $SERVER/sagecell/uwsgi
+
+#. Set the ``webserver`` variable in the ``sagecell_config.py`` file
+   to be ``'uwsgi'``.
+
+.. note:: If there are errors when you start the uwsgi server, you may
+   need to change permissions of ``/tmp/uwsgi.sock``::
+
+       chmod 777 /tmp/uwsgi.sock
+
+
 
 License
 =======
 
-See the file "LICENSE.txt" for terms & conditions for usage and a
+See the ``LICENSE.txt`` file for terms and conditions for usage and a
 DISCLAIMER OF ALL WARRANTIES.

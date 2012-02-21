@@ -3,7 +3,7 @@ sage=''
 
 if sage=='':
    import os
-   sage=os.environ('SAGE_ROOT')
+   sage=os.environ('SAGE_ROOT')+'/sage '
 
 python=sage+' -python'
 
@@ -15,11 +15,11 @@ mongo_config={
 
 
 # WEB SERVER
-webserver='python'
-#webserver='twistd'
+#webserver='python'
+webserver='twistd'
 #webserver='uwsgi'
 
-#twistd=sage+' -twistd'
+twistd=sage+' -twistd'
 twistd_config={
     'port': 8080,
 }
