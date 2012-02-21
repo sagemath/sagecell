@@ -249,8 +249,7 @@ exit
     p.stdin.flush()
     p.wait()
     db.delete_device(device=device)
-    print "done",
-    sys.exit(0)
+    print "done"
 
 if __name__=='__main__':
     # We cannot use argparse until Sage's python is upgraded.
@@ -330,5 +329,7 @@ if __name__=='__main__':
     try:
         db_loop.process.join()
     except:
+        print "IN EXCEPT"
         signal_handler(signal.SIGTERM,None)
         print "Done"
+    sys.exit(0)
