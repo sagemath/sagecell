@@ -37,6 +37,14 @@ should take care of most or all of them::
 
     sudo apt-get install uuid-dev libpcre3-dev zlib1g-dev openssh-server
 
+Sage
+^^^^
+
+Install Sage 5.0.beta4.  ``$SAGE_ROOT`` refers to the installation
+directory.
+
+Install the flask Sage notebook by following the directions at http://trac.sagemath.org/sage_trac/ticket/11080.
+
 ØMQ
 ^^^
 
@@ -62,11 +70,11 @@ nginx
 Download nginx and build it in ``$SERVER/nginx/install/``::
 
     cd $SERVER
-    wget http://www.nginx.org/download/nginx-1.0.11.tar.gz
-    tar -xzvf nginx-1.0.11.tar.gz
-    ln -s nginx-1.0.11 nginx
+    wget http://www.nginx.org/download/nginx-1.0.12.tar.gz
+    tar -xzvf nginx-1.0.12.tar.gz
+    ln -s nginx-1.0.12 nginx
     cd nginx
-    ./configure --prefix=`pwd`/install && make install
+    ./configure --prefix=`pwd`/install --without-http_rewrite_module && make install
 
 uWSGI
 ^^^^^
@@ -80,9 +88,9 @@ files.
 #. Get uWSGI::
 
     cd $SERVER
-    wget http://projects.unbit.it/downloads/uwsgi-1.0.11.tar.gz
-    tar -xzvf uwsgi-1.0.11.tar.gz
-    ln -s uwsgi-1.0.11 uwsgi
+    wget http://projects.unbit.it/downloads/uwsgi-latest.tar.gz
+    tar -xzvf uwsgi-latest.tar.gz
+    ln -s uwsgi-1* uwsgi
 
 #. Change the configuration file to set ``xml = false``::
 
@@ -123,7 +131,7 @@ extract the contents of the contained folder into ``$SERVER/sagecell``,
 or use git to clone the code::
 
     cd $SERVER
-    git clone git://github.com/sagecell/sagecell.git sagecell
+    git clone git://github.com/sagemath/sagecell.git sagecell
 
 MongoDB
 ^^^^^^^
@@ -138,10 +146,11 @@ Sage
 
 Several patches enable Sage to take advantage of the enhanced protocol
 for communicating graphical displays.  In order to patch Sage, apply
-the patches to your Sage installation found in the ``sage-patches``
-directory.  Apply them in numeric order.  We suggest using Mercurial
-Queues so that it is easy to back out the patches if needed.  After
-applying the patches, rebuild Sage with ``sage -b``.
+the patches to your Sage installation found in the
+``$SERVER/sagecell/sage-patches`` directory.  Apply them in numeric
+order.  We suggest using Mercurial Queues so that it is easy to back
+out the patches if needed.  After applying the patches, rebuild Sage
+with ``sage -b``.
 
 Jmol
 ^^^^
