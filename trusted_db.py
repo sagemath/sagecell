@@ -260,6 +260,8 @@ if __name__=='__main__':
     parser.add_option("-w", "--workers", type=int, default=1, dest="workers", help="Number of workers to start.")
     parser.add_option("--print", action="store_true", dest="print_cmd", default=False, 
                         help="Print out command to launch workers instead of launching them automatically")
+    parser.add_option("--pidfile", dest="pidfile",
+                      help="pidfile to write the pid", default="")
     parser.add_option("--untrusted-account", dest="untrusted_account", 
                       help="untrusted account; should be something you can ssh into without a password", default="")
     parser.add_option("--untrusted-python", dest="untrusted_python",
@@ -281,13 +283,18 @@ if __name__=='__main__':
 
     if sysargs.quiet:
         util.LOGGING=False
+    print "PID: ", os.getpid()
+    if sysargs.pidfile:
+        if os.path.isfile(sysargs.pidfile):
+            raise RuntimeError('pid file found: %s'%sysargs.pidfile)
+        with open(sysargs.pidfile, 'w') as f:
+            f.write("%s\n"%os.getpid())
     db, fs = misc.select_db(sysargs)
     keys=[b64encode(os.urandom(32)) if sysargs.print_cmd else os.urandom(32) for _ in (0,1)]
     db_loop=MessageLoop(db, keys[0])
     fs_loop=MessageLoop(fs, keys[1], isFS=True)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    print "PID: ", os.getpid()
     cwd=os.getcwd()
     # We pass the key using a file to address security issues
     # see, for example, http://hub.opensolaris.org/bin/view/Community+Group+arc/passwords-cli
