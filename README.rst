@@ -56,13 +56,6 @@ Download ØMQ and build it in ``$SERVER/zeromq/install/``::
     cd zeromq
     ./configure --prefix=`pwd`/install && make install
 
-MongoDB
-^^^^^^^
-
-Download the appropriate version of MongoDB from
-`here <http://www.mongodb.org/downloads>`_ and extract the
-contents to the ``$SERVER`` directory.
-
 Python packages
 ^^^^^^^^^^^^^^^
 
@@ -174,7 +167,7 @@ MongoDB
     cd $SERVER/mongodb/
     $SERVER/mongodb-bin/bin/mongod -f mongodb.conf
 
-#. Now you need to set up usernames and passwords for database access,
+#. OPTIONAL: Now you need to set up usernames and passwords for database access,
    if the database is running on a shared server.
 
    .. note::
