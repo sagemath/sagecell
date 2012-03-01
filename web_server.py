@@ -158,7 +158,7 @@ def evaluate(db,fs):
         z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
         zipurl = url_for('root', _external=True, z=z)
         if len(urlencode({'c': code.encode('utf8')}))<100:
-            codeurl = url_for('root', _external=True, c=code)
+            codeurl = url_for('root', _external=True, c=quote(code))
         else:
             codeurl=zipurl
 

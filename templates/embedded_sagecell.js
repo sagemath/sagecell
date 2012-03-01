@@ -276,6 +276,10 @@ sagecell.initCell = (function(sagecellInfo) {
     };
 
     inputLocation.find(".sagecell_evalButton").click(sagecellInfo.submit);
+    // Automatically submit code from URL parameter unless parameter "autoeval=false" is given
+    if (sagecellInfo.code && !document.location.search.match(/(^\?|&)autoeval=false(&|$)/)) {
+	sagecellInfo.submit();
+    }
     return sagecellInfo;
 });
 
