@@ -15,7 +15,9 @@
 /* not resizeable */
 .CodeMirror-scroll {height: 200px}
 .sagecell_done {color: red}
-.sagecell_sessionOutput {border: 2px solid; padding: 5px; overflow-x: auto}
+.sagecell_sessionOutput {border: 2px solid; padding: 5px; overflow-x: auto; position: relative}
+.sagecell_sessionOutput .poweredBy {z-index: -1; opacity: 0.5; position: absolute; right: 3px; bottom: 3px; font-size: 12px; font-family: sans}
+.sagecell_sessionOutput .poweredBy img {vertical-align: text-top;}
 .sagecell_sessionFiles {padding-bottom: 1.0em;}
 .sagecell_interactContainer {padding: 15px 5px 5px 5px}
 .sagecell_interactOutput {border-left: 2px solid blue; padding: 5px; overflow-x: auto}

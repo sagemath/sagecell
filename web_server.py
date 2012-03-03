@@ -315,6 +315,10 @@ def embedded():
         response.headers['Etag']=datahash
     return response
 
+@app.route("/favicon.ico")
+def favicon():
+    return send_file("static/favicon.ico")
+
 #purely for backwards compatibility
 @app.route("/embedded_singlecell.js")
 def embedded_old():
