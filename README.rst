@@ -47,14 +47,14 @@ Install the flask Sage notebook by following the directions at http://trac.sagem
 ØMQ
 ^^^
 
-Download ØMQ and build it in ``$SERVER/zeromq/install/``::
+Download ØMQ and build it in ``$SERVER/zeromq/installed/``::
 
     cd $SERVER
     wget http://download.zeromq.org/zeromq-2.1.11.tar.gz
     tar -xzvf zeromq-2.1.11.tar.gz
     ln -s zeromq-2.1.11 zeromq
     cd zeromq
-    ./configure --prefix=`pwd`/install && make install
+    ./configure --prefix=`pwd`/installed && make install
 
 Python packages
 ^^^^^^^^^^^^^^^
@@ -65,7 +65,7 @@ Install the required Python packages. ::
     easy_install pip # install a better installer than easy_install
     pip install flask
     pip install pymongo
-    pip install pyzmq --install-option="--zmq=$SERVER/zeromq/install"
+    pip install pyzmq --install-option="--zmq=$SERVER/zeromq/installed"
     exit
 
 
