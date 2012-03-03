@@ -93,6 +93,7 @@ def root(db,fs):
         if isinstance(options['code'], unicode):
             options['code']=options['code'].encode('utf8')
         options['code']=quote(options['code'])
+        options['autoeval'] = 'false' if 'autoeval' in request.args and request.args['autoeval'] == 'false' else 'true'
     return render_template('root.html', **options)
 
 @app.route("/eval", methods=['GET','POST'])
