@@ -257,18 +257,25 @@ def tabComplete(db,fs):
                 "text":"", "line":code, "block":code, "cursor_pos":request.values["pos"]}})
     return jsonify({"completions":xreq.getMessages(header,True)[0]["content"]["matches"]})
 
-@app.route("/config")
+# This is disabled for now since it is also a security issue.
+# We should be able to turn it on or off from the config file
+# (so maybe a configurl=True/False parameter in the config file?)
+#@app.route("/config")
 @get_db
 def config(db, fs):
     #TODO: reload this module to get the most current configuration
     import sagecell_config as c
     
     s=''
-    s+='webserver={\n'
-    
-    for k in [key for key in ('processes', 'listen', 'disable-logging') if key in c.web_server_config]:
-        s+='    %r: %r\n'%(k,c.web_server_config[k])
-    s+='}\n\ndevices=[\n'
+    s+='webserver=%r\n'%getattr(c, 'webserver', 'default')
+    if hasattr(c, 'webserver') and hasattr(c, c.webserver+'_config'):
+        webconfig = getattr(c, c.webserver+'_config')
+        s+='webserver_config={\n'
+        for k in [key for key in ('processes', 'listen', 'disable-logging') if key in webconfig]:
+            s+='    %r: %r\n'%(k,webconfig[k])
+        s+='}\n'
+
+    s+='\ndevices=[\n'
     
     total_workers=0
     for device in db.get_devices():
