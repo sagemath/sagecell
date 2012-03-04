@@ -4,12 +4,13 @@
     <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
     <meta name="viewport" content="width=device-width">
     <title>Sage Cell Server</title>
-    <script type="text/javascript" src="../static/jquery.min.js"></script>
-    <script type="text/javascript" src="./embedded_sagecell.js"></script>
+    <script type="text/javascript" src="{{url_for('static', filename = 'jquery.min.js', _external = True)}}"></script>
+    <script type="text/javascript" src="{{url_for('embedded', _external = True)}}"></script>
     <script>$(function() {sagecell.init(function () {
                  mysagecell = sagecell.makeSagecell({inputLocation: '#sagecell', 
                  hide: ["computationID", "messages", "sessionTitle"]
                  {% if code %}, code: decodeURIComponent('{{code}}') {% endif %} }); });});</script>
+    <link rel="icon" href="{{url_for('static', filename = 'favicon.ico', _external = True)}}">
 </head>
   <body>
 <style type="text/css">

@@ -440,6 +440,7 @@ sagecell.functions = {
 // Make the script root available to jquery
 $URL={'root': {{ request.url_root|tojson|safe }},
       'evaluate': {{url_for('evaluate',_external=True)|tojson|safe}},
+      'powered_by_img': {{url_for('static', filename = 'sagelogo.png', _external=True)|tojson|safe}},
       'output_poll': {{url_for('output_poll',_external=True)|tojson|safe}} +
           '?callback=?',
       'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
