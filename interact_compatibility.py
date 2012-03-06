@@ -238,18 +238,16 @@ def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **
         hide_box=kwargs.get('hide_box', False)
         return color_selector(default=default, label=label, 
                               widget=widget, hide_box=hide_box)
-    
-    if not isinstance(default, basestring):
-        default=repr(default)
     from sage.all import sage_eval
-    if type is None:
-        adapter = lambda x, globs: sage_eval(x, globs)
-    elif type is str:
+    if type is str:
         adapter=lambda x, globs: x
     else:
         adapter = lambda x, globs: sage_eval(x, globs)
-    return InputBox(default=default, width=width, 
-                    label=label, adapter=adapter, height=height)
+    ib = InputBox(default=default, width=width, raw=False,
+                  label=label, adapter=adapter, height=height)
+    if type is not str:
+        ib.default_return = repr(default)
+    return ib
 
 def color_selector(default=(0,0,1), label=None,
                  widget='colorpicker', hide_box=False):
