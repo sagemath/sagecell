@@ -51,7 +51,8 @@ sagecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     link.appendChild(img);
     poweredBy.appendChild(link);
     poweredBy.setAttribute('class', 'sagecell_poweredBy');
-    document.getElementById('session_' + this.session_id + '_files').appendChild(poweredBy);
+    var output = document.getElementById('output_' + this.session_id)
+    output.parentNode.insertBefore(poweredBy, output.nextSibling);
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output={null: false}
     this.lock_output=false;

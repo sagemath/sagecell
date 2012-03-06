@@ -16,10 +16,9 @@
 .CodeMirror-scroll {height: 200px}
 .sagecell_done {color: red}
 .sagecell_sessionOutput {border: 2px solid; padding: 5px; overflow-x: auto;}
+.sagecell_poweredBy {height: 0px; padding-right: 5px; padding-top: 3px; text-align: right; overflow:visible; font-size: 12px; font-family: sans;}
+.sagecell_poweredBy img {vertical-align: text-top;}
 .sagecell_sessionFiles {padding-bottom: 1.0em;}
-.sagecell_sessionFilesTitle {position: relative;}
-.sagecell_sessionFilesTitle .sagecell_poweredBy {position: absolute; right: 3px; top: 3px; font-size: 12px; font-family: sans;}
-.sagecell_sessionFilesTitle .sagecell_poweredBy img {vertical-align: text-top;}
 .sagecell_interactContainer {padding: 15px 5px 5px 5px}
 .sagecell_interactOutput {border-left: 2px solid blue; padding: 5px; overflow-x: auto}
 .sagecell_interactValueBox {font-family: monospace} /* Required since dynamic input box size is determined by monospaced fonts */
