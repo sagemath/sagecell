@@ -41,6 +41,10 @@ sagecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     this.lastMessage = {};
     this.sessionContinue = true;
     this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="sagecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="sagecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="sagecell_sessionOutput"></div><div id="session_'+this.session_id+'_files" class="sagecell_sessionFilesTitle">Session Files:</div><div id="output_files_'+this.session_id+'" class="sagecell_sessionFiles"></div></div>');
+    var container = document.createElement('div');
+    container.setAttribute('class', 'sagecell_poweredBy_container');
+    var output = document.getElementById('output_' + this.session_id)
+    output.parentNode.insertBefore(container, output.nextSibling);
     var poweredBy = document.createElement('div');
     poweredBy.appendChild(document.createTextNode('Powered by '));
     var link = document.createElement('a');
@@ -51,7 +55,7 @@ sagecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     link.appendChild(img);
     poweredBy.appendChild(link);
     poweredBy.setAttribute('class', 'sagecell_poweredBy');
-    document.getElementById('session_' + this.session_id + '_files').appendChild(poweredBy);
+    container.appendChild(poweredBy);
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output={null: false}
     this.lock_output=false;
