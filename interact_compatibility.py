@@ -243,11 +243,8 @@ def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **
         adapter=lambda x, globs: x
     else:
         adapter = lambda x, globs: sage_eval(x, globs)
-    ib = InputBox(default=default, width=width, raw=False,
-                  label=label, adapter=adapter, height=height)
-    if type is not str:
-        ib.default_return = repr(default)
-    return ib
+    return InputBox(default=default, width=width, raw=False,
+                    label=label, adapter=adapter, height=height)
 
 def color_selector(default=(0,0,1), label=None,
                  widget='colorpicker', hide_box=False):
