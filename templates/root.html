@@ -3,15 +3,21 @@
   <head>
     <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
     <meta name="viewport" content="width=device-width">
+    <link rel="icon" href="{{url_for('static', filename = 'favicon.ico', _external = True)}}">
     <title>Sage Cell Server</title>
     <script type="text/javascript" src="{{url_for('static', filename = 'jquery.min.js', _external = True)}}"></script>
     <script type="text/javascript" src="{{url_for('embedded', _external = True)}}"></script>
-    <script>$(function() {sagecell.init(function () {
-                 mysagecell = sagecell.makeSagecell({inputLocation: '#sagecell', 
-                 hide: ["computationID", "messages", "sessionTitle"]
-                 {% if code %}, code: decodeURIComponent('{{code}}') {% endif %} }); });});</script>
-    <link rel="icon" href="{{url_for('static', filename = 'favicon.ico', _external = True)}}">
-</head>
+    <script>
+$(function () {
+    sagecell.init(function () {
+        sagecell.makeSagecell({inputLocation: '#sagecell', 
+                               hide: ["computationID", "messages", "sessionTitle"]
+                {% if code %}, code: decodeURIComponent('{{code}}'),
+                               autoeval: {{autoeval}} {% endif %} });
+    });
+});
+    </script>
+  </head>
   <body>
 <style type="text/css">
 .sagecell_evalButton {font-size: 150%;background-color: transparent;padding: 0 2px 0 2px;}
