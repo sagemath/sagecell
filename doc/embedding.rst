@@ -188,6 +188,16 @@ should replace or be displayed alongside current session output::
    replaceOutput: boolean
    .. }
 
+Automatic evaluation
+------------------------
+
+This sets whether the Sage Cell will immediately evalute the code from the
+``code`` option::
+
+   { ..
+   autoeval: boolean
+   .. }
+
 Hiding Sage Cell elements
 ---------------------------
 
@@ -271,6 +281,12 @@ information, as these options mirror what can be given to
 
    { ..
    replaceOutput: boolean
+   .. }
+
+* Automatic evaluation::
+
+   { ..
+   autoeval: boolean
    .. }
 
 There are two built-in templates in ``sagecell.templates`` which are
