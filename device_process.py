@@ -562,7 +562,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         if 'files' in msg['content']:
             for filename in msg['content']['files']:
                 with open(filename,'w') as f:
-                    fs.copy_file(f,filename=filename, cell_id=session, hmac=fs_hmac)
+                    fs.copy_file(f,filename=filename, session=session, hmac=fs_hmac)
                 old_files[filename]=-1
         file_parent.send(True)
         with output_handler as MESSAGE:
@@ -626,7 +626,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                 file_list.append(filename)
                 try:
                     with open(filename) as f:
-                        fs.create_file(f, cell_id=session, filename=filename, hmac=fs_hmac)
+                        fs.create_file(f, session=session, filename=filename, hmac=fs_hmac)
                 except Exception as e:
                     sys.stdout.write("An exception occurred: %s\n"%(e,))
         if len(file_list)>0:

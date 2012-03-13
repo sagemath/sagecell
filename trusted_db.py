@@ -138,11 +138,12 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
             log("Create authkey: session: %r, key: %r"%(auth_session, auth_dict[auth_session].digest()))
             to_send=True
         elif isFS:
+            c=msg['content']
             if msg['msg_type']=='create_file':
-                with db.new_file(**msg['content']) as f:
+                with db.new_file(session=c.get('session', c.get('cell_id','')), filename=c['filename']) as f:
                     f.write(msgs[2].bytes)
             elif msg['msg_type']=='copy_file':
-                reply=[sender,db.get_file(**msg['content']).read()]
+                reply=[sender,db.get_file(session=c.get('session', c.get('cell_id','')), filename=c['filename']).read()]
                 socket.send_multipart(reply, copy=False, track=True).wait()
                 send_finally=False
         elif msg['msg_type']=='register_device':

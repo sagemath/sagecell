@@ -87,6 +87,10 @@ def Debugger(func):
         def decorated(*args, **kwargs):
             print "****************Entering ",func.func_name
             print "    args ",args, kwargs
+            #try:
+            #    print "filename: %s"%(args[0]._filename(**kwargs),)
+            #except Exception as a:
+            #    print "Couldn't get filename", a
             ret = func(*args, **kwargs)
             print ret
             return ret
@@ -106,6 +110,9 @@ class FileStoreMongo(FileStore):
         self.new_context()
         self._fs=GridFS(self.database)
 
+    def _filename(self, **kwargs):
+        return {'session': kwargs.get('session', kwargs.get('cell_id', 'SESSION NOT FOUND')), 'filename': kwargs['filename']}
+    @Debugger
     def new_file(self, **kwargs):
         """
         See :meth:`FileStore.new_file`
@@ -113,26 +120,30 @@ class FileStoreMongo(FileStore):
         :rtype: :class:`gridfs.grid_file.GridIn`
         """
         self.delete_files(**kwargs)
-        return self._fs.new_file(**kwargs)
+        log("FS Creating %s"%self._filename(**kwargs))
+        return self._fs.new_file(**self._filename(**kwargs))
 
+    @Debugger
     def delete_files(self, **kwargs):
         """
         See :meth:`FileStore.delete_files`
         """
-        while self._fs.exists(kwargs):
-            self._fs.delete(self._fs.get_last_version(**kwargs)._id)
+        while self._fs.exists(self._filename(**kwargs)):
+            self._fs.delete(self._fs.get_last_version(**self._filename(**kwargs))._id)
 
+    @Debugger
     def get_file(self, **kwargs):
         """
         See :meth:`FileStore.get_file`
 
         :rtype: :class:`gridfs.grid_file.GridOut`
         """
-        if self._fs.exists(kwargs):
-            return self._fs.get(self._fs.get_last_version(**kwargs)._id)
+        if self._fs.exists(self._filename(**kwargs)):
+            return self._fs.get(self._fs.get_last_version(**self._filename(**kwargs))._id)
         else:
             return None
     
+    @Debugger
     def create_file(self, file_handle, **kwargs):
         """
         See :meth:`FileStore.create_file`
@@ -140,12 +151,14 @@ class FileStoreMongo(FileStore):
         with self.new_file(**kwargs) as f:
             f.write(file_handle.read())
 
+    @Debugger
     def copy_file(self, file_handle, **kwargs):
         """
         See :meth:`FileStore.copy_file`
         """
         file_handle.write(self.get_file(**kwargs).read())
 
+    @Debugger
     def new_context(self):
         """
         Reconnect to the filestore. This function should be
@@ -301,6 +314,6 @@ class FileStoreZMQ(FileStoreMongo):
         file_handle.write(self.socket.recv())
 
     create_secret=db_method('create_secret',['session'], True)
-    new_file=db_method('new_file',['cell_id','filename'], True)
-    delete_files=db_method('delete_files',['cell_id','filename'], True)
-    get_file=db_method('get_file',['cell_id','filename'], True)
+    new_file=db_method('new_file',['session','cell_id', 'filename'], True)
+    delete_files=db_method('delete_files',['session', 'filename'], True)
+    get_file=db_method('get_file',['session', 'filename'], True)
