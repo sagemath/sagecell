@@ -219,7 +219,7 @@ man_pages = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ('http://docs.python.org/release/2.6.4/', None),
+intersphinx_mapping = {'python': ('http://docs.python.org/release/2.7.2/', None),
                        'ipython': ('http://ipython.org/ipython-doc/dev/', None),
                        'pymongo': ('http://api.mongodb.org/python/current/', None),
                        'pyzmq': ('http://zeromq.github.com/pyzmq/', None),
