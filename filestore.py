@@ -37,7 +37,7 @@ class FileStore(object):
         If the file does not exist, return ``None``.
 
         :arg \*\*kwargs: the properties of the desired file
-        :returns: the opened file
+        :returns: the opened file, or ``None`` if no file exists
         :rtype: file handle
         """
         raise NotImplementedError
@@ -78,6 +78,20 @@ try:
 except ImportError:
     # we may not be able to import sagecell_config if we are untrusted
     mongo_config=None
+
+DEBUG = True
+
+def Debugger(func):
+    if DEBUG:
+        def decorated(*args, **kwargs):
+            print "****************Entering ",func.func_name
+            print "    args ",args, kwargs
+            ret = func(*args, **kwargs)
+            print ret
+            return ret
+        return decorated
+    else:
+        return func
 
 class FileStoreMongo(FileStore):
     """
@@ -147,6 +161,64 @@ class FileStoreMongo(FileStore):
                 raise Exception("MongoDB authentication problem")
 
     valid_untrusted_methods=()
+
+
+class FileStoreFilesystem(FileStore):
+    """
+    Filestore using the file system
+
+    :arg dir: A directory in which to store files
+    """
+    def __init__(self, dir):
+        self._dir = dir
+
+    def _filename(_id, filename):
+        return os.path.join(self._dir, '%s-%s'%(_id, filename))
+    
+    def new_file(self, _id, filename):
+        """
+        See :meth:`FileStore.new_file`
+        """
+        return open(self._filename(_id, filename), 'w')
+
+    def delete_files(self, _id, filename):
+        """
+        See :meth:`FileStore.delete_files`
+        """
+        os.path.remove(self._filename(_id, filename))
+
+    def get_file(self, _id, filename):
+        """
+        See :meth:`FileStore.get_file`
+        """
+        f=self._filename(_id, filename)
+        if os.file.exists(f):
+            return open(f, 'r')
+        else:
+            return None
+    
+    def create_file(self, file_handle, **kwargs):
+        """
+        See :meth:`FileStore.create_file`
+        """
+        with self.new_file(**kwargs) as f:
+            f.write(file_handle.read())
+
+    def copy_file(self, file_handle, **kwargs):
+        """
+        See :meth:`FileStore.copy_file`
+        """
+        file_handle.write(self.get_file(**kwargs).read())
+
+    def new_context(self):
+        """
+        Empty function
+        """
+        pass
+
+    valid_untrusted_methods=()
+
+##
 
 import zmq
 from db_zmq import db_method
