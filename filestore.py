@@ -58,6 +58,7 @@ class FileStore(object):
         :arg file file_handle: a file handle open for writing
         :arg \*\*kwargs: labels to identify the file to copy
         """
+        raise NotImplementedError
 
     def create_secret(self, session):
         """
