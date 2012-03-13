@@ -135,6 +135,7 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
         if msg['msg_type']=='create_secret':
             key[0]=sha1(key[0]).digest()
             auth_dict[auth_session]=hmac.new(key[0],digestmod=sha1)
+            log("Create authkey: session: %r, key: %r"%(auth_session, auth_dict[auth_session].digest()))
             to_send=True
         elif isFS:
             if msg['msg_type']=='create_file':
@@ -186,6 +187,7 @@ def authenticate(msg_str, digest, session, auth_dict, hexdigest=False):
     real_digest=auth_dict[session].hexdigest() if hexdigest else auth_dict[session].digest()
     if real_digest!=digest:
         auth_dict[session]=old_hmac
+        log("Authentication problem: msg: %r\nreal_digest: %r\nsentdigest: %r\nold_digest: %r"%(msg_str, real_digest, digest, old_hmac.digest()))
         raise AuthenticationException
 
 def signal_handler(signal, frame):

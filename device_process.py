@@ -687,6 +687,7 @@ def upload_files(upload_recv, file_child, session, fs_secret):
     fs=FileStoreZMQ(fs.address)
 
     fs_hmac=hmac.new(fs_secret, digestmod=sha1)
+    log("starting fs secret: %r"%fs_hmac.digest())
     del fs_secret
 
     file_list={}

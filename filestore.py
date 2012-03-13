@@ -207,7 +207,9 @@ class FileStoreZMQ(FileStoreMongo):
             f=file_handle.read()
         msg_str=dumps({'msg_type':'create_file',"header":str(uuid4()),
                        'content':kwargs})
+        log("Sending: msg_str: %r, old_digest: %r"%(msg_str, hmac.digest()))
         hmac.update(msg_str)
+        log("New digest: %r"%hmac.digest())
         message=[msg_str, hmac.digest(), f]
         self.socket.send_multipart(message,copy=False,track=True).wait()
         self.socket.recv()
