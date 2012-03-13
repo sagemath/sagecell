@@ -366,6 +366,9 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                 keys[1]=sha1(keys[1]).digest()
                 msg_queue=manager.Queue()
                 args=(session, msg_queue, resource_limits, keys[1])
+                # we increment the key one more time to keep up with the trusted side
+                # (which incremented once for session and once for sessionupload
+                keys[1]=sha1(keys[1]).digest()
                 sessions[session]={'messages': msg_queue,
                                    'worker': pool.apply_async(worker,args),
                                    'parent_header': X['header']}
@@ -686,8 +689,8 @@ def upload_files(upload_recv, file_child, session, fs_secret):
     global fs
     fs=FileStoreZMQ(fs.address)
 
-    fs_hmac=hmac.new(fs_secret, digestmod=sha1)
-    log("starting fs secret: %r"%fs_hmac.digest())
+    fs_hmac=hmac.new(sha1(fs_secret).digest(), digestmod=sha1)
+    log("starting fs secret for upload_files: %r"%fs_hmac.digest())
     del fs_secret
 
     file_list={}
