@@ -161,7 +161,7 @@ def callback(db, key, pipe, auth_dict, socket, msgs, isFS):
         elif msg['msg_type'] in db.valid_untrusted_methods:
             to_send=getattr(db,msg['msg_type'])(**msg['content'])
     except AuthenticationException:
-        log("Authentication failed")
+        log("Authentication failed: %s"%msg)
     finally:
         if send_finally:
             if isFS:
