@@ -707,6 +707,8 @@ def upload_files(upload_recv, file_child, session, fs_secret):
                 try:
                     file_list[filename]=os.stat(filename).st_mtime
                     with open(filename) as f:
+                        # TODO: for some reason, switching the cell_id below to be session=session causes an authentication error
+                        # TODO: figure out why.
                         fs.create_file(f, cell_id=session, session_auth_channel='upload', filename=filename, hmac=fs_hmac)
                 except Exception as e:
                     log("An exception occurred in uploading files: %s\n"%(e,))

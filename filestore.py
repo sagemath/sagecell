@@ -314,6 +314,8 @@ class FileStoreZMQ(FileStoreMongo):
         file_handle.write(self.socket.recv())
 
     create_secret=db_method('create_secret',['session'], True)
+    # TODO: There is an authentication failure if we remove 'cell_id' from the list of
+    # arguments in new_file.
     new_file=db_method('new_file',['session','cell_id', 'filename'], True)
     delete_files=db_method('delete_files',['session', 'filename'], True)
     get_file=db_method('get_file',['session', 'filename'], True)
