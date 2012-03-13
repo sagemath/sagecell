@@ -361,14 +361,15 @@ def device(db, fs, workers, interact_timeout, keys, poll_interval=0.1, resource_
                 hmacs[session]=hmac.new(keys[0],digestmod=sha1)
                 while not fs.create_secret(session=session):
                     time.sleep(0.1)
+                keys[1]=sha1(keys[1]).digest()
+                fs_secret={}
+                fs_secret['']=keys[1]
                 while not fs.create_secret(session=session+'upload'):
                     time.sleep(0.1)
                 keys[1]=sha1(keys[1]).digest()
+                fs_secret['upload']=keys[1]
                 msg_queue=manager.Queue()
-                args=(session, msg_queue, resource_limits, keys[1])
-                # we increment the key one more time to keep up with the trusted side
-                # (which incremented once for session and once for sessionupload
-                keys[1]=sha1(keys[1]).digest()
+                args=(session, msg_queue, resource_limits, fs_secret)
                 sessions[session]={'messages': msg_queue,
                                    'worker': pool.apply_async(worker,args),
                                    'parent_header': X['header']}
@@ -518,10 +519,10 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
 
     upload_recv, upload_send=Pipe()
     file_parent, file_child=Pipe()
-    file_upload_process=Process(target=upload_files, args=(upload_recv, file_child, session, fs_secret))
+    file_upload_process=Process(target=upload_files, args=(upload_recv, file_child, session, fs_secret['upload']))
     file_upload_process.start()
 
-    fs_hmac=hmac.new(fs_secret, digestmod=sha1)
+    fs_hmac=hmac.new(fs_secret[''], digestmod=sha1)
     del fs_secret
     if resource_limits is None:
         resource_limits=[]
@@ -689,7 +690,7 @@ def upload_files(upload_recv, file_child, session, fs_secret):
     global fs
     fs=FileStoreZMQ(fs.address)
 
-    fs_hmac=hmac.new(sha1(fs_secret).digest(), digestmod=sha1)
+    fs_hmac=hmac.new(fs_secret, digestmod=sha1)
     log("starting fs secret for upload_files: %r"%fs_hmac.digest())
     del fs_secret
 
