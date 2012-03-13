@@ -80,7 +80,7 @@ except ImportError:
     # we may not be able to import sagecell_config if we are untrusted
     mongo_config=None
 
-DEBUG = True
+DEBUG = False
 
 def Debugger(func):
     if DEBUG:
