@@ -9,3 +9,10 @@ static/mathjax/*
 # ignore timing test results
 timing/results
 2011*
+
+# ignore the default directory for the filesystem filestore
+files/*
+
+# generated web files
+static/all*
+minifiers/jsmin
