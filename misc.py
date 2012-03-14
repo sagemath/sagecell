@@ -1,5 +1,4 @@
 import sys
-import sagecell_config
 
 def select_db(sysargs, context=None):
     u"""
@@ -10,6 +9,7 @@ def select_db(sysargs, context=None):
     :type context: zmq.Context
     :returns: a tuple of the form ``(db, fs)``
     """
+    import sagecell_config
     try:
         db=sysargs.db
     except:
@@ -38,8 +38,7 @@ def select_db(sysargs, context=None):
         return db_sqlalchemy.DB('sqlalchemy_sqlite.db'), None # None should be replaced by the sqlite filestore
     elif db=="mongo":
         import pymongo, db_mongo, filestore
-        import sagecell_config
-        from sagecell_config import mongo_config
+        mongo_config = sagecell_config.mongo_config
 
         if '@' in mongo_config['mongo_uri']:
             # password specified, so we need to include the database in the URI
