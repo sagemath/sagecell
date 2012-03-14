@@ -80,7 +80,7 @@ except ImportError:
     # we may not be able to import sagecell_config if we are untrusted
     mongo_config=None
 
-DEBUG = False
+DEBUG = True
 
 def Debugger(func):
     if DEBUG:
@@ -176,41 +176,66 @@ class FileStoreMongo(FileStore):
 
     valid_untrusted_methods=()
 
+from flask import safe_join
+import os
 
 class FileStoreFilesystem(FileStore):
     """
     Filestore using the file system
 
-    :arg dir: A directory in which to store files
-    """
-    def __init__(self, dir):
-        self._dir = dir
+    The levels parameter controls how the session is split up to give
+    subdirectories.  For example, if levels=4, then session
+    0c490701-b1b0-40b8-88ea-70b61a580cf2 files are stored in
+    subdirectory ``0/c/4/9/0c490701-b1b0-40b8-88ea-70b61a580cf2``.
+    This prevents having too many directories in the root directory.
 
-    def _filename(_id, filename):
-        return os.path.join(self._dir, '%s-%s'%(_id, filename))
-    
-    def new_file(self, _id, filename):
+    :arg dir: A directory in which to store files
+    :arg levels: The number of levels to use for splitting up session directories
+    """
+    def __init__(self, dir, levels=0):
+        self._dir = dir
+        self._levels=levels
+
+    def _filename(self, **kwargs):
+        if 'session' in kwargs:
+            session=kwargs['session']
+        elif 'cell_id' in kwargs:
+            session = kwargs['cell_id']
+        else:
+            session = "SESSION_NOT_FOUND"
+        session_subdir = list(str(session)[:self._levels])+[str(session)]
+        # Use Flask's safe_join to make sure we don't overwrite something crucial
+        session_dir = safe_join(self._dir, os.path.join(*session_subdir))
+        if not os.path.isdir(session_dir):
+            os.makedirs(session_dir)
+        return safe_join(session_dir, kwargs['filename'])
+
+    @Debugger
+    def new_file(self, **kwargs):
         """
         See :meth:`FileStore.new_file`
         """
-        return open(self._filename(_id, filename), 'w')
+        return open(self._filename(**kwargs), 'w')
 
-    def delete_files(self, _id, filename):
+    @Debugger
+    def delete_files(self, session, filename):
         """
         See :meth:`FileStore.delete_files`
         """
-        os.path.remove(self._filename(_id, filename))
+        os.path.remove(self._filename(session=session, filename=filename))
 
-    def get_file(self, _id, filename):
+    @Debugger
+    def get_file(self, session, filename):
         """
         See :meth:`FileStore.get_file`
         """
-        f=self._filename(_id, filename)
-        if os.file.exists(f):
+        f=self._filename(session=session, filename=filename)
+        if os.path.exists(f):
             return open(f, 'r')
         else:
             return None
-    
+
+    @Debugger
     def create_file(self, file_handle, **kwargs):
         """
         See :meth:`FileStore.create_file`
@@ -218,12 +243,14 @@ class FileStoreFilesystem(FileStore):
         with self.new_file(**kwargs) as f:
             f.write(file_handle.read())
 
+    @Debugger
     def copy_file(self, file_handle, **kwargs):
         """
         See :meth:`FileStore.copy_file`
         """
         file_handle.write(self.get_file(**kwargs).read())
 
+    @Debugger
     def new_context(self):
         """
         Empty function
