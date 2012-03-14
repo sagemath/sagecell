@@ -9,20 +9,21 @@ def select_db(sysargs, context=None):
     :type context: zmq.Context
     :returns: a tuple of the form ``(db, fs)``
     """
-    import sagecell_config
     try:
         db=sysargs.db
     except:
-        if hasattr(sagecell_config, 'db'):
+        try:
+            import sagecell_config
             db=sagecell_config.db
-        else:
+        except:
             db='mongo'
     try:
         fs=sysargs.fs
     except:
-        if hasattr(sagecell_config, 'fs'):
+        try:
+            import sagecell_config
             fs=sagecell_config.fs
-        else:
+        except:
             fs=db
 
     if db=="sqlite":
