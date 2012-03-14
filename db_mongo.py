@@ -2,18 +2,33 @@
 The MongoDB database has the following collections:
 
     - ``device``: information on each device process
+       - ``device`` (str) - device id
+       - ``account`` (str) - the ssh account for the device
+       - ``workers`` (int) - the number of workers
+       - ``pgid`` (int) - the parent group id of the device (used to shutdown the device)
+    
     - ``input_messages``: the code to execute
 
-        - ``evaluated``: whether or not a message has been evaluated
-        - ``device``: the ID of the device to which this message has
+        - ``evaluated`` (bool, indexed) - whether or not a message has been evaluated
+        - ``device`` (str, indexed) -  the ID of the device to which this message has
           been assigned; ``None`` if it has not yet been assigned
           to a device
+        - ``shortened`` (str, indexed) - a short identifier for the input, for permalinks
+        - ``timestamp`` (datetime) - the timestamp of the input
+   
 
     - ``messages``: a series of messages in IPython format
+        - index on parent_header.session
+        - sequence
+        - 
+
     - ``ipython``: a table to keep track of IPython ports for tab
       completion (usable when there is a single long-running dedicated
       IPython session for each computation.)
     - ``sessions``: a table listing which device is assigned to each session
+        - session (indexed str) - session
+        - device
+    
 """
 
 import db
