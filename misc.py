@@ -1,4 +1,5 @@
 import sys
+import sagecell_config
 
 def select_db(sysargs, context=None):
     u"""
@@ -12,7 +13,18 @@ def select_db(sysargs, context=None):
     try:
         db=sysargs.db
     except:
-        db="mongo"
+        if hasattr(sagecell_config, 'db'):
+            db=sagecell_config.db
+        else:
+            db='mongo'
+    try:
+        fs=sysargs.fs
+    except:
+        if hasattr(sagecell_config, 'fs'):
+            fs=sagecell_config.fs
+        else:
+            fs=db
+
     if db=="sqlite":
         import db_sqlite
         import sqlite3
