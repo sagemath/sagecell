@@ -1,6 +1,6 @@
 import db
 
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, select
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Boolean, DateTime, text, select
 
 class DB(db.DB):
     def __init__(self, c):
@@ -8,22 +8,30 @@ class DB(db.DB):
         self._filename = c
         self._c = create_engine('sqlite:///%s'%self._filename)
         meta = MetaData(bind=self._c)
-        self._messages_table = Table('cells', meta,
+        self._messages = Table('messages', meta,
                                  Column('_id', Integer, primary_key=True),
-                                 Column('device_id', Integer),
-                                 Column('input', String),
-                                 Column('output', String))
-        self._devices_table = Table('devices', meta,
+                                 Column('session', String, index=True),
+                                 Column('sequence', Integer, index=True),
+                                 Column('message', String))
+        self._input_messages = Table('input_messages', meta,
+                                     Column('_id', Integer, primary_key=True),
+                                     Column('message', String),
+                                     Column('evaluated', Boolean, index=True),
+                                     Column('device', String, nullable=True),
+                                     Column('shortened', String,nullable=True),
+            Column('timestamp', DateTime))
+            #, server_default=text('NOW()')))
+        self._devices = Table('devices', meta,
                                     Column('_id', Integer, primary_key=True),
-                                    Column('session', Integer),
-                                    Column('device', Integer))
+                                    Column('session', String, index=True),
+                                    Column('device', String, index=True))
+        #not used
         self._ipython_port_table = Table('ipython_port', meta,
                                          Column('_id', Integer, primary_key=True),
                                          Column('pid', Integer),
                                          Column('xreq', Integer),
                                          Column('sub', Integer),
                                          Column('rep', Integer))
-                                         
         meta.create_all()
 
 
@@ -32,21 +40,21 @@ class DB(db.DB):
         # look up device; None means a device has not yet been assigned
         # Note that this makes it easy for an attacker to inject messages into a session
         # if they can snoop the session ID
-        t=self._devices_table
-        query = select([t.c._id,t.c.device], (t.c.session==msg['header']['session'])).limit(1)
-        results=[dict(_id=u, input=v) for u,v in query.execute()]
-        if len(results)!=0:
-            msg['device'] = results[0]['device']
- 
-        msg['evaluated']=False
-        import datetime
-        msg['timestamp']=datetime.datetime.utcnow()
-        t.self._messages.insert(...)
+        t=self._devices
+        query = select([t.c.device]).where(t.c.session==msg['header']['session']).limit(1)
+        row=query.execute().fetchone()
+        if row:
+            device = row[t.c.device]
+            row.close()
+        else:
+            device = None
+        self._input_messages.insert().execute(message=json.dumps(msg), evaluated=False, device=device)
 
     def get_input_message_by_shortened(self, shortened):
         """
         Retrieve the input code for a shortened field
         """
+        raise NotImplementedError
         doc=self.database.input_messages.find_one({'shortened': shortened}, {'content.code': 1})
         if doc is not None:
             return doc['content']['code']
@@ -57,13 +65,17 @@ class DB(db.DB):
         """
         See :meth:`db.DB.get_input_messages`
         """
-        # find the sessions for this device
-        device_messages=list(self.database.input_messages.find({'device':device, 'evaluated':False }))
-        if len(device_messages)>0:
-            self.database.input_messages.update({'_id':{'$in': [i['_id'] for i in device_messages]},
-                                          '$atomic':True},
-                                         {'$set': {'evaluated':True}}, multi=True)
+        t=self._devices
+        m=self._input_messages
+        # find the non-evaluated messages for sessions already on this device
+        c=self._c.connect()
+        with c.begin():
+            # we use a transaction so that the select and update happen together
+            r=c.execute(select([m.c._id,m.c.message]).where(and_(m.c.device==device,m.c.evaluated==False)))
+            p=c.execute(update(m).values(evaluated=True).where(and_(m.c.device==device,m.c.evaluated==False)))
 
+        device_messages = [row[m.c.message] for row in r]
+        # Now get new messages that aren't assigned to a device
         # if limit is 0, don't do the query (just return empty list)
         # if limit is None or negative, do the query without limit
         # otherwise do the query with the specified limit
@@ -92,76 +104,71 @@ class DB(db.DB):
         """
         See :meth:`db.DB.close_session`
         """
-        self.database.sessions.remove({'session':session, 'device':device})    
-
+        # remove the device/session record from the sessions table
+        pass
+    
     def get_messages(self, session, sequence=0):
         """
         See :meth:`db.DB.get_messages`
         """
-        messages=list(self.database.messages.find({'parent_header.session':session,
-                                            'sequence':{'$gte':sequence}}))
-        #TODO: just get the fields we want instead of deleting the ones we don't want
-        for m in messages:
-            del m['_id']
+        # get all messages from self._messages with the given session id that also
+        # has a sequence number >= the given sequence number
+        # order by sequence number ascending
         return messages
 
     def add_messages(self, messages):
         """
         See :meth:`db.DB.add_messages`
         """
-        self.database.messages.insert(messages)
+        # insert the list of messages into self._messages.  Extract the sequence and parent_header['session']
+        # to be able to insert that information into the appropriate columns
+        pass
         log("INSERTED: %s"%('\n'.join(str(m) for m in messages),))
 
     def register_device(self, device, account, workers, pgid):
         """
         See :meth:`db.DB.register_device`
         """
-        doc={"device":device, "account":account, "workers": workers, "pgid":pgid}
-        self.database.device.insert(doc)
+        # Insert into self._devices the record with the device, account, workers, and pgid info
         log("REGISTERED DEVICE: %s"%doc)
 
     def delete_device(self, device):
         """
         See :meth:`db.DB.delete_device`
         """
+        # delete the device record from self._devices
         self.database.device.remove({'device': device})
 
     def get_devices(self):
         """
         See :meth:`db.DB.get_devices`
         """
-        return list(self.database.device.find())
-
-    def set_ipython_ports(self, kernel):
-        """
-        See :meth:`db.DB.set_ipython_ports`
-        """
-        self.database.ipython.remove()
-        self.database.ipython.insert({"pid":kernel[0].pid, "xreq":kernel[1], "sub":kernel[2], "rep":kernel[3]})
-    
-    def get_ipython_port(self, channel):
-        """
-        See :meth:`db.DB.get_ipython_port`
-        """
-        return self.database.ipython.find().next()[channel]
+        # get all self._devices
+        pass
 
     def new_context(self):
         """
         Reconnect to the database. This function should be
         called before the first database access in each new process.
         """
-        self.database=pymongo.database.Database(self.c, mongo_config['mongo_db'])
-        uri=mongo_config['mongo_uri']
-        if '@' in uri:
-            # strip off optional mongodb:// part
-            if uri.startswith('mongodb://'):
-                uri=uri[len('mongodb://'):]
-            result=self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
-            if result==0:
-                raise Exception("MongoDB authentication problem")
+        # should anything be done here to connect?  I don't think we need to do anything
 
     valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')
-        
+
+    # The following is old code that may or may not be useful in getting the idea of how to write queries
+    # it can be deleted once the code for the above functions is working
+
+    def set_ipython_ports(self, kernel):
+        """
+        See :meth:`db.DB.set_ipython_ports`
+        """
+        pass
+    
+    def get_ipython_port(self, channel):
+        """
+        See :meth:`db.DB.get_ipython_port`
+        """
+        pass
 
     def create_cell(self, input):
         """
