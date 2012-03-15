@@ -6,6 +6,7 @@ doc/_build/*
 .idea
 static/mathjax/*
 static/jmol
+dist/*
 
 # ignore timing test results
 timing/results
