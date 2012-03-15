@@ -186,10 +186,10 @@ def jsonMessageSync(row, syncToJSON):
     :class:`dict` that maps the name of a column to the a list representing the
     "path" of the corresponding value in the JSON object.
     
-    When one the properties of a JSON message object is changed, this function
+    When one of the properties of a JSON message object is changed, this function
     should be called before committing. Its effect is to synchronize the
     value of the JSON-formatted string field with the database column and keep
-    the the two storage locations consistant with one another.
+    the two storage locations consistant with one another.
     
     :arg Base row: the database row to be synchronized
     :arg bool syncToJSON: if ``True``, modify the JSON object field to match the

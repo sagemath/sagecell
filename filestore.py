@@ -211,9 +211,12 @@ class FileStoreSQLAlchemy(FileStore):
             self.filestore.create_file(self, self.session, self.filename)
             super(type(self), self).close()
 
-from gridfs import GridFS
-import pymongo
-from pymongo.objectid import ObjectId
+try:
+    from gridfs import GridFS
+    import pymongo
+    from pymongo.objectid import ObjectId
+except ImportError:
+    pass
 
 class FileStoreMongo(FileStore):
     """

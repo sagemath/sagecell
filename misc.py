@@ -15,13 +15,9 @@ def select_db(sysargs, context=None):
         try:
             import sagecell_config
             db=sagecell_config.db
-        except:
-            db='sqlalchemy'
-        try:
-            import sagecell_config
-            fs=sagecell_config.fs
-        except:
-            fs=db
+            fs=sagecell_config.fs if hasattr(sagecell_config, fs) else db
+        except ImportError:
+            db = fs = 'sqlalchemy'
 
     if db=="sqlite":
         import db_sqlite
