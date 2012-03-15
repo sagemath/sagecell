@@ -229,7 +229,6 @@ def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **
         sage: input_box('Multiline\nInput',label='Click to change value',type=str,height=5)
         Interact input box labeled 'Click to change value' with default value 'Multiline\nInput'
     """
-    # TODO: make input_box take a type
     from sagenb.misc.misc import Color
 
     if type is Color:
@@ -247,7 +246,7 @@ def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **
     elif type is str:
         adapter=lambda x, globs: x
     else:
-        adapter = lambda x, globs: sage_eval(x, globs)
+        adapter = lambda x, globs: type(sage_eval(x, globs))
     return InputBox(default=default, width=width, 
                     label=label, adapter=adapter, height=height)
 
