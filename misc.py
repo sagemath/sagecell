@@ -9,17 +9,14 @@ def select_db(sysargs, context=None):
     :type context: zmq.Context
     :returns: a tuple of the form ``(db, fs)``
     """
-    try:
+    if sysargs.db is not None:
         db=sysargs.db
-    except:
+    else:
         try:
             import sagecell_config
             db=sagecell_config.db
         except:
-            db='mongo'
-    try:
-        fs=sysargs.fs
-    except:
+            db='sqlalchemy'
         try:
             import sagecell_config
             fs=sagecell_config.fs
@@ -35,8 +32,9 @@ def select_db(sysargs, context=None):
         conn.close()
         return db_sqlite.DB('sqlite.db'), None # None should be replaced by the sqlite filestore
     elif db=="sqlalchemy":
-        import db_sqlalchemy
-        return db_sqlalchemy.DB('sqlalchemy_sqlite.db'), None # None should be replaced by the sqlite filestore
+        import db_sqlalchemy, filestore
+        return (db_sqlalchemy.DB(sagecell_config.sqlalchemy_uri),
+                filestore.FileStoreSQLAlchemy(sagecell_config.sqlalchemy_uri))
     elif db=="mongo":
         import pymongo, db_mongo, filestore
         mongo_config = sagecell_config.mongo_config

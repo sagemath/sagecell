@@ -337,7 +337,7 @@ if __name__ == "__main__":
     # sometime in the summer of 2011, and then we can move this to use argparse.
     from optparse import OptionParser
     parser = OptionParser(description="The web server component of the notebook")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], help="Database to use")
     parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
     (sysargs, args) = parser.parse_args()
 

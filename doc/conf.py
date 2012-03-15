@@ -43,7 +43,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Sage Cell Server'
-copyright = u'2011, Jason Grout, Ira Hanson, Alex Kramer, William Stein'
+copyright = u'2012 Jason Grout, Ira Hanson, Alex Kramer, William Stein'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -223,4 +223,5 @@ intersphinx_mapping = {'python': ('http://docs.python.org/release/2.7.2/', None)
                        'ipython': ('http://ipython.org/ipython-doc/dev/', None),
                        'pymongo': ('http://api.mongodb.org/python/current/', None),
                        'pyzmq': ('http://zeromq.github.com/pyzmq/', None),
+                       'sqlalchemy': ('http://docs.sqlalchemy.org/en/rel_0_5/', None),
                        'sage': ('http://www.sagemath.org/doc/reference/', None)}

@@ -69,10 +69,13 @@ class FileStore(object):
         :arg str session: the ID of the new session
         """
         raise NotImplementedError
-    
-from gridfs import GridFS
-import pymongo
-from pymongo.objectid import ObjectId
+
+    def new_context(self):
+        """
+        Reconnect to the filestore. This function should be
+        called before the first filestore access in each new process.
+        """
+        pass
 
 try:
     from sagecell_config import mongo_config
@@ -97,6 +100,120 @@ def Debugger(func):
         return decorated
     else:
         return func
+
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.types import Binary
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from StringIO import StringIO
+
+class FileStoreSQLAlchemy(FileStore):
+    """
+    A filestore in a SQLAlchemy database.
+    
+    :arg str fs_file: the SQLAlchemy URI for a database file
+    """
+    def __init__(self, fs_file):
+        engine = create_engine(fs_file)
+        self.SQLSession = sessionmaker(bind=engine)
+        FileStoreSQLAlchemy.Base.metadata.create_all(engine)
+        self.new_context()
+
+    @Debugger
+    def new_file(self, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.new_file`
+        """
+        self.delete_files(session, filename)
+        log("FS Creating %s/%s"%(session, filename))
+        return FileStoreSQLAlchemy.DBFileWriter(self, session, filename)
+
+    @Debugger
+    def delete_files(self, session=None, filename=None, **kwargs):
+        """
+        See :meth:`FileStore.new_file`
+        """
+        q = self.dbsession.query(FileStoreSQLAlchemy.StoredFile)
+        if session is not None:
+            q = q.filter_by(session=session)
+        if filename is not None:
+            q = q.filter_by(filename=filename)
+        q.delete()
+        self.dbsession.commit()
+
+    @Debugger
+    def get_file(self, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.get_file`
+        """
+        return StringIO(self.dbsession.query(FileStoreSQLAlchemy.StoredFile.contents) \
+                .filter_by(session=session, filename=filename).first().contents)
+
+    @Debugger
+    def create_file(self, file_handle, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.create_file`
+        """
+        f = FileStoreSQLAlchemy.StoredFile(session=session, filename=filename)
+        if type(file_handle) is FileStoreSQLAlchemy.DBFileWriter:
+            contents = file_handle.getvalue()
+        else:
+            contents = file_handle.read()
+        f.contents = contents
+        self.dbsession.add(f)
+        self.dbsession.commit()
+
+    @Debugger
+    def copy_file(self, file_handle, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.copy_file`
+        """
+        self.dbsession.add(FileStoreSQLAlchemy.StoredFile(session=session,
+                filename=filename, contents=file_handle.read()))
+        self.dbsession.commit()
+
+    @Debugger
+    def new_context(self):
+        """
+        See :meth:`FileStore.new_context`
+        """
+        self.dbsession = self.SQLSession()
+
+    Base = declarative_base()
+    
+    class StoredFile(Base):
+        """A file stored in the database"""
+        __tablename__ = 'filestore'
+        n = Column(Integer, primary_key=True)
+        session = Column(String)
+        filename = Column(String)
+        contents = Column(Binary)
+
+    class DBFileWriter(StringIO, object):
+        """
+        A file-like object that writes its contents to the database when it is
+        closed.
+        
+        :arg FileStoreSQLAlchemy filestore: the filestore object to write to
+        :arg str session: the ID of the session that is the source of this file
+        :arg str filename: the name of the file
+        """
+        def __init__(self, filestore, session, filename):
+            self.filestore = filestore
+            self.session = session
+            self.filename = filename
+            super(type(self), self).__init__()
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            self.close()
+        def close(self):
+            self.filestore.create_file(self, self.session, self.filename)
+            super(type(self), self).close()
+
+from gridfs import GridFS
+import pymongo
+from pymongo.objectid import ObjectId
 
 class FileStoreMongo(FileStore):
     """
@@ -161,8 +278,7 @@ class FileStoreMongo(FileStore):
     @Debugger
     def new_context(self):
         """
-        Reconnect to the filestore. This function should be
-        called before the first filestore access in each new process.
+        See :meth:`FileStore.new_context`
         """
         self.database=pymongo.database.Database(self._conn, mongo_config['mongo_db'])
         uri=mongo_config['mongo_uri']
@@ -258,8 +374,6 @@ class FileStoreFilesystem(FileStore):
         pass
 
     valid_untrusted_methods=()
-
-##
 
 import zmq
 from db_zmq import db_method

@@ -27,12 +27,12 @@ class DB(object):
         """
         raise NotImplementedError
 
-    def get_input_messages(self, device_id, limit=None):
+    def get_input_messages(self, device, limit=None):
         """
         Find the computations that haven't been started yet,
         mark them as in-progress with the device ID and return
         the cells. The :obj:`limit` keyword can give an upper 
-        on the number unassigned sessions returned.
+        on the number of unassigned sessions returned.
 
         The database also stores a list of sessions for each device.
         Currently, we rely on each message having a device attribute
@@ -48,11 +48,22 @@ class DB(object):
         """
         raise NotImplementedError
 
-    def add_messages(self, output):
+    def get_input_message_by_shortened(self, shortened):
+        """
+        Retrieve the input code for a shortened field
+        
+        :arg str shortened: the shortened identifier for the input message
+        :returns: a string containing the input code, or the empty string if
+            the shortened ID does not match any input.
+        :rtype: str
+        """
+        raise NotImplementedError
+
+    def add_messages(self, messages):
         """
         Add IPython-style output messages to the database.
 
-        :arg dict output: the message to add
+        :arg list output: the messages to add
         """
         raise NotImplementedError
 
@@ -68,6 +79,8 @@ class DB(object):
 
         :arg str device: device ID
         :arg str account: account
+        :arg int workers: number of workers
+        :arg int pgid: process group ID
         """
         raise NotImplementedError
 
@@ -136,3 +149,10 @@ class DB(object):
         :rtype: int
         """
         raise NotImplementedError
+
+    def new_context(self):
+        """
+        Reconnect to the database. This function should be
+        called before the first database access in each new process.
+        """
+        pass

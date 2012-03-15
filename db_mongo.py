@@ -74,7 +74,7 @@ class DB(db.DB):
 
     def get_input_message_by_shortened(self, shortened):
         """
-        Retrieve the input code for a shortened field
+        See :meth:`db.DB.get_input_message_by_shortened`
         """
         doc=self.database.input_messages.find_one({'shortened': shortened}, {'content.code': 1})
         if doc is not None:
@@ -121,7 +121,7 @@ class DB(db.DB):
         """
         See :meth:`db.DB.close_session`
         """
-        self.database.sessions.remove({'session':session, 'device':device})    
+        self.database.sessions.remove({'session':session, 'device':device})
 
     def get_messages(self, session, sequence=0):
         """
@@ -176,8 +176,7 @@ class DB(db.DB):
 
     def new_context(self):
         """
-        Reconnect to the database. This function should be
-        called before the first database access in each new process.
+        See :meth:`db.DB.new_context`
         """
         self.database=pymongo.database.Database(self.c, mongo_config['mongo_db'])
         uri=mongo_config['mongo_uri']

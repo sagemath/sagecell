@@ -18,6 +18,8 @@ mongo_config={
     'mongo_db': 'sagecelldb'
     }
 
+# SQLAlchemy
+sqlalchemy_uri = 'sqlite:///sqlite.db'
 
 # WEB SERVER
 #webserver='python'
