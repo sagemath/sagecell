@@ -1,0 +1,27 @@
+= name of spkg =
+
+== Description ==
+
+The Sage Cell server provides a way to embed Sage into any web page.
+
+== License ==
+
+Various -- see separate packages
+
+== SPKG Maintainers ==
+
+* Jason Grout
+
+== Upstream Contact ==
+
+Jason Grout <jason-sage@creativetrax.com>
+
+== Dependencies ==
+
+* flask sage notebook
+
+Other dependencies are included (zeromq, pyzmq)
+
+== Changelog ==
+
+See the git log
