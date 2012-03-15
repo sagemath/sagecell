@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+# Create a new Sage Cell Server spkg.
+#
+
+# From the sage notebook spkg-dist, upon which this is based:
+# This spkg-dist doesn't need any Python modules of Sage, so it should
+# be okay to run it from a system-wide Python (provided it is sufficiently
+# recent).  This script *does* need a sage executable to be in the PATH
+# because we need to run "sage -pkg" below and also the "sdist" script
+# runs "sage -python" and "sage -hg". -- Jeroen Demeyer
+
+
+import os
+import sys
+import stat
+import shutil
+import tarfile
+import subprocess
+from tempfile import mkdtemp
+
+from pkg_resources import Requirement
+from setuptools.package_index import PackageIndex
+
+version='0.9.0'
+
+SAGECELL_ROOT=os.getcwd()
+SPKG_ROOT = os.path.join(SAGECELL_ROOT, 'dist', 'sagecell-%s'%version)
+SPKG_SRC = os.path.join(SPKG_ROOT, 'src')
+
+# Create the source distribution.
+print "Creating the new source tarball..."
+os.system("""
+rm -rf %(SPKG_ROOT)s
+mkdir -p %(SPKG_SRC)s
+cd %(SPKG_SRC)s
+git clone %(SAGECELL_ROOT)s sagecell
+cd ..
+cp %(SAGECELL_ROOT)s/sage-spkg/SPKG.txt .
+"""%{'version': version, 'SAGECELL_ROOT': SAGECELL_ROOT, 'SPKG_ROOT': SPKG_ROOT, 'SPKG_SRC': SPKG_SRC}
+)
+
+
+print "Fetching the required packages"
+pkg_index = PackageIndex()
+tmp_dir = mkdtemp()
+# in order of dependencies
+required_packages = ('pymongo>=2.1.1',
+                     'pyzmq==2.1.11', # should be the same version as zmq
+    )
+
+install_python_dependencies=""
+for pkg in required_packages:
+    print "Fetching %s" % pkg
+    dist = pkg_index.fetch_distribution(Requirement.parse(pkg), tmp_dir, True, True)
+    location = os.path.abspath(dist.location)
+    shutil.copy(location, os.path.join(SPKG_SRC, os.path.basename(location)))
+    # --allow-hosts=None prevents downloading
+    install_python_dependencies += r"""
+easy_install --allow-hosts=None %(pkg)s
+if [ $? -ne 0 ]; then
+    echo >&2 "Error installing %(pkg)s."
+    exit 1
+fi
+
+""" % {'pkg': os.path.basename(location)}
+
+os.chdir(SPKG_SRC)
+
+# get zeromq and mathjax
+zeromq_version='2.1.11'
+zeromq_url='http://download.zeromq.org/zeromq-%s.tar.gz'%zeromq_version
+os.system("curl -L %s | tar xz"%zeromq_url)
+os.system("ln -s zeromq-%s zeromq"%zeromq_version)
+
+mathjax_version='1.1a'
+mathjax_url='https://github.com/mathjax/MathJax/tarball/v%s'%mathjax_version
+os.system("curl -L %s | tar xz"%mathjax_url)
+os.system("ln -s mathjax-MathJax* mathjax")
+
+os.chdir(SPKG_ROOT)
+os.chdir(os.path.pardir) # (now in dist/)
+
+print "Creating 'spkg-install'..."
+sys.stdout.flush()
+spkg_install_template = os.path.abspath(os.path.join(SAGECELL_ROOT, 'sage-spkg', 'spkg-install'))
+spkg_install = os.path.join(SPKG_ROOT,'spkg-install')
+with open(spkg_install, 'w') as f, open(spkg_install_template, 'r') as template:
+    f.write(template.read() % {'install_python_dependencies': install_python_dependencies})
+
+os.chmod(spkg_install, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+         stat.S_IROTH | stat.S_IXOTH) # -rwxr-xr-x
+
+# We are still in dist/, now package sagenb-x.y.z/ :
+print "Running 'sage -pkg %s'..."%SPKG_ROOT
+sys.stdout.flush()
+if subprocess.call(['sage', '-pkg', SPKG_ROOT]):
+    sys.stderr.write('Error: "sage -pkg %s" failed.\nSee message(s) above for the specific error.\n'%SPKG_ROOT)
+    sys.exit(1)
