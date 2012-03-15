@@ -297,7 +297,7 @@ def interact(f, controls=[], update=None, layout=None):
         c = _INTERACTS[function_id]["controls"][var]
         # initially, the default global context is the function's
         # global namespace
-        state[var] = c.adapter(value, f.func_globals)
+        state[var] = c.default
 
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
@@ -393,7 +393,9 @@ class InputBox(InteractControl):
     :arg bool raw: ``True`` if the value should be treated as "unquoted"
         (raw), so it can be used in control structures; ``False`` if the
         value should be treated as a string. The value of a textarea (``height``
-        greater than one) will always be treated as a string.
+        greater than one) will always be treated as a string. If this argument
+        is not given, it will default to ``False`` if ``default`` is a string,
+        and ``True`` if it is not.
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     :arg adapter: a callable which will be passed the input before
@@ -404,9 +406,9 @@ class InputBox(InteractControl):
         function as the value of the control.
     """
 
-    def __init__(self, default="", label=None, width=0, height=1, raw=False,
+    def __init__(self, default="", label=None, width=0, height=1, raw=None,
                  adapter=None):
-        self.default=self.default_return=default
+        self.default=default
         self.width=int(width)
         self.height=int(height)
         self.raw=raw
@@ -419,9 +421,20 @@ class InputBox(InteractControl):
             self.raw = True
         else:
             self.subtype = "input"
-            if self.raw:
+        if self.raw is None:
+            self.raw = not isinstance(default, basestring)
+        if self.raw == True:
+            if isinstance(default, basestring):
+                self.default_return = self.default
+                from sage.all import sage_eval
+                self.default = sage_eval(self.default)
+            else:
                 self.default_return = repr(self.default)
-
+        else:
+            if isinstance(self.default, basestring):
+                self.default_return = self.default
+            else:
+                self.default_return = repr(self.default)
     def message(self):
         """
         Get an input box control configuration message for an
