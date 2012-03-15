@@ -3,7 +3,7 @@ sage=''
 
 if sage=='':
    import os
-   sage=os.environ('SAGE_ROOT')+'/sage '
+   sage=os.environ['SAGE_ROOT']+'/sage '
 
 python=sage+' -python'
 

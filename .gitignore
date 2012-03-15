@@ -5,6 +5,8 @@ sqlalchemy_sqlite.db
 doc/_build/*
 .idea
 static/mathjax/*
+static/jmol
+dist/*
 
 # ignore timing test results
 timing/results
@@ -16,3 +18,4 @@ files/*
 # generated web files
 static/all*
 minifiers/jsmin
+
