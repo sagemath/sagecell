@@ -20,7 +20,7 @@
 .sagecell_poweredBy img {vertical-align: text-top;}
 .sagecell_sessionFiles {padding-bottom: 1.0em;}
 .sagecell_interactContainer {padding: 15px 5px 5px 5px}
-.sagecell_interactOutput {border-left: 2px solid blue; padding: 5px; overflow-x: auto}
+.sagecell_interactOutput {padding: 10px; overflow-x: auto}
 .sagecell_interactValueBox {font-family: monospace} /* Required since dynamic input box size is determined by monospaced fonts */
 .sagecell_dirtyControl {border-left: 2px solid red;}
 .sagecell_commands {width: 100%; height: 200px; border: 1px solid; font-family: monospace; font-size: 10pt;}
