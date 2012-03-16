@@ -791,7 +791,7 @@ if __name__ == "__main__":
 
     filename=sysargs.keyfile
     with open(filename,"rb") as f:
-        keys=[s.rstrip() for s in f.readlines()]
+        keys=f.read().split('KEY_SEPARATOR')
     os.remove(filename)
 
     import misc
