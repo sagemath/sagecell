@@ -284,20 +284,13 @@ def interact(f, controls=[], update=None, layout=None):
         MESSAGE.pop_output_id()
         return returned
 
+    globs = f.func_globals
     _INTERACTS[function_id] = {
-        "state": dict(zip(names,[c.default for c in controls])),
+        "state": dict(zip(names,[c.adapter(c.default, globs) for c in controls])),
         "function": adapted_f,
         "controls": dict(zip(names, controls)),
-        "globals": f.func_globals,
+        "globals": globs,
         }
-    state = _INTERACTS[function_id]["state"]
-
-    # transform state by the adapter
-    for var, value in state.items():
-        c = _INTERACTS[function_id]["controls"][var]
-        # initially, the default global context is the function's
-        # global namespace
-        state[var] = c.default
 
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
@@ -306,7 +299,7 @@ def interact(f, controls=[], update=None, layout=None):
                                    'layout':layout})
     global __sage_cell_timeout__
     __sage_cell_timeout__=60
-    adapted_f(control_vals=state.copy())
+    adapted_f(control_vals=_INTERACTS[function_id]["state"].copy())
     return f
 
 
