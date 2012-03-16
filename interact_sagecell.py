@@ -1112,9 +1112,6 @@ def automatic_control(control, var=None):
         C = InputBox(default = control, label = label)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
-    elif isinstance(control, Number):
-        from sage.all import sage_eval
-        C = InputBox(default = control, label = label, adapter=lambda x,globs: sage_eval(x,globs))
     elif isinstance(control, list):
         if len(control)==1:
             if isinstance(control[0], (list,tuple)) and len(control[0])==2:
