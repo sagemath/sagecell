@@ -319,13 +319,12 @@ if __name__=='__main__':
 %(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --cpu %(untrusted_cpu)f --mem %(untrusted_mem)f --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i --keyfile %(keyfile)s %(quiet)s\n"""%options
     if sysargs.print_cmd:
         print
-        print "echo %s > %s_copy"%(keys[0],filename)
-        print "echo %s >> %s_copy"%(keys[1],filename)
+        print "echo %s%s%s > %s_copy"%(keys[0],'KEY_SEPARATOR',keys[1],filename)
         print cmd
     else:
         # we use os.open so we can specify the file permissions
         with os.fdopen(os.open(filename, os.O_WRONLY|os.O_EXCL|os.O_CREAT, 0600), 'w') as f:
-            f.write('\n'.join(keys))
+            f.write('KEY_SEPARATOR'.join(keys))
         # transferred with -p to keep the restrictive permissions
         Popen(["scp","-p",filename,sysargs.untrusted_account+":"+filename+"_copy"],stdin=PIPE,stdout=PIPE).wait()
         os.remove(filename)
