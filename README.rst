@@ -124,14 +124,6 @@ appropriate Jmol directory in the Sage notebook::
     cd $SERVER/sagecell/static
     ln -s $SAGE_ROOT/local/share/jmol .
 
-MathJax
-^^^^^^^
-
-MathJax is used for typesetting complex expressions. Due to its size, it
-cannot be included in the repository, so it must be
-`downloaded <http://www.mathjax.org/download/>`_ and installed
-separately to ``$SERVER/sagecell/static/mathjax/``.
-
 Configuration and Running
 -------------------------
 
