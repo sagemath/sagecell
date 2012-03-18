@@ -78,8 +78,7 @@ class DB(db.DB):
 
     def new_context(self):
         """
-        Reconnect to the database. This function should be
-        called before the first database access in each new process.
+        See :meth:`db.DB.new_context`
         """
         self._context=zmq.Context()
         self._req=self._context.socket(zmq.REQ)

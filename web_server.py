@@ -48,16 +48,9 @@ def get_db(f):
         global db
         global fs
         global sysargs
-        if sysargs is None:
-            # Fake a sysargs object for a default
-            # this is for when we don't call this file directly
-            class A: pass
-            sysargs=A()
-            sysargs.db='mongo'
-
         if db is None or fs is None:
             db,fs=misc.select_db(sysargs)
-        args = (db,fs) + args
+        args = (db.new_context_copy(), fs.new_context_copy()) + args
         return f(*args, **kwds)
     return wrapper
 
@@ -136,7 +129,6 @@ def evaluate(db,fs):
 
             if bool(request.form.get("sage_mode")) is True:
                 sage_mode = True
-
             shortened = str(uuid.uuid4())
             message = {"parent_header": {},
                        "header": {"msg_id": request.form.get("msg_id"),
@@ -162,7 +154,6 @@ def evaluate(db,fs):
             codeurl = url_for('root', _external=True, c=code)
         else:
             codeurl=zipurl
-
         queryurl = url_for('root', _external=True, q=shortened)
         returnlink = '<a href="%s">Permalink</a> (<a href="%s">Alternate permalink</a>; <a href="%s">Shortened temporary link</a>)'%(codeurl, zipurl, queryurl)
         return returnlink

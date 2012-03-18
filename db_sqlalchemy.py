@@ -12,11 +12,12 @@ class DB(db.DB):
     
     :arg db_file str: the SQLAlchemy URI for a database file
     """
-    def __init__(self, db_file):
-        engine = create_engine(db_file)
-        self.SQLSession = sessionmaker(bind=engine)
-        Base.metadata.create_all(engine)
-        self.new_context()
+    def __init__(self, db_file=None):
+        if db_file is not None:
+            engine = create_engine(db_file)
+            self.SQLSession = sessionmaker(bind=engine)
+            Base.metadata.create_all(engine)
+            self.new_context()
 
     def new_input_message(self, msg):
         """
@@ -128,6 +129,15 @@ class DB(db.DB):
         See :meth:`db.DB.new_context`
         """
         self.dbsession = self.SQLSession()
+
+    def new_context_copy(self):
+        """
+        See :meth:`db.DB.new_context_copy`
+        """
+        new = type(self)()
+        new.SQLSession = self.SQLSession
+        new.new_context()
+        return new
 
     valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')
 

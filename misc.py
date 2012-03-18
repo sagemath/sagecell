@@ -1,6 +1,6 @@
 import sys
 
-def select_db(sysargs, context=None):
+def select_db(sysargs=None, context=None):
     u"""
     Create connections to the database and filestore given in sysargs.
 
@@ -9,13 +9,14 @@ def select_db(sysargs, context=None):
     :type context: zmq.Context
     :returns: a tuple of the form ``(db, fs)``
     """
-    if sysargs.db is not None:
+
+    if hasattr(sysargs, "db") and sysargs.db is not None:
         db=sysargs.db
     else:
         try:
             import sagecell_config
             db=sagecell_config.db
-            fs=sagecell_config.fs if hasattr(sagecell_config, fs) else db
+            fs=sagecell_config.fs if hasattr(sagecell_config, "fs") else db
         except ImportError:
             db = fs = 'sqlalchemy'
 

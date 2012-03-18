@@ -155,4 +155,11 @@ class DB(object):
         Reconnect to the database. This function should be
         called before the first database access in each new process.
         """
-        pass
+
+    def new_context_copy(self):
+        """
+        Create a copy of this object for use in a single thread.
+
+        :returns: a new database object
+        :rtype: DB
+        """

@@ -188,4 +188,7 @@ class DB(db.DB):
             if result==0:
                 raise Exception("MongoDB authentication problem")
 
+    def new_context_copy(self):
+        return type(self)(self.c)
+
     valid_untrusted_methods=('get_input_messages', 'close_session', 'add_messages')

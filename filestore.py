@@ -75,7 +75,14 @@ class FileStore(object):
         Reconnect to the filestore. This function should be
         called before the first filestore access in each new process.
         """
-        pass
+
+    def new_context(self):
+        """
+        Create a copy of this object for use in a single thread.
+
+        :returns: a new filestore object
+        :rtype: FileStore
+        """
 
 try:
     from sagecell_config import mongo_config
@@ -113,11 +120,12 @@ class FileStoreSQLAlchemy(FileStore):
     
     :arg str fs_file: the SQLAlchemy URI for a database file
     """
-    def __init__(self, fs_file):
-        engine = create_engine(fs_file)
-        self.SQLSession = sessionmaker(bind=engine)
-        FileStoreSQLAlchemy.Base.metadata.create_all(engine)
-        self.new_context()
+    def __init__(self, fs_file=None):
+        if fs_file is not None:
+            engine = create_engine(fs_file)
+            self.SQLSession = sessionmaker(bind=engine)
+            FileStoreSQLAlchemy.Base.metadata.create_all(engine)
+            self.new_context()
 
     @Debugger
     def new_file(self, session, filename, **kwargs):
@@ -178,6 +186,16 @@ class FileStoreSQLAlchemy(FileStore):
         See :meth:`FileStore.new_context`
         """
         self.dbsession = self.SQLSession()
+
+    @Debugger
+    def new_context_copy(self):
+        """
+        See :meth:`FileStore.new_context_copy`
+        """
+        new = type(self)()
+        new.SQLSession = self.SQLSession
+        new.new_context()
+        return new
 
     Base = declarative_base()
     
@@ -292,6 +310,13 @@ class FileStoreMongo(FileStore):
             result=self.database.authenticate(uri[:uri.index(':')],uri[uri.index(':')+1:uri.index('@')])
             if result==0:
                 raise Exception("MongoDB authentication problem")
+
+    @Debugger
+    def new_context_copy(self):
+        """
+        See :meth:`FileStore.new_context_copy`
+        """
+        return type(self)(self._conn)
 
     valid_untrusted_methods=()
 
