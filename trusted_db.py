@@ -259,7 +259,7 @@ if __name__=='__main__':
     from optparse import OptionParser
     import sagecell_config
     parser=OptionParser(description="Starts a connection between a trusted and an untrusted process.")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], help="Database to use on trusted side")
+    parser.add_option("--db", choices=["mongo", "sqlalchemy"], help="Database to use on trusted side")
     parser.add_option("-w", "--workers", type=int, default=1, dest="workers", help="Number of workers to start.")
     parser.add_option("--print", action="store_true", dest="print_cmd", default=False, 
                         help="Print out command to launch workers instead of launching them automatically")

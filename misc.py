@@ -20,15 +20,7 @@ def select_db(sysargs=None, context=None):
         except ImportError:
             db = fs = 'sqlalchemy'
 
-    if db=="sqlite":
-        import db_sqlite
-        import sqlite3
-        conn = sqlite3.connect('sqlite.db')
-        c = conn.cursor()
-        c.execute("CREATE TABLE IF NOT EXISTS cells(device_id BIGINT DEFAULT NULL, input TEXT, output TEXT DEFAULT NULL);")
-        conn.close()
-        return db_sqlite.DB('sqlite.db'), None # None should be replaced by the sqlite filestore
-    elif db=="sqlalchemy":
+    if db=="sqlalchemy":
         import db_sqlalchemy, filestore
         return (db_sqlalchemy.DB(sagecell_config.sqlalchemy_uri),
                 filestore.FileStoreSQLAlchemy(sagecell_config.sqlalchemy_uri))
