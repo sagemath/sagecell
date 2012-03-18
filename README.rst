@@ -198,7 +198,7 @@ Sage Cell Server
 
 First, minify CSS and JavaScript files (this is required)::
 
-    cd $SERVER/sagecell/static
+    cd $SERVER/sagecell
     make
 
 The only thing left now is to configure and start the Sage cell server.

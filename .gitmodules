@@ -1,0 +1,12 @@
+[submodule "submodules/codemirror2"]
+	path = submodules/codemirror2
+	url = git://github.com/marijnh/CodeMirror2.git
+[submodule "submodules/cssmin"]
+	path = submodules/cssmin
+	url = https://github.com/zacharyvoase/cssmin.git
+[submodule "submodules/jquery-ui-touch-punch"]
+	path = submodules/jquery-ui-touch-punch
+	url = git://github.com/furf/jquery-ui-touch-punch.git
+[submodule "submodules/jsmin"]
+	path = submodules/jsmin
+	url = git://github.com/douglascrockford/JSMin.git
