@@ -4,6 +4,7 @@ Embedding Sage Cell Instances
 =============================
 
 .. default-domain:: js
+.. highlight:: javascript
 
 Description
 ^^^^^^^^^^^
@@ -19,18 +20,18 @@ Basic Usage
 ^^^^^^^^^^^
 
 jQuery is assumed to be loaded in ``<head>``. 
-In ``<head>``, the following lines should be inserted::
+In ``<head>``, the following line should be inserted:
+
+.. code-block:: html
 
    <script type="text/javascript" src="http://<server>/embedded_sagecell.js"></script>
-   <script type="text/javascript">sagecell.init();</script>
 
 where ``<server>`` is the root url of a live Sage Cell server. This downloads
-additional required javascript and css libraries and creates a global javascript
-object called ``sagecell``. See the documentation for
-:ref:`sagecell.init() <sagecell.init_embed>` for more configuration options
-upon initialization, including callback functionality.
+additional required JavaScript and CSS libraries and creates a global JavaScript
+object called ``sagecell``. Use :ref:`sagecell.init() <sagecell.init_embed>`
+for more configuration options upon initialization, including callback functionality.
 
-Later, the following javascript should be run::
+Later, the following JavaScript should be run::
 
    sagecell.makeSagecell({inputLocation: "[jQuery selector]"});
 
@@ -46,7 +47,7 @@ Sage Cell instance if desired.
 Sage Cell instances, as long as the input (and output, if specified) locations
 of each instance are unique to the page.
 
-To remove a Sage Cell instance, the following javascript can be used::
+To remove a Sage Cell instance, the following JavaScript can be used::
 
    sagecell.deleteSagecell(sagecellInfo);
 
@@ -57,7 +58,7 @@ Sage Cell instances can be safely embedded within HTML forms (even though each
 instance contains form elements) since those form elements are copied to a
 hidden form outside of the embedded context. However, in such a case, it may
 not be optimal for external form submission to include Sage Cell elements. To
-prevent this issue, the following javascript can be used before and after form
+prevent this issue, the following JavaScript can be used before and after form
 submission to move and restore the Sage Cell::
 
    sagecell.moveInputForm(sagecellInfo); // before submission
@@ -135,10 +136,13 @@ This sets the initial content of the code editor::
 
 
 Code editor content can also be set by embedding the code within the input
-location of the Sage Cell::
+location of the Sage Cell:
+
+.. code-block:: html
 
    <div id="myInputDiv">
-      <script type="text/code">print "Here's some code!"
+      <script type="text/x-sage">
+   print "Here's some code!"
    print "Hello World"
       </script>
    </div>
@@ -155,7 +159,7 @@ the code.
   have it work nicely.
 
 If the code parameter is not set, the input location is examined for code.
-If no code is found there, the javascript attempts to restore in the editor
+If no code is found there, the JavaScript attempts to restore in the editor
 whatever the user had in that particular cell before (using the web browser's
 session storage capabilities). If that fails, the editor is initialized to an
 empty string.
@@ -237,7 +241,7 @@ Templates
 
 Templates provide an alternative way to set certain Sage Cell properties and
 are designed to simplify the process of embedding multiple instances on the
-same page. A template is a javascript dictionary with key/value pairs
+same page. A template is a JavaScript dictionary with key/value pairs
 corresponding to desired key/value pairs given to
 ``sagecell.makeSagecell()``.
 
@@ -322,7 +326,7 @@ case both the explicit and template options are combined.
 Module Initialization
 ^^^^^^^^^^^^^^^^^^^^^
 
-The embed javascript is initialized with ``sagecell.init()``, which can take a
+The embed JavaScript is initialized with ``sagecell.init()``, which can take a
 callback function as its argument that is executed after all required external
 libraries are loaded.
 
@@ -377,7 +381,7 @@ different Sage Cell server, if you like)::
 
      </head>
       <body>
-        <div id="mycell"><script type="text/code">
+        <div id="mycell"><script type="text/x-sage">
     @interact
     def _(a=(1,10)):
           print factorial(a)
