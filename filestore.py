@@ -76,7 +76,7 @@ class FileStore(object):
         called before the first filestore access in each new process.
         """
 
-    def new_context(self):
+    def new_context_copy(self):
         """
         Create a copy of this object for use in a single thread.
 
