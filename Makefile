@@ -9,7 +9,7 @@ static/all.min.js: submodules/jsmin-bin static/all.js
 	submodules/jsmin-bin < static/all.js > static/all.min.js
 
 static/all.js: submodules/codemirror2/lib/codemirror.js submodules/codemirror2/mode/python/python.js static/jmol/appletweb/Jmol.js static/jqueryui/js/jquery-ui-1.8.17.custom.min.js submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js static/colorpicker/js/colorpicker.js static/compute_server.js static/sagecell.js
-	echo -n > static/all.js
+	echo '' > static/all.js
 	cat submodules/codemirror2/lib/codemirror.js submodules/codemirror2/mode/python/python.js >> static/all.js
 	cat static/jmol/appletweb/Jmol.js >> static/all.js
 	cat static/jqueryui/js/jquery-ui-1.8.17.custom.min.js >> static/all.js
