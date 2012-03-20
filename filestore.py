@@ -1,8 +1,13 @@
+"""
+
+These classes implement ways to store files in the server.
+"""
+
 from util import log
 
 class FileStore(object):
     """
-    An object that abstracts a filesystem
+    An object that abstracts a filesystem.  This is the base class for filestores.
     """
     def __init__(self):
         raise NotImplementedError
@@ -328,13 +333,13 @@ class FileStoreFilesystem(FileStore):
     Filestore using the file system
 
     The levels parameter controls how the session is split up to give
-    subdirectories.  For example, if levels=4, then session
-    0c490701-b1b0-40b8-88ea-70b61a580cf2 files are stored in
-    subdirectory ``0/c/4/9/0c490701-b1b0-40b8-88ea-70b61a580cf2``.
+    subdirectories.  For example, if ``levels=4``, then session
+    ``0c490701-b1b0-40b8-88ea-70b61a580cf2`` files are stored in
+    subdirectory :file:`0/c/4/9/0c490701-b1b0-40b8-88ea-70b61a580cf2`.
     This prevents having too many directories in the root directory.
 
-    :arg dir: A directory in which to store files
-    :arg levels: The number of levels to use for splitting up session directories
+    :arg str dir: A directory in which to store files
+    :arg int levels: The number of levels to use for splitting up session directories
     """
     def __init__(self, dir, levels=0):
         self._dir = dir
