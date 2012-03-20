@@ -1,3 +1,8 @@
+"""
+ZeroMQ Database Adapter
+------------------------
+"""
+
 import db
 import zmq
 from uuid import uuid4

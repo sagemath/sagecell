@@ -1,4 +1,7 @@
 """
+MongoDB Database Adapter
+------------------------
+
 The MongoDB database has the following collections:
 
     - ``device``: information on each device process
@@ -20,7 +23,6 @@ The MongoDB database has the following collections:
     - ``messages``: a series of messages in IPython format
         - index on parent_header.session
         - sequence
-        - 
 
     - ``ipython``: a table to keep track of IPython ports for tab
       completion (usable when there is a single long-running dedicated

@@ -1,3 +1,7 @@
+"""
+SQLAlchemy Database Adapter
+---------------------------
+"""
 import db
 import json
 from sqlalchemy import create_engine, Column, Integer, String, Boolean

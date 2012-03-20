@@ -1,4 +1,7 @@
 """
+Generic Database Adapter
+------------------------
+
 The database is where information that needs to be accessed
 by different pieces of the backend is stored. This includes
 the code inside each executed cell, and the output messages
