@@ -180,16 +180,21 @@ restrictions; this account will be executing arbitrary user code).
      described at :ref:`Database Engines <sqlalchemy:engines_toplevel>`. By
      default, the database will be created in the file
      :file:`{$SERVER}/sagecell/sqlite.db`.
-   
+
+     .. warning:: Make the ``sqlalchemy_uri`` file *only* readable by
+        the trusted account, not by the untrusted account::
+
+          chmod 600 sqlite.db
+
    * If you do not use Sage or ``sage -sh`` to start the scripts, the
      ``sage`` variable should be set to point to the Sage executable at
      :file:`{$SAGE_ROOT}/sage`. If you will not be running the server using
      Sage, define the ``python`` and other variables in the config file
      appropriately to not use the ``sage`` variable.
 
-   .. warning:: Make the :file:`sagecell_config.py` file *only* readable by
-      the trusted account, not by the untrusted account, since it
-      contains the password to the database::
+     .. warning:: Make the :file:`sagecell_config.py` file *only* readable by
+        the trusted account, not by the untrusted account, since it
+        contains the password to the database::
 
           chmod 600 sagecell_config.py
 
