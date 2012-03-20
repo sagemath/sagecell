@@ -1,7 +1,6 @@
 .. highlight:: bash
 
-This is a demo of a 3-component Sage computation service,
-using MongoDB.
+This is a demo of a 3-component Sage computation service.
 
 Installation
 ============
@@ -9,13 +8,18 @@ Installation
 We depend on the following packages:
 
 * `Flask <http://flask.pocoo.org/>`_
-* `MongoDB <http://www.mongodb.org/>`_
-* `PyMongo <http://api.mongodb.org/python/current/>`_
-  (at least version 1.10.1, which is newer than the version
-  packaged in some Ubuntu releases)
 * `ØMQ <http://www.zeromq.org/>`_
 * `pyzmq <http://www.zeromq.org/bindings:python>`_
 * `MathJax <http://www.mathjax.org/>`_
+
+and optionally:
+
+* `MongoDB <http://www.mongodb.org>`_
+* `PyMongo <http://api.mongodb.org/python/current/>`_
+  (at least version 1.10.1, which is newer than the version
+  packaged in some Ubuntu releases)
+* `nginx <http://www.nginx.org/>`_
+* `uWSGI <http://projects.unbit.it/uwsgi/>`_
 
 
 These instructions assume Sage 5.0.beta4 is installed.
