@@ -1,11 +1,25 @@
 import sys
 
+sagecell_config_defaults = dict(
+    db='sqlalchemy',
+    sqlalchemy_config={'uri': 'sqlite:///sqlite.db'},
+    )
+
+def get_config(value):
+    try:
+        import sagecell_config
+        return getattr(sagecell_config, value)
+    except ImportError:
+        return sagecell_config_defaults[value]
+    except AttributeError:
+        raise KeyError(value)
+
 def mongo_connection():
     """
     Set up a MongoDB connection.
     """
     import pymongo
-    mongo_config = sagecell_config.mongo_config
+    mongo_config = get_config('mongo_config')
 
     if '@' in mongo_config['mongo_uri']:
         # password specified, so we need to include the database in the URI
@@ -26,17 +40,17 @@ def select_db(sysargs=None, context=None):
 
     if hasattr(sysargs, "db") and sysargs.db is not None:
         db=sysargs.db
+        fs=db #todo: support passing the fs in the command line
     else:
+        db=get_config('db')
         try:
-            import sagecell_config
-            db=sagecell_config.db
-            fs=sagecell_config.fs if hasattr(sagecell_config, "fs") else db
-        except ImportError:
-            db = fs = 'sqlalchemy'
+            fs=get_config('fs')
+        except KeyError:
+            fs=db
 
     if db=="sqlalchemy":
         import db_sqlalchemy
-        return_db = db_sqlalchemy.DB(sagecell_config.sqlalchemy_uri)
+        return_db = db_sqlalchemy.DB(get_config('sqlalchemy_config')['uri'])
     elif db=="mongo":
         import db_mongo
         conn = mongo_connection()
@@ -47,9 +61,9 @@ def select_db(sysargs=None, context=None):
 
     import filestore
     if fs=="sqlalchemy":
-        return_fs = filestore.FileStoreSQLAlchemy(sagecell_config.sqlalchemy_uri))
+        return_fs = filestore.FileStoreSQLAlchemy(get_config('sqlalchemy_config')['uri'])
     elif fs=="mongo":
-        mongo_config = sagecell_config.mongo_config
+        mongo_config = get_config('mongo_config')
         if db!="mongo":
             # conn has not been set up yet
             conn = mongo_connection()
