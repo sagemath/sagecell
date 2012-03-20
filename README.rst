@@ -361,7 +361,7 @@ files.
 
     sage -python uwsgiconfig.py --build sagecell
 
-#. Create a symbolic link to uWSGI in :samp:`{$SERVER}/sagecell`::
+#. Create a symbolic link to uWSGI in :file:`{$SERVER}/sagecell/`::
 
       ln -s $SERVER/uwsgi/uwsgi $SERVER/sagecell/uwsgi
 
