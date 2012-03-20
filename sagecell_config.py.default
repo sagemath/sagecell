@@ -9,17 +9,19 @@ python=sage+' -python'
 
 
 # DATABASE
-db='mongo'
+db='sqlalchemy'
 fs=db
+
+# SQLAlchemy
+sqlalchemy_config={
+    'uri': 'sqlite:///sqlite.db'
+}
 
 # MONGODB
 mongo_config={
     'mongo_uri': 'mongodb://localhost',
     'mongo_db': 'sagecelldb'
     }
-
-# SQLAlchemy
-sqlalchemy_uri = 'sqlite:///sqlite.db'
 
 # WEB SERVER
 #webserver='python'
