@@ -257,14 +257,18 @@ sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR
 		break;
 
 	    case 'pyerr':
-		this.output("<pre>"+sagecell.functions.colorizeTB(msg.content.traceback.join("\n")
-					     .replace(/&/g,"&amp;")
-					     .replace(/</g,"&lt;")+"</pre>"),output_block);
+		this.output("<pre></pre>",output_block)
+		    .html(sagecell.functions.colorizeTB(msg.content.traceback
+							.replace(/&/g,"&amp;")
+							.replace(/</g,"&lt;")));
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    this.output("<pre></pre>",output_block).html(sagecell.functions.colorizeTB(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
+		    this.output("<pre></pre>",output_block)
+			.html(sagecell.functions.colorizeTB(msg.content.traceback
+							    .replace(/&/g,"&amp;")
+							    .replace(/</g,"&lt;")));
 		}
 		this.updateQuery(this.polling_times.inactive);
 		break;
