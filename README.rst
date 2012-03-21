@@ -381,15 +381,16 @@ License
 See the :download:`LICENSE.txt <../LICENSE.txt>` file for terms and conditions for usage and a
 DISCLAIMER OF ALL WARRANTIES.
 
-Compatibility
-=============
+Browser Compatibility
+=====================
 
-We have reports that the Sage Cell Server does not work in:
+The Sage Cell Server is designed to be compatible with recent versions of:
 
-  * Internet Explorer version 8, Windows XP
-  * Internet Explorer version 8, Windows 7
+* Google Chrome
+* Firefox
+* Safari
+* Opera
+* Internet Explorer (7+)
 
-If you notice any other browsers that are not supported, please let us
-know.  If you notice that one of the browsers above really does work,
-please let us know.
+If you notice issues with any of these browsers, please let us know.
 
