@@ -167,9 +167,9 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
 	create=true;
     }
     if (create) {
-	out = output_block.append(html).children().last()
+	out = output_block.append(html).children().last();
     } else {
-	out = output_block
+	out = output_block.children().last();
     }
     return out;
 }
