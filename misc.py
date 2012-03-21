@@ -57,9 +57,10 @@ def select_db(sysargs, context=None):
                 break
             except:
                 if attempts > 3:
-                    raise pymongo.errors.AutoReconnect("Database connection failed! This may be due to long startup times for MongoDB on certain systems.")
+                    raise pymongo.errors.AutoReconnect("Database re-connection failed! This may be due to long startup times for MongoDB on certain systems.")
                 attempts +=1
-                time.sleep(1)
+                print "Database connection attempt %d failed, retrying in 5 seconds."%attempts
+                time.sleep(5)
         return db_mongo.DB(conn), filestore.FileStoreMongo(conn)
     elif db=="zmq":
         import db_zmq, filestore
