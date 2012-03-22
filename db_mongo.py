@@ -140,9 +140,11 @@ class DB(db.DB):
         """
         # We have to insert messages one at a time, so that an error doesn't
         # cause the remaining messages in the list to be ignored
+        success = []
         for m in messages:
             try:
                 self.database.messages.insert(m)
+                success.append(m)
             except Exception as e:
                 self.database.messages.insert({
                       "content": {"status": "error",
@@ -153,7 +155,9 @@ class DB(db.DB):
                       "msg_type": "execute_reply",
                       "output_block": None,
                       "sequence": m["sequence"]})
-        log("INSERTED: %s"%('\n'.join(str(m) for m in messages),))
+        log("INSERTED: %s"%('\n'.join(str(m) for m in success),))
+       	if len(success) < len(messages):
+       		log("FAILED TO INSERT %d message(s)" % (len(messages) - len(success)))
 
     def register_device(self, device, account, workers, pgid):
         """
