@@ -848,8 +848,8 @@ sagecell.InteractData.InputBox.prototype.html = function() {
     } else if (subtype === "input") {
 	return "<span class='sagecell_var_"+this.name+"'><input type='text' class='"+
 	    this.control_class+"' id='"+this.control_id+"' size="+
-	    this.control["width"]+" value="+
-	    this.control["default"].replace(/'/g, "&#039;") + "></span>";
+	    this.control["width"]+" value='"+
+	    this.control["default"].replace(/'/g, "&#039;") + "'></span>";
     }
 }
 

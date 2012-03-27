@@ -238,12 +238,15 @@ def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **
         return color_selector(default=default, label=label, 
                               widget=widget, hide_box=hide_box)
     from sage.all import sage_eval
+    default_adapter=repr
     if type is str or height>1:
         adapter=lambda x, globs: x
+        if isinstance(default, basestring):
+            default_adapter=lambda x: x
     else:
         adapter = lambda x, globs: type(sage_eval(x, globs))
     ib = InputBox(default=default, width=width,
-                  label=label, adapter=adapter, height=height)
+                  label=label, adapter=adapter, default_adapter=default_adapter, height=height)
     return ib
 
 def color_selector(default=(0,0,1), label=None,

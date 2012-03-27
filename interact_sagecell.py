@@ -392,8 +392,8 @@ class InputBox(InteractControl):
         should return something that is then passed into the interact
         function as the value of the control.
     """
-    def __init__(self, default="", label=None, width=0, height=1, adapter=None):
-        self.default=repr(default)
+    def __init__(self, default="", label=None, width=0, height=1, adapter=None, default_adapter=repr):
+        self.default=default_adapter(default)
         self.width=int(width)
         self.height=int(height)
         self.raw=False
