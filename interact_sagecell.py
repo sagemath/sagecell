@@ -1108,8 +1108,8 @@ def automatic_control(control, var=None):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
             default_value, control = control
 
-    if isinstance(control, str):
-        C = InputBox(default = control, label = label)
+    if isinstance(control, basestring):
+        C = InputBox(default = control, label = label, adapter=lambda x,globs: x, default_adapter=lambda x: x)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
     elif isinstance(control, list):
