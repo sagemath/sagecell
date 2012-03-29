@@ -157,7 +157,7 @@ class DB(db.DB):
                       "sequence": m["sequence"]})
         log("INSERTED: %s"%('\n'.join(str(m) for m in success),))
        	if len(success) < len(messages):
-       		log("FAILED TO INSERT %d message(s)" % (len(messages) - len(success)))
+            log("FAILED TO INSERT %d message(s)" % (len(messages) - len(success)))
 
     def register_device(self, device, account, workers, pgid):
         """
