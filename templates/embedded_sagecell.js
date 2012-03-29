@@ -1,9 +1,10 @@
-
 (function($) {
 // Make a global sagecell namespace for our functions
 window.sagecell = {};
 
 sagecell.init = (function(callback) {
+    if (sagecell.dependencies_loaded !== undefined)
+	return;
     var load = function ( config ) {
 	// We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag 
 	// being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
@@ -19,6 +20,7 @@ sagecell.init = (function(callback) {
     };
 
     sagecell.init_callback = callback
+    sagecell.dependencies_loaded = false;
 
     // many stylesheets that have been smashed together into all.min.css
     $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
@@ -40,41 +42,34 @@ sagecell.init = (function(callback) {
 });
 
 sagecell.sagecell_dependencies_callback = (function() {
-    window.sagecell_dependencies=true;
+    sagecell.dependencies_loaded = true;
     if (sagecell.init_callback !== undefined) {
 	sagecell.init_callback();
     }
 });
 
-
-sagecell.makeSagecell = (function(args) {
+sagecell.makeSagecell = function (args) {
     var defaults;
     var settings = {};
-
     if (typeof args === "undefined") {
 	args = {};
     }
-
     if (args.inputLocation === undefined) {
 	throw "Must specify an inputLocation!";
     }
-
     if (args.outputLocation === undefined) {
 	args.outputLocation = args.inputLocation;
     }
-
     if (args.code === undefined) {
 	args.code = $(args.inputLocation).text();
 	// delete the text
 	$(args.inputLocation).text("");
     }
-
     defaults = {"editor": "codemirror",
 		"evalButtonText": "Evaluate",
 		"hide": [],
 		"replaceOutput": true,
 		"sageMode": true};
-
     if (args.template !== undefined) {
 	settings = $.extend(settings, defaults, args.template, args)
 	if (args.template.hide !== undefined) {
@@ -83,68 +78,68 @@ sagecell.makeSagecell = (function(args) {
     } else {
 	settings = $.extend(settings, defaults, args);
     }
-
     settings.hideDynamic = [];
-
-    var body = {% filter tojson %}{% include "sagecell.html" %}{% endfilter %};
-    setTimeout(function() {
+    setTimeout(function waitForLoad() {
 	// Wait for CodeMirror to load before using the $ function
 	// Could we use MathJax Queues for this?
 	// We have to do something special here since Codemirror is loaded dynamically,
 	// so it may not be ready even though the page is loaded and ready.
-	if (typeof sagecell_dependencies === "undefined") {
-	    setTimeout(arguments.callee, 100);
+	if (!sagecell.dependencies_loaded) {
+	    if (sagecell.dependencies_loaded === undefined) {
+		sagecell.init();
+	    }
+	    setTimeout(waitForLoad, 100);
 	    return false;
-	} else {
-	    $(function() {
-		var hide = settings.hide;
-		var inputLocation = settings.inputLocation;
-		var outputLocation = settings.outputLocation;
-		var evalButtonText = settings.evalButtonText;
-
-		$(inputLocation).html(body);
-		$(inputLocation+" .sagecell_commands").text(settings.code);
-		if (inputLocation !== outputLocation) {
-		    $(inputLocation+" .sagecell_output, .sagecell_messages").appendTo(outputLocation);
-		}
-                hideAdvanced={};
-		for (var i = 0, i_max = hide.length; i < i_max; i++) {
-		    if (hide[i] === 'computationID' ||
-			hide[i] === 'editor' ||
-			hide[i] === 'editorToggle' ||
-			hide[i] === 'files' ||
-			hide[i] === 'evalButton' ||
-			hide[i] === 'sageMode') {
-			$(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
-                        // TODO: make the advancedFrame an option to hide, then delete
-                        // this hideAdvanced hack
-                        if (hide[i] === 'files' || hide[i] === 'sageMode') {
-                            hideAdvanced[hide[i]]=true;
-                        }
-		    } else if (hide[i] === 'output' ||
-			       hide[i] === 'messages' ||
-                               hide[i] === 'sessionTitle') {
-			$(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
-                        $('head').append("<style type='text/css'> "+outputLocation+" .sagecell_"+hide[i]+ "{display: none;} </style>");
-
-		    } else if (hide[i] === 'done' ||
-			       hide[i] === 'sessionFiles' ||
-			       hide[i] === 'sessionFilesTitle') {
-			settings.hideDynamic.push(".sagecell_"+hide[i]);
-		    }
-		}
-                if (hideAdvanced.files === true && hideAdvanced.sageMode === true) {
-		    $(inputLocation+" .sagecell_advancedFrame").css("display", "none");
-                }
-		if (typeof(evalButtonText) !== "undefined") {
-		    $(inputLocation+ " .sagecell_evalButton").val(evalButtonText);
-		}
-		sagecell.initCell(settings);
-	    });
 	}
+	var body = {% filter tojson %}{% include "sagecell.html" %}{% endfilter %};
+	$(function() {
+	    var hide = settings.hide;
+	    var inputLocation = settings.inputLocation;
+	    var outputLocation = settings.outputLocation;
+	    var evalButtonText = settings.evalButtonText;
+
+	    $(inputLocation).html(body);
+	    $(inputLocation+" .sagecell_commands").text(settings.code);
+	    if (inputLocation !== outputLocation) {
+		$(inputLocation+" .sagecell_output, .sagecell_messages").appendTo(outputLocation);
+	    }
+            hideAdvanced={};
+	    for (var i = 0, i_max = hide.length; i < i_max; i++) {
+		if (hide[i] === 'computationID' ||
+		    hide[i] === 'editor' ||
+		    hide[i] === 'editorToggle' ||
+		    hide[i] === 'files' ||
+		    hide[i] === 'evalButton' ||
+		    hide[i] === 'sageMode') {
+		    $(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
+                    // TODO: make the advancedFrame an option to hide, then delete
+                    // this hideAdvanced hack
+                    if (hide[i] === 'files' || hide[i] === 'sageMode') {
+                        hideAdvanced[hide[i]]=true;
+                    }
+		} else if (hide[i] === 'output' ||
+			   hide[i] === 'messages' ||
+                           hide[i] === 'sessionTitle') {
+		    $(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
+                    $('head').append("<style type='text/css'> "+outputLocation+" .sagecell_"+hide[i]+ "{display: none;} </style>");
+
+		} else if (hide[i] === 'done' ||
+			   hide[i] === 'sessionFiles' ||
+			   hide[i] === 'sessionFilesTitle') {
+		    settings.hideDynamic.push(".sagecell_"+hide[i]);
+		}
+	    }
+            if (hideAdvanced.files === true && hideAdvanced.sageMode === true) {
+		$(inputLocation+" .sagecell_advancedFrame").css("display", "none");
+            }
+	    if (typeof(evalButtonText) !== "undefined") {
+		$(inputLocation+ " .sagecell_evalButton").val(evalButtonText);
+	    }
+	    sagecell.initCell(settings);
+	});
     }, 100);
     return settings;
-});
+};
 
 sagecell.initCell = (function(sagecellInfo) {
 //Strips all special characters
