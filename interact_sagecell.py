@@ -378,7 +378,8 @@ class InputBox(InteractControl):
     """
     An input box control
 
-    :arg default: default value of the input box
+    :arg default: default value of the input box.  If this is not a string, repr is
+        called on it to get a string, which is then the default input.
     :arg int width: character width of the input box.
     :arg int height: character height of the input box. If this is greater than
         one, an HTML textarea will be rendered, while if it is less than one,
@@ -392,8 +393,10 @@ class InputBox(InteractControl):
         should return something that is then passed into the interact
         function as the value of the control.
     """
-    def __init__(self, default="", label=None, width=0, height=1, adapter=None, default_adapter=repr):
-        self.default=default_adapter(default)
+    def __init__(self, default="", label=None, width=0, height=1, adapter=None):
+        if not isinstance(default, basestring):
+            default = repr(default)
+        self.default=default
         self.width=int(width)
         self.height=int(height)
         self.raw=False
@@ -1109,7 +1112,7 @@ def automatic_control(control, var=None):
             default_value, control = control
 
     if isinstance(control, basestring):
-        C = InputBox(default = control, label = label, adapter=lambda x,globs: x, default_adapter=lambda x: x)
+        C = InputBox(default = control, label = label, adapter=lambda x,globs: x)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
     elif isinstance(control, list):
