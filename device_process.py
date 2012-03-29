@@ -151,7 +151,7 @@ class QueueOut(StringIO.StringIO):
                'content': content}
         msg=dumps(msg)
         self.queue.put(msg)
-        log("USER MESSAGE PUT IN QUEUE: %r\n"%(msg))
+        log("USER MESSAGE PUT IN QUEUE: %r\n"%(msg[:1000]))
 
 class ChannelQueue(QueueOut):
     """
