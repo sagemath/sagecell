@@ -7,7 +7,7 @@ import mimetypes
 from time import time, sleep
 from functools import wraps
 from util import log
-import uuid
+from uuid import uuid4
 import zmq
 from ip_receiver import IPReceiver
 from werkzeug import secure_filename
@@ -137,7 +137,7 @@ def evaluate(db,fs):
             if bool(request.form.get("sage_mode")) is True:
                 sage_mode = True
 
-            shortened = str(uuid.uuid4())
+            shortened = str(uuid4())
             message = {"parent_header": {},
                        "header": {"msg_id": request.form.get("msg_id"),
                                   "username": "",
@@ -252,7 +252,7 @@ def tabComplete(db,fs):
     global xreq
     if xreq==None:
         xreq=IPReceiver(zmq.XREQ,db.get_ipython_port("xreq"))
-    header={"msg_id":str(uuid.uuid4())}
+    header={"msg_id":str(uuid4())}
     code=request.values["code"]
     xreq.socket.send_json({"header":header, "msg_type":"complete_request", "content": { \
                 "text":"", "line":code, "block":code, "cursor_pos":request.values["pos"]}})
