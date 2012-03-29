@@ -49,6 +49,36 @@ sagecell.sagecell_dependencies_callback = (function() {
 });
 
 sagecell.makeSagecell = function (args) {
+    var defaults;
+    var settings = {};
+    if (typeof args === "undefined") {
+	args = {};
+    }
+    if (args.inputLocation === undefined) {
+	throw "Must specify an inputLocation!";
+    }
+    if (args.outputLocation === undefined) {
+	args.outputLocation = args.inputLocation;
+    }
+    if (args.code === undefined) {
+	args.code = $(args.inputLocation).text();
+	// delete the text
+	$(args.inputLocation).text("");
+    }
+    defaults = {"editor": "codemirror",
+		"evalButtonText": "Evaluate",
+		"hide": [],
+		"replaceOutput": true,
+		"sageMode": true};
+    if (args.template !== undefined) {
+	settings = $.extend(settings, defaults, args.template, args)
+	if (args.template.hide !== undefined) {
+	    settings.hide.concat(args.template.hide);
+	}
+    } else {
+	settings = $.extend(settings, defaults, args);
+    }
+    settings.hideDynamic = [];
     setTimeout(function waitForLoad() {
 	// Wait for CodeMirror to load before using the $ function
 	// Could we use MathJax Queues for this?
@@ -61,44 +91,6 @@ sagecell.makeSagecell = function (args) {
 	    setTimeout(waitForLoad, 100);
 	    return false;
 	}
-	var defaults;
-	var settings = {};
-
-	if (typeof args === "undefined") {
-	    args = {};
-	}
-
-	if (args.inputLocation === undefined) {
-	    throw "Must specify an inputLocation!";
-	}
-
-	if (args.outputLocation === undefined) {
-	    args.outputLocation = args.inputLocation;
-	}
-
-	if (args.code === undefined) {
-	    args.code = $(args.inputLocation).text();
-	    // delete the text
-	    $(args.inputLocation).text("");
-	}
-
-	defaults = {"editor": "codemirror",
-		    "evalButtonText": "Evaluate",
-		    "hide": [],
-		    "replaceOutput": true,
-		    "sageMode": true};
-
-	if (args.template !== undefined) {
-	    settings = $.extend(settings, defaults, args.template, args)
-	    if (args.template.hide !== undefined) {
-		settings.hide.concat(args.template.hide);
-	    }
-	} else {
-	    settings = $.extend(settings, defaults, args);
-	}
-
-	settings.hideDynamic = [];
-
 	var body = {% filter tojson %}{% include "sagecell.html" %}{% endfilter %};
 	$(function() {
 	    var hide = settings.hide;
@@ -146,6 +138,7 @@ sagecell.makeSagecell = function (args) {
 	    sagecell.initCell(settings);
 	});
     }, 100);
+    return settings;
 };
 
 sagecell.initCell = (function(sagecellInfo) {
