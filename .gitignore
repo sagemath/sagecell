@@ -7,6 +7,7 @@ doc/_build/*
 static/mathjax/*
 static/jmol
 dist/*
+sagecell_config.py
 
 # ignore timing test results
 timing/results
@@ -16,6 +17,6 @@ timing/results
 files/*
 
 # generated web files
+submodules/jsmin-bin
 static/all*
-minifiers/jsmin
-
+static/jquery.min.js
