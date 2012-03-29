@@ -33,4 +33,4 @@ submodules/jsmin-bin:  submodules/jsmin/jsmin.c
 	gcc -o submodules/jsmin-bin submodules/jsmin/jsmin.c
 
 static/jquery.min.js:
-	curl http://code.jquery.com/jquery-1.7.1.min.js > static/jquery.min.js
+	python -c "import urllib; urllib.urlretrieve('http://code.jquery.com/jquery-1.7.1.min.js','static/jquery.min.js')"
