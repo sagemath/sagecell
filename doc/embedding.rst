@@ -15,9 +15,10 @@ and functionality shown to the user.
 Example
 ^^^^^^^
 
-This is a very simple embedded cell with most things turned off and a
-default piece of code (you can replace ``aleph.sagemath.org`` with a
-different Sage Cell server, if you like)::
+This is a very simple HTML page showing how to embed two cells with
+most things turned off and a default piece of code (you can replace
+``aleph.sagemath.org`` with a different Sage Cell server, if you
+like)::
 
    <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
    <html>
@@ -31,16 +32,25 @@ different Sage Cell server, if you like)::
    $(function () {
    sagecell.makeSagecell({inputLocation:  '#mycell',
                           template:       sagecell.templates.minimal,
-                          evalButtonText: 'Make Live'});
+                          evalButtonText: 'Activate'});
+   sagecell.makeSagecell({inputLocation: '#mycell2',
+                          hide: ["computationID", "messages", "sessionTitle"],
+                          evalButtonText: 'Evaluate'});
    });
        </script>
      </head>
      <body>
+     <h1>Embedded Sage Cells</h1>
+     <h2>Factorial</h2>
+     Click the "Activate" button below in order to calculate factorials.
        <div id="mycell"><script type="text/x-sage">
    @interact
    def _(a=(1,10)):
          print factorial(a)
        </script></div>
+   <h2>Your own computation</h2>
+   Type your own Sage computation below and click "Evaluate".
+       <div id="mycell2"><script type="text/x-sage">plot(sin(x), (x,0,2*pi))</script></div>
      </body>
    </html>
 
