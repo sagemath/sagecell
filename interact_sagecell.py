@@ -612,7 +612,7 @@ class DiscreteSlider(InteractControl):
         if self.range_slider:
             self.subtype = "discrete_range"
             if default is None:
-                self.default = (0,len(values))
+                self.default = (0,len(values)-1)
             else:
                 self.default=tuple(default_to_index(self.values, d)
                                    for d in default)
