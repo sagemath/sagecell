@@ -27,18 +27,30 @@ SAGECELL_ROOT=os.getcwd()
 SPKG_ROOT = os.path.join(SAGECELL_ROOT, 'dist', 'sagecell-%s'%version)
 SPKG_SRC = os.path.join(SPKG_ROOT, 'src')
 
+
+
 # Create the source distribution.
 print "Creating the new source tarball..."
-os.system("""
+os.system(r"""
 rm -rf %(SPKG_ROOT)s
 mkdir -p %(SPKG_SRC)s
 cd %(SPKG_SRC)s
 git clone %(SAGECELL_ROOT)s sagecell
-cd ..
+
+# we do the following so that we don't have to pull the submodule repositories from the net
+cd %(SAGECELL_ROOT)s
+git submodule --quiet foreach 'echo [submodule \"$path\"]\\n path = $path\\n url = $toplevel/$path ' > %(SPKG_SRC)s/sagecell/.gitmodules
+cd %(SPKG_SRC)s/sagecell
+git submodule sync --quiet
+git submodule update --init --recursive
+git checkout .gitmodules
+git submodule sync --quiet
+
+make static/jquery.min.js
+cd %(SPKG_ROOT)s
 cp %(SAGECELL_ROOT)s/sage-spkg/SPKG.txt .
 """%{'version': version, 'SAGECELL_ROOT': SAGECELL_ROOT, 'SPKG_ROOT': SPKG_ROOT, 'SPKG_SRC': SPKG_SRC}
 )
-
 
 print "Fetching the required packages"
 pkg_index = PackageIndex()
@@ -71,11 +83,6 @@ zeromq_version='2.1.11'
 zeromq_url='http://download.zeromq.org/zeromq-%s.tar.gz'%zeromq_version
 os.system("curl -L %s | tar xz"%zeromq_url)
 os.system("ln -s zeromq-%s zeromq"%zeromq_version)
-
-mathjax_version='1.1a'
-mathjax_url='https://github.com/mathjax/MathJax/tarball/v%s'%mathjax_version
-os.system("curl -L %s | tar xz"%mathjax_url)
-os.system("ln -s mathjax-MathJax* mathjax")
 
 os.chdir(SPKG_ROOT)
 os.chdir(os.path.pardir) # (now in dist/)
