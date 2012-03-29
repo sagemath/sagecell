@@ -138,8 +138,26 @@ class DB(db.DB):
         """
         See :meth:`db.DB.add_messages`
         """
-        self.database.messages.insert(messages)
-        log("INSERTED: %s"%('\n'.join(str(m) for m in messages),))
+        # We have to insert messages one at a time, so that an error doesn't
+        # cause the remaining messages in the list to be ignored
+        success = []
+        for m in messages:
+            try:
+                self.database.messages.insert(m)
+                success.append(m)
+            except Exception as e:
+                self.database.messages.insert({
+                      "content": {"status": "error",
+                                  "ename": "", "evalue": "",
+                                  "traceback": ["\x1b[1;31mError: \x1b[1;30m%s" % e.message]},
+                      "header": m["header"],
+                      "parent_header": m["parent_header"],
+                      "msg_type": "execute_reply",
+                      "output_block": None,
+                      "sequence": m["sequence"]})
+        log("INSERTED: %s"%('\n'.join(str(m)[:1000] for m in success),))
+        if len(success) < len(messages):
+            log("FAILED TO INSERT %d message(s)" % (len(messages) - len(success)))
 
     def register_device(self, device, account, workers, pgid):
         """

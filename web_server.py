@@ -195,7 +195,7 @@ def output_poll(db,fs):
     computation_id=request.values['computation_id']
     sequence=int(request.values.get('sequence',0))
     results = db.get_messages(computation_id,sequence=sequence)
-    log("Retrieved messages: %s"%(results,))
+    log("Retrieved messages: %s"%(str(results)[:2000],))
     if results is not None and len(results)>0:
         return jsonify_with_callback(callback, content=results)
     return jsonify_with_callback(callback, [])

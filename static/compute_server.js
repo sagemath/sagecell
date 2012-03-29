@@ -54,7 +54,7 @@ sagecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     var output = document.getElementById('output_' + this.session_id)
     output.parentNode.insertBefore(poweredBy, output.nextSibling);
     this.session_title=$('#session_'+this.session_id+'_title');
-    this.replace_output={null: false}
+    this.replace_output={};
     this.lock_output=false;
     this.files = {};
     this.eventHandlers = {};
@@ -156,18 +156,22 @@ sagecell.Session.prototype.output_id = function(block_id) {
 sagecell.Session.prototype.output = function(html, block_id, create) {
     // create===false means just pass back the last child of the output_block
     // if we aren't replacing the output block
-    if (typeof(create)==="undefined") {create=true;}
+    if (typeof(create)==="undefined") {
+	create=true;
+    }
     var output_block=$("#"+this.output_id(block_id));
-    if (this.replace_output[block_id]) {
+    if (typeof(block_id) !=="undefined" && block_id !== null &&
+	this.replace_output[block_id]) {
 	output_block.empty();
 	this.replace_output[block_id]=false;
 	create=true;
     }
-    out = output_block
     if (create) {
-	out = out.append(html);
+	out = output_block.append(html).children().last();
+    } else {
+	out = output_block.children().last();
     }
-    return out.children().last();
+    return out;
 }
 
 sagecell.Session.prototype.write = function(html) {
@@ -253,14 +257,18 @@ sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR
 		break;
 
 	    case 'pyerr':
-		this.output("<pre>"+sagecell.functions.colorizeTB(msg.content.traceback.join("\n")
-					     .replace(/&/g,"&amp;")
-					     .replace(/</g,"&lt;")+"</pre>"),output_block);
+		this.output("<pre></pre>",output_block)
+		    .html(sagecell.functions.colorizeTB(msg.content.traceback
+							.replace(/&/g,"&amp;")
+							.replace(/</g,"&lt;")));
 		break;
 	    case 'execute_reply':
 		if(msg.content.status==="error") {
 		    // copied from the pyerr case
-		    this.output("<pre></pre>",output_block).html(sagecell.functions.colorizeTB(msg.content.traceback.join("\n").replace(/&/g,"&amp;").replace(/</g,"&lt;")));
+		    this.output("<pre></pre>",output_block)
+			.html(sagecell.functions.colorizeTB(msg.content.traceback
+							    .replace(/&/g,"&amp;")
+							    .replace(/</g,"&lt;")));
 		}
 		this.updateQuery(this.polling_times.inactive);
 		break;
