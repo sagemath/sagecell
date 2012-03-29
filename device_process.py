@@ -151,7 +151,7 @@ class QueueOut(StringIO.StringIO):
                'content': content}
         msg=dumps(msg)
         self.queue.put(msg)
-        log("USER MESSAGE PUT IN QUEUE: %r\n"%(msg))
+        log("USER MESSAGE PUT IN QUEUE: %r\n"%(msg[:1000]))
 
 class ChannelQueue(QueueOut):
     """
@@ -589,34 +589,24 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                 # technically should send back an execution_state: idle message too
 
             except:
-
                 (etype, evalue, etb) = sys.exc_info()
 
-                # Modified version of ultraTB from IPython 0.10 with IPython 0.11 tracebacks
-                import ultraTB_10
-                err = ultraTB_10.VerboseTB(include_vars = 0, tb_offset=1)
-                
-                # Using IPython 0.11 - change code to: import IPython.core.ultratb
-                # Using IPython 0.11 - change code to: err = IPython.core.ultratb.VerboseTB(include_vars = "false")
+                from IPython import ultraTB
+                err = ultraTB.VerboseTB(include_vars = 0, tb_offset = 1)
 
                 try: # Check whether the exception has any further details
                     error_value = evalue[0]
                 except:
                     error_value = ""
-                # Using IPython 0.11 - change code to:
-                # err_msg={"ename":
-                # etype.__name__, "evalue": error_value,
-                # "traceback": err.structured_traceback(etype,
-                # evalue, etb, context = 3)})
 
                 #TODO: docs have this as exc_name and exc_value,
                 #but it seems like IPython returns ename and
                 #evalue!
 
-                err_msg={"ename": etype.__name__, "evalue": error_value,
+                err_msg={"ename": etype.__name__, "evalue": str(error_value),
                          "traceback": err.text(etype, evalue, etb, context=3),
                          "status": "error"}
-                output_handler.message_queue.raw_message("execute_reply", 
+                output_handler.message_queue.raw_message("execute_reply",
                                                          err_msg)
         upload_send.send_bytes(json.dumps({'msg_type': 'end_exec'}))
         new_files=file_parent.recv()
