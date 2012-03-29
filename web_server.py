@@ -243,6 +243,72 @@ def session_file(db,fs,session,filename):
     else:
         abort(404)
 
+@app.route("/service", methods=['GET','POST'])
+@get_db
+def service(db,fs):
+    code = request.values.get("code")
+    log("code: %r"%(code,))
+    if not isinstance(code, basestring):
+        log("code was not a string: %r"%(code,))
+        return ""
+    log("Service called with code: %r"%code[:1000])
+
+    default_timeout=30 #seconds
+    poll_interval=.1 #seconds
+    end_time=time()+default_timeout
+    session = str(uuid4())
+    log("making message")
+    message = {"parent_header": {},
+               "header": {"msg_id": session,
+                          "username": "",
+                          "session": session,
+                          },
+                          "msg_type": "execute_request",
+                          "content": {"code": code,
+                                      "silent": False,
+                                      "files": [],
+                                      "sage_mode": True,
+                                      "user_variables": [],
+                                      "user_expressions": {},
+                                      },
+        }
+    log("Message: %r"%message)
+    db.new_input_message(message)
+    log("inserted into db")
+    sequence = 0
+    s = ""
+    done=False
+    while not done and time()<end_time:
+        log("sleeping")
+        sleep(poll_interval)
+        log("Getting results")
+        try:
+            log('A')
+            results = db.get_messages(session, sequence=sequence)
+            log(repr(results))
+        except Exception:
+            log('hi')
+        log("Got results: %r"%(results,))
+        if results is not None and len(results)>0:
+            for m in results:
+                msg_type = m.get('msg_type','')
+                content = m['content']
+                if msg_type=="execute_reply":
+                    if content['status']=="ok":
+                        success=True
+                    elif content['status']=="error":
+                        success=False
+                    done=True
+                    break
+                elif msg_type=="stream":
+                    if content['name']=="stdout":
+                        s += content['data']
+                elif msg_type=="pyout":
+                    s+=content['data'].get('text/plain','')
+        log("looping again")
+    log('returning: %r'%json.dumps([s,success]))
+    return jsonify(output=s, success=success)
+
 @app.route("/complete")
 @get_db
 def tabComplete(db,fs):
