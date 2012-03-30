@@ -1,8 +1,11 @@
-all: submodules static/all.min.js static/all.min.css static/jquery.min.js
+all: submodules static/jquery.min.js static/all.min.js static/all.min.css
 
 .PHONY: submodules
 submodules:
 	@if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
+
+static/jquery.min.js:
+	python -c "import urllib; urllib.urlretrieve('http://code.jquery.com/jquery-1.7.1.min.js','static/jquery.min.js')"
 
 static/all.min.js: submodules/jsmin-bin static/all.js
 	rm -f static/all.min.js
@@ -32,5 +35,3 @@ static/all.min.css: submodules/codemirror2/lib/codemirror.css static/stylesheet.
 submodules/jsmin-bin:  submodules/jsmin/jsmin.c
 	gcc -o submodules/jsmin-bin submodules/jsmin/jsmin.c
 
-static/jquery.min.js:
-	python -c "import urllib; urllib.urlretrieve('http://code.jquery.com/jquery-1.7.1.min.js','static/jquery.min.js')"
