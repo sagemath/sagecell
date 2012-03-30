@@ -1,4 +1,5 @@
 import sys
+import time
 
 sagecell_config_defaults = dict(
     db='sqlalchemy',
@@ -26,7 +27,21 @@ def mongo_connection():
         URI=mongo_config['mongo_uri']+'/'+mongo_config['mongo_db']
     else:
         URI = mongo_config['mongo_uri']
-    return pymongo.Connection(URI)
+    # Try to reconnect to MongoDB - preallocation of journal files on some
+    # systems can take a while, and we would prefer the device process start
+    # up eventually, rather than raise an error and halt.
+    attempts = 0
+    while True:
+        try:
+            conn=pymongo.Connection(URI)
+            break
+        except:
+            if attempts > 3:
+                raise pymongo.errors.AutoReconnect("Database re-connection failed! This may be due to long startup times for MongoDB on certain systems.")
+            attempts +=1
+            print "Database connection attempt %d failed, retrying in 5 seconds."%attempts
+            time.sleep(5)
+    return conn
 
 def select_db(sysargs=None, context=None):
     u"""
