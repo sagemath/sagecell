@@ -14,6 +14,42 @@ SRC="`pwd`"
 
 # make sure the new sagenb is installed somehow...
 
+cd $SAGE_ROOT/devel/sage/
+if hg qseries | grep -q 01-sage-embedded.patch;  then
+    echo "Sage patches already applied.  Please pop 01-sage-embedded.patch and 02-sage-show.patch"
+    echo "Do something like:"
+    echo "cd $SAGE_ROOT/devel/sage"
+    echo "hg qpop 01-sage-embedded.patch && hg qpop"
+    echo "hg qdelete 01-sage-embedded.patch && hg qdelete 02-sage-show.patch"
+    exit 1
+fi
+
+echo "Patching Sage"
+hg qimport $SRC/sagecell/sage-patches/01-sage-embedded.patch
+if [ $? -ne 0 ]; then
+    echo >&2 "Error importing patch 01-sage-embedded.patch."
+    exit 1
+fi
+hg qpush
+if [ $? -ne 0 ]; then
+    echo >&2 "Error pushing patch 01-sage-embedded.patch."
+    exit 1
+fi
+hg qimport $SRC/sagecell/sage-patches/02-sage-show.patch
+if [ $? -ne 0 ]; then
+    echo >&2 "Error importing patch 02-sage-show.patch."
+    exit 1
+fi
+hg qpush
+if [ $? -ne 0 ]; then
+    echo >&2 "Error pushing patch 02-sage-show.patch."
+    exit 1
+fi
+
+$SAGE_ROOT/sage -b
+
+cd $SRC
+
 echo "Installing zeromq"
 cd zeromq
 ./configure --prefix="$SAGE_LOCAL"
@@ -38,14 +74,6 @@ echo "Installing python dependencies"
 cd $SRC
 %(install_python_dependencies)s
 
-echo "Patching Sage"
-cd $SAGE_ROOT/devel/sage/
-hg qimport $SRC/sagecell/sage-patches/01-sage-embedded.patch
-hg qpush
-hg qimport $SRC/sagecell/sage-patches/02-sage-show.patch
-hg qpush
-$SAGE_ROOT/sage -b
-
 cd $SRC
 
 if [ -d "$SAGE_ROOT/devel/sagecell-main" ]; then
@@ -61,12 +89,15 @@ fi
 rm -f "$SAGE_ROOT/devel/sagecell" # Delete just the link itself (if it exists)
 
 # We need to have -R below so symbolic links are copied correctly
+echo "Copying sagecell source"
+
 cp -pR sagecell "$SAGE_ROOT/devel/sagecell-main" # Creates new sagecell-main dir
 if [ $? -ne 0 ]; then
     echo >&2 "Error copying the new SageCell package."
     exit 1
 fi
 
+echo "Creating devel/sagecell symbolic link"
 cd "$SAGE_ROOT/devel"
 ln -s sagecell-main sagecell # Create new symbolic link (deleted above)
 if [ $? -ne 0 ]; then
@@ -76,6 +107,7 @@ fi
 
 SAGECELL="$SAGE_ROOT/devel/sagecell"
 
+echo "Creating jmol link"
 cd "$SAGECELL/static"
 ln -s "$SAGE_ROOT/local/share/jmol" .
 if [ $? -ne 0 ]; then
@@ -83,15 +115,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-cd "$SRC"
-cp -pr mathjax/ "$SAGECELL/static/mathjax/" # Creates mathjax directory
-if [ $? -ne 0 ]; then
-    echo >&2 "Error copying Mathjax."
-    exit 1
-fi
-
-
-cd "$SAGECELL/static"
+echo "Running make in sagecell"
+cd "$SAGECELL"
 make
 if [ $? -ne 0 ]; then
     echo >&2 "Error minifying javascript and CSS."

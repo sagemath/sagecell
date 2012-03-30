@@ -8,3 +8,5 @@ Database adapters
 .. automodule:: db_mongo
 
 .. automodule:: db_zmq
+
+.. automodule:: db_sqlalchemy

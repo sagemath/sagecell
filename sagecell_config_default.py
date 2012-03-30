@@ -9,15 +9,19 @@ python=sage+' -python'
 
 
 # DATABASE
-db='mongo'
+db='sqlalchemy'
 fs=db
+
+# SQLAlchemy
+sqlalchemy_config={
+    'uri': 'sqlite:///sqlite.db'
+}
 
 # MONGODB
 mongo_config={
     'mongo_uri': 'mongodb://localhost',
     'mongo_db': 'sagecelldb'
     }
-
 
 # WEB SERVER
 #webserver='python'
@@ -39,7 +43,7 @@ uwsgi_config={
 
 # DEVICE
 device_config={
-    'workers': 100,
+    'workers': 5,
     'quiet': '',
     'python': python,
     'untrusted-account': 'localhost',

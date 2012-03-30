@@ -9,12 +9,10 @@
     <script type="text/javascript" src="{{url_for('embedded', _external = True)}}"></script>
     <script>
 $(function () {
-    sagecell.init(function () {
-        sagecell.makeSagecell({inputLocation: '#sagecell', 
-                               hide: ["computationID", "messages", "sessionTitle"]
-                {% if code %}, code: decodeURIComponent('{{code}}'),
-                               autoeval: {{autoeval}} {% endif %} });
-    });
+    sagecell.makeSagecell({inputLocation: '#sagecell',
+                           hide: ["computationID", "messages", "sessionTitle"]
+            {% if code %}, code: decodeURIComponent('{{code}}'),
+                           autoeval: {{autoeval}} {% endif %} });
 });
     </script>
   </head>
@@ -27,6 +25,6 @@ body {margin-bottom: 80%;}
 <h1><a href="http://sagemath.org">Sage</a> Cell Server</h1>
 Type some Sage code below and press Evaluate.
 <hr/>
-    <div id="sagecell"><script type="text/code"></script></div>
+    <div id="sagecell"><script type="text/x-sage"></script></div>
   </body>
 </html>

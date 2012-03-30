@@ -1,31 +1,76 @@
 .. highlight:: bash
 
-This is a demo of a 3-component Sage computation service,
-using MongoDB.
+This is a Sage computation web service.
 
 Installation
 ============
 
-We depend on the following packages:
+The easiest way to install the Sage Cell server is to install the
+experimental spkg for Sage.
 
-* `Flask <http://flask.pocoo.org/>`_
-* `MongoDB <http://www.mongodb.org/>`_
-* `PyMongo <http://api.mongodb.org/python/current/>`_
-  (at least version 1.10.1, which is newer than the version
-  packaged in some Ubuntu releases)
-* `ØMQ <http://www.zeromq.org/>`_
-* `pyzmq <http://www.zeromq.org/bindings:python>`_
-* `MathJax <http://www.mathjax.org/>`_
+#. Install Sage 5.0 (tested on beta 6)
+#. Install the new Sage Notebook (instructions at `Trac 11080 <http://trac.sagemath.org/sage_trac/ticket/11080>`_)
+#. Install the `spkg <http://sage.math.washington.edu/home/jason/sagecell-0.9.0.spkg>`_::
 
+    sage -i http://sage.math.washington.edu/home/jason/sagecell-0.9.0.spkg
 
-These instructions assume Sage 5.0.beta4 is installed.
+Then open up two terminals.  In the first, launch the webserver::
+
+    cd $SAGE_ROOT/devel/sagecell
+    sage ./start_web.py
+
+In the second terminal, launch the worker processes::
+
+    cd $SAGE_ROOT/devel/sagecell
+    sage ./start_device.py
+
+Open your browser to http://localhost:8080/ and have fun!
+
+You can update your codebase to the latest cutting-edge version by
+doing::
+
+    cd $SAGE_ROOT/devel/sagecell
+    git pull
+
+The biggest potential troublesome spot in the installation is that it
+has to apply two patches to Sage using queues.  If you have
+uncommitted changes, or if you have conflicts, that should stop the
+spkg installation, and you'll have to resolve those conflicts.
+
+The default configuration is not secure, so you'll need to do more
+work to harden the system to open it up to outside users.  But at
+least that should get you up and running for a personal/development
+server.
+
+The rest of this section covers setting up a server outside of a Sage
+installation and making your server more secure and scalable.
 
 Dependencies
 ------------
 
-In the following instructions, ``$SERVER`` refers to the directory
+We depend on the following packages:
+
+* `Flask <http://flask.pocoo.org/>`_
+* `ØMQ <http://www.zeromq.org/>`_
+* `pyzmq <http://www.zeromq.org/bindings:python>`_
+* `MathJax <http://www.mathjax.org/>`_
+
+and optionally:
+
+* `MongoDB <http://www.mongodb.org>`_
+* `PyMongo <http://api.mongodb.org/python/current/>`_
+  (at least version 1.10.1, which is newer than the version
+  packaged in some Ubuntu releases)
+* `nginx <http://www.nginx.org/>`_
+* `uWSGI <http://projects.unbit.it/uwsgi/>`_
+
+
+These instructions assume Sage 5.0.beta4 is installed.
+
+
+In the following instructions, :envvar:`$SERVER` refers to the directory
 containing all of the software (for example, it might be
-``/var/sagecellsystem``).
+:file:`/var/sagecellsystem`).
 
 Build dependencies
 ^^^^^^^^^^^^^^^^^^
@@ -39,15 +84,15 @@ should take care of most or all of them::
 Sage
 ^^^^
 
-Install Sage 5.0.beta4.  ``$SAGE_ROOT`` refers to the installation
+Install Sage 5.0.beta4.  :envvar:`$SAGE_ROOT` refers to the installation
 directory.
 
-Install the flask Sage notebook by following the directions at http://trac.sagemath.org/sage_trac/ticket/11080.
+Install the Flask Sage notebook by following the directions at http://trac.sagemath.org/sage_trac/ticket/11080.
 
 ØMQ
 ^^^
 
-Download ØMQ and build it in ``$SERVER/zeromq/installed/``::
+Download ØMQ and build it in :file:`{$SERVER}/zeromq/installed/`::
 
     cd $SERVER
     wget http://download.zeromq.org/zeromq-2.1.11.tar.gz
@@ -64,7 +109,7 @@ Install the required Python packages. ::
     sudo sage -sh # install into Sage's python
     easy_install pip # install a better installer than easy_install
     pip install flask
-    pip install pymongo
+    pip install pymongo # only necessary if you will be using MongoDB
     pip install pyzmq --install-option="--zmq=$SERVER/zeromq/installed"
     exit
 
@@ -73,25 +118,15 @@ Sage Cell Server
 ^^^^^^^^^^^^^^^^
 
 The repository for this software is in the `sagemath/sagecell
-<https://github.com/sagemath/sagecell>`_ repository on Github.
+<https://github.com/sagemath/sagecell>`_ repository on GitHub.
 
 Either download the `tarball
 <https://github.com/sagemath/sagecell/tarball/master>`_ and
-extract the contents of the contained folder into ``$SERVER/sagecell``,
-or use git to clone the code::
+extract the contents of the contained folder into :file:`{$SERVER}/sagecell`,
+or use Git to clone the code::
 
     cd $SERVER
     git clone git://github.com/sagemath/sagecell.git sagecell
-
-MongoDB
-^^^^^^^
-
-Download the appropriate version of MongoDB from `here
-<http://www.mongodb.org/downloads>`_ and extract the contents to the
-``$SERVER`` directory.  Then make a symbolic link named
-``mongodb-bin`` to the installation directory::
-
-    ln -s $SERVER/mongodb-linux-x86_64-2.0.2 $SERVER/mongodb-bin
 
 Sage
 ^^^^
@@ -99,7 +134,7 @@ Sage
 Several patches enable Sage to take advantage of the enhanced protocol
 for communicating graphical displays.  In order to patch Sage, apply
 the patches to your Sage installation found in the
-``$SERVER/sagecell/sage-patches`` directory.  Apply them in numeric
+:file:`{$SERVER}/sagecell/sage-patches` directory.  Apply them in numeric
 order.  We suggest using Mercurial Queues so that it is easy to back
 out the patches if needed.  After applying the patches, rebuild Sage
 with ``sage -b``. ::
@@ -116,9 +151,9 @@ with ``sage -b``. ::
 
 Jmol
 ^^^^
-In sage mode, Sage can output 3d graphs in Jmol format.  The Jmol java
+In Sage mode, Sage can output 3D graphs in Jmol format.  The Jmol Java
 applet must be installed in order to see these.  It is sufficient to
-make a symbolic link from the ``/static`` directory over to the
+make a symbolic link from the :file:`/static` directory over to the
 appropriate Jmol directory in the Sage notebook::
 
     cd $SERVER/sagecell/static
@@ -127,17 +162,121 @@ appropriate Jmol directory in the Sage notebook::
 Configuration and Running
 -------------------------
 
-MongoDB
-^^^^^^^
+Sage Cell Server
+^^^^^^^^^^^^^^^^
 
-#. Make new directories ``$SERVER/mongodb`` and
-   ``$SERVER/mongodb/mongo``::
+First, minify CSS and JavaScript files, as well as update the various
+web components we depend on (this is required)::
+
+    cd $SERVER/sagecell
+    make
+
+The only thing left now is to configure and start the Sage cell server.
+The server will automatically launch a number of workers via
+passwordless SSH into an untrusted account (i.e., an account with heavy
+restrictions; this account will be executing arbitrary user code).
+
+.. warning::
+
+    The untrusted account will execute arbitrary user code, which may
+    include malicious code.  Make *sure* that you are securing the
+    account properly.  Working with a professional IT person is a very
+    good idea here.  Since the untrusted accounts can be on any
+    computer, one way to isolate these accounts is to host them in a
+    virtual machine that can be reset if the machine is compromised.
+
+    These instructions assume that the locked-down account is on the
+    same computer as the server.
+
+#. Install OpenSSH if it is not already installed.
+
+#. Create a new restricted user account and enable passwordless SSH
+   from your account to the restricted account::
+
+     sudo adduser <UNTRUSTED_USER>
+     ssh-keygen # not needed if you already have a public key
+     sudo mkdir <UNTRUSTED_USER_HOME_DIR>/.ssh
+     sudo cp ~/.ssh/id_rsa.pub <UNTRUSTED_USER_HOME_DIR>/.ssh/authorized_keys
+
+   Test the passwordless SSH by logging in
+   (:samp:`ssh {<UNTRUSTED_USER>}@localhost`) and out (``exit``).
+   If you have a passphrase for your key, you may need to type it
+   once, but there should be a way to store the key and log in
+   fully automatically.
+
+#. Create a configuration file
+   :file:`{$SERVER}/sagecell/sagecell_config.py` by copying and modifying
+   :file:`{$SERVER}/sagecell/sagecell_config.py.default` and make the
+   following changes:
+
+   * If you are using MongoDB, the ``mongo_uri`` variable should be set to
+     :samp:`'mongodb://{<SAGECELL_USER>}:{<SAGECELL_PASSWORD}>@localhost:{<MONGODB_PORT>}'`
+     and the ``db`` variable should be set to ``'mongo'``.
+
+   * If you are using SQLALchemy, the ``sqlalchemy_uri`` variable should be
+     set to :samp:`'sqlite:///{<$SERVER>}/sqlite.db'` or some other URI as
+     described at :ref:`Database Engines <sqlalchemy:engines_toplevel>`. By
+     default, the database will be created in the file
+     :file:`{$SERVER}/sagecell/sqlite.db`.
+
+     .. warning:: Make the ``sqlalchemy_uri`` file *only* readable by
+        the trusted account, not by the untrusted account::
+
+          chmod 600 sqlite.db
+
+   * If you do not use Sage or ``sage -sh`` to start the scripts, the
+     ``sage`` variable should be set to point to the Sage executable at
+     :file:`{$SAGE_ROOT}/sage`. If you will not be running the server using
+     Sage, define the ``python`` and other variables in the config file
+     appropriately to not use the ``sage`` variable.
+
+     .. warning:: Make the :file:`sagecell_config.py` file *only* readable by
+        the trusted account, not by the untrusted account, since it
+        contains the password to the database::
+
+          chmod 600 sagecell_config.py
+
+#. Start the webserver::
+
+       sage -sh
+       cd $SERVER/sagecell
+       ./start_web.py
+
+#. Start the trusted server::
+
+       sage -sh
+       cd $SERVER/sagecell
+       ./start_device.py
+
+   When you want to shut down the server, just press :kbd:`Ctrl-C`. This should
+   automatically clean up the worker processes.
+
+#. Go to http://localhost:8080 to use the Sage Cell server.
+
+Optional Installation
+=====================
+
+MongoDB
+-------
+
+Follow these steps if you want to use MongoDB as the database for the server.
+Otherwise, the Sage Cell will use a SQLite database through SQLAlchemy.
+
+#. Download the appropriate version of MongoDB from `here
+   <http://www.mongodb.org/downloads>`_ and extract the contents to the
+   :envvar:`$SERVER` directory. Then make a symbolic link named
+   :file:`mongodb-bin` to the installation directory::
+
+    ln -s $SERVER/mongodb-linux-x86_64-2.0.2 $SERVER/mongodb-bin
+
+#. Make new directories :file:`{$SERVER}/mongodb` and
+   :file:`{$SERVER}/mongodb/mongo`::
 
     mkdir -p $SERVER/mongodb/mongo
 
-#. Make a ``$SERVER/mongodb/mongodb.conf`` file. Copy the text
-   below into this file, replacing ``<MONGODB_PORT>`` with the port
-   you want for your database and ``<$SERVER>`` with the path of
+#. Make a :file:`{$SERVER}/mongodb/mongodb.conf` file. Copy the text
+   below into this file, replacing :samp:`{<MONGODB_PORT>}` with the port
+   you want for your database and :samp:`{<$SERVER>}` with the path of
    the server directory. ::
 
     dbpath = <$SERVER>/mongodb/mongo/
@@ -171,13 +310,15 @@ MongoDB
 
    Set up an admin user, authenticate, then set up a user for the
    ``sagecelldb`` database.  Since we include the
-   ``<SAGECELL_USER>`` and ``<SAGECELL_PASSWORD>`` in a URL later,
+   :samp:`{<SAGECELL_USER>}` and :samp:`{<SAGECELL_PASSWORD>}` in a URL later,
    it's helpful if neither of them contain any of ``%:/@`` (any
    length of password with letters and numbers would be okay).  Change
-   ``<ADMIN_USER>``, ``<ADMIN_PASSWORD>``, ``<SAGECELL_USER>``, and
-   ``<SAGECELL_PASSWORD>``, and ``<MONGODB_PORT>`` to appropriate values::
+   :samp:`{<ADMIN_USER>}`, :samp:`{<ADMIN_PASSWORD>}`, :samp:`{<SAGECELL_USER>}`, and
+   :samp:`{<SAGECELL_PASSWORD>}`, and :samp:`{<MONGODB_PORT>}` to appropriate values:
 
-      $SERVER/mongodb-bin/bin/mongo --port <MONGODB_PORT> # start up mongo client
+   .. code-block:: console
+
+      $ SERVER/mongodb-bin/bin/mongo --port <MONGODB_PORT> # start up mongo client
       > use admin
       > db.addUser("<ADMIN_USER>", "<ADMIN_PASSWORD>")
       > db.auth("<ADMIN_USER>", "<ADMIN_PASSWORD>")
@@ -185,100 +326,21 @@ MongoDB
       > db.addUser("<SAGECELL_USER>", "<SAGECELL_PASSWORD>")
       > quit()
 
-Sage Cell Server
-^^^^^^^^^^^^^^^^
+nginx and uWSGI
+---------------
 
-First, minify CSS and JavaScript files (this is required)::
-
-    cd $SERVER/sagecell
-    make
-
-The only thing left now is to configure and start the Sage cell server.
-The server will automatically launch a number of workers via
-passwordless SSH into an untrusted account (i.e., an account with heavy
-restrictions; this account will be executing arbitrary user code).
-
-.. warning::
-
-    The untrusted account will execute arbitrary user code, which may
-    include malicious code.  Make *sure* that you are securing the
-    account properly.  Working with a professional IT person is a very
-    good idea here.  Since the untrusted accounts can be on any
-    computer, one way to isolate these accounts is to host them in a
-    virtual machine that can be reset if the machine is compromised.
-
-    These instructions assume that the locked-down account is on the
-    same computer as the server.
-
-#. Install OpenSSH if it is not already installed.
-
-#. Create a new restricted user account and enable passwordless SSH
-   from your account to the restricted account::
-
-     sudo adduser <UNTRUSTED_USER>
-     ssh-keygen # not needed if you already have a public key
-     sudo mkdir <UNTRUSTED_USER_HOME_DIR>/.ssh
-     sudo cp ~/.ssh/id_rsa.pub <UNTRUSTED_USER_HOME_DIR>/.ssh/authorized_keys
-
-   Test the passwordless SSH by logging in
-   (``ssh <UNTRUSTED_USER>@localhost``) and out (``exit``).
-   If you have a passphrase for your key, you may need to type it
-   once, but there should be a way to store the key and log in
-   fully automatically.
-
-#. Create a configuration file
-   ``$SERVER/sagecell/sagecell_config.py`` by copying and
-   modifying
-   ``$SERVER/sagecell/sagecell_config.py.default`` and make the
-   following changes:
-
-   * The ``mongo_uri`` variable should be set to
-     ``mongodb://<SAGECELL_USER>:<SAGECELL_PASSWORD>@localhost:<MONGODB_PORT>``.
-   
-   * If you do not use Sage or ``sage -sh`` to start the scripts, the
-     ``sage`` variable should be set to point to the sage executable.
-     If you will not be running the server using Sage, define the
-     ``python`` and other variables in the config file appropriately
-     to not use the ``sage`` variable.
-
-   .. warning:: Make the ``sagecell_config.py`` file *only* readable by
-      the trusted account, not by the untrusted account, since it
-      contains the password to the database::
-
-          chmod 600 sagecell_config.py
-
-#. Start the webserver::
-
-       sage -sh
-       cd $SERVER/sagecell
-       ./start_web.py
-
-#. Start the trusted server::
-
-       sage -sh
-       cd $SERVER/sagecell
-       ./start_device.py
-
-   When you want to shut down the server, just press Ctrl-C. This should
-   automatically clean up the worker processes.
-
-#. Go to ``http://localhost:8080`` to use the Sage Cell server.
-
-Optional Installation
-=====================
-
-You can use ``nginx`` and ``uwsgi`` to get a more capable webserver.
+You can use nginx and uWSGI to get a more capable webserver.
 
 nginx
------
+^^^^^
 
-First, install the ``libpcre3-dev`` library (if on Ubuntu).  This
+First, install the :command:`libpcre3-dev` library (if on Ubuntu).  This
 makes it so that when nginx is a reverse proxy, it can rewrite the
 headers so that the absolute URLs work out correctly. ::
 
     sudo apt-get install libpcre3-dev
 
-Download nginx and build it in ``$SERVER/nginx/install/``::
+Download nginx and build it in :file:`{$SERVER}/nginx/install/`::
 
     cd $SERVER
     wget http://www.nginx.org/download/nginx-1.0.12.tar.gz
@@ -287,12 +349,12 @@ Download nginx and build it in ``$SERVER/nginx/install/``::
     cd nginx
     ./configure --prefix=`pwd`/install --without-http_rewrite_module && make install
 
-
-
-Make the ``$SERVER/nginx/install/conf/nginx.conf`` file have
+Make the :file:`{$SERVER}/nginx/install/conf/nginx.conf` file have
 only one server entry, as shown here (delete all the others).
-``<SERVER_PORT>`` should be whatever port you plan to expose to
-the public (should be different from ``<MONGODB_PORT>``). ::
+:samp:`{<SERVER_PORT>}` should be whatever port you plan to expose to
+the public (different from :samp:`{<MONGODB_PORT>}`).
+
+.. code-block:: nginx
 
     server {
         listen <SERVER_PORT>;
@@ -311,7 +373,7 @@ Start nginx::
 
 
 uWSGI
------
+^^^^^
 
 These instructions are based on `these instructions
 <http://webapp.org.ua/dev/compiling-uwsgi-from-sources/>`_.  We don't
@@ -337,7 +399,7 @@ files.
 
     sage -python uwsgiconfig.py --build sagecell
 
-#. Create a symbolic link to uWSGI in ``$SERVER/sagecell``::
+#. Create a symbolic link to uWSGI in :file:`{$SERVER}/sagecell/`::
 
       ln -s $SERVER/uwsgi/uwsgi $SERVER/sagecell/uwsgi
 
@@ -345,16 +407,26 @@ files.
    to be ``'uwsgi'``.
 
 .. note:: If there are errors when you start the uwsgi server, you may
-   need to change permissions of ``/tmp/uwsgi.sock``::
+   need to change permissions of :file:`/tmp/uwsgi.sock`::
 
        chmod 777 /tmp/uwsgi.sock
 
+
+Making an spkg
+==============
+
+In order to make an spkg, after the cell server is installed, just go
+into the main cell server repository directory and do::
+
+    sage sage-spkg/spkg-dist
+
+The spkg will be made in the :file:`dist/` directory
 
 
 License
 =======
 
-See the ``LICENSE.txt`` file for terms and conditions for usage and a
+See the :download:`LICENSE.txt <../LICENSE.txt>` file for terms and conditions for usage and a
 DISCLAIMER OF ALL WARRANTIES.
 
 Browser Compatibility

@@ -7,13 +7,16 @@ import mimetypes
 from time import time, sleep
 from functools import wraps
 from util import log
-import uuid
+from uuid import uuid4
 import zmq
 from ip_receiver import IPReceiver
 from werkzeug import secure_filename
 from urllib import quote, quote_plus
 
-import sagecell_config
+try:
+    import sagecell_config
+except ImportError:
+    import sagecell_config_default as sagecell_config
 MAX_FILES = sagecell_config.flask_config['max_files']
 
 app = Flask(__name__)
@@ -48,16 +51,9 @@ def get_db(f):
         global db
         global fs
         global sysargs
-        if sysargs is None:
-            # Fake a sysargs object for a default
-            # this is for when we don't call this file directly
-            class A: pass
-            sysargs=A()
-            sysargs.db='mongo'
-
         if db is None or fs is None:
             db,fs=misc.select_db(sysargs)
-        args = (db,fs) + args
+        args = (db.new_context_copy(), fs.new_context_copy()) + args
         return f(*args, **kwds)
     return wrapper
 
@@ -136,8 +132,7 @@ def evaluate(db,fs):
 
             if bool(request.form.get("sage_mode")) is True:
                 sage_mode = True
-
-            shortened = str(uuid.uuid4())
+            shortened = str(uuid4())
             message = {"parent_header": {},
                        "header": {"msg_id": request.form.get("msg_id"),
                                   "username": "",
@@ -162,7 +157,6 @@ def evaluate(db,fs):
             codeurl = url_for('root', _external=True, c=code)
         else:
             codeurl=zipurl
-
         queryurl = url_for('root', _external=True, q=shortened)
         returnlink = '<a href="%s">Permalink</a> (<a href="%s">Alternate permalink</a>; <a href="%s">Shortened temporary link</a>)'%(codeurl, zipurl, queryurl)
         return returnlink
@@ -243,6 +237,60 @@ def session_file(db,fs,session,filename):
     else:
         abort(404)
 
+@app.route("/service", methods=['GET','POST'])
+@get_db
+def service(db,fs):
+    code = request.values.get("code")
+    if not isinstance(code, basestring):
+        log("code was not a string: %r"%(code,))
+        return ""
+    log("Service called with code: %r"%code[:1000])
+
+    default_timeout=30 #seconds
+    poll_interval=.1 #seconds
+    end_time=time()+default_timeout
+    session = str(uuid4())
+    message = {"parent_header": {},
+               "header": {"msg_id": session,
+                          "username": "",
+                          "session": session,
+                          },
+                          "msg_type": "execute_request",
+                          "content": {"code": code,
+                                      "silent": False,
+                                      "files": [],
+                                      "sage_mode": True,
+                                      "user_variables": [],
+                                      "user_expressions": {},
+                                      },
+        }
+    db.new_input_message(message)
+    sequence = 0
+    s = ""
+    success=False
+    done=False
+    while not done and time()<end_time:
+        sleep(poll_interval)
+        results = db.get_messages(session, sequence=sequence)
+        if results is not None and len(results)>0:
+            for m in results:
+                msg_type = m.get('msg_type','')
+                content = m['content']
+                if msg_type=="execute_reply":
+                    if content['status']=="ok":
+                        success=True
+                    elif content['status']=="error":
+                        success=False
+                    done=True
+                    break
+                elif msg_type=="stream":
+                    if content['name']=="stdout":
+                        s += content['data']
+                elif msg_type=="pyout":
+                    s+=content['data'].get('text/plain','')
+    log('Service returning: %r'%json.dumps([s,success]))
+    return jsonify(output=s, success=success)
+
 @app.route("/complete")
 @get_db
 def tabComplete(db,fs):
@@ -252,7 +300,7 @@ def tabComplete(db,fs):
     global xreq
     if xreq==None:
         xreq=IPReceiver(zmq.XREQ,db.get_ipython_port("xreq"))
-    header={"msg_id":str(uuid.uuid4())}
+    header={"msg_id":str(uuid4())}
     code=request.values["code"]
     xreq.socket.send_json({"header":header, "msg_type":"complete_request", "content": { \
                 "text":"", "line":code, "block":code, "cursor_pos":request.values["pos"]}})
@@ -337,7 +385,7 @@ if __name__ == "__main__":
     # sometime in the summer of 2011, and then we can move this to use argparse.
     from optparse import OptionParser
     parser = OptionParser(description="The web server component of the notebook")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy"], default="mongo", help="Database to use")
+    parser.add_option("--db", choices=["mongo", "sqlalchemy"], help="Database to use")
     parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
     (sysargs, args) = parser.parse_args()
 
