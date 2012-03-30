@@ -744,7 +744,7 @@ if __name__ == "__main__":
     print "PROCESS GROUP ID: ",os.getpgid(0)
     from optparse import OptionParser
     parser = OptionParser(description="Run one or more devices to process commands from the client.")
-    parser.add_option("--db", choices=["mongo","sqlite","sqlalchemy", "zmq"], default="mongo", help="Database to use")
+    parser.add_option("--db", choices=["mongo", "sqlalchemy", "zmq"], help="Database to use")
     parser.add_option("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
     parser.add_option("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
     parser.add_option("-w", type=int, default=1, dest="workers",

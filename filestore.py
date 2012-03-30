@@ -1,8 +1,13 @@
+"""
+
+These classes implement ways to store files in the server.
+"""
+
 from util import log
 
 class FileStore(object):
     """
-    An object that abstracts a filesystem
+    An object that abstracts a filesystem.  This is the base class for filestores.
     """
     def __init__(self):
         raise NotImplementedError
@@ -69,10 +74,20 @@ class FileStore(object):
         :arg str session: the ID of the new session
         """
         raise NotImplementedError
-    
-from gridfs import GridFS
-import pymongo
-from pymongo.objectid import ObjectId
+
+    def new_context(self):
+        """
+        Reconnect to the filestore. This function should be
+        called before the first filestore access in each new process.
+        """
+
+    def new_context_copy(self):
+        """
+        Create a copy of this object for use in a single thread.
+
+        :returns: a new filestore object
+        :rtype: FileStore
+        """
 
 try:
     from sagecell_config import mongo_config
@@ -97,6 +112,134 @@ def Debugger(func):
         return decorated
     else:
         return func
+
+from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy.types import Binary
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from StringIO import StringIO
+
+class FileStoreSQLAlchemy(FileStore):
+    """
+    A filestore in a SQLAlchemy database.
+    
+    :arg str fs_file: the SQLAlchemy URI for a database file
+    """
+    def __init__(self, fs_file=None):
+        if fs_file is not None:
+            engine = create_engine(fs_file)
+            self.SQLSession = sessionmaker(bind=engine)
+            FileStoreSQLAlchemy.Base.metadata.create_all(engine)
+            self.new_context()
+
+    @Debugger
+    def new_file(self, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.new_file`
+        """
+        self.delete_files(session, filename)
+        log("FS Creating %s/%s"%(session, filename))
+        return FileStoreSQLAlchemy.DBFileWriter(self, session, filename)
+
+    @Debugger
+    def delete_files(self, session=None, filename=None, **kwargs):
+        """
+        See :meth:`FileStore.new_file`
+        """
+        q = self.dbsession.query(FileStoreSQLAlchemy.StoredFile)
+        if session is not None:
+            q = q.filter_by(session=session)
+        if filename is not None:
+            q = q.filter_by(filename=filename)
+        q.delete()
+        self.dbsession.commit()
+
+    @Debugger
+    def get_file(self, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.get_file`
+        """
+        return StringIO(self.dbsession.query(FileStoreSQLAlchemy.StoredFile.contents) \
+                .filter_by(session=session, filename=filename).first().contents)
+
+    @Debugger
+    def create_file(self, file_handle, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.create_file`
+        """
+        f = FileStoreSQLAlchemy.StoredFile(session=session, filename=filename)
+        if type(file_handle) is FileStoreSQLAlchemy.DBFileWriter:
+            contents = file_handle.getvalue()
+        else:
+            contents = file_handle.read()
+        f.contents = contents
+        self.dbsession.add(f)
+        self.dbsession.commit()
+
+    @Debugger
+    def copy_file(self, file_handle, session, filename, **kwargs):
+        """
+        See :meth:`FileStore.copy_file`
+        """
+        self.dbsession.add(FileStoreSQLAlchemy.StoredFile(session=session,
+                filename=filename, contents=file_handle.read()))
+        self.dbsession.commit()
+
+    @Debugger
+    def new_context(self):
+        """
+        See :meth:`FileStore.new_context`
+        """
+        self.dbsession = self.SQLSession()
+
+    @Debugger
+    def new_context_copy(self):
+        """
+        See :meth:`FileStore.new_context_copy`
+        """
+        new = type(self)()
+        new.SQLSession = self.SQLSession
+        new.new_context()
+        return new
+
+    Base = declarative_base()
+    
+    class StoredFile(Base):
+        """A file stored in the database"""
+        __tablename__ = 'filestore'
+        n = Column(Integer, primary_key=True)
+        session = Column(String)
+        filename = Column(String)
+        contents = Column(Binary)
+
+    class DBFileWriter(StringIO, object):
+        """
+        A file-like object that writes its contents to the database when it is
+        closed.
+        
+        :arg FileStoreSQLAlchemy filestore: the filestore object to write to
+        :arg str session: the ID of the session that is the source of this file
+        :arg str filename: the name of the file
+        """
+        def __init__(self, filestore, session, filename):
+            self.filestore = filestore
+            self.session = session
+            self.filename = filename
+            super(type(self), self).__init__()
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            self.close()
+        def close(self):
+            self.filestore.create_file(self, self.session, self.filename)
+            super(type(self), self).close()
+
+try:
+    from gridfs import GridFS
+    import pymongo
+    from pymongo.objectid import ObjectId
+except ImportError:
+    pass
 
 class FileStoreMongo(FileStore):
     """
@@ -161,8 +304,7 @@ class FileStoreMongo(FileStore):
     @Debugger
     def new_context(self):
         """
-        Reconnect to the filestore. This function should be
-        called before the first filestore access in each new process.
+        See :meth:`FileStore.new_context`
         """
         self.database=pymongo.database.Database(self._conn, mongo_config['mongo_db'])
         uri=mongo_config['mongo_uri']
@@ -174,6 +316,13 @@ class FileStoreMongo(FileStore):
             if result==0:
                 raise Exception("MongoDB authentication problem")
 
+    @Debugger
+    def new_context_copy(self):
+        """
+        See :meth:`FileStore.new_context_copy`
+        """
+        return type(self)(self._conn)
+
     valid_untrusted_methods=()
 
 from flask import safe_join
@@ -184,13 +333,13 @@ class FileStoreFilesystem(FileStore):
     Filestore using the file system
 
     The levels parameter controls how the session is split up to give
-    subdirectories.  For example, if levels=4, then session
-    0c490701-b1b0-40b8-88ea-70b61a580cf2 files are stored in
-    subdirectory ``0/c/4/9/0c490701-b1b0-40b8-88ea-70b61a580cf2``.
+    subdirectories.  For example, if ``levels=4``, then session
+    ``0c490701-b1b0-40b8-88ea-70b61a580cf2`` files are stored in
+    subdirectory :file:`0/c/4/9/0c490701-b1b0-40b8-88ea-70b61a580cf2`.
     This prevents having too many directories in the root directory.
 
-    :arg dir: A directory in which to store files
-    :arg levels: The number of levels to use for splitting up session directories
+    :arg str dir: A directory in which to store files
+    :arg int levels: The number of levels to use for splitting up session directories
     """
     def __init__(self, dir, levels=0):
         self._dir = dir
@@ -258,8 +407,6 @@ class FileStoreFilesystem(FileStore):
         pass
 
     valid_untrusted_methods=()
-
-##
 
 import zmq
 from db_zmq import db_method
