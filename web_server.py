@@ -13,7 +13,10 @@ from ip_receiver import IPReceiver
 from werkzeug import secure_filename
 from urllib import quote, quote_plus
 
-import sagecell_config
+try:
+    import sagecell_config
+except ImportError:
+    import sagecell_config_default as sagecell_config
 MAX_FILES = sagecell_config.flask_config['max_files']
 
 app = Flask(__name__)

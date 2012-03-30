@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-import sagecell_config
+try:
+    import sagecell_config
+except:
+    import sagecell_config_default as sagecell_config
+
 import uuid
 options=sagecell_config.device_config
 python=options.pop('python')

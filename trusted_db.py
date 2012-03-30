@@ -257,7 +257,10 @@ exit
 if __name__=='__main__':
     # We cannot use argparse until Sage's python is upgraded.
     from optparse import OptionParser
-    import sagecell_config
+    try:
+        import sagecell_config
+    except ImportError:
+        import sagecell_config_default as sagecell_config
     parser=OptionParser(description="Starts a connection between a trusted and an untrusted process.")
     parser.add_option("--db", choices=["mongo", "sqlalchemy"], help="Database to use on trusted side")
     parser.add_option("-w", "--workers", type=int, default=1, dest="workers", help="Number of workers to start.")

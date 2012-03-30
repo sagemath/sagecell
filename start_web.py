@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-import sagecell_config
+try:
+    import sagecell_config
+except:
+    import sagecell_config_default as sagecell_config
 
 if hasattr(sagecell_config, 'webserver'):
     webserver = sagecell_config.webserver
