@@ -1,4 +1,5 @@
 import sys
+import time
 
 def select_db(sysargs, context=None):
     u"""
@@ -46,7 +47,20 @@ def select_db(sysargs, context=None):
             URI=mongo_config['mongo_uri']+'/'+mongo_config['mongo_db']
         else:
             URI = mongo_config['mongo_uri']
-        conn=pymongo.Connection(URI)
+        # Try to reconnect to MongoDB - preallocation of journal files on some
+        # systems can take a while, and we would prefer the device process start
+        # up eventually, rather than raise an error and halt.
+        attempts = 0
+        while True:
+            try:
+                conn=pymongo.Connection(URI)
+                break
+            except:
+                if attempts > 3:
+                    raise pymongo.errors.AutoReconnect("Database re-connection failed! This may be due to long startup times for MongoDB on certain systems.")
+                attempts +=1
+                print "Database connection attempt %d failed, retrying in 5 seconds."%attempts
+                time.sleep(5)
         return db_mongo.DB(conn), filestore.FileStoreMongo(conn)
     elif db=="zmq":
         import db_zmq, filestore
