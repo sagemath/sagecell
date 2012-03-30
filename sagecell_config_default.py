@@ -43,7 +43,7 @@ uwsgi_config={
 
 # DEVICE
 device_config={
-    'workers': 100,
+    'workers': 5,
     'quiet': '',
     'python': python,
     'untrusted-account': 'localhost',
