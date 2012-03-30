@@ -1,9 +1,52 @@
 .. highlight:: bash
 
-This is a demo of a 3-component Sage computation service.
+This is a Sage computation web service.
 
 Installation
 ============
+
+The easiest way to install the Sage Cell server is to install the
+experimental spkg for Sage.
+
+#. Install Sage 5.0 (tested on beta 6)
+#. Install the new Sage Notebook (instructions at `Trac 11080 <http://trac.sagemath.org/sage_trac/ticket/11080>`_)
+#. Install the `spkg <http://sage.math.washington.edu/home/jason/sagecell-0.9.0.spkg>`_::
+
+    sage -i http://sage.math.washington.edu/home/jason/sagecell-0.9.0.spkg
+
+Then open up two terminals.  In the first, launch the webserver::
+
+    cd $SAGE_ROOT/devel/sagecell
+    sage ./start_web.py
+
+In the second terminal, launch the worker processes::
+
+    cd $SAGE_ROOT/devel/sagecell
+    sage ./start_device.py
+
+Open your browser to http://localhost:8080/ and have fun!
+
+You can update your codebase to the latest cutting-edge version by
+doing::
+
+    cd $SAGE_ROOT/devel/sagecell
+    git pull
+
+The biggest potential troublesome spot in the installation is that it
+has to apply two patches to Sage using queues.  If you have
+uncommitted changes, or if you have conflicts, that should stop the
+spkg installation, and you'll have to resolve those conflicts.
+
+The default configuration is not secure, so you'll need to do more
+work to harden the system to open it up to outside users.  But at
+least that should get you up and running for a personal/development
+server.
+
+The rest of this section covers setting up a server outside of a Sage
+installation and making your server more secure and scalable.
+
+Dependencies
+------------
 
 We depend on the following packages:
 
@@ -24,8 +67,6 @@ and optionally:
 
 These instructions assume Sage 5.0.beta4 is installed.
 
-Dependencies
-------------
 
 In the following instructions, :envvar:`$SERVER` refers to the directory
 containing all of the software (for example, it might be
@@ -124,7 +165,8 @@ Configuration and Running
 Sage Cell Server
 ^^^^^^^^^^^^^^^^
 
-First, minify CSS and JavaScript files (this is required)::
+First, minify CSS and JavaScript files, as well as update the various
+web components we depend on (this is required)::
 
     cd $SERVER/sagecell
     make
@@ -369,6 +411,16 @@ files.
 
        chmod 777 /tmp/uwsgi.sock
 
+
+Making an spkg
+==============
+
+In order to make an spkg, after the cell server is installed, just go
+into the main cell server repository directory and do::
+
+    sage sage-spkg/spkg-dist
+
+The spkg will be made in the :file:`dist/` directory
 
 
 License
