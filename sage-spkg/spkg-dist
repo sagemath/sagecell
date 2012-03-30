@@ -91,8 +91,9 @@ print "Creating 'spkg-install'..."
 sys.stdout.flush()
 spkg_install_template = os.path.abspath(os.path.join(SAGECELL_ROOT, 'sage-spkg', 'spkg-install'))
 spkg_install = os.path.join(SPKG_ROOT,'spkg-install')
-with open(spkg_install, 'w') as f, open(spkg_install_template, 'r') as template:
-    f.write(template.read() % {'install_python_dependencies': install_python_dependencies})
+with open(spkg_install, 'w') as f:
+    with open(spkg_install_template, 'r') as template:
+        f.write(template.read() % {'install_python_dependencies': install_python_dependencies})
 
 os.chmod(spkg_install, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
          stat.S_IROTH | stat.S_IXOTH) # -rwxr-xr-x
