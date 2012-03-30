@@ -247,7 +247,6 @@ def session_file(db,fs,session,filename):
 @get_db
 def service(db,fs):
     code = request.values.get("code")
-    log("code: %r"%(code,))
     if not isinstance(code, basestring):
         log("code was not a string: %r"%(code,))
         return ""
@@ -257,7 +256,6 @@ def service(db,fs):
     poll_interval=.1 #seconds
     end_time=time()+default_timeout
     session = str(uuid4())
-    log("making message")
     message = {"parent_header": {},
                "header": {"msg_id": session,
                           "username": "",
@@ -272,23 +270,14 @@ def service(db,fs):
                                       "user_expressions": {},
                                       },
         }
-    log("Message: %r"%message)
     db.new_input_message(message)
-    log("inserted into db")
     sequence = 0
     s = ""
+    success=False
     done=False
     while not done and time()<end_time:
-        log("sleeping")
         sleep(poll_interval)
-        log("Getting results")
-        try:
-            log('A')
-            results = db.get_messages(session, sequence=sequence)
-            log(repr(results))
-        except Exception:
-            log('hi')
-        log("Got results: %r"%(results,))
+        results = db.get_messages(session, sequence=sequence)
         if results is not None and len(results)>0:
             for m in results:
                 msg_type = m.get('msg_type','')
@@ -305,8 +294,7 @@ def service(db,fs):
                         s += content['data']
                 elif msg_type=="pyout":
                     s+=content['data'].get('text/plain','')
-        log("looping again")
-    log('returning: %r'%json.dumps([s,success]))
+    log('Service returning: %r'%json.dumps([s,success]))
     return jsonify(output=s, success=success)
 
 @app.route("/complete")
