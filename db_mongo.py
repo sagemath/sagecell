@@ -37,7 +37,11 @@ import db
 import pymongo.objectid
 from pymongo.objectid import ObjectId
 from pymongo import ASCENDING, DESCENDING
-from sagecell_config import mongo_config
+try:
+    from sagecell_config import mongo_config
+except ImportError:
+    from sagecell_config_default import mongo_config
+
 from util import log
 import uuid
 
