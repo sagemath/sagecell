@@ -10,9 +10,9 @@ sagecell.init = (function(callback) {
         // being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
         var script = document.createElement( 'script' );
         if (config.type!==undefined) {
-            script.type = config.type
+            script.type = config.type;
         } else {
-            script.type="text/javascript"
+            script.type="text/javascript";
         }
         if (config.src!==undefined) { script.src = config.src; }
         if (config.text!==undefined) {script.text = config.text;}
@@ -61,9 +61,11 @@ sagecell.makeSagecell = function (args) {
         args.outputLocation = args.inputLocation;
     }
     if (args.code === undefined) {
-        args.code = $(args.inputLocation).text();
-        // delete the text
-        $(args.inputLocation).text("");
+        if (args.codeLocation !== undefined) {
+            args.code = $(args.codeLocation).html();
+        } else {
+            args.code = $(args.inputLocation).children("script").html();
+        }
     }
     defaults = {"editor": "codemirror",
                 "evalButtonText": "Evaluate",
@@ -99,7 +101,7 @@ sagecell.makeSagecell = function (args) {
             var evalButtonText = settings.evalButtonText;
 
             $(inputLocation).html(body);
-            $(inputLocation+" .sagecell_commands").text(settings.code);
+            $(inputLocation+" .sagecell_commands").val(settings.code);
             if (inputLocation !== outputLocation) {
                 $(inputLocation+" .sagecell_output, .sagecell_messages").appendTo(outputLocation);
             }
