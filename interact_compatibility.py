@@ -197,14 +197,16 @@ def range_slider(vmin, vmax=None, step_size=None, default=None, label=None, disp
                           default=default, label=label, display_value=display_value)
 
 
-def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **kwargs):
+def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs):
     r"""
     An input box interactive control.  Use this in conjunction
     with the :func:`interact` command.
 
     INPUT:
 
-    - ``default`` - an object; the default put in this input box
+    - ``default`` - an string; the default string for the input box
+      and adapter.  If this is not a string, then the default string
+      is set to ``repr(object)``.
 
     - ``label`` - a string; the label rendered to the left of the
       box.
@@ -238,17 +240,16 @@ def input_box(default=None, label=None, type=lambda x: x, width=80, height=1, **
         return color_selector(default=default, label=label, 
                               widget=widget, hide_box=hide_box)
     
-    if not isinstance(default, basestring):
-        default=repr(default)
     from sage.all import sage_eval
-    if type is None:
-        adapter = lambda x, globs: sage_eval(x, globs)
-    elif type is str:
-        adapter=lambda x, globs: x
-    else:
-        adapter = lambda x, globs: type(sage_eval(x, globs))
-    return InputBox(default=default, width=width, 
-                    label=label, adapter=adapter, height=height)
+    adapter = None
+    evaluate = True
+    if type is str or height>1:
+        evaluate = False
+    elif type is not None:
+        adapter = lambda x, globs: type(x)
+    return InputBox(default=default, width=width,
+                    label=label, adapter=adapter, evaluate=evaluate,
+                    height=height)
 
 def color_selector(default=(0,0,1), label=None,
                  widget='colorpicker', hide_box=False):

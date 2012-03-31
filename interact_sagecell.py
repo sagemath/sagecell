@@ -284,20 +284,13 @@ def interact(f, controls=[], update=None, layout=None):
         MESSAGE.pop_output_id()
         return returned
 
+    globs = f.func_globals
     _INTERACTS[function_id] = {
-        "state": dict(zip(names,[c.default for c in controls])),
+        "state": dict(zip(names,[c.adapter(c.default, globs) for c in controls])),
         "function": adapted_f,
         "controls": dict(zip(names, controls)),
-        "globals": f.func_globals,
+        "globals": globs,
         }
-    state = _INTERACTS[function_id]["state"]
-
-    # transform state by the adapter
-    for var, value in state.items():
-        c = _INTERACTS[function_id]["controls"][var]
-        # initially, the default global context is the function's
-        # global namespace
-        state[var] = c.adapter(value, f.func_globals)
 
     MESSAGE.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
@@ -306,7 +299,7 @@ def interact(f, controls=[], update=None, layout=None):
                                    'layout':layout})
     global __sage_cell_timeout__
     __sage_cell_timeout__=60
-    adapted_f(control_vals=state.copy())
+    adapted_f(control_vals=_INTERACTS[function_id]["state"].copy())
     return f
 
 
@@ -385,15 +378,12 @@ class InputBox(InteractControl):
     """
     An input box control
 
-    :arg default: default value of the input box
+    :arg default: default value of the input box.  If this is not a string, repr is
+        called on it to get a string, which is then the default input.
     :arg int width: character width of the input box.
     :arg int height: character height of the input box. If this is greater than
         one, an HTML textarea will be rendered, while if it is less than one,
         an input box form element will be rendered.
-    :arg bool raw: ``True`` if the value should be treated as "unquoted"
-        (raw), so it can be used in control structures; ``False`` if the
-        value should be treated as a string. The value of a textarea (``height``
-        greater than one) will always be treated as a string.
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     :arg adapter: a callable which will be passed the input before
@@ -402,25 +392,31 @@ class InputBox(InteractControl):
         function should take as input the value of the control and
         should return something that is then passed into the interact
         function as the value of the control.
+    :arg bool evaluate: If ``True`` (default), the user's string will first be evaluated
+        using ``sage_eval``, and then passed to the adapter function.
     """
-
-    def __init__(self, default="", label=None, width=0, height=1, raw=False,
-                 adapter=None):
-        self.default=self.default_return=default
+    def __init__(self, default="", label=None, width=0, height=1, adapter=None, evaluate=True):
+        if not isinstance(default, basestring):
+            default = repr(default)
+        self.default=default
         self.width=int(width)
         self.height=int(height)
-        self.raw=raw
+        self.raw=False
         self.label=label
-        if adapter is not None:
-            self.adapter=adapter
+        if evaluate:
+            from sage.all import sage_eval
+            if adapter is not None:
+                self.adapter = lambda x,globs: adapter(sage_eval(x,globs), globs)
+            else:
+                self.adapter = lambda x,globs: sage_eval(x,globs)
+        elif adapter is not None:
+            self.adapter = lambda x,globs: adapter(x,globs)
 
         if self.height > 1:
             self.subtype = "textarea"
             self.raw = True
         else:
             self.subtype = "input"
-            if self.raw:
-                self.default_return = repr(self.default)
 
     def message(self):
         """
@@ -432,7 +428,7 @@ class InputBox(InteractControl):
         """
         return {'control_type':'input_box',
                 'subtype':self.subtype,
-                'default':self.default_return,
+                'default':self.default,
                 'width':self.width,
                 'height':self.height,
                 'raw':self.raw,
@@ -1124,12 +1120,10 @@ def automatic_control(control, var=None):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
             default_value, control = control
 
-    if isinstance(control, str):
-        C = InputBox(default = control, label = label)
+    if isinstance(control, basestring):
+        C = InputBox(default = control, label = label, evaluate=False)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
-    elif isinstance(control, Number):
-        C = InputBox(default = control, label = label, raw = True)
     elif isinstance(control, list):
         if len(control)==1:
             if isinstance(control[0], (list,tuple)) and len(control[0])==2:
@@ -1155,7 +1149,8 @@ def automatic_control(control, var=None):
             values=list(control)
             C = DiscreteSlider(default = values[default_value], values = values, label = label)
     else:
-        C = InputBox(default = control, label=label, raw = True)
+        from sage.all import sage_eval
+        C = InputBox(default = control, label=label, evaluate=True)
 
         if CONFIG.EMBEDDED_MODE["sage_mode"] and CONFIG.EMBEDDED_MODE["enable_sage"]:
             from sagenb.misc.misc import Color
