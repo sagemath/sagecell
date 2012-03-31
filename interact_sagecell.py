@@ -392,8 +392,10 @@ class InputBox(InteractControl):
         function should take as input the value of the control and
         should return something that is then passed into the interact
         function as the value of the control.
+    :arg bool evaluate: If ``True`` (default), the user's string will first be evaluated
+        using ``sage_eval``, and then passed to the adapter function.
     """
-    def __init__(self, default="", label=None, width=0, height=1, adapter=None):
+    def __init__(self, default="", label=None, width=0, height=1, adapter=None, evaluate=True):
         if not isinstance(default, basestring):
             default = repr(default)
         self.default=default
@@ -401,8 +403,15 @@ class InputBox(InteractControl):
         self.height=int(height)
         self.raw=False
         self.label=label
-        if adapter is not None:
-            self.adapter=adapter
+        if evaluate:
+            from sage.all import sage_eval
+            if adapter is not None:
+                self.adapter = lambda x,globs: adapter(sage_eval(x,globs), globs)
+            else:
+                self.adapter = lambda x,globs: sage_eval(x,globs)
+        elif adapter is not None:
+            self.adapter = lambda x,globs: adapter(x,globs)
+
         if self.height > 1:
             self.subtype = "textarea"
             self.raw = True
@@ -1112,7 +1121,7 @@ def automatic_control(control, var=None):
             default_value, control = control
 
     if isinstance(control, basestring):
-        C = InputBox(default = control, label = label, adapter=lambda x,globs: x)
+        C = InputBox(default = control, label = label, evaluate=False)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
     elif isinstance(control, list):
@@ -1141,7 +1150,7 @@ def automatic_control(control, var=None):
             C = DiscreteSlider(default = values[default_value], values = values, label = label)
     else:
         from sage.all import sage_eval
-        C = InputBox(default = control, label=label, adapter=lambda x, globs: sage_eval(x, globs))
+        C = InputBox(default = control, label=label, evaluate=True)
 
         if CONFIG.EMBEDDED_MODE["sage_mode"] and CONFIG.EMBEDDED_MODE["enable_sage"]:
             from sagenb.misc.misc import Color

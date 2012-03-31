@@ -239,15 +239,17 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         hide_box=kwargs.get('hide_box', False)
         return color_selector(default=default, label=label, 
                               widget=widget, hide_box=hide_box)
+    
     from sage.all import sage_eval
+    adapter = None
+    evaluate = True
     if type is str or height>1:
-        adapter=lambda x, globs: x
-    elif type is None:
-        adapter = lambda x, globs: sage_eval(x,globs)
-    else:
-        adapter = lambda x, globs: type(sage_eval(x, globs))
+        evaluate = False
+    elif type is not None:
+        adapter = lambda x, globs: type(x)
     return InputBox(default=default, width=width,
-                    label=label, adapter=adapter, height=height)
+                    label=label, adapter=adapter, evaluate=evaluate,
+                    height=height)
 
 def color_selector(default=(0,0,1), label=None,
                  widget='colorpicker', hide_box=False):
