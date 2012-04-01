@@ -28,29 +28,33 @@ like)::
        <title>Sage Cell Server</title>
        <script type="text/javascript" src="http://aleph.sagemath.org/static/jquery.min.js"></script>
        <script type="text/javascript" src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
+       <script type="text/x-sage" id="code">
+   @interact
+   def _(a=(1, 10)):
+       print factorial(a)
+       </script>
+       <script type="text/x-sage" id="code2">plot(sin(x), (x, 0, 2 * pi))</script>
        <script>
    $(function () {
-   sagecell.makeSagecell({inputLocation:  '#mycell',
-                          template:       sagecell.templates.minimal,
-                          evalButtonText: 'Activate'});
-   sagecell.makeSagecell({inputLocation: '#mycell2',
-                          hide: ["computationID", "messages", "sessionTitle"],
-                          evalButtonText: 'Evaluate'});
+       sagecell.makeSagecell({inputLocation:  '#mycell',
+                              codeLocation:   '#code',
+                              template:       sagecell.templates.minimal,
+                              evalButtonText: 'Activate'});
+       sagecell.makeSagecell({inputLocation: '#mycell2',
+                              codeLocation:  '#code2',
+                              hide: ["computationID", "messages", "sessionTitle"],
+                              evalButtonText: 'Evaluate'});
    });
        </script>
      </head>
      <body>
      <h1>Embedded Sage Cells</h1>
      <h2>Factorial</h2>
-     Click the "Activate" button below in order to calculate factorials.
-       <div id="mycell"><script type="text/x-sage">
-   @interact
-   def _(a=(1,10)):
-         print factorial(a)
-       </script></div>
+     Click the &ldquo;Activate&rdquo; button below to calculate factorials.
+       <div id="mycell"></div>
    <h2>Your own computation</h2>
-   Type your own Sage computation below and click "Evaluate".
-       <div id="mycell2"><script type="text/x-sage">plot(sin(x), (x,0,2*pi))</script></div>
+   Type your own Sage computation below and click &ldquo;Evaluate&rdquo;.
+       <div id="mycell2"></div>
      </body>
    </html>
 
@@ -78,7 +82,7 @@ Later, the following JavaScript should be run::
    sagecell.makeSagecell({inputLocation: "[jQuery selector]"});
 
 This creates a basic Sage Cell instance at the location matching
-``inputLocation``. This location must be a unique selector for an HTML element
+``inputLocation``. This location must be a selector for a unique HTML element
 in which content can be dynamically placed. See the documentation for
 :ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`
 for more configuration options. This function returns a dictionary containing
@@ -127,10 +131,12 @@ the editor, editor toggle, "Sage Mode" selector, file upload selector, and the
 evaluate button::
 
    { ..
-   inputLocation: "jQuery selector, must map to a unique HTML tag"
+   inputLocation: "#..."
    .. }
 
-The inputLocation argument is required and cannot be omitted.
+The ``inputLocation`` argument should be a
+`jQuery selector <http://api.jquery.com/category/selectors/>`_
+for a single DOM node. It is required and cannot be omitted.
 
 Output Location
 ---------------
@@ -139,11 +145,13 @@ This sets the location of the output elements of a Sage Cell, which includes
 the session output, the computation ID, and server messages::
 
    { ..
-   outputLocation: "jQuery selector, must map to a unique HTML tag"
+   outputLocation: "#..."
    .. }
 
-If ``outputLocation`` is not specified, it defaults to the same selector as
-``inputLocation``.
+The ``outputLocation`` argument should be a
+`jQuery selector <http://api.jquery.com/category/selectors/>`_
+for a single DOM node. If ``outputLocation`` is not specified,
+it defaults to the same selector as ``inputLocation``.
 
 Code Editor
 -----------
@@ -170,24 +178,35 @@ group of editors that are editable or static. For instance, ``textarea-readonly`
 can only become ``codemirror-readonly``, rather than ``textarea`` or
 ``codemirror``.
 
+Default code
+------------
+
 This sets the initial content of the code editor::
 
    { ..
    code: "code"
    .. }
 
+The value of the ``code`` argument should be a string of Python/Sage
+code.
 
-Code editor content can also be set by embedding the code within the input
-location of the Sage Cell:
+Code editor content can also be set using the ``codeLocation`` argument::
+
+   { ..
+   codeLocation: "#..."
+   .. }
+
+The ``codeLocation`` argument should be a
+`jQuery selector <http://api.jquery.com/category/selectors/>`_
+for a single DOM node. This node should be a ``SCRIPT`` element
+of type ``text/x-sage`` containing the default Python/Sage code:
 
 .. code-block:: html
 
-   <div id="myInputDiv">
-      <script type="text/x-sage">
+       <script type="text/x-sage" id="mycode">
    print "Here's some code!"
    print "Hello World"
-      </script>
-   </div>
+       </script>
 
 Note that all whitespace is preserved inside of the ``<script>``
 tags.  Since the Python/Sage language is whitespace-sensitive, make
@@ -200,7 +219,7 @@ the code.
   whitespace, so that people can easily paste in blocks of code and
   have it work nicely.
 
-If the code parameter is not set, the input location is examined for code.
+If the code parameter is not set, the code location is examined for code.
 If no code is found there, the JavaScript attempts to restore in the editor
 whatever the user had in that particular cell before (using the web browser's
 session storage capabilities). If that fails, the editor is initialized to an
