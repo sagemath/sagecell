@@ -2,64 +2,56 @@
 // Make a global sagecell namespace for our functions
 window.sagecell = {};
 
-sagecell.init = (function(callback) {
+if (!document.head) {
+    document.head = document.getElementsByTagName("head")[0];
+}
+
+sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined)
         return;
-    var load = function ( config ) {
-        // We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag 
-        // being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
-        var script = document.createElement( 'script' );
-        if (config.type!==undefined) {
-            script.type = config.type;
-        } else {
-            script.type="text/javascript";
-        }
-        if (config.src!==undefined) { script.src = config.src; }
-        if (config.text!==undefined) {script.text = config.text;}
-        document.getElementsByTagName("head")[0].appendChild(script);
-    };
-
     sagecell.init_callback = callback
     sagecell.dependencies_loaded = false;
 
     // many stylesheets that have been smashed together into all.min.css
-    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='all.min.css', _external=True) -}}'></link>");
-    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='jqueryui/css/sage/jquery-ui-1.8.17.custom.css', _external=True) -}}'></link>");
-    $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='colorpicker/css/colorpicker.css', _external=True) -}}'></link>");
+    var stylesheets = [{{url_for("static", filename="all.min.css", _external=True)|tojson|safe}},
+                       {{url_for("static", filename="jqueryui/css/sage/jquery-ui-1.8.17.custom.css", _external=True)|tojson|safe}},
+                       {{url_for("static", filename="colorpicker/css/colorpicker.css", _external=True)|tojson|safe}}];
+    for (var i = 0; i < stylesheets.length; i++) {
+        document.head.appendChild(sagecell.functions.createElement("link",
+                {rel: "stylesheet", href: stylesheets[i]}));
+    }
 
     // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
-    load({'text': 'MathJax.Hub.Config({  ' +
-          'extensions: ["jsMath2jax.js", "tex2jax.js"],' + 
-          'tex2jax: {' +
-          ' inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ],' +
-          ' displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ],' +
-          ' processEscapes: true}' +
-          '});' +
-          '// SVG backend does not work for IE version < 9, so switch if the default is SVG' +
-          '//if (MathJax.Hub.Browser.isMSIE && (document.documentMode||0) < 9) {' +
-          '//  MathJax.Hub.Register.StartupHook("End Config",function () {' +
-          '//    var settings = MathJax.Hub.config.menuSettings;' +
-          '//    if (!settings.renderer) {settings.renderer = "HTML-CSS"}' +
-          '//  });' +
-          '//}', 
-          'type': 'text/x-mathjax-config'});
-    load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
-
+    document.head.appendChild(sagecell.functions.createElement("script",
+        {"type": "text/x-mathjax-config"},
+        [document.createTextNode('MathJax.Hub.Config({ \
+             extensions: ["jsMath2jax.js", "tex2jax.js"], \
+             tex2jax: {inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ], \
+                       displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ], \
+             }); \
+             // SVG backend does not work for IE version < 9, so switch if the default is SVG \
+             // if (MathJax.Hub.Browser.isMSIE && (document.documentMode||0) < 9) { \
+             //     MathJax.Hub.Register.StartupHook("End Config",function () { \
+             //         var settings = MathJax.Hub.config.menuSettings; \
+             //         if (!settings.renderer) {settings.renderer = "HTML-CSS"} \
+             //     }); \
+             // }')]));
     // many prerequisites that have been smashed together into all.min.js
-    load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
-});
+    document.head.appendChild(sagecell.functions.createElement("script",
+        {"src": {{url_for('static', filename='all.min.js', _external=True)|tojson|safe}}}));
+};
 
-sagecell.sagecell_dependencies_callback = (function() {
+sagecell.sagecell_dependencies_callback = function () {
     sagecell.dependencies_loaded = true;
     if (sagecell.init_callback !== undefined) {
         sagecell.init_callback();
     }
-});
+};
 
 sagecell.makeSagecell = function (args) {
     var defaults;
     var settings = {};
-    if (typeof args === "undefined") {
+    if (args === undefined) {
         args = {};
     }
     if (args.inputLocation === undefined) {
@@ -88,7 +80,6 @@ sagecell.makeSagecell = function (args) {
     } else {
         settings = $.extend(settings, defaults, args);
     }
-    settings.hideDynamic = [];
     setTimeout(function waitForLoad() {
         // Wait for CodeMirror to load before using the $ function
         // Could we use MathJax Queues for this?
@@ -104,49 +95,49 @@ sagecell.makeSagecell = function (args) {
         var body = {% filter tojson %}{% include "sagecell.html" %}{% endfilter %};
         $(function() {
             var hide = settings.hide;
-            var inputLocation = settings.inputLocation;
-            var outputLocation = settings.outputLocation;
+            var inputLocation = $(settings.inputLocation);
+            var outputLocation = $(settings.outputLocation);
             var evalButtonText = settings.evalButtonText;
 
-            $(inputLocation).html(body);
-            $(inputLocation+" .sagecell_commands").val(settings.code);
+            inputLocation.html(body);
+            inputLocation.find(".sagecell_commands").val(settings.code);
             if (inputLocation !== outputLocation) {
-                $(inputLocation+" .sagecell_output, .sagecell_messages").appendTo(outputLocation);
+                inputLocation.find(".sagecell_output, .sagecell_messages")
+                        .appendTo(outputLocation);
             }
-            hideAdvanced={};
+            var hideAdvanced = {};
+            var hideable = {"in": {"computationID": true, "editor": true,
+                                   "editorToggle": true,  "files": true,
+                                   "evalButton": true,    "sageMode": true},
+                            "out": {"output": true,       "messages": true,
+                                    "sessionTitle": true, "done": true,
+                                    "sessionFiles": true, "sessionFilesTitle": true}};
+            var hidden_out = [];
             for (var i = 0, i_max = hide.length; i < i_max; i++) {
-                if (hide[i] === 'computationID' ||
-                    hide[i] === 'editor' ||
-                    hide[i] === 'editorToggle' ||
-                    hide[i] === 'files' ||
-                    hide[i] === 'evalButton' ||
-                    hide[i] === 'sageMode') {
-                    $(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
+                if (hideable["in"][hide[i]]) {
+                    inputLocation.find(".sagecell_"+hide[i]).css("display", "none");
                     // TODO: make the advancedFrame an option to hide, then delete
                     // this hideAdvanced hack
                     if (hide[i] === 'files' || hide[i] === 'sageMode') {
-                        hideAdvanced[hide[i]]=true;
+                        hideAdvanced[hide[i]] = true;
                     }
-                } else if (hide[i] === 'output' ||
-                           hide[i] === 'messages' ||
-                           hide[i] === 'sessionTitle') {
-                    $(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
-                    $('head').append("<style type='text/css'> "+outputLocation+" .sagecell_"+hide[i]+ "{display: none;} </style>");
-
-                } else if (hide[i] === 'done' ||
-                           hide[i] === 'sessionFiles' ||
-                           hide[i] === 'sessionFilesTitle') {
-                    settings.hideDynamic.push(".sagecell_"+hide[i]);
+                } else if (hideable["out"][hide[i]]) {
+                    hidden_out.push(settings.outputLocation + " .sagecell_" + hide[i]);
                 }
             }
-            if (hideAdvanced.files === true && hideAdvanced.sageMode === true) {
-                $(inputLocation+" .sagecell_advancedFrame").css("display", "none");
+            if (hideAdvanced.files && hideAdvanced.sageMode) {
+                inputLocation.find(".sagecell_advancedFrame").css("display", "none");
             }
-            if (typeof(evalButtonText) !== "undefined") {
-                $(inputLocation+ " .sagecell_evalButton").val(evalButtonText);
+            if (hidden_out.length > 0) {
+                document.head.appendChild(sagecell.functions.createElement("style", {},
+                        [document.createTextNode(hidden_out.join(", ") +
+                         " {display: none;}")]));
+            }
+            if (evalButtonText !== undefined) {
+                inputLocation.find(".sagecell_evalButton").val(evalButtonText);
             }
             sagecell.initCell(settings);
-        });
+	        });
     }, 100);
     return settings;
 };
@@ -158,7 +149,6 @@ sagecell.initCell = (function(sagecellInfo) {
     var outputLocation = $(sagecellInfo.outputLocation);
     var editor = sagecellInfo.editor;
     var replaceOutput = sagecellInfo.replaceOutput;
-    var hideDynamic = sagecellInfo.hideDynamic;
     var sageMode = inputLocation.find(".sagecell_sageModeCheck");
     var textArea = inputLocation.find(".sagecell_commands");
     var files = 0;
@@ -167,7 +157,6 @@ sagecell.initCell = (function(sagecellInfo) {
     if (sagecellInfo.code !== undefined) {
         textArea.val(sagecellInfo.code);
     }
-
     if (! sagecellInfo.sageMode) {
         sageMode.attr("checked", false);
     }
@@ -188,16 +177,15 @@ sagecell.initCell = (function(sagecellInfo) {
     } catch(e) {}
     */
 
-
     temp = this.renderEditor(editor, inputLocation);
     editor = temp[0];
     editorData = temp[1];
 
-    $(document.body).append("<form class='sagecell_form' id='"+inputLocationName+"_form'></form>");
-    $("#"+inputLocationName+"_form").attr({"action": $URL.evaluate,
-                                "enctype": "multipart/form-data",
-                                "method": "POST"
-                               });
+    this.submitForm = sagecell.functions.createElement("form",
+            {"action": $URL.evaluate, "enctype": "multipart/form-data",
+             "method": "POST"});
+    this.submitForm.id = inputLocationName + "_form";
+    document.body.appendChild(this.submitForm);
 
     inputLocation.find(".sagecell_editorToggle").click(function(){
         temp = sagecell.toggleEditor(editor, editorData, inputLocation);
@@ -228,24 +216,22 @@ sagecell.initCell = (function(sagecellInfo) {
         location.attr("checked", !location.attr("checked"));
     });
     
-    $(".sagecell_selectorButton").live("hover",function(e) {
-        $(e.target).toggleClass("ui-state-hover");
+    $(".sagecell_selectorButton").live("hover", function (e) {
+        $(e.target).addClass("ui-state-hover");
     });
-    $(".sagecell_selectorButton").live("focus",function(e) {
-        $(e.target).toggleClass("ui-state-focus");
+    $(".sagecell_selectorButton").live("focus", function (e) {
+        $(e.target).addClass("ui-state-focus");
     });
-    $(".sagecell_selectorButton").live("blur",function(e) {
+    $(".sagecell_selectorButton").live("blur", function (e) {
         $(e.target).removeClass("ui-state-focus");
     });
-    
+
     sagecellInfo.submit = function() {
         // TODO: actually make the JSON execute request message here.
-
         if (replaceOutput) {
             outputLocation.find(".sagecell_output").empty();
         }
-        
-        var session = new sagecell.Session(outputLocation, ".sagecell_output", inputLocation.find(".sagecell_sageModeCheck").attr("checked"), hideDynamic);
+        var session = new sagecell.Session(outputLocation, ".sagecell_output", inputLocation.find(".sagecell_sageModeCheck").attr("checked"));
         inputLocation.find(".sagecell_computationID").append("<div>"+session.session_id+"</div>");
         if (editorData.save !== undefined) {editorData.save();}
         $("#"+inputLocationName+"_form").append("<input type='hidden' name='commands'>").children().last().val(JSON.stringify(textArea.val()));
@@ -287,22 +273,25 @@ sagecell.initCell = (function(sagecellInfo) {
     return sagecellInfo;
 });
 
-sagecell.deleteSagecell = (function(sagecellInfo) {
+sagecell.deleteSagecell = function (sagecellInfo) {
     $(sagecellInfo.inputLocation).remove();
     $(sagecellInfo.outputLocation).remove();
-});
+};
 
-sagecell.moveInputForm = (function(sagecellInfo) {
-    $(document.body).append("<div id='sagecell_moved' style='display:none'></div>");
-    $(sagecellInfo.inputLocation).contents().appendTo("#sagecell_moved");
-});
+sagecell.moveInputForm = function (sagecellInfo) {
+    var moved = sagecell.functions.createElement("div", {"id": "sagecell_moved"});
+    moved.style.display = "none";
+    $(document.body).append(moved);
+    $(sagecellInfo.inputLocation).contents().appendTo($(moved));
+};
 
-sagecell.restoreInputForm = (function(sagecellInfo) {
-    $("#sagecell_moved").contents().appendTo(sagecellInfo.inputLocation);
-    $("#sagecell_moved").remove();
-});
+sagecell.restoreInputForm = function (sagecellInfo) {
+    var moved = $("#sagecell_moved");
+    moved.contents().appendTo(sagecellInfo.inputLocation);
+    moved.remove();
+};
 
-sagecell.renderEditor = (function(editor, inputLocation) {
+sagecell.renderEditor = function (editor, inputLocation) {
     var editorData;
 
     if (editor === "textarea") {
@@ -317,19 +306,20 @@ sagecell.renderEditor = (function(editor, inputLocation) {
         } else {
             editor = "codemirror";
         }
-
-        editorData = CodeMirror.fromTextArea(inputLocation.find(".sagecell_commands").get(0), {
-            mode:"python",
-            indentUnit:4,
-            tabMode:"shift",
-            lineNumbers:true,
-            matchBrackets:true,
-            readOnly: readOnly,
-            extraKeys: {'Shift-Enter': (function(editor) {
-                editor.save()
-                inputLocation.find(".sagecell_evalButton").click();})},
-            onKeyEvent: (function(editor, event){
-                editor.save();
+        editorData = CodeMirror.fromTextArea(
+            inputLocation.find(".sagecell_commands").get(0),
+            {mode: "python",
+             indentUnit: 4,
+             tabMode: "shift",
+             lineNumbers: true,
+             matchBrackets: true,
+             readOnly: readOnly,
+             extraKeys: {'Shift-Enter': function (editor) {
+                 editor.save();
+                 inputLocation.find(".sagecell_evalButton").click();
+             }},
+             onKeyEvent: function (editor, event) {
+                 editor.save();
                 /* Saving state and restoring it seems more confusing for new users, so we're commenting it out for now.
                 try {
                     sessionStorage.removeItem(inputLocationName+"_editorValue");
@@ -338,14 +328,12 @@ sagecell.renderEditor = (function(editor, inputLocation) {
                     // if we can't store, don't do anything, e.g. if cookies are blocked
                 }
                 */
-            })
-        });
+            }});
     }
-
     return [editor, editorData];
-});
+};
 
-sagecell.toggleEditor = (function(editor, editorData, inputLocation) {
+sagecell.toggleEditor = function (editor, editorData, inputLocation) {
     var editable = ["textarea", "codemirror"];
     var temp;
 
@@ -370,9 +358,8 @@ sagecell.toggleEditor = (function(editor, editorData, inputLocation) {
             editorData = temp[1];
         }
     }
-
     return [editor, editorData];
-});
+};
 
 sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
@@ -441,20 +428,32 @@ sagecell.functions = {
             }
             return result;
         }
-    })()
+    })(),
+    "createElement": function (type, args, children) {
+        var node = document.createElement(type);
+        for (var k in args) {
+            if (args.hasOwnProperty(k)) {
+                node.setAttribute(k, args[k]);
+            }
+        }
+        if (children) {
+            for (var i = 0; i < children.length; i++) {
+                node.appendChild(children[i]);
+            }
+        }
+        return node;
+    }
 };
 
-
 // Make the script root available to jquery
-$URL={'root': {{ request.url_root|tojson|safe }},
+$URL={'root': {{request.url_root|tojson|safe}},
       'evaluate': {{url_for('evaluate',_external=True)|tojson|safe}},
       'powered_by_img': {{url_for('static', filename = 'sagelogo.png', _external=True)|tojson|safe}},
       'output_poll': {{url_for('output_poll',_external=True)|tojson|safe}} +
           '?callback=?',
-      'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}
-     };
+      'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}};
 
 // Purely for backwards compability
-window.singlecell=window.sagecell;
-window.singlecell.makeSinglecell=window.singlecell.makeSagecell;
+window.singlecell = window.sagecell;
+window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
 })(jQuery);

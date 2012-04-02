@@ -28,12 +28,10 @@ jQuery.noConflict();
 **************************************************************/
 
 sagecell.Session = (sagecell.functions.makeClass());
-sagecell.Session.prototype.init = function(outputDiv, output, sage_mode,
-                                           hideDynamic) {
+sagecell.Session.prototype.init = function(outputDiv, output, sage_mode) {
     this.outputDiv = outputDiv;
     this.session_id = sagecell.functions.uuid4();
     this.sage_mode = sage_mode;
-    this.hideDynamic = hideDynamic;
     this.sequence = 0;
     this.polling_times = {'active': 250, 'inactive': 2000};
     this.poll_interval = this.polling_times.active;
@@ -60,11 +58,6 @@ sagecell.Session.prototype.init = function(outputDiv, output, sage_mode,
     this.eventHandlers = {};
     this.interacts = {};
     this.setQuery();
-
-    for (var i = 0; i < this.hideDynamic.length; i++) {
-        this.outputDiv.find(this.hideDynamic[i]).css("display","none");
-    }
-
 }
 
 // Manages querying the webserver for messages
@@ -296,10 +289,7 @@ sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR
                     this.output(html,output_block).effect("pulsate", {times:1}, 500);
                     break;
                 case "session_end":
-                    if ($.inArray(".sagecell_done", this.hideDynamic) === -1) {
-                        this.output("<div class='sagecell_done'>Session <span class='sagecell_sessionTitle'>"+id+ "</span> done</div>", output_block);
-                    }
-
+                    this.output("<div class='sagecell_done'>Session <span class='sagecell_sessionTitle'>"+id+ "</span> done</div>", output_block);
                     // Unbinds interact change handlers
                     for (var i in this.eventHandlers) {
                         for (var j in this.eventHandlers[i]) {
