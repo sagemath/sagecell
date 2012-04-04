@@ -43,7 +43,7 @@ sagecell.init = (function(callback) {
           '//  });' +
           '//}', 
           'type': 'text/x-mathjax-config'});
-    load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTML') -}}"});
+    load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
 
     // many prerequisites that have been smashed together into all.min.js
     load({'src': "{{- url_for('static', filename='all.min.js', _external=True) -}}"});
