@@ -28,13 +28,22 @@ sagecell.init = (function(callback) {
     $("head").append("<link rel='stylesheet' href='{{- url_for('static', filename='colorpicker/css/colorpicker.css', _external=True) -}}'></link>");
 
     // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
+    // The if statement below loads HTML-CSS if the browser is IE version < 9
+    // otherwise, we use the SVG renderer
     load({'text': 'MathJax.Hub.Config({  ' +
           'extensions: ["jsMath2jax.js", "tex2jax.js"],' + 
           'tex2jax: {' +
           ' inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ],' +
           ' displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ],' +
           ' processEscapes: true}' +
-          '});', 'type': 'text/x-mathjax-config'});
+          '});' +
+          'if (MathJax.Hub.Browser.isMSIE && (document.documentMode||0) < 9) {' +
+          '  MathJax.Hub.Register.StartupHook("End Config",function () {' +
+          '    var settings = MathJax.Hub.config.menuSettings;' +
+          '    if (!settings.renderer) {settings.renderer = "HTML-CSS"}' +
+          '  });' +
+          '}', 
+          'type': 'text/x-mathjax-config'});
     load({'src': "{{- url_for('static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_SVG') -}}"});
 
     // many prerequisites that have been smashed together into all.min.js
