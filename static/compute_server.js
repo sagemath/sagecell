@@ -28,9 +28,9 @@ jQuery.noConflict();
 **************************************************************/
 
 sagecell.Session = (sagecell.functions.makeClass());
-sagecell.Session.prototype.init = function(outputDiv, output, sage_mode) {
+sagecell.Session.prototype.init = function (outputDiv, output, session_id, sage_mode) {
     this.outputDiv = outputDiv;
-    this.session_id = sagecell.functions.uuid4();
+    this.session_id = session_id;
     this.sage_mode = sage_mode;
     this.sequence = 0;
     this.polling_times = {'active': 250, 'inactive': 2000};
@@ -44,7 +44,7 @@ sagecell.Session.prototype.init = function(outputDiv, output, sage_mode) {
     var link = document.createElement('a');
     link.setAttribute('href', 'http://www.sagemath.org');
     var img = document.createElement('img');
-    img.setAttribute('src', $URL['powered_by_img']);
+    img.setAttribute('src', sagecell.$URL.powered_by_img);
     img.setAttribute('alt', 'Sage');
     link.appendChild(img);
     poweredBy.appendChild(link);
@@ -122,13 +122,9 @@ sagecell.Session.prototype.sendMsg = function() {
        for why. If we don't do the proxy, then "this" in the
        send_computation_success function will *not* refer to the
        session object. */
-    $.post($URL.evaluate, {message: JSON.stringify(msg)}, function(){}, 'jsonp')
-        .success($.proxy( this, 'send_computation_success' ))
-        .error(function(jqXHR, textStatus, errorThrown) {
-            console.warn(jqXHR);
-            console.warn(textStatus);
-            console.warn(errorThrown);
-        });
+    sagecell.sendRequest("POST", sagecell.$URL.evaluate,
+            {"message": JSON.stringify(msg)},
+            $.proxy(this.send_computation_success, this));
     // Pretend like we just got an update, so that we don't request a new update
     // immediately (since it will probably take a little bit of time for the server
     // to get the request and respond)
@@ -171,8 +167,8 @@ sagecell.Session.prototype.write = function(html) {
     this.output(html);
 }
 
-sagecell.Session.prototype.send_computation_success = function(data, textStatus, jqXHR) {
-    if (data.computation_id!==this.session_id) {
+sagecell.Session.prototype.send_computation_success = function(data) {
+    if (JSON.parse(data).computation_id !== this.session_id) {
         alert("Session id returned and session id sent don't match up");
     }
     this.setQuery();
@@ -180,13 +176,14 @@ sagecell.Session.prototype.send_computation_success = function(data, textStatus,
 
 sagecell.Session.prototype.get_output = function() {
     this.last_update = (new Date).getTime();
-    // POSSIBLE TODO: Have a global object querying the server for a given computation. Right now, it's managed by the session object.
-    $.getJSON($URL.output_poll, {computation_id: this.session_id, sequence: this.sequence}, $.proxy(this, 'get_output_success'));
+    sagecell.sendRequest("GET", sagecell.$URL.output_poll,
+            {"computation_id": this.session_id, "sequence": this.sequence},
+            $.proxy(this, "get_output_success"));
 }
 
-sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR) {
+sagecell.Session.prototype.get_output_success = function(data) {
     var id=this.session_id;
-
+    data = JSON.parse(data);
     if(typeof(data) !== "undefined" && data.content !== undefined) {
         var content = data.content;
         for (var i = 0, i_max = content.length; i < i_max; i++) {
@@ -225,7 +222,7 @@ sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR
                 break;
 
             case 'display_data':
-                var filepath=$URL['root']+'files/'+id+'/', html;
+                var filepath=sagecell.$URL.root+'files/'+id+'/', html;
 
                 if(msg.content.data['image/svg+xml']!==undefined) {
                     this.output('<embed  class="sagecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
@@ -283,7 +280,7 @@ sagecell.Session.prototype.get_output_success = function(data, textStatus, jqXHR
                     }
                     for (j in this.files) {
                         //TODO: escape filenames and id
-                        html+='<a href="'+$URL['root']+'files/'+id+'/'+j+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
+                        html+='<a href="'+sagecell.$URL.root+'files/'+id+'/'+j+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
                     }
                     html+="</div>";
                     this.output(html,output_block).effect("pulsate", {times:1}, 500);
@@ -799,7 +796,8 @@ sagecell.InteractData.HtmlBox.prototype.changes = function() {
 }
 
 sagecell.InteractData.HtmlBox.prototype.html = function() {
-    var html = this.control["value"].replace(/cell:\/\//gi, $URL["root"]+"files/"+this.session_id+'/');
+    var html = this.control["value"].replace(/cell:\/\//gi, 
+            sagecell.$URL.root + "files/" + this.session_id + '/');
     return "<span class='sagecell_var_"+this.name+"'><div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div></span>";
 }
 
@@ -1276,15 +1274,12 @@ sagecell.InteractData.Slider.prototype.finishRender = function(location) {
         }
         slider_config["values"] = default_value;
     }
-
     control_out.find("#"+this.control_id).slider(slider_config);
-    
 }
-
 
 // Initialize jmol
 // TODO: move to a better place
-jmolInitialize($URL["root"]+'/static/jmol');
-jmolSetCallback("menuFile",$URL["root"]+"/static/jmol/appletweb/SageMenu.mnu");
+jmolInitialize(sagecell.$URL.root + '/static/jmol');
+jmolSetCallback("menuFile", sagecell.$URL.root + "/static/jmol/appletweb/SageMenu.mnu");
 
 })(jQuery);

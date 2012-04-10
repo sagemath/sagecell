@@ -26,9 +26,33 @@
     margin-top: 1.25em;
 }
 
-.sagecell_button {
+.sagecell button, .sagecell_button {
     padding: 0.1em 0.5em;
     cursor: default;
+    border-radius: 4px;
+    background-color: #11F;
+    background: -moz-linear-gradient(90deg, #11F, #99F);
+    background: -webkit-linear-gradient(90deg, #11F, #99F);
+    background: -o-linear-gradient(90deg, #11F, #99F);
+    background: -ms-linear-gradient(90deg, #11F, #99F);
+    color: white;
+    border: outset #99F 1px;
+    margin: 1px;
+    text-shadow: RGBA(0, 0, 0, 0.8) 1px 1px 0.5px;
+}
+
+.sagecell button:hover, .sagecell button.sagecell_button_hover {
+    background-color: #44F;
+    background: -moz-linear-gradient(90deg, #33F, #BBF);
+    background: -webkit-linear-gradient(90deg, #33F, #BBF);
+    background: -o-linear-gradient(90deg, #33F, #BBF);
+    background: -ms-linear-gradient(90deg, #33F, #BBF);
+}
+
+.sagecell button:active, .sagecell button.sagecell_button_click {
+    background: #99F;
+    border-style: inset;
+    text-shadow: none;
 }
 
 .sagecell_colorSelector {
@@ -122,18 +146,50 @@
     border: 1px solid;
 }
 
-.sagecell_evalButton {
-    margin-bottom: 1em;
-}
-
 .sagecell_advancedFrame {
     border: 1px solid;
     padding: 0.2em;
     display: inline-block;
+    width: 300px;
+    overflow: hidden;
     margin-left: 3em;
+    margin-bottom: 1em;
     vertical-align: top;
 }
 
 .sagecell_advancedTitle {
     border-bottom: 1px solid;
+}
+
+.sagecell_fileList li {
+    list-style: none;
+    position: relative;
+}
+
+.sagecell_fileName {
+    position: relative;
+    display: inline-block;
+    white-space: nowrap;
+    width: 230px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sagecell_deleteButton {
+    position: absolute;
+    left: -1.2em;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+.sagecell_deleteButton:hover {
+    color: red;
+}
+
+.sagecell_deleteButton:active {
+    color: darkred;
+}
+
+.sagecell_deleteButton:before {
+    content: "\2716";
 }

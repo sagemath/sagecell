@@ -61,8 +61,8 @@ def jsonify_with_callback(callback, *args, **kwargs):
     if callback is None:
         return jsonify(*args, **kwargs)
     else:
-        return Response(callback+'('+json.dumps(kwargs)+')',
-                        mimetype='text/javascript')
+        return Response(callback + '(' + json.dumps(json.dumps(kwargs))+')',
+                        mimetype="application/javascript")
 
 import string
 _VALID_QUERY_CHARS=set(string.letters+string.digits+'-')
@@ -92,7 +92,7 @@ def root(db,fs):
         options['autoeval'] = 'false' if 'autoeval' in request.args and request.args['autoeval'] == 'false' else 'true'
     return render_template('root.html', **options)
 
-@app.route("/eval", methods=['GET','POST'])
+@app.route("/eval", methods=['POST'])
 @get_db
 def evaluate(db,fs):
     # If the request is a JSON message, such as from an interact update:
@@ -102,13 +102,11 @@ def evaluate(db,fs):
         session_id=message['header']['session']
         db.new_input_message(message)
         # TODO: computation_id -> session_id
-        callback=request.values['callback'] if 'callback' in request.values else None
-        return jsonify_with_callback(callback, computation_id=session_id)
-     # Else if the request is the initial form submission at the beginning of a session:
+        rval = json.dumps({"computation_id": session_id})
+    # Else if the request is the initial form submission at the beginning of a session:
     else:
-        log('Received Request: %s'%(request.form,))
-        session_id = request.form.get("session_id")
-        sage_mode = False
+        log('Received Request: %s' % (request.values,))
+        session_id = str(uuid4())
         valid_request = True
         code = ""
         uploaded_files = request.files.getlist("file")
@@ -125,16 +123,15 @@ def evaluate(db,fs):
                     filename = secure_filename(file.filename)
                     fs.create_file(file, filename=filename, session=session_id)
                     files.append(filename)
-            code = json.loads(request.form.get("commands"))
+            code = json.loads(request.values.get("commands"))
             if not isinstance(code, basestring):
                 log("code was not a string: %r"%(code,))
-                return ""
+                return jsonify()
 
-            if bool(request.form.get("sage_mode")) is True:
-                sage_mode = True
+            sage_mode = "sage_mode" in request.values
             shortened = str(uuid4())
             message = {"parent_header": {},
-                       "header": {"msg_id": request.form.get("msg_id"),
+                       "header": {"msg_id": request.values.get("msg_id"),
                                   "username": "",
                                   "session": session_id
                                   },
@@ -158,8 +155,15 @@ def evaluate(db,fs):
         else:
             codeurl=zipurl
         queryurl = url_for('root', _external=True, q=shortened)
-        returnlink = '<a href="%s">Permalink</a> (<a href="%s">Alternate permalink</a>; <a href="%s">Shortened temporary link</a>)'%(codeurl, zipurl, queryurl)
-        return returnlink
+        rval = json.dumps({"codeurl": codeurl, "zipurl": zipurl,
+                           "queryurl": queryurl, "session_id": session_id})
+    if (request.values.get("frame") is not None):
+        return Response("<script>parent.postMessage(" + json.dumps(rval) +
+                ",\"*\");</script>")
+    else:
+        r = Response(rval, mimetype="application/json")
+        r.headers["Access-Control-Allow-Origin"] = "*"
+        return r
 
 from urllib import urlencode, urlopen
 from json import loads
@@ -191,8 +195,11 @@ def output_poll(db,fs):
     results = db.get_messages(computation_id,sequence=sequence)
     log("Retrieved messages: %s"%(str(results)[:2000],))
     if results is not None and len(results)>0:
-        return jsonify_with_callback(callback, content=results)
-    return jsonify_with_callback(callback, [])
+        rval = jsonify_with_callback(callback, content=results)
+    else:
+        rval = jsonify_with_callback(callback, [])
+    rval.headers["Access-Control-Allow-Origin"] = "*"
+    return rval
 
 @app.route("/output_long_poll")
 @print_exception
@@ -360,14 +367,14 @@ def embedded():
     global _embedded_sagecell_cache
     if _embedded_sagecell_cache is None:
         data = Response(render_template("embedded_sagecell.js"),
-                        content_type='text/javascript')
+                        content_type='application/javascript')
         _embedded_sagecell_cache = (data, sha1(repr(data)).hexdigest())
     data,datahash = _embedded_sagecell_cache
     if request.environ.get('HTTP_IF_NONE_MATCH', None) == datahash:
         response = make_response('',304)
     else:
         response = make_response(data)
-        response.headers['Content-Type'] = 'text/javascript; charset=utf-8'
+        response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
         response.headers['Etag']=datahash
     return response
 
