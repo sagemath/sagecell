@@ -165,6 +165,15 @@ class DB(db.DB):
         if len(success) < len(messages):
             log("FAILED TO INSERT %d message(s)" % (len(messages) - len(success)))
 
+    def purge_output(self):
+        """
+        Purges all output (files and output messages) in the database.
+        Be careful calling this function!
+        """
+        self.database.messages.remove(safe=True)
+        self.database.fs.files.remove(safe=True)
+        self.database.fs.chunks.remove(safe=True)
+
     def register_device(self, device, account, workers, pgid):
         """
         See :meth:`db.DB.register_device`
