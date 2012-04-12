@@ -8,7 +8,7 @@ Installation
 The easiest way to install the Sage Cell server is to install the
 experimental spkg for Sage.
 
-#. Install Sage 5.0 (tested on beta 6)
+#. Install Sage 5.0 (tested on 5.0 beta 12)
 #. Install the new Sage Notebook (instructions at `Trac 11080 <http://trac.sagemath.org/sage_trac/ticket/11080>`_)
 #. Install the `spkg <http://sage.math.washington.edu/home/jason/sagecell-0.9.0.spkg>`_::
 
