@@ -37,6 +37,11 @@ mkdir -p %(SPKG_SRC)s
 cd %(SPKG_SRC)s
 git clone %(SAGECELL_ROOT)s sagecell
 
+# change the origin to the official github repository
+cd sagecell
+git remote rm origin
+git remote add origin git://github.com/sagemath/sagecell.git
+
 # we do the following so that we don't have to pull the submodule repositories from the net
 cd %(SAGECELL_ROOT)s
 git submodule --quiet foreach 'echo [submodule \"$path\"]\\n path = $path\\n url = $toplevel/$path ' > %(SPKG_SRC)s/sagecell/.gitmodules

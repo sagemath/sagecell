@@ -41,7 +41,8 @@ sagecell.init = function (callback) {
           tex2jax: {\n\
            inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ],\n\
            displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ],\n\
-           processEscapes: true}\n\
+           processEscapes: true,\n\
+           processEnvironments: false}\n\
           });\n\
           // SVG backend does not work for IE version < 9, so switch if the default is SVG\n\
           //if (MathJax.Hub.Browser.isMSIE && (document.documentMode||0) < 9) {\n\
