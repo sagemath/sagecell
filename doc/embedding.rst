@@ -42,7 +42,6 @@ like)::
                               evalButtonText: 'Activate'});
        sagecell.makeSagecell({inputLocation: '#mycell2',
                               codeLocation:  '#code2',
-                              hide: ["computationID", "messages", "sessionTitle"],
                               evalButtonText: 'Evaluate'});
    });
        </script>
@@ -272,26 +271,29 @@ This hides specified parts of the Sage Cell using CSS ``display: none``::
    hide: ["element_1", ... , "element_n"]
    .. }
 
-
 The following input elements can be hidden:
 
 * Editor (``editor``)
 * Editor type toggle (``editorToggle``)
 * Evaluate button (``evalButton``)
-* Sage Mode toggle (``sageMode``)
 
 The following output elements can be hidden:
 
-* Computation ID logging (``computationID``)
-* Message logging (``messages``)
 * Session output (``output``)
-* Session title (``sessionTitle``)
 * Session end message (``done``)
 * Session files label (``sessionFilesTitle``)
 * Session files (``sessionFiles``)
 
-.. todo:: make the Session identifiers on an output cell be hidden.
-   Also, it might be nice to make a more user-friendly way of saying
+Additionally, the following debugging elements are hidden by default:
+
+* Computation ID logging (``computationID``)
+* Message logging (``messages``)
+* Session title (``sessionTitle``)
+* Sage Mode toggle (``sageMode``)
+
+These elements can be displayed in :ref:`debug_mode`.
+
+.. todo:: It might be nice to make a more user-friendly way of saying
    that a session is done, maybe by changing the background color or
    letting the page author pass in a CSS "style" or maybe a class?
 
@@ -364,7 +366,7 @@ designed for common embedding scenarios:
 
     {
       "editor": "textarea-readonly",
-      "hide": ["computationID","editor","editorToggle","files","messages","sageMode", "sessionTitle", "done", "sessionFilesTitle"],
+      "hide": ["editor","editorToggle","files","done","sessionFilesTitle"],
       "replaceOutput": true
      }
 
@@ -375,7 +377,7 @@ designed for common embedding scenarios:
 
      {
        "editor": "codemirror-readonly",
-       "hide": ["computationID","editorToggle","files","messages","sageMode","sessionTitle","done","sessionFilesTitle"],
+       "hide": ["editorToggle","files","done","sessionFilesTitle"],
        "replaceOutput": true
      }
 
@@ -383,4 +385,21 @@ Explicit options given to ``sagecell.makeSagecell()`` override options
 described in a template dictionary, with the exception of ``hide``, in which
 case both the explicit and template options are combined.
 
+.. _debug_mode:
+
+Debug Mode
+----------
+
+A special "debug" mode is avaliable by passing the following to
+``sagecell.makeSagecell()``::
+
+     { ..
+       mode: "debug"
+     .. }
+
+This shows all page elements (overriding ``hide`` specification), which provides
+computation ID logging, session titles, and sent / recieved message logging, that
+are otherwise hidden by default. Since this mode is not intended for production
+purposes, a browser warning will be raised when initializing a Sage Cell instance
+in debug mode.
 

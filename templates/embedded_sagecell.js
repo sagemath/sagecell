@@ -78,16 +78,26 @@ sagecell.makeSagecell = function (args) {
     }
     defaults = {"editor": "codemirror",
                 "evalButtonText": "Evaluate",
-                "hide": [],
+                "hide": ["computationID", "messages", "sessionTitle", "sageMode"],
+                "mode": "normal",
                 "replaceOutput": true,
                 "sageMode": true};
+
+    // jQuery.extend() has issues with nested objects, so we manually merge
+    // hide parameters.
+    if (args.hide === undefined) {
+        args.hide = defaults.hide;
+    } else {
+        args.hide = $.merge(args.hide, defaults.hide);
+    }
+
     if (args.template !== undefined) {
-        settings = $.extend(settings, defaults, args.template, args)
+        settings = $.extend({}, defaults, args.template, args)
         if (args.template.hide !== undefined) {
-            settings.hide.concat(args.template.hide);
+            settings.hide = $.merge(settings.hide, args.template.hide);
         }
     } else {
-        settings = $.extend(settings, defaults, args);
+        settings = $.extend({}, defaults, args);
     }
     settings.hideDynamic = [];
     setTimeout(function waitForLoad() {
@@ -114,37 +124,41 @@ sagecell.makeSagecell = function (args) {
             if (inputLocation !== outputLocation) {
                 $(inputLocation+" .sagecell_output, .sagecell_messages").appendTo(outputLocation);
             }
-            hideAdvanced={};
-            for (var i = 0, i_max = hide.length; i < i_max; i++) {
-                if (hide[i] === 'computationID' ||
-                    hide[i] === 'editor' ||
-                    hide[i] === 'editorToggle' ||
-                    hide[i] === 'files' ||
-                    hide[i] === 'evalButton' ||
-                    hide[i] === 'sageMode') {
-                    $(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
-                    // TODO: make the advancedFrame an option to hide, then delete
-                    // this hideAdvanced hack
-                    if (hide[i] === 'files' || hide[i] === 'sageMode') {
-                        hideAdvanced[hide[i]]=true;
-                    }
-                } else if (hide[i] === 'output' ||
-                           hide[i] === 'messages' ||
-                           hide[i] === 'sessionTitle') {
-                    $(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
-                    $('head').append("<style type='text/css'> "+outputLocation+" .sagecell_"+hide[i]+ "{display: none;} </style>");
+            if (settings.mode === "debug") {
+                console.warn("Running the Sage Cell in debug mode!");
+            } else {
+                hideAdvanced={};
+                for (var i = 0, i_max = hide.length; i < i_max; i++) {
+                    if (hide[i] === 'computationID' ||
+                        hide[i] === 'editor' ||
+                        hide[i] === 'editorToggle' ||
+                        hide[i] === 'files' ||
+                        hide[i] === 'evalButton' ||
+                        hide[i] === 'sageMode') {
+                        $(inputLocation+" .sagecell_"+hide[i]).css("display", "none");
+                        // TODO: make the advancedFrame an option to hide, then delete
+                        // this hideAdvanced hack
+                        if (hide[i] === 'files' || hide[i] === 'sageMode') {
+                            hideAdvanced[hide[i]]=true;
+                        }
+                    } else if (hide[i] === 'output' ||
+                               hide[i] === 'messages' ||
+                               hide[i] === 'sessionTitle') {
+                        $(outputLocation+" .sagecell_"+hide[i]).css("display", "none");
+                        $('head').append("<style type='text/css'> "+outputLocation+" .sagecell_"+hide[i]+ "{display: none;} </style>");
 
-                } else if (hide[i] === 'done' ||
-                           hide[i] === 'sessionFiles' ||
-                           hide[i] === 'sessionFilesTitle') {
-                    settings.hideDynamic.push(".sagecell_"+hide[i]);
+                    } else if (hide[i] === 'done' ||
+                               hide[i] === 'sessionFiles' ||
+                               hide[i] === 'sessionFilesTitle') {
+                        settings.hideDynamic.push(".sagecell_"+hide[i]);
+                    }
+                }
+                if (hideAdvanced.files === true && hideAdvanced.sageMode === true) {
+                    $(inputLocation+" .sagecell_advancedFrame").css("display", "none");
                 }
             }
-            if (hideAdvanced.files === true && hideAdvanced.sageMode === true) {
-                $(inputLocation+" .sagecell_advancedFrame").css("display", "none");
-            }
             if (typeof(evalButtonText) !== "undefined") {
-                $(inputLocation+ " .sagecell_evalButton").val(evalButtonText);
+                $(inputLocation + " .sagecell_evalButton").val(evalButtonText);
             }
             sagecell.initCell(settings);
         });
@@ -378,15 +392,12 @@ sagecell.toggleEditor = (function(editor, editorData, inputLocation) {
 sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
         "editor": "textarea-readonly",
-        "hide": ["computationID", "editor", "editorToggle", "files",
-                 "messages", "sageMode", "sessionTitle", "done",
-                 "sessionFilesTitle"],
+        "hide": ["editor", "editorToggle", "files", "done", "sessionFilesTitle"],
         "replaceOutput": true
     },
     "restricted": { // to display/evaluate code that can't be edited.
         "editor": "codemirror-readonly",
-        "hide": ["computationID", "editorToggle", "files", "messages",
-                 "sageMode", "sessionTitle", "done", "sessionFilesTitle"],
+        "hide": ["editorToggle", "files", "done", "sessionFilesTitle"],
         "replaceOutput": true
     }
 };
