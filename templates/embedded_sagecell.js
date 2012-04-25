@@ -91,12 +91,12 @@ sagecell.makeSagecell = function (args) {
     }
 
     if (args.template !== undefined) {
-        settings = $.extend([], defaults, args.template, args)
+        settings = $.extend({}, defaults, args.template, args)
         if (args.template.hide !== undefined) {
             settings.hide = $.merge(settings.hide, args.template.hide);
         }
     } else {
-        settings = $.extend([], defaults, args);
+        settings = $.extend({}, defaults, args);
     }
     settings.hideDynamic = [];
     setTimeout(function waitForLoad() {
