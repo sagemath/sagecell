@@ -1,0 +1,44 @@
+.sagecell button {
+    padding: 0.1em 0.5em;
+    cursor: default;
+    border-radius: 4px;
+    background-color: #11F;
+    background: -moz-linear-gradient(90deg, #11F, #99F);
+    background: -webkit-linear-gradient(90deg, #11F, #99F);
+    background: -o-linear-gradient(90deg, #11F, #99F);
+    background: -ms-linear-gradient(90deg, #11F, #99F);
+    color: white;
+    border: outset #99F 1px;
+    margin: 1px;
+    text-shadow: RGBA(0, 0, 0, 0.8) 1px 1px 0.5px;
+}
+
+.sagecell button:hover {
+    background-color: #44F;
+    background: -moz-linear-gradient(90deg, #33F, #BBF);
+    background: -webkit-linear-gradient(90deg, #33F, #BBF);
+    background: -o-linear-gradient(90deg, #33F, #BBF);
+    background: -ms-linear-gradient(90deg, #33F, #BBF);
+}
+
+.sagecell button:active {
+    background: #99F;
+    border-style: inset;
+    text-shadow: none;
+}
+
+body {
+    margin-bottom: 80%;
+}
+
+.sagecell button.sagecell_evalButton {
+    font-size: 150%;
+}
+
+.CodeMirror-scroll {
+    height: auto;
+    overflow-y: auto;
+    overflow-x: auto;
+    min-height: 12ex;
+    max-height: 45ex;
+}

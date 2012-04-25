@@ -3,10 +3,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <link rel="icon" href="{{url_for('.static', filename = 'favicon.ico', _external = True)}}">
+    <link rel="icon" href="{{url_for('.static', filename='favicon.ico', _external=True)}}">
+    <link rel="stylesheet" href="{{url_for('.static', filename='root.css', _external=True)}}">
     <title>Sage Cell Server</title>
-    <script src="{{url_for('.static', filename = 'jquery.min.js', _external = True)}}"></script>
-    <script src="{{url_for('embedded', _external = True)}}"></script>
+    <script src="{{url_for('.static', filename='jquery.min.js', _external=True)}}"></script>
+    <script src="{{url_for('embedded', _external=True)}}"></script>
     <script>
 $(function () {
     sagecell.makeSagecell({inputLocation: '#sagecell',
@@ -15,11 +16,6 @@ $(function () {
                            autoeval: {{autoeval}} {% endif %} });
 });
     </script>
-    <style>
-.sagecell button.sagecell_evalButton {font-size: 150%;}
-.CodeMirror-scroll {height: auto; overflow-y: auto; overflow-x: auto; min-height: 12ex; max-height: 45ex;}
-body {margin-bottom: 80%;}
-    </style>
   </head>
   <body>
     <h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>

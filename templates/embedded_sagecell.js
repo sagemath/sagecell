@@ -56,12 +56,6 @@ sagecell.init = function (callback) {
 
     // many prerequisites that have been smashed together into all.min.js
     load({'src': "{{- url_for('.static', filename='all.min.js', _external=True) -}}"});
-    sagecell.fileInput = sagecell.functions.createElement("input",
-            {"type": "file", "multiple": "true", "name": "file"});
-    sagecell.fileInput.style.position = "absolute";
-    sagecell.fileInput.style.top = sagecell.fileInput.style.right = "-10px";
-    sagecell.fileInput.style.fontSize = "100px";
-    $(sagecell.fileInput).fadeTo(0, 0);
 };
 
 sagecell.sagecell_dependencies_callback = function () {
@@ -217,7 +211,7 @@ sagecell.initCell = (function(sagecellInfo) {
         return false;
     });
     inputLocation.find(".sagecell_advancedTitle").click(function () {
-        inputLocation.find('.sagecell_advancedFields').slideToggle();
+        inputLocation.find(".sagecell_advancedFields").slideToggle();
         return false;
     });
     function fileRemover(i, li) {
@@ -227,77 +221,76 @@ sagecell.initCell = (function(sagecellInfo) {
         }
     }
     var fileButton = inputLocation.find(".sagecell_addFile");
-    var input = sagecell.fileInput.cloneNode(false);
-    // Create a transparent file input box on top of the "Add file" button
-    // so that when the user clicks the button, the file selection dialog will open.
-    var span = sagecell.functions.createElement("span", {}, [input]);
-    span.style.position = "relative";
-    span.style.overflow = "hidden";
-    span.style.display = "inline-block";
-    span.style.verticalAlign = "top";
-    var events = {
-        "mouseenter": function () {
-            fileButton.addClass("sagecell_button_hover");
-        },
-        "mouseleave": function () {
-            fileButton.removeClass("sagecell_button_hover");
-        },
-        "mousedown": function () {
-            fileButton.addClass("sagecell_button_click");
-        },
-        "change": function () {
-            var delButton = sagecell.functions.createElement("span",
-                    {"title": "Remove file"});
-            $(delButton).addClass("sagecell_deleteButton");
-            var fileList = inputLocation.find(".sagecell_fileList");
-            var li = document.createElement("li");
-            li.appendChild(delButton.cloneNode(false));
-            li.appendChild(document.createElement("span"));
-            $(li.childNodes[1]).addClass("sagecell_fileName");
-            if (input.files) {
-                for (var i = 0; i < input.files.length; i++) {
-                    if (window.FormData) {
-                        var f = li.cloneNode(true);
-                        files.push(input.files[i]);
-                        f.childNodes[1].appendChild(
-                                document.createTextNode(input.files[i].name));
-                        $(f.childNodes[0]).click(fileRemover(files.length - 1, f));
-                        fileList.append(f);
-                    } else {
-                        li.childNodes[1].appendChild(
-                                document.createTextNode(input.files[i].name));
-                        if (i < input.files.length - 1) {
-                            li.childNodes[1].appendChild(document.createElement("br"));
-                        }
+    var input = sagecell.functions.createElement("input",
+            {"type": "file", "multiple": "true", "name": "file"});
+    if (navigator.userAgent.indexOf("MSIE") === -1) {
+        // Create an off-screen file input box if not in Internet Explorer
+        input.style.position = "absolute";
+        input.style.top = "0px";
+        input.style.left = "-9999px";
+        fileButton.click(function () {
+            input.click();
+        });
+        document.body.appendChild(input);
+    } else {
+        // Put the input box in the file upload box in Internet Explorer
+        fileButton.remove();
+        inputLocation.find(".sagecell_clearFiles").before(input,
+                document.createElement("br"));
+    }
+    function change() {
+        var delButton = sagecell.functions.createElement("span",
+                {"title": "Remove file"});
+        $(delButton).addClass("sagecell_deleteButton");
+        var fileList = inputLocation.find(".sagecell_fileList");
+        var li = document.createElement("li");
+        li.appendChild(delButton.cloneNode(false));
+        li.appendChild(document.createElement("span"));
+        $(li.childNodes[1]).addClass("sagecell_fileName");
+        if (input.files) {
+            for (var i = 0; i < input.files.length; i++) {
+                if (window.FormData) {
+                    var f = li.cloneNode(true);
+                    files.push(input.files[i]);
+                    f.childNodes[1].appendChild(
+                            document.createTextNode(input.files[i].name));
+                    $(f.childNodes[0]).click(fileRemover(files.length - 1, f));
+                    fileList.append(f);
+                } else {
+                    li.childNodes[1].appendChild(
+                            document.createTextNode(input.files[i].name));
+                    if (i < input.files.length - 1) {
+                        li.childNodes[1].appendChild(document.createElement("br"));
                     }
                 }
-                if (!window.FormData) {
-                    files.push(input);
-                    $(li.childNodes[0]).click(fileRemover(files.length - 1, li));
-                    if (input.files.length > 1) {
-                        li.childNodes[0].setAttribute("title", "Remove files")
-                    }
-                    fileList.append(li);
-                }
-            } else {
+            }
+            if (!window.FormData) {
                 files.push(input);
-                li.childNodes[1].appendChild(document.createTextNode(
-                        input.value.substr(input.value.lastIndexOf("\\") + 1)));
                 $(li.childNodes[0]).click(fileRemover(files.length - 1, li));
+                if (input.files.length > 1) {
+                    li.childNodes[0].setAttribute("title", "Remove files")
+                }
                 fileList.append(li);
             }
-            var newInput = sagecell.fileInput.cloneNode(false);
-            $(newInput).bind(events);
-            input.parentNode.replaceChild(newInput, input);
-            input = newInput;
+        } else {
+            files.push(input);
+            li.childNodes[1].appendChild(document.createTextNode(
+                    input.value.substr(input.value.lastIndexOf("\\") + 1)));
+            $(li.childNodes[0]).click(fileRemover(files.length - 1, li));
+            fileList.append(li);
         }
-    };
-    $(input).bind(events);
-    $(document).mouseup(function () {
-        fileButton.removeClass("sagecell_button_click");
-    });
-    fileButton.before(span);
-    span.appendChild(fileButton[0]);
+        var newInput = sagecell.functions.createElement("input",
+            {"type": "file", "multiple": "true", "name": "file"});
+        if (navigator.userAgent.indexOf("MSIE") === -1) {
+            newInput.style.position = "absolute";
+            newInput.style.top = "0px";
+            newInput.style.left = "-9999px";
+        }
+        $(newInput).change(change);
+        input.parentNode.replaceChild(newInput, input);
+        input = newInput;
+    }
+    $(input).change(change);
     inputLocation.find(".sagecell_clearFiles").click(function () {
         files = [];
         inputLocation.find(".sagecell_fileList").empty();
@@ -366,6 +359,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     if (method === "GET") {
         data.rand = Math.random().toString();
     }
+    // Format parameters to send as a string or a FormData object
     if (window.FormData && method !== "GET") {
         fd = new FormData();
         for (var k in data) {
@@ -392,6 +386,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         }
     }
     if (window.FormData || !(isXDomain || hasFiles)) {
+        // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 /* DONE */) {
@@ -403,9 +398,11 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         }
         xhr.send(fd);
     } else if (method === "GET") {
+        // Use JSONP to send cross-domain GET requests
         url += (url.indexOf("?") === -1 ? "?" : "&") + "callback=?";
         $.getJSON(url, data, callback);
     } else {
+        // Use a form submission to send POST requests
         var iframe = document.createElement("iframe");
         iframe.name = sagecell.functions.uuid4();
         var form = sagecell.functions.createElement("form",
@@ -422,7 +419,6 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
             form.setAttribute("enctype", "multipart/form-data");
             for (var i = 0; i < files.length; i++) {
                 if (files[i]) {
-                    form.setAttribute("enctype", "multipart/form-data");
                     form.appendChild(files[i]);
                 }
             }
