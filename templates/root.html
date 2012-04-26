@@ -10,7 +10,6 @@
     <script>
 $(function () {
     sagecell.makeSagecell({inputLocation: '#sagecell',
-                           hide: ["computationID", "messages", "sessionTitle"]
             {% if code %}, code: decodeURIComponent('{{code}}'),
                            autoeval: {{autoeval}} {% endif %} });
 });
