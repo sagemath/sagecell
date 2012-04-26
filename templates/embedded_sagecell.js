@@ -553,13 +553,11 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
 sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
         "editor": "textarea-readonly",
-        "hide": ["editor", "editorToggle", "files", "done", "sessionFilesTitle"],
-        "replaceOutput": true
+        "hide": ["editor", "editorToggle", "files", "sessionFilesTitle", "permalinks"],
     },
     "restricted": { // to display/evaluate code that can't be edited.
         "editor": "codemirror-readonly",
-        "hide": ["editorToggle", "files", "done", "sessionFilesTitle"],
-        "replaceOutput": true
+        "hide": ["editorToggle", "files", "sessionFilesTitle", "permalinks"],
     }
 };
 
