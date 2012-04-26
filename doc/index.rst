@@ -9,24 +9,19 @@ Welcome to the Sage Cell Server Documentation
 Contents:
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     README
     embedding
+    web_service
+    advanced_installation
     db
-    trusted_db
     web_server
     device
-    filestore
     interact_protocol
     timing
     js
-
-.. automodule:: misc
-    :members:
-
-
-
+    future
 
 Indices and tables
 ==================

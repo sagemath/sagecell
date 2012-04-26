@@ -6,14 +6,12 @@ Embedding Sage Cell Instances
 .. default-domain:: js
 .. highlight:: javascript
 
-Description
-^^^^^^^^^^^
-Provides functionality to embed multiple customized instances of the Sage Cell
-in arbitrary webpages. Customizable options include location of input and output
-and functionality shown to the user.
+You can embed multiple customized instances of the Sage Cell in
+arbitrary webpages. Customizable options include location of input and
+output and functionality shown to the user.
 
 Example
-^^^^^^^
+-------
 
 This is a very simple HTML page showing how to embed two cells with
 most things turned off and a default piece of code (you can replace
@@ -57,12 +55,9 @@ like)::
      </body>
    </html>
 
-Dependencies
-^^^^^^^^^^^^
-jQuery: http://www.jquery.com
 
 Basic Usage
-^^^^^^^^^^^
+-----------
 
 jQuery is assumed to be loaded in ``<head>``. 
 In ``<head>``, the following line should be inserted:
@@ -81,12 +76,13 @@ Later, the following JavaScript should be run::
    sagecell.makeSagecell({inputLocation: "[jQuery selector]"});
 
 This creates a basic Sage Cell instance at the location matching
-``inputLocation``. This location must be a selector for a unique HTML element
-in which content can be dynamically placed. See the documentation for
-:ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`
-for more configuration options. This function returns a dictionary containing
-information necessary to later move portions of or remove the entirety of the
-Sage Cell instance if desired.
+``inputLocation``. This location must be a selector for a unique HTML
+element in which content can be dynamically placed. See the
+documentation for :ref:`sagecell.makeSagecell()
+<sagecell.makeSagecell>` for more configuration options. This function
+returns an object containing information necessary to later move
+portions of or remove the entirety of the Sage Cell instance if
+desired.
 
 ``sagecell.makeSagecell()`` can be called multiple times to embed multiple
 Sage Cell instances, as long as the input (and output, if specified) locations
@@ -96,8 +92,8 @@ To remove a Sage Cell instance, the following JavaScript can be used::
 
    sagecell.deleteSagecell(sagecellInfo);
 
-where ``sagecellInfo`` is the dictionary of information returned upon that
-Sage Cell instance's creation by ``sagecell.makeSagecell()``.
+where ``sagecellInfo`` is the object returned upon that Sage Cell
+instance's creation by ``sagecell.makeSagecell()``.
 
 Sage Cell instances can be safely embedded within HTML forms (even though each
 instance contains form elements) since those form elements are copied to a
@@ -109,13 +105,13 @@ submission to move and restore the Sage Cell::
    sagecell.moveInputForm(sagecellInfo); // before submission
    sagecell.restoreInputForm(sagecellInfo); // after submission
 
-where ``sagecellInfo`` is the dictionary of information returned upon that
-Sage Cell instance's creation by ``sagecell.makeSagecell()``.
+where ``sagecellInfo`` is the object returned upon that Sage Cell
+instance's creation by ``sagecell.makeSagecell()``.
 
 .. _Customization:
 
 Customization
-^^^^^^^^^^^^^
+-------------
 
 All customization occurs through ``sagecell.makeSagecell()``, which takes a
 dictionary as its argument. The key/value pairs of this dictionary serve as the
@@ -123,7 +119,7 @@ configuration of the created Sage Cell instance. The following options can be
 set when embedding:
 
 Input Location
---------------
+^^^^^^^^^^^^^^
 
 This sets the location of the input elements of a Sage Cell, which includes
 the editor, editor toggle, "Sage Mode" selector, file upload selector, and the
@@ -138,7 +134,7 @@ The ``inputLocation`` argument should be a
 for a single DOM node. It is required and cannot be omitted.
 
 Output Location
----------------
+^^^^^^^^^^^^^^^
 
 This sets the location of the output elements of a Sage Cell, which includes
 the session output, the computation ID, and server messages::
@@ -153,7 +149,7 @@ for a single DOM node. If ``outputLocation`` is not specified,
 it defaults to the same selector as ``inputLocation``.
 
 Code Editor
------------
+^^^^^^^^^^^
 
 This sets the type of code editor::
 
@@ -178,7 +174,7 @@ can only become ``codemirror-readonly``, rather than ``textarea`` or
 ``codemirror``.
 
 Default code
-------------
+^^^^^^^^^^^^
 
 This sets the initial content of the code editor::
 
@@ -225,7 +221,7 @@ session storage capabilities). If that fails, the editor is initialized to an
 empty string.
 
 Evaluate button text
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 This sets the text of the evaluate button::
 
@@ -234,7 +230,7 @@ This sets the text of the evaluate button::
    .. }
 
 Sage Mode
----------
+^^^^^^^^^
 
 This sets whether the Sage Cell can evaluate Sage-specific code::
 
@@ -243,7 +239,7 @@ This sets whether the Sage Cell can evaluate Sage-specific code::
    .. }
 
 Managing subsequent sessions
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This sets whether subsequent session output (future Sage Cell evaluations)
 should replace or be displayed alongside current session output::
@@ -253,7 +249,7 @@ should replace or be displayed alongside current session output::
    .. }
 
 Automatic evaluation
-------------------------
+^^^^^^^^^^^^^^^^^^^^
 
 This sets whether the Sage Cell will immediately evalute the code from the
 ``code`` option::
@@ -263,7 +259,7 @@ This sets whether the Sage Cell will immediately evalute the code from the
    .. }
 
 Hiding Sage Cell elements
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This hides specified parts of the Sage Cell using CSS ``display: none``::
 
@@ -300,7 +296,7 @@ These elements can be displayed in :ref:`debug_mode`.
 .. _Templates:
 
 Templates
----------
+^^^^^^^^^
 
 Templates provide an alternative way to set certain Sage Cell properties and
 are designed to simplify the process of embedding multiple instances on the
@@ -374,7 +370,7 @@ case both the explicit and template options are combined.
 .. _debug_mode:
 
 Debug Mode
-----------
+^^^^^^^^^^
 
 A special "debug" mode is avaliable by passing the following to
 ``sagecell.makeSagecell()``::

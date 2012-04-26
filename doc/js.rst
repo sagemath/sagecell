@@ -1,7 +1,7 @@
 .. _js:
 
-Compute Server Javascript
-=========================
+Javascript Frontend
+===================
 
 .. default-domain:: js
 
