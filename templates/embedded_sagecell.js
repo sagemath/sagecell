@@ -86,16 +86,26 @@ sagecell.makeSagecell = function (args) {
     }
     defaults = {"editor": "codemirror",
                 "evalButtonText": "Evaluate",
-                "hide": [],
+                "hide": ["computationID", "messages", "sessionTitle", "sageMode"],
+                "mode": "normal",
                 "replaceOutput": true,
                 "sageMode": true};
+
+    // jQuery.extend() has issues with nested objects, so we manually merge
+    // hide parameters.
+    if (args.hide === undefined) {
+        args.hide = defaults.hide;
+    } else {
+        args.hide = $.merge(args.hide, defaults.hide);
+    }
+
     if (args.template !== undefined) {
-        settings = $.extend(settings, defaults, args.template, args)
+        settings = $.extend({}, defaults, args.template, args)
         if (args.template.hide !== undefined) {
-            settings.hide.concat(args.template.hide);
+            settings.hide = $.merge(settings.hide, args.template.hide);
         }
     } else {
-        settings = $.extend(settings, defaults, args);
+        settings = $.extend({}, defaults, args);
     }
     setTimeout(function waitForLoad() {
         // Wait for CodeMirror to load before using the $ function
@@ -124,40 +134,44 @@ sagecell.makeSagecell = function (args) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
             }
             outputLocation.find(".sagecell_output_elements").hide();
-            var hideAdvanced = {};
-            var hideable = {"in": {"computationID": true, "editor": true,
-                                   "editorToggle": true,  "files": true,
-                                   "evalButton": true,    "sageMode": true},
-                            "out": {"output": true,       "messages": true,
-                                    "sessionTitle": true, "done": true,
-                                    "sessionFiles": true, "sessionFilesTitle": true,
-                                    "permalinks": true}};
-            var hidden_out = [];
-            for (var i = 0, i_max = hide.length; i < i_max; i++) {
-                if (hide[i] in hideable["in"]) {
-                    inputLocation.find(".sagecell_"+hide[i]).css("display", "none");
-                    // TODO: make the advancedFrame an option to hide, then delete
-                    // this hideAdvanced hack
-                    if (hide[i] === 'files' || hide[i] === 'sageMode') {
-                        hideAdvanced[hide[i]] = true;
+            if (settings.mode === "debug") {
+                console.warn("Running the Sage Cell in debug mode!");
+            } else {
+                var hideAdvanced = {};
+                var hideable = {"in": {"computationID": true, "editor": true,
+                                       "editorToggle": true,  "files": true,
+                                       "evalButton": true,    "sageMode": true},
+                                "out": {"output": true,       "messages": true,
+                                        "sessionTitle": true, "done": true,
+                                        "sessionFiles": true, "sessionFilesTitle": true,
+                                        "permalinks": true}};
+                var hidden_out = [];
+                for (var i = 0, i_max = hide.length; i < i_max; i++) {
+                    if (hide[i] in hideable["in"]) {
+                        inputLocation.find(".sagecell_"+hide[i]).css("display", "none");
+                        // TODO: make the advancedFrame an option to hide, then delete
+                        // this hideAdvanced hack
+                        if (hide[i] === 'files' || hide[i] === 'sageMode') {
+                            hideAdvanced[hide[i]] = true;
+                        }
+                    } else if (hide[i] in hideable["out"]) {
+                        hidden_out.push(settings.outputLocation + " .sagecell_" + hide[i]);
                     }
-                } else if (hide[i] in hideable["out"]) {
-                    hidden_out.push(settings.outputLocation + " .sagecell_" + hide[i]);
                 }
-            }
-            if (hideAdvanced.files && hideAdvanced.sageMode) {
-                inputLocation.find(".sagecell_advancedFrame").css("display", "none");
-            }
-            if (hidden_out.length > 0) {
-                var s = document.createElement("style");
-                var css = hidden_out.join(", ") + " {display: none;}";
-                s.setAttribute("type", "text/css");
-                if (s.styleSheet) {
-                    s.styleSheet.cssText = css;
-                } else {
-                    s.appendChild(document.createTextNode(css));
+                if (hideAdvanced.files && hideAdvanced.sageMode) {
+                    inputLocation.find(".sagecell_advancedFrame").css("display", "none");
                 }
-                document.head.appendChild(s);
+                if (hidden_out.length > 0) {
+                    var s = document.createElement("style");
+                    var css = hidden_out.join(", ") + " {display: none;}";
+                    s.setAttribute("type", "text/css");
+                    if (s.styleSheet) {
+                        s.styleSheet.cssText = css;
+                    } else {
+                        s.appendChild(document.createTextNode(css));
+                    }
+                    document.head.appendChild(s);
+                }
             }
             if (evalButtonText !== undefined) {
                 inputLocation.find(".sagecell_evalButton").text(evalButtonText);
@@ -539,15 +553,12 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
 sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
         "editor": "textarea-readonly",
-        "hide": ["computationID", "editor", "editorToggle", "files",
-                 "messages", "sageMode", "sessionTitle", "done",
-                 "sessionFilesTitle"],
+        "hide": ["editor", "editorToggle", "files", "done", "sessionFilesTitle"],
         "replaceOutput": true
     },
     "restricted": { // to display/evaluate code that can't be edited.
         "editor": "codemirror-readonly",
-        "hide": ["computationID", "editorToggle", "files", "messages",
-                 "sageMode", "sessionTitle", "done", "sessionFilesTitle"],
+        "hide": ["editorToggle", "files", "done", "sessionFilesTitle"],
         "replaceOutput": true
     }
 };
