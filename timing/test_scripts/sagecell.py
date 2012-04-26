@@ -42,7 +42,9 @@ class Session:
         result=urlopen(request).read()
         if result:
             try:
-                return loads(result)
+                jsonresult=loads(result)
+                self.session = jsonresult["session_id"]
+                return jsonresult
             except ValueError:
                 return result
         else:
