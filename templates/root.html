@@ -10,7 +10,7 @@
     <script src="{{url_for('embedded', _external=True)}}"></script>
     <script>
 $(function () {
-    sagecell.makeSagecell({inputLocation: '#sagecell',
+    sagecell.makeSagecell({inputLocation: '#sagecell'
             {% if code %}, code: decodeURIComponent('{{code}}'),
                            autoeval: {{autoeval}} {% endif %} });
 });
