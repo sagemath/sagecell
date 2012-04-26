@@ -1,12 +1,13 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE HTML>
 <html>
   <head>
-    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <link rel="icon" href="{{url_for('static', filename = 'favicon.ico', _external = True)}}">
+    <link rel="icon" href="{{url_for('.static', filename='favicon.ico', _external=True)}}">
+    <link rel="stylesheet" href="{{url_for('.static', filename='root.css', _external=True)}}">
     <title>Sage Cell Server</title>
-    <script type="text/javascript" src="{{url_for('static', filename = 'jquery.min.js', _external = True)}}"></script>
-    <script type="text/javascript" src="{{url_for('embedded', _external = True)}}"></script>
+    <script src="{{url_for('.static', filename='jquery.min.js', _external=True)}}"></script>
+    <script src="{{url_for('embedded', _external=True)}}"></script>
     <script>
 $(function () {
     sagecell.makeSagecell({inputLocation: '#sagecell',
@@ -16,14 +17,9 @@ $(function () {
     </script>
   </head>
   <body>
-<style type="text/css">
-.sagecell_evalButton {font-size: 150%;background-color: transparent;padding: 0 2px 0 2px;}
-.CodeMirror-scroll {height: auto; overflow-y: auto; overflow-x: auto; min-height: 12ex; max-height: 45ex;}
-body {margin-bottom: 80%;}
-</style>
-<h1><a href="http://sagemath.org">Sage</a> Cell Server</h1>
-Type some Sage code below and press Evaluate.
-<hr/>
-    <div id="sagecell"><script type="text/x-sage"></script></div>
+    <h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
+    Type some Sage code below and press Evaluate.
+    <hr/>
+    <div id="sagecell"></div>
   </body>
 </html>

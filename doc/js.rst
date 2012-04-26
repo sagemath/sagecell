@@ -96,6 +96,29 @@ ________________
     information created by
     :ref:`sagecell.makeSagecell() <sagecell.makeSagecell>`.
 
+.. _sagecell.sendRequest:
+.. function:: sagecell.sendRequest(method, url, data, callback, [files])
+
+   Send an HTTP request to a URL using an ``XMLHttpRequest``, JSONP, or
+   a form submission. This function will give the same result regardless of
+   cross-origin issues.
+
+   :param string method: HTTP method (usually "GET" or "POST")
+
+   :param string url: URL to which to send the request. The host portion of this
+     URL must be the same as the one from which the JavaScript is loaded.
+
+   :param object data: parameters to send with the request
+   
+   :param function callback: a function that takes a single argument. If the
+     request succeeds, the function will be called with the string containing
+     the server response.
+
+   :param Array files: if the browser supports the ``FormData`` class, an array
+     of ``File`` objects to be uploaded; otherwise, an array of ``input``
+     elements of ``type="file"``. This argument will be ignored if ``method`` is
+     ``GET``.
+
 .. _sagecell.renderEditor:
 .. function:: sagecell.renderEditor(editor, inputLocation)
 
@@ -141,6 +164,15 @@ These functions serve a variety of repeated purposes throughout the Sage Cell Se
 .. function:: sagecell.functions.colorize()
 
     Colorizes error tracebacks formatted with `IPython <http://ipython.scipy.org>`_'s ultraTB library.
+
+.. _createElement:
+.. function:: sagecell.functions.createElement(type, [attrs, [children]])
+
+    Creates a DOM element with the given parameters.
+
+    :param string type: the element type
+    :param object attrs: the attribute names and values for the element
+    :param Array children: a list of child nodes to give this element
 
 
 Session Class

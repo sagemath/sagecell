@@ -20,14 +20,14 @@ most things turned off and a default piece of code (you can replace
 ``aleph.sagemath.org`` with a different Sage Cell server, if you
 like)::
 
-   <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+   <!DOCTYPE HTML>
    <html>
      <head>
-       <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+       <meta charset="utf-8">
        <meta name="viewport" content="width=device-width">
        <title>Sage Cell Server</title>
-       <script type="text/javascript" src="http://aleph.sagemath.org/static/jquery.min.js"></script>
-       <script type="text/javascript" src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
+       <script src="http://aleph.sagemath.org/static/jquery.min.js"></script>
+       <script src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
        <script type="text/x-sage" id="code">
    @interact
    def _(a=(1, 10)):
@@ -279,6 +279,7 @@ The following input elements can be hidden:
 
 The following output elements can be hidden:
 
+* Permalinks (``permalinks``)
 * Session output (``output``)
 * Session end message (``done``)
 * Session files label (``sessionFilesTitle``)
