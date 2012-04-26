@@ -143,8 +143,7 @@ sagecell.makeSagecell = function (args) {
                                        "evalButton": true,    "sageMode": true},
                                 "out": {"output": true,       "messages": true,
                                         "sessionTitle": true, "done": true,
-                                        "sessionFiles": true, "sessionFilesTitle": true,
-                                        "permalinks": true}};
+                                        "sessionFiles": true, "permalinks": true}};
                 var hidden_out = [];
                 for (var i = 0, i_max = hide.length; i < i_max; i++) {
                     if (hide[i] in hideable["in"]) {
@@ -553,11 +552,11 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
 sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
         "editor": "textarea-readonly",
-        "hide": ["editor", "editorToggle", "files", "sessionFilesTitle", "permalinks"],
+        "hide": ["editor", "editorToggle", "files", "permalinks"],
     },
     "restricted": { // to display/evaluate code that can't be edited.
         "editor": "codemirror-readonly",
-        "hide": ["editorToggle", "files", "sessionFilesTitle", "permalinks"],
+        "hide": ["editorToggle", "files", "permalinks"],
     }
 };
 

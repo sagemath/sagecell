@@ -282,7 +282,6 @@ The following output elements can be hidden:
 * Permalinks (``permalinks``)
 * Session output (``output``)
 * Session end message (``done``)
-* Session files label (``sessionFilesTitle``)
 * Session files (``sessionFiles``)
 
 Additionally, the following debugging elements are hidden by default:
@@ -360,27 +359,13 @@ information, as these options mirror what can be given to
 There are two built-in templates in ``sagecell.templates`` which are
 designed for common embedding scenarios:
 
-* ``sagecell.templates.minimal``: Prevents editing and display of embedded
-  code, but displays output of that code when the Evaluate button is clicked.
-  Only one output cell is shown at a time (subsequent output replaces previous
-  output)::
+* ``sagecell.templates.minimal``: Prevents editing and display of
+  embedded code, but displays output of that code when the Evaluate
+  button is clicked.
 
-    {
-      "editor": "textarea-readonly",
-      "hide": ["editor","editorToggle","files","done","sessionFilesTitle"],
-      "replaceOutput": true
-     }
 
-* ``sagecell.templates.restricted``: Displays code that cannot be edited
-  and displays output of that code when the Evaluate button is clicked. Only
-  one output cell is shown at a time (subsequent output replaces previous
-  output)::
-
-     {
-       "editor": "codemirror-readonly",
-       "hide": ["editorToggle","files","done","sessionFilesTitle"],
-       "replaceOutput": true
-     }
+* ``sagecell.templates.restricted``: Displays a read-only version of
+  the code.
 
 Explicit options given to ``sagecell.makeSagecell()`` override options
 described in a template dictionary, with the exception of ``hide``, in which
