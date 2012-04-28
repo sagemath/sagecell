@@ -442,8 +442,6 @@ def input_grid(nrows, ncols, default=None, label=None, to_value=None, width=4, t
         Interact 1 x 3 input grid control labeled None with default value [[1, 2, 3]]
 
     """
-    with open('/Users/grout/tmp.txt','w') as f:
-        f.write('hi')
     # this mirrors the code in input_box
     element_adapter = None
     evaluate = True
