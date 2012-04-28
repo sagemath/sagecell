@@ -455,10 +455,10 @@ class InputGrid(InteractControl):
         and returns an adapter element.  A nested list of these adapted elements
         is what is given to the adapter function.
     :arg evaluate: whether or not the strings returned from the front end
-        are first sage_eval'd.
+        are first sage_eval'd (default: ``True``).
     """
     def __init__(self, nrows=1, ncols=1, default='0', adapter=None, width=0, label=None,
-                 element_adapter=None, evaluate=None):
+                 element_adapter=None, evaluate=True):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
         self.width = int(width)
