@@ -440,25 +440,25 @@ class InputGrid(InteractControl):
 
     :arg int nrows: number of rows in the grid
     :arg int ncols: number of columns in the grid
-    :arg int width: character width of each input box
     :arg default: default values of the control. A multi-dimensional
         list specifies the values of individual inputs; a single value
         sets the same value to all inputs
-    :arg str label: the label of the control, ``""`` for no label, and
-        a default value (None) of the control's variable.
     :arg adapter: a callable which will be passed the input before
         sending it into the function.  This might ensure that the
         input to the function is of a specific type, for example.  The
         function should take as input a list of lists (the value
         of the control), as well as the globals.
+    :arg int width: character width of each input box
+    :arg str label: the label of the control, ``""`` for no label, and
+        a default value (None) of the control's variable.
     :arg element_adapter: a callable which takes an element value and the globs
         and returns an adapter element.  A nested list of these adapted elements
         is what is given to the adapter function.
     :arg evaluate: whether or not the strings returned from the front end
         are first sage_eval'd.
     """
-    def __init__(self, nrows=1, ncols=1, width=0, default=0, label=None,
-                 adapter=None, element_adapter=None, evaluate=None):
+    def __init__(self, nrows=1, ncols=1, default='0', adapter=None, width=0, label=None,
+                 element_adapter=None, evaluate=None):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
         self.width = int(width)
