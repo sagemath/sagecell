@@ -93,34 +93,45 @@ class DB(db.DB):
         See :meth:`db.DB.get_input_messages`
         """
         # find the sessions for this device
-        device_messages=list(self.database.input_messages.find({'device':device, 'evaluated':False }))
-        if len(device_messages)>0:
-            self.database.input_messages.update({'_id':{'$in': [i['_id'] for i in device_messages]},
-                                          '$atomic':True},
-                                         {'$set': {'evaluated':True}}, multi=True)
+        device_messages=[]
+        while True:
+            msg = self.database.input_messages.find_and_modify({'device':device, 'evaluated':False },
+                                                               {'$set': {'evaluated':True}})
+            if msg is None:
+                break
+            else:
+                device_messages.append(msg)
+
 
         # if limit is 0, don't do the query (just return empty list)
         # if limit is None or negative, do the query without limit
         # otherwise do the query with the specified limit
+        unassigned_messages=[]
 
         if limit==0:
-            unassigned_messages=[]
+            pass # do nothing
+        elif limit is None or limit<0:
+            while True:
+                msg = self.database.input_messages.find_and_modify({'device':None, 'evaluated':False },
+                                                                   {'$set': {'device': device, 'evaluated':True}})
+                if msg is None:
+                    break
+                else:
+                    unassigned_messages.append(msg)
         else:
-            q=self.database.input_messages.find({'device':None,
-                                          'evaluated':False})
-            if limit is not None and limit>=0:
-                q=q.limit(limit)
-            
-            unassigned_messages=list(q)
-            if len(unassigned_messages)>0:
-                self.database.input_messages.update({'_id': {'$in': [i['_id'] for i in unassigned_messages]}, 
-                                              '$atomic':True}, 
-                                             {'$set': {'device': device, 'evaluated':True}}, multi=True)
-                self.database.sessions.insert([{'session':m['header']['session'], 'device':device} 
-                                        for m in unassigned_messages])
-                log("DEVICE %s took SESSIONS %s"%(device,
-                                                    [m['header']['session']
-                                                     for m in unassigned_messages]))
+            while limit>0:
+                msg = self.database.input_messages.find_and_modify({'device':None, 'evaluated':False },
+                                                                   {'$set': {'device': device, 'evaluated':True}})
+                if msg is None:
+                    break
+                else:
+                    unassigned_messages.append(msg)
+                    limit -= 1
+        if len(unassigned_messages)>0:
+            self.database.sessions.insert([{'session':m['header']['session'], 'device':device} 
+                                           for m in unassigned_messages])
+            log("DEVICE %s took SESSIONS %s"%(device, [m['header']['session'] for m in unassigned_messages]))
+
         return device_messages+unassigned_messages
 
     def close_session(self, device, session):
