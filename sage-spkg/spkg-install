@@ -18,12 +18,18 @@ SRC="`pwd`"
 
 cd $SAGE_ROOT/devel/sage/
 if hg qseries | grep -q 01-sage-embedded.patch;  then
-    echo "Sage patches already applied.  Assuming the right patches are applied!"
-    echo "If this assumption is false, things may go wrong!"
-    echo "Then you should do something like the following and then reinstall the patches:"
-    echo "cd $SAGE_ROOT/devel/sage"
-    echo "hg qpop 01-sage-embedded.patch && hg qpop"
-    echo "hg qdelete 01-sage-embedded.patch && hg qdelete 02-sage-show.patch"
+    echo "Sage patches already applied.  Checking the patches..."
+    cmp -s .hg/patches/01-sage-embedded.patch $SRC/sagecell/sage-patches/01-sage-embedded.patch
+    if [ $? -ne 0 ]; then
+        echo >&2 "Error: you have an out-of-date 01-sage-embedded.patch; remove this and reinstall the spkg."
+        exit 1
+    fi
+    cmp -s .hg/patches/02-sage-show.patch $SRC/sagecell/sage-patches/02-sage-show.patch
+    if [ $? -ne 0 ]; then
+        echo >&2 "Error: you have an out-of-date 02-sage-show.patch applied to Sage; remove this and reinstall the spkg."
+        exit 1
+    fi
+    echo "Patches are the same as what we would apply."
 else
 echo "Patching Sage"
 hg qimport $SRC/sagecell/sage-patches/01-sage-embedded.patch
