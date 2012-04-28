@@ -237,10 +237,8 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         # kwargs are only used if the type is Color.  
         widget=kwargs.get('widget', None)
         hide_box=kwargs.get('hide_box', False)
-        return color_selector(default=default, label=label, 
+        return color_selector(default=default, label=label,
                               widget=widget, hide_box=hide_box)
-    
-    from sage.all import sage_eval
     adapter = None
     evaluate = True
     if type is str or height>1:
@@ -394,7 +392,7 @@ def selector(values, label=None, default=None,
     return Selector(values=values, default=default, label=label, selector_type=selector_type,
                     nrows=nrows, ncols=ncols, width=width)
 
-def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, width=4):
+def input_grid(nrows, ncols, default=None, label=None, to_value=None, width=4, type=None):
     r"""
     An input grid interactive control.  Use this in conjunction
     with the :func:`interact` command.
@@ -410,9 +408,12 @@ def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, wid
     - ``label`` - a string; the label rendered to the left of the
       box.
 
-    - ``to_value`` - a list; the grid output (list of rows) is
+    - ``to_value`` - a function; the grid output (list of rows) is
       sent through this function.  This may reformat the data or
       coerce the type.
+
+    - ``type`` - a function; each input box string is sent through
+      this function before sending the list through to_value
 
     - ``width`` - an integer; size of each input box in characters
 
@@ -441,10 +442,24 @@ def input_grid(nrows, ncols, default=None, label=None, to_value=lambda x: x, wid
         Interact 1 x 3 input grid control labeled None with default value [[1, 2, 3]]
 
     """
-    def adapter(x, globs):
-        return to_value(x)
+    with open('/Users/grout/tmp.txt','w') as f:
+        f.write('hi')
+    # this mirrors the code in input_box
+    element_adapter = None
+    evaluate = True
+    if type is str:
+        evaluate = False
+    elif type is not None:
+        element_adapter = lambda x, globs: type(x)
+
+    if to_value is None:
+        adapter=None
+    else:
+        adapter=lambda x,globs: to_value(x)
+
     return InputGrid(nrows=nrows, ncols=ncols, width=width,
-                     default=default, label=label, adapter=adapter)    
+                     default=default, label=label, adapter=adapter,
+                     element_adapter=element_adapter, evaluate=evaluate)
 
 def checkbox(default=True, label=None):
     """

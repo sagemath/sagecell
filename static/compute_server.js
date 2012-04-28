@@ -871,14 +871,17 @@ sagecell.InteractData.InputGrid.prototype.changeHandlers = function() {
 }
 
 sagecell.InteractData.InputGrid.prototype.changes = function() {
-    var control_out = $(this.location),
-    values = "[";
+    var control_out = $(this.location);
+    var row = [];
+    var values = "[";
 
     for (var i = 0, i_max = this.control["nrows"]; i < i_max; i ++) {
         values += "[";
+        row = [];
         for (var j =0, j_max = this.control["ncols"]; j < j_max; j ++) {
-            values += control_out.find("#"+this.control_id + "_" + i + "_" + j).val() + ", ";
+            row.push("'"+control_out.find("#"+this.control_id + "_" + i + "_" + j).val().replace(/'/g, "\\'")+"'");
         }
+        values+=row.join(',');
         values += "],";
     }
     values += "]";
