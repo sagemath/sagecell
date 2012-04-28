@@ -18,14 +18,13 @@ SRC="`pwd`"
 
 cd $SAGE_ROOT/devel/sage/
 if hg qseries | grep -q 01-sage-embedded.patch;  then
-    echo "Sage patches already applied.  Please pop 01-sage-embedded.patch and 02-sage-show.patch"
-    echo "Do something like:"
+    echo "Sage patches already applied.  Assuming the right patches are applied!"
+    echo "If this assumption is false, things may go wrong!"
+    echo "Then you should do something like the following and then reinstall the patches:"
     echo "cd $SAGE_ROOT/devel/sage"
     echo "hg qpop 01-sage-embedded.patch && hg qpop"
     echo "hg qdelete 01-sage-embedded.patch && hg qdelete 02-sage-show.patch"
-    exit 1
-fi
-
+else
 echo "Patching Sage"
 hg qimport $SRC/sagecell/sage-patches/01-sage-embedded.patch
 if [ $? -ne 0 ]; then
@@ -46,6 +45,7 @@ hg qpush
 if [ $? -ne 0 ]; then
     echo >&2 "Error pushing patch 02-sage-show.patch."
     exit 1
+fi
 fi
 
 $SAGE_ROOT/sage -b
