@@ -444,38 +444,56 @@ class InputGrid(InteractControl):
     :arg default: default values of the control. A multi-dimensional
         list specifies the values of individual inputs; a single value
         sets the same value to all inputs
-    :arg bool raw: ``True`` if the value should be treated as "unquoted"
-        (raw), so it can be used in control structures; ``False`` if the
-        value should be treated as a string
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     :arg adapter: a callable which will be passed the input before
         sending it into the function.  This might ensure that the
         input to the function is of a specific type, for example.  The
-        function should take as input the value of the control and
-        should return something that is then passed into the interact
-        function as the value of the control.
+        function should take as input a list of lists (the value
+        of the control), as well as the globals.
+    :arg element_adapter: a callable which takes an element value and the globs
+        and returns an adapter element.  A nested list of these adapted elements
+        is what is given to the adapter function.
+    :arg evaluate: whether or not the strings returned from the front end
+        are first sage_eval'd.
     """
-    def __init__(self, nrows=1, ncols=1, width=0, default=0, raw=True,
-                 label=None, adapter=None):
+    def __init__(self, nrows=1, ncols=1, width=0, default=0, label=None,
+                 adapter=None, element_adapter=None, evaluate=None):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
         self.width = int(width)
-        self.raw = raw
         self.label = label
-        if adapter is not None:
-            self.adapter = adapter
+        if evaluate:
+            from sage.all import sage_eval
+            if element_adapter is not None:
+                self.element_adapter = lambda x,globs: element_adapter(sage_eval(x,globs), globs)
+            else:
+                self.element_adapter = lambda x,globs: sage_eval(x,globs)
+        else:
+            if element_adapter is not None:
+                self.element_adapter = lambda x,globs: element_adapter(x,globs)
+            else:
+                self.element_adapter = lambda x,globs: x
+
+        if adapter is None:
+            self.adapter = lambda x,globs: [[self.element_adapter(i,globs) for i in xi] for xi in x]
+        else:
+            self.adapter = lambda x,globs: adapter([[self.element_adapter(i,globs) for i in xi] for xi in x],globs)
+
+        def makestring(x):
+            if isinstance(x, basestring):
+                return x
+            else:
+                return repr(x)
 
         if not isinstance(default, list):
-            self.default = self.default_return = [[default for _ in range(self.ncols)] for _ in range(self.nrows)]
+            self.default = [[makestring(default) for _ in range(self.ncols)] for _ in range(self.nrows)]
         # Allows 1-row input grids to use non-nested lists for default values
-        elif not all(type(entry) == list for entry in default):
-            self.default = self.default_return = [[default[i * self.ncols + j] for j in range(self.ncols)] for i in range(self.nrows)]
+        elif not all(isinstance(entry, (list,tuple)) for entry in default):
+            # the above test will exhaust an iterator...
+            self.default = [[makestring(default[i * self.ncols + j]) for j in range(self.ncols)] for i in range(self.nrows)]
         else:
-            self.default = self.default_return = default
-
-        if self.raw:
-            self.default_return = [[repr(j) for j in i] for i in self.default]
+            self.default = [[makestring(default[r][c]) for c in range(self.ncols)] for r in range(self.nrows)]
 
     def message(self):
         """
@@ -488,9 +506,9 @@ class InputGrid(InteractControl):
         return {'control_type': 'input_grid',
                 'nrows': self.nrows,
                 'ncols': self.ncols,
-                'default': self.default_return,
+                'default': self.default,
                 'width':self.width,
-                'raw': self.raw,
+                'raw': True,
                 'label': self.label}
 
 class Selector(InteractControl):
