@@ -52,27 +52,36 @@
     height: 200px;
 }
 
-.sagecell_done {
-    color: red;
-}
-
 .sagecell_sessionOutput {
+    position: relative;
     border: 2px solid;
     padding: 5px;
+    min-height: 16px;
     overflow-x: auto;
 }
+
+.sagecell_sessionOutput.sagecell_active {
+    border-color: lightgreen;
+}
+
 .sagecell_poweredBy {
     height: 0px;
     padding-right: 5px;
     padding-top: 3px;
     text-align: right;
-    overflow:visible;
+    overflow: visible;
     font-size: 12px;
     font-family: sans;
 }
 
+.sagecell_spinner {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+}
+
 .sagecell_poweredBy img {
-    vertical-align: text-top;
+    vertical-align: -5px;
     border-style: none;
 }
 
