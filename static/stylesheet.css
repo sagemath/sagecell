@@ -52,26 +52,43 @@
     height: 200px;
 }
 
+.sagecell_sessionContainer {
+    position: relative;
+}
+
 .sagecell_sessionOutput {
     position: relative;
     border: 2px solid;
     padding: 5px;
+    margin-top: 2px;
     min-height: 16px;
     overflow-x: auto;
+    background-color: lightgray;
+}
+
+.sagecell_sessionOutput pre {
+    margin: 0px;
 }
 
 .sagecell_sessionOutput.sagecell_active {
-    border-color: lightgreen;
+    border-color: #080;
+    background-color: white;
 }
 
 .sagecell_poweredBy {
-    height: 0px;
-    padding-right: 5px;
+    position: absolute;
+    right: 5px;
     padding-top: 3px;
+    display:block;
+    width: 18%;
     text-align: right;
     overflow: visible;
     font-size: 12px;
-    font-family: sans;
+}
+
+.sagecell_poweredBy img {
+    vertical-align: -5px;
+    border-style: none;
 }
 
 .sagecell_spinner {
@@ -80,12 +97,8 @@
     top: 5px;
 }
 
-.sagecell_poweredBy img {
-    vertical-align: -5px;
-    border-style: none;
-}
-
 .sagecell_sessionFiles {
+    width: 80%;
     padding-bottom: 1.0em;
 }
 
@@ -99,6 +112,8 @@
 }
 
 .sagecell_interactValueBox {
+    background-color: transparent;
+    vertical-align: top;
     font-family: monospace;  /* Required since dynamic input box size is determined by monospaced fonts */
 }
 
@@ -138,6 +153,7 @@
 }
 
 .sagecell_advancedTitle {
+    cursor: default;
     border-bottom: 1px solid;
 }
 

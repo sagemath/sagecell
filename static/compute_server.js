@@ -183,7 +183,6 @@ sagecell.Session.prototype.get_output_success = function(data) {
     var id=this.session_id;
     data = JSON.parse(data);
     if(typeof(data) !== "undefined" && data.content !== undefined) {
-        this.spinner.style.display = "none";
         var content = data.content;
         for (var i = 0, i_max = content.length; i < i_max; i++) {
             var msg = content[i];
@@ -252,6 +251,7 @@ sagecell.Session.prototype.get_output_success = function(data) {
                                                         .replace(/</g,"&lt;")));
                 break;
             case 'execute_reply':
+                this.spinner.style.display = "none";
                 if(msg.content.status==="error") {
                     // copied from the pyerr case
                     this.output("<pre></pre>",output_block)
