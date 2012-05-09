@@ -335,10 +335,18 @@ sagecell.initCell = (function(sagecellInfo) {
             data["sage_mode"] = "on";
         }
         function callback(response) {
-            response = JSON.parse(response);
-            outputLocation.find(".sagecell_codeurl").attr("href", response.codeurl);
-            outputLocation.find(".sagecell_zipurl").attr("href", response.zipurl);
-            outputLocation.find(".sagecell_queryurl").attr("href", response.queryurl);
+            var response = JSON.parse(response);
+            var zipurl = outputLocation.find(".sagecell_zipurl");
+            var queryurl = outputLocation.find(".sagecell_queryurl");
+            if (response.zipurl.length < 1024) {
+                zipurl.attr("href", response.zipurl);
+                queryurl.css("padding-left", "1em");
+                zipurl.show();
+            } else {
+                queryurl.css("padding-left", "0");
+                zipurl.hide();
+            }
+            queryurl.attr("href", response.queryurl);
             new sagecell.Session(outputLocation, ".sagecell_output", response.session_id,
                     inputLocation.find(".sagecell_sageModeCheck").attr("checked"));
             outputLocation.find(".sagecell_computationID span").append(response.session_id);
