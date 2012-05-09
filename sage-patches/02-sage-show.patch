@@ -2,13 +2,13 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1311809242 25200
 # Node ID f67d7039d959b56d5b611b5979375b95dbe69398
-# Parent 41f1edc3d5a617a3dae69be65149fc72d36405f9
+# Parent ac59ad14c635cbe761491d1030a4cceaaa85d0a6
 [mq]: show.patch
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
 --- a/sage/misc/html.py
 +++ b/sage/misc/html.py
-@@ -168,13 +168,17 @@
+@@ -173,13 +173,17 @@
              s = s[j+7:] 
  
          from sage.misc.misc import EMBEDDED_MODE
@@ -27,8 +27,8 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 +
  
      def table(self, x, header = False):
-         r""" 
-@@ -272,13 +276,20 @@
+         r"""
+@@ -277,13 +281,20 @@
              </html>
  
          """
@@ -51,7 +51,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
          if isinstance(x, types.GeneratorType):
              x = list(x)
          if isinstance(x, (list, tuple)):
-@@ -286,25 +297,25 @@
+@@ -291,25 +302,25 @@
              if rows > 0:
                  # if the table has less then 100 rows, don't truncate the output in the notebook
                  if rows <= 100:
@@ -90,7 +90,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -1967,7 +1967,8 @@
+@@ -2004,7 +2004,8 @@
          latex_options = {}
      s = _latex_file_(objects, title=title, sep=sep, tiny=tiny, debug=debug, **latex_options)
      # notebook
@@ -100,7 +100,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          jsMath_okay = True
          for t in latex.jsmath_avoid_list():
              if s.find(t) != -1:
-@@ -1975,7 +1976,13 @@
+@@ -2012,7 +2013,13 @@
              if not jsMath_okay:
                  break
          if jsMath_okay:
@@ -115,7 +115,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          else:
              if pdflatex is True:
                  engine = "pdflatex"
-@@ -1986,7 +1993,15 @@
+@@ -2023,7 +2030,15 @@
              png_link = "cell://" + png_file
              png(objects, os.path.join(base_dir, png_file),
                  debug=debug, engine=engine)
@@ -135,7 +135,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 --- a/sage/plot/animate.py
 +++ b/sage/plot/animate.py
-@@ -386,6 +386,15 @@
+@@ -388,6 +388,15 @@
              from subprocess import check_call, CalledProcessError
              try:
                  check_call(cmd, shell=True)
@@ -151,39 +151,24 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
                  if show_path:
                      print "Animation saved to file %s." % savefile
              except (CalledProcessError, OSError):
-diff --git a/sage/plot/plot.py b/sage/plot/plot.py
---- a/sage/plot/plot.py
-+++ b/sage/plot/plot.py
-@@ -337,10 +337,10 @@
- ALLOWED_EXTENSIONS = ['.eps', '.pdf', '.png', '.ps', '.sobj', '.svg']
- #DEFAULT_FIGSIZE=(6, 3.70820393249937)
- DEFAULT_DPI = 100
--from sage.misc.misc import EMBEDDED_MODE
--DOCTEST_MODE = False
-+import sage.misc.misc as misc
- import sage.misc.misc
- from sage.misc.misc import srange
-+DOCTEST_MODE = False
- DOCTEST_MODE_FILE = os.path.join(sage.misc.misc.SAGE_TMP, 'test.png')
- SHOW_DEFAULT = True
- 
-@@ -1770,17 +1770,29 @@
+diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
+--- a/sage/plot/graphics.py
++++ b/sage/plot/graphics.py
+@@ -1465,17 +1465,27 @@
  
          # This option should not be passed on to save().
          linkmode = kwds.pop('linkmode', False)
-+        import sys
- 
-         if DOCTEST_MODE:
+-
+         if sage.plot.plot.DOCTEST_MODE:
              kwds.pop('filename', None)
              self.save(DOCTEST_MODE_FILE, **kwds)
--        elif EMBEDDED_MODE:
-+        elif misc.EMBEDDED_MODE:
-             kwds.setdefault('filename', sage.misc.misc.graphics_filename()) 
+         elif sage.plot.plot.EMBEDDED_MODE:
+             kwds.setdefault('filename', sage.misc.misc.graphics_filename())
 +            filename=kwds['filename']
              self.save(**kwds)
 -            if linkmode == True:
 -                return "<img src='cell://%s'>" % kwds['filename']
-+
++            import sys
 +            if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
@@ -201,7 +186,7 @@ diff --git a/sage/plot/plot.py b/sage/plot/plot.py
          else:
              kwds.setdefault('filename', sage.misc.misc.tmp_filename() + '.png')
              self.save(**kwds)
-@@ -2486,41 +2498,47 @@
+@@ -2182,42 +2192,46 @@
          options.update(kwds)
          dpi = options.pop('dpi')
          transparent = options.pop('transparent')
@@ -219,7 +204,6 @@ diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 -                             + "', '".join(ALLOWED_EXTENSIONS) + "'!")
 -        elif ext in ['', '.sobj']:
 -            SageObject.save(self, filename)
-+
 +
 +        if isinstance(filename, basestring):
 +            ext = os.path.splitext(filename)[1].lower()
@@ -252,7 +236,7 @@ diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 +                transparent=transparent)
          else:
 -            figure = self.matplotlib(**options)
--            # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension. 
+-            # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension.
 -            # matplotlib looks at the file extension to see what the renderer should be.
 -            # The default is FigureCanvasAgg for PNG's because this is by far the most
 -            # common type of files rendered, like in the notebook, for example.
@@ -272,21 +256,19 @@ diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 -            else:
 -                figure.savefig(filename, dpi=dpi,
 -                           transparent=transparent)
+-
 +            figure.savefig(filename, dpi=dpi,
 +                       transparent=transparent)
  
- #Currently not used - see comment immediately above about 
- #figure.canvas.mpl_connect('draw_event', pad_for_tick_labels)
-@@ -3872,11 +3890,20 @@
+ class GraphicsArray(SageObject):
+     """
+@@ -2576,11 +2590,18 @@
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
              return
--        if EMBEDDED_MODE:
-+
 +        if filename is None:
 +            filename = sage.misc.misc.graphics_filename()
-+
-+        if misc.EMBEDDED_MODE: # JASON TODO
+         if sage.plot.plot.EMBEDDED_MODE:
              self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
 +            if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json

@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent 91d23918f03dbbfe5ffa91d4f9517193ba63be4b
+# Parent 93511b36e569848a8f1ec4d04a22cd49273efcdc
 imported patch embedded.patch
 
 diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
@@ -143,7 +143,7 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
 diff --git a/sage/matrix/matrix0.pyx b/sage/matrix/matrix0.pyx
 --- a/sage/matrix/matrix0.pyx
 +++ b/sage/matrix/matrix0.pyx
-@@ -1818,7 +1818,7 @@
+@@ -1920,7 +1920,7 @@
  
          Note that size-zero subdivisions are ignored in the notebook::
              
@@ -152,7 +152,7 @@ diff --git a/sage/matrix/matrix0.pyx b/sage/matrix/matrix0.pyx
              sage: latex(B)
              \left(\begin{array}{rr}
              \left(\begin{array}{rrr}
-@@ -1835,7 +1835,7 @@
+@@ -1937,7 +1937,7 @@
              0
              \end{array}\right)
              \end{array}\right)
@@ -161,7 +161,7 @@ diff --git a/sage/matrix/matrix0.pyx b/sage/matrix/matrix0.pyx
          """
          latex = sage.misc.latex.latex
          matrix_delimiters = latex.matrix_delimiters()
-@@ -1855,7 +1855,9 @@
+@@ -1957,7 +1957,9 @@
          # jsmath doesn't know the command \hline, so have to do things
          # differently (and not as attractively) in embedded mode:
          # construct an array with a subarray for each block.
@@ -214,7 +214,7 @@ diff --git a/sage/misc/hg.py b/sage/misc/hg.py
 diff --git a/sage/misc/html.py b/sage/misc/html.py
 --- a/sage/misc/html.py
 +++ b/sage/misc/html.py
-@@ -166,7 +166,14 @@
+@@ -171,7 +171,14 @@
              t += s[:i] + '<span class="math">%s</span>'%\
                       latex(sage_eval(s[6+i:j], locals=locals))
              s = s[j+7:] 
@@ -230,7 +230,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
          return ''
  
      def table(self, x, header = False):
-@@ -233,7 +240,7 @@
+@@ -238,7 +245,7 @@
              </table>
              </div>
              </html>
@@ -239,7 +239,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
              sage: html.table([(x,n(sin(x), digits=2)) for x in [0..3]], header = ["$x$", "$\sin(x)$"])
              <html>
              <div class="notruncate">
-@@ -265,9 +272,13 @@
+@@ -270,9 +277,13 @@
              </html>
  
          """
@@ -253,7 +253,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
          if isinstance(x, types.GeneratorType):
              x = list(x)
          if isinstance(x, (list, tuple)):
-@@ -275,24 +286,25 @@
+@@ -280,24 +291,25 @@
              if rows > 0:
                  # if the table has less then 100 rows, don't truncate the output in the notebook
                  if rows <= 100:
@@ -288,7 +288,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
  
      def _table_columns(self, row, header=False):
          r"""
-@@ -315,13 +327,15 @@
+@@ -320,13 +332,15 @@
          elif not isinstance(row, (list, tuple)):
              row = [row]
  
@@ -341,7 +341,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
  from sage.misc.sage_ostools import have_program
  from sage.misc.cachefunc import cached_function, cached_method
  
-@@ -1943,12 +1942,12 @@
+@@ -1980,12 +1979,12 @@
  
      EXAMPLES::
  
@@ -356,7 +356,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
  
      TESTS::
  
-@@ -2187,14 +2186,14 @@
+@@ -2224,14 +2223,14 @@
  
          sage: sage.misc.latex.print_or_typeset(3)
          3
@@ -390,7 +390,7 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
  def sage_makedirs(dir):
      """
      Python version of ``mkdir -p``: try to create a directory, and also
-@@ -2133,19 +2140,6 @@
+@@ -2155,19 +2162,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -430,7 +430,7 @@ diff --git a/sage/misc/pager.py b/sage/misc/pager.py
 diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
 --- a/sage/misc/sagedoc.py
 +++ b/sage/misc/sagedoc.py
-@@ -25,7 +25,7 @@
+@@ -36,7 +36,7 @@
  import os, re, sys
  import pydoc
  from sage.misc.viewer import browser
@@ -439,7 +439,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
  
-@@ -728,7 +728,6 @@
+@@ -737,7 +737,6 @@
      if not interact:
          return results
  
@@ -447,7 +447,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1313,7 +1312,6 @@
+@@ -1322,7 +1321,6 @@
              raise OSError, """The document '%s' does not exist.  Please build it
  with 'sage -docbuild %s html --jsmath' and try again.""" %(name, name)
  
@@ -466,7 +466,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
  
  def isclassinstance(obj):
      r"""
-@@ -1133,7 +1132,8 @@
+@@ -1139,7 +1138,8 @@
          # sometimes s contains "*args" or "**keywds", and the
          # asterisks confuse ReST/sphinx/docutils, so escape them:
          # change * to \*, and change ** to \**.
@@ -476,7 +476,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
              s = s.replace('**', '\\**')  # replace ** with \**
              t = ''
              while True:  # replace * with \*
-@@ -1250,13 +1250,14 @@
+@@ -1256,13 +1256,14 @@
      - extensions by Nick Alexander
      """
      import sage.misc.sagedoc
@@ -554,7 +554,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
  import sage.misc.viewer
  
  class Animation(SageObject):
-@@ -451,7 +451,7 @@
+@@ -453,7 +453,7 @@
              self.gif(savefile=filename, delay=delay, iterations=iterations)
              return
          
@@ -566,10 +566,10 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -337,7 +337,7 @@
- ALLOWED_EXTENSIONS = ['.eps', '.pdf', '.png', '.ps', '.sobj', '.svg']
+@@ -333,7 +333,7 @@
+ ## going to be used.
+ 
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)
- DEFAULT_DPI = 100
 -EMBEDDED_MODE = False
 +from sage.misc.misc import EMBEDDED_MODE
  DOCTEST_MODE = False
