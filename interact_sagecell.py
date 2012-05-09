@@ -704,12 +704,12 @@ class ContinuousSlider(InteractControl):
             self.subtype = "continuous_range"
             self.default = default if default is not None and len(default) == 2 else [self.interval[0], self.interval[1]]
             for i in range(2):
-                if not (self.default[i] > self.interval[0] and self.default[i] < self.interval[1]):
+                if not (self.interval[0] <= self.default[i] <= self.interval[1]):
                     self.default[i] = self.interval[i]
             self.default_return = [float(i) for i in self.default]
         else:
             self.subtype = "continuous"
-            self.default = default if default is not None and default < self.interval[1] and default > self.interval[0] else self.interval[0]
+            self.default = default if default is not None and self.interval[0] <= default <= self.interval[1] else self.interval[0]
             self.default_return = float(self.default)
 
         self.steps = int(steps) if steps > 0 else 250
