@@ -142,8 +142,8 @@ sagecell.makeSagecell = function (args) {
                                        "editorToggle": true,  "files": true,
                                        "evalButton": true,    "sageMode": true},
                                 "out": {"output": true,       "messages": true,
-                                        "sessionTitle": true, "done": true,
-                                        "sessionFiles": true, "permalinks": true}};
+                                        "sessionTitle": true, "sessionFiles": true,
+                                        "permalinks": true}};
                 var hidden_out = [];
                 for (var i = 0, i_max = hide.length; i < i_max; i++) {
                     if (hide[i] in hideable["in"]) {
@@ -629,9 +629,10 @@ sagecell.functions = {
 };
 
 // Make the script root available to jquery
-sagecell.$URL={'root': {{request.url_root|tojson|safe}},
+sagecell.$URL = {'root': {{request.url_root|tojson|safe}},
         'evaluate': {{url_for('evaluate',_external=True)|tojson|safe}},
-        'powered_by_img': {{url_for('.static', filename = 'sagelogo.png', _external=True)|tojson|safe}},
+        'powered_by_img': {{url_for('.static', filename='sagelogo.png', _external=True)|tojson|safe}},
+        'spinner_img': {{url_for('.static', filename='spinner.gif', _external=True)|tojson|safe}},
         'output_poll': {{url_for('output_poll',_external=True)|tojson|safe}},
         'output_long_poll': {{url_for('output_long_poll',_external=True)|tojson|safe}}};
 
