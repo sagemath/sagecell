@@ -581,7 +581,7 @@ sagecell.InteractData.Button.prototype.finishRender = function(location) {
                     $(this).removeClass("ui-state-active");
                     $(this).parent().find("#"+control_id+"_value").val("true").change();
                 }
-            }(control_id = this.control_id)),
+            }(this.control_id)),
             "click": function(e) {
                 e.preventDefault();
             }
@@ -661,7 +661,7 @@ sagecell.InteractData.ButtonBar.prototype.finishRender = function(location) {
                         $(location).find("#"+control_id+"_value").val(i)
                             .change();
                     }
-                }(location = this.location, control_id = this.control_id, i)),
+                }(this.location, this.control_id, i)),
                 "click": function(e) {
                     e.preventDefault();
                 }
@@ -754,14 +754,14 @@ sagecell.InteractData.ColorSelector.prototype.finishRender = function(location) 
                 return function(hsb, hex, rgb, el) {
                     $(location).find("#"+control_id+"_value").change();
                 }
-            }(location = this.location, control_id = this.control_id)),
+            }(this.location, this.control_id)),
             onSubmit: (function(location, control_id) {
                 return function(hsb, hex, rgb, el) {
                     $(el).ColorPickerHide();
                     $(location).find("#"+control_id+"_value")
                         .val("#"+hex).change();
                 }
-            }(location = this.location, control_id = this.control_id)),
+            }(this.location, this.control_id)),
             onChange: (function(location, control_id) {
                 return function(hsb, hex, rgb, el) {
                     $(location).find("#"+control_id).css({
@@ -770,7 +770,7 @@ sagecell.InteractData.ColorSelector.prototype.finishRender = function(location) 
                     });
                     $(location).find("#"+control_id+"_value").val("#"+hex);
                 }
-            }(location = this.location, control_id = this.control_id))
+            }(this.location, this.control_id))
         });
 }
 
@@ -1129,7 +1129,7 @@ sagecell.InteractData.Selector.prototype.finishRender = function(location) {
                     control_out.find("#"+control_id).val(etarget.val()).change();
                 }
             }
-        }(control_out, control_id = this.control_id)));
+        }(control_out, this.control_id)));
     } else if (subtype === "button") {
         control_out.find("#"+default_id).addClass("ui-state-active");
         control_out.find("."+this.control_id).css("width",this.control["width"]);
@@ -1142,17 +1142,19 @@ sagecell.InteractData.Selector.prototype.finishRender = function(location) {
                 "mouseleave": function(e) {
                     $(this).removeClass("ui-state-hover");
                 },
-                "mousedown": function(e) {
-                    control_out.find(".ui-state-active").removeClass("ui-state-active");
-                    $(this).addClass("ui-state-active");
-                },
+                "mousedown": function (control_id) {
+                    return function (e) {
+                        control_out.find(".ui-state-active." + control_id).removeClass("ui-state-active");
+                        $(this).addClass("ui-state-active");
+                    };
+                }(this.control_id),
                 "mouseup": (function(control_out,i,control_id) {
                     return function(e) {
                         if (control_out.find("#"+control_id).val() !== ""+i) {
                             control_out.find("#"+control_id).val(i).change();
                         }
                     }
-                }(control_out, i, control_id=this.control_id)),
+                }(control_out, i, this.control_id)),
                 "click": function(e) {
                     e.preventDefault();
                 }
