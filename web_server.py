@@ -150,13 +150,9 @@ def evaluate(db,fs):
         import zlib, base64
         z=base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
         zipurl = url_for('root', _external=True, z=z)
-        if len(urlencode({'c': code.encode('utf8')}))<100:
-            codeurl = url_for('root', _external=True, c=code)
-        else:
-            codeurl=zipurl
         queryurl = url_for('root', _external=True, q=shortened)
-        rval = json.dumps({"codeurl": codeurl, "zipurl": zipurl,
-                           "queryurl": queryurl, "session_id": session_id})
+        rval = json.dumps({"zipurl": zipurl, "queryurl": queryurl,
+                           "session_id": session_id})
     if (request.values.get("frame") is not None):
         return Response("<script>parent.postMessage(" + json.dumps(rval) +
                 ",\"*\");</script>")
@@ -167,17 +163,6 @@ def evaluate(db,fs):
 
 from urllib import urlencode, urlopen
 from json import loads
-
-def GooGL(url):
-    # Note: we need to get an API key to do this legally
-    params = urlencode({'security_token': None, 'longURL': url})
-    f = urlopen('http://goo.gl/api/shorten', params)
-    return loads(f.read())['short_url']
-
-def tinyurl(url):
-    params = urlencode({'url':url})
-    f = urlopen('http://tinyurl.com/api-create.php', params)
-    return f.read()
 
 @app.route("/output_poll")
 @print_exception
