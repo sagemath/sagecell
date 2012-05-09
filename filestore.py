@@ -237,7 +237,6 @@ class FileStoreSQLAlchemy(FileStore):
 try:
     from gridfs import GridFS
     import pymongo
-    from pymongo.objectid import ObjectId
 except ImportError:
     pass
 

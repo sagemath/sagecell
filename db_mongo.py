@@ -34,8 +34,7 @@ The MongoDB database has the following collections:
 """
 
 import db
-import pymongo.objectid
-from pymongo.objectid import ObjectId
+import pymongo
 from pymongo import ASCENDING, DESCENDING
 try:
     from sagecell_config import mongo_config
