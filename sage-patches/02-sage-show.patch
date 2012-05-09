@@ -162,14 +162,15 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
          if sage.plot.plot.DOCTEST_MODE:
              kwds.pop('filename', None)
              self.save(DOCTEST_MODE_FILE, **kwds)
-         elif sage.plot.plot.EMBEDDED_MODE:
+-        elif sage.plot.plot.EMBEDDED_MODE:
++        elif sage.misc.misc.EMBEDDED_MODE:
              kwds.setdefault('filename', sage.misc.misc.graphics_filename())
 +            filename=kwds['filename']
              self.save(**kwds)
 -            if linkmode == True:
 -                return "<img src='cell://%s'>" % kwds['filename']
 +            import sys
-+            if misc.EMBEDDED_MODE['frontend']=='sagecell':
++            if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
 +                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
@@ -178,7 +179,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +                return "<img src='cell://%s'>"%filename
              else:
 -                html("<img src='cell://%s'>" % kwds['filename'])
-+                if misc.EMBEDDED_MODE['frontend']=='sagecell':
++                if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                    msg={'text/filename': filename}
 +                    sys._sage_messages.message_queue.display(msg)
 +                else:
@@ -266,11 +267,12 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
              return
+-        if sage.plot.plot.EMBEDDED_MODE:
 +        if filename is None:
 +            filename = sage.misc.misc.graphics_filename()
-         if sage.plot.plot.EMBEDDED_MODE:
++        if sage.misc.misc.EMBEDDED_MODE:
              self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
-+            if misc.EMBEDDED_MODE['frontend']=='sagecell':
++            if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json
 +                import sys
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
@@ -283,6 +285,17 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
          self._render(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
          os.system('%s %s 2>/dev/null 1>/dev/null &'%(
                           sage.misc.viewer.browser(), filename))
+diff --git a/sage/plot/plot.py b/sage/plot/plot.py
+--- a/sage/plot/plot.py
++++ b/sage/plot/plot.py
+@@ -333,7 +333,6 @@
+ ## going to be used.
+ 
+ #DEFAULT_FIGSIZE=(6, 3.70820393249937)
+-from sage.misc.misc import EMBEDDED_MODE
+ DOCTEST_MODE = False
+ import sage.misc.misc
+ from sage.misc.misc import srange
 diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 --- a/sage/plot/plot3d/base.pyx
 +++ b/sage/plot/plot3d/base.pyx
