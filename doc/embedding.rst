@@ -26,32 +26,31 @@ like)::
        <title>Sage Cell Server</title>
        <script src="http://aleph.sagemath.org/static/jquery.min.js"></script>
        <script src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
-       <script type="text/x-sage" id="code">
-   @interact
-   def _(a=(1, 10)):
-       print factorial(a)
-       </script>
-       <script type="text/x-sage" id="code2">plot(sin(x), (x, 0, 2 * pi))</script>
        <script>
    $(function () {
        sagecell.makeSagecell({inputLocation:  '#mycell',
-                              codeLocation:   '#code',
                               template:       sagecell.templates.minimal,
                               evalButtonText: 'Activate'});
        sagecell.makeSagecell({inputLocation: '#mycell2',
-                              codeLocation:  '#code2',
                               evalButtonText: 'Evaluate'});
    });
        </script>
      </head>
      <body>
      <h1>Embedded Sage Cells</h1>
+
      <h2>Factorial</h2>
      Click the &ldquo;Activate&rdquo; button below to calculate factorials.
-       <div id="mycell"></div>
+       <div id="mycell"><script type="text/x-sage">
+   @interact
+   def _(a=(1, 10)):
+       print factorial(a)
+    </script>
+   </div>
+
    <h2>Your own computation</h2>
    Type your own Sage computation below and click &ldquo;Evaluate&rdquo;.
-       <div id="mycell2"></div>
+       <div id="mycell2"><script type="text/x-sage">plot(sin(x), (x, 0, 2*pi))</script></div>
      </body>
    </html>
 
