@@ -38,19 +38,17 @@ sagecell.Session.prototype.init = function (outputDiv, output, session_id, sage_
     this.last_update = (new Date).getTime();
     this.lastMessage = {};
     this.sessionContinue = true;
-    this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="sagecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="sagecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="sagecell_sessionOutput"></div><div id="output_files_'+this.session_id+'" class="sagecell_sessionFiles"></div></div>');
-    var poweredBy = document.createElement('div');
-    poweredBy.appendChild(document.createTextNode('Powered by '));
-    var link = document.createElement('a');
-    link.setAttribute('href', 'http://www.sagemath.org');
-    var img = document.createElement('img');
-    img.setAttribute('src', sagecell.$URL.powered_by_img);
-    img.setAttribute('alt', 'Sage');
-    link.appendChild(img);
-    poweredBy.appendChild(link);
-    poweredBy.setAttribute('class', 'sagecell_poweredBy');
-    var output = document.getElementById('output_' + this.session_id)
-    output.parentNode.insertBefore(poweredBy, output.nextSibling);
+    this.outputDiv.find(output).prepend('<div id="session_'+this.session_id+'" class="sagecell_sessionContainer"><div id="session_'+this.session_id+'_title" class="sagecell_sessionTitle">Session '+this.session_id+'</div><div id="output_'+this.session_id+'" class="sagecell_sessionOutput sagecell_active"></div><div id="output_files_'+this.session_id+'" class="sagecell_sessionFiles"></div></div>');
+    var output = $(document.getElementById("output_" + this.session_id))
+    output.after(sagecell.functions.createElement("div", {"class": "sagecell_poweredBy"}, [
+            document.createTextNode("Powered by "),
+            sagecell.functions.createElement("a", {"href": "http://www.sagemath.org"}, [
+                sagecell.functions.createElement("img",
+                    {"src": sagecell.$URL.powered_by_img, "alt": "Sage"})])]));
+    this.spinner = sagecell.functions.createElement("img",
+            {"src": sagecell.$URL.spinner_img, "alt": "Loading",
+             "class": "sagecell_spinner"});
+    output.append(this.spinner);
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output={};
     this.lock_output=false;
@@ -253,6 +251,7 @@ sagecell.Session.prototype.get_output_success = function(data) {
                                                         .replace(/</g,"&lt;")));
                 break;
             case 'execute_reply':
+                this.spinner.style.display = "none";
                 if(msg.content.status==="error") {
                     // copied from the pyerr case
                     this.output("<pre></pre>",output_block)
@@ -286,7 +285,7 @@ sagecell.Session.prototype.get_output_success = function(data) {
                     this.output(html,output_block).effect("pulsate", {times:1}, 500);
                     break;
                 case "session_end":
-                    this.output("<div class='sagecell_done'>Session <span class='sagecell_sessionTitle'>"+id+ "</span> done</div>", output_block);
+                    $(document.getElementById("output_" + this.session_id)).removeClass("sagecell_active");
                     // Unbinds interact change handlers
                     for (var i in this.eventHandlers) {
                         for (var j in this.eventHandlers[i]) {
@@ -431,7 +430,7 @@ sagecell.InteractCell.prototype.bindChange = function(interact) {
                     }
                 }
                 code += "))";
-
+                interact.session.spinner.style.display = "";
                 interact.session.sendMsg(code, interact.msg_id, interact.interact_id);
                 interact.session.replace_output[interact.interact_id]=true;
             } else {
