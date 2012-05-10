@@ -63,7 +63,6 @@
     margin-top: 2px;
     min-height: 16px;
     overflow-x: auto;
-    background-color: #eaeaea;
 }
 
 .sagecell_sessionOutput pre {
