@@ -704,12 +704,12 @@ class ContinuousSlider(InteractControl):
             self.subtype = "continuous_range"
             self.default = default if default is not None and len(default) == 2 else [self.interval[0], self.interval[1]]
             for i in range(2):
-                if not (self.default[i] > self.interval[0] and self.default[i] < self.interval[1]):
+                if not (self.interval[0] <= self.default[i] <= self.interval[1]):
                     self.default[i] = self.interval[i]
             self.default_return = [float(i) for i in self.default]
         else:
             self.subtype = "continuous"
-            self.default = default if default is not None and default < self.interval[1] and default > self.interval[0] else self.interval[0]
+            self.default = default if default is not None and self.interval[0] <= default <= self.interval[1] else self.interval[0]
             self.default_return = float(self.default)
 
         self.steps = int(steps) if steps > 0 else 250
@@ -1154,10 +1154,10 @@ def automatic_control(control, var=None):
                 selectortype = "button"
             else:
                 selectortype = "list"
-            C = Selector(selector_type = selectortype, default = control[default_value], label = label, values = control)
+            C = Selector(selector_type = selectortype, default = default_value, label = label, values = control)
     elif isinstance(control, GeneratorType):
         values=take(10000,control)
-        C = DiscreteSlider(default = values[default_value], values = values, label = label)
+        C = DiscreteSlider(default = default_value, values = values, label = label)
     elif isinstance (control, tuple):
         if len(control) == 2:
             C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), label = label)
@@ -1165,7 +1165,7 @@ def automatic_control(control, var=None):
             C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), stepsize = control[2], label = label)
         else:
             values=list(control)
-            C = DiscreteSlider(default = values[default_value], values = values, label = label)
+            C = DiscreteSlider(default = default_value, values = values, label = label)
     else:
         from sage.all import sage_eval
         C = InputBox(default = control, label=label, evaluate=True)
@@ -1232,7 +1232,7 @@ def default_to_index(values, default):
         except ValueError:
             # here no index matches -- which is best?
             try:
-                v = [(abs(default - values[j]), j) for j in range(len(values))]
+                v = [(abs(default - val), j) for j,val in enumerate(values)]
                 m = min(v)
                 i = m[1]
             except TypeError: # abs not defined on everything, so give up
