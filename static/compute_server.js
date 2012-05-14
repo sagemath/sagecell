@@ -1186,11 +1186,26 @@ sagecell.InteractData.Slider.prototype.changeHandlers = function() {
 sagecell.InteractData.Slider.prototype.changes = function() {
     var subtype = this.control["subtype"],
     control_out = $(this.location),
-    input;
+    slider, max, min, val, input, box;
 
     if (subtype === "continuous") {
-        input = control_out.find("#"+this.control_id+"_value").val();
-        control_out.find("#"+this.control_id).slider("option","value",input);
+        slider = control_out.find("#"+this.control_id);
+        box = control_out.find("#"+this.control_id+"_value");
+        max = slider.slider("option","max");
+        min = slider.slider("option","min");
+        val = slider.slider("option","value");
+        input = box.val();
+
+        if (isNaN(input) || input === "") {
+            input = val;
+        } else if (input < min) {
+            input = min;
+        } else if (input > max) {
+            input = max;
+        }
+
+        box.val(input);
+        slider.slider("option","value",input);
         return String(input);
     } else if (subtype === "continuous_range") {
         input = String("["+control_out.find("#"+this.control_id+"_value").val()+"]");
