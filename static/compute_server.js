@@ -1203,6 +1203,7 @@ sagecell.InteractData.Slider.prototype.changes = function() {
         }
 
         box.val(input);
+        slider.slider("option","value",input);
         return String(input);
     } else if (subtype === "continuous_range") {
         input = String("["+control_out.find("#"+this.control_id+"_value").val()+"]");
