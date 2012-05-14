@@ -205,15 +205,7 @@ This device implements the IPython 0.11 messaging scheme for communicating resul
 .. automodule:: device_process
     :members:
 
-.. IPython device
-.. --------------
+User code-device interaction
+----------------------------
 
-.. This device requires IPython 0.11, which has not been released yet.
-
-.. .. automodule:: device_ipython
-..      :members:
-
-.. .. automodule:: ip_receiver
-..      :members:
-
-
+.. automodule:: user_convenience

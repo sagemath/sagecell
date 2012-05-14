@@ -271,17 +271,19 @@ def interact(f, controls=[], update=None, layout=None):
     else:
         layout["top_center"] = [n for n in names]
 
-    from sys import _sage_messages as MESSAGE, maxint
+    from sys import maxint
     from random import randrange
 
     # UUID would be better, but we can't use it because of a
     # bug in Python 2.6 on Mac OS X (http://bugs.python.org/issue8621)
     function_id=str(randrange(maxint))
 
+    # _output_handler is monkey-patched onto interact_sagecell by the device
+
     def adapted_f(control_vals):
-        MESSAGE.push_output_id(function_id)
+        _output_handler.push_output_id(function_id)
         returned=f(**control_vals)
-        MESSAGE.pop_output_id()
+        _output_handler.pop_output_id()
         return returned
 
     globs = f.func_globals
@@ -292,7 +294,7 @@ def interact(f, controls=[], update=None, layout=None):
         "globals": globs,
         }
 
-    MESSAGE.message_queue.message('interact_prepare',
+    _output_handler.message_queue.message('interact_prepare',
                                   {'interact_id':function_id,
                                    'controls':dict(zip(names,[c.message() for c in controls])),
                                    'update':update,

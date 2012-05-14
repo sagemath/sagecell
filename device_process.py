@@ -566,21 +566,14 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                     fs.copy_file(f,filename=filename, session=session, hmac=fs_hmac)
                 old_files[filename]=-1
         file_parent.send(True)
-        with output_handler as MESSAGE:
+        with output_handler:
             try:
-                def _display_message(filename):
-                    output_handler.message_queue.display({'text/filename':filename})
-                def _send_message(message_type, content_dict):
-                    output_handler.message_queue.raw_message(message_type, content_dict)
-                def _file_upload(filename):
-                    upload_send.send_bytes(json.dumps([filename]))
-                    upload_send.recv_bytes() # blocks until upload is finished
-                    _display_message(filename)
-                locals={'MESSAGE': MESSAGE,
-                        '_send_message': _send_message,
-                        '_file_upload': _file_upload,
-                        '_display_message': _display_message,
-                        'interact_sagecell': interact_sagecell}
+                interact_sagecell._output_handler = output_handler
+                import user_convenience
+
+                locals={'_sagecell': user_convenience.UserConvenience(output_handler,
+                                                                      upload_send)}
+
                 if enable_sage and sage_mode:
                     locals['sage'] = sage
 
@@ -611,8 +604,8 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                 #evalue!
 
                 err_msg={"ename": etype.__name__, "evalue": str(error_value),
-                         "traceback": err.text(etype, evalue, etb, context=3),
-                         "status": "error"}
+                             "traceback": err.text(etype, evalue, etb, context=3),
+                             "status": "error"}
                 output_handler.message_queue.raw_message("execute_reply",
                                                          err_msg)
         upload_send.send_bytes(json.dumps({'msg_type': 'end_exec'}))
