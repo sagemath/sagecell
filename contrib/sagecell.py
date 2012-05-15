@@ -10,6 +10,10 @@ Usage::
     1+1
     }}}
 
+Installation
+
+Put this file in ``data/plugin/parser/``.
+
 You must also something like these lines in your wikiconfig::
 
     html_head = '<script type="text/javascript" src="http://aleph.sagemath.org/static/jquery.min.js"></script>'
