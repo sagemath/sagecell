@@ -29,7 +29,7 @@ class UserConvenience(object):
 
         :arg str filename: The name of the file to be displayed
         """
-        self.file_upload(filename)
+        self.upload_file(filename)
         self.output_handler.message_queue.display({'text/filename':filename})
 
     def send_message(self, message_type, content_dict):
@@ -49,4 +49,3 @@ class UserConvenience(object):
         """
         self.upload_send.send_bytes(json.dumps([filename]))
         self.upload_send.recv_bytes() # blocks until upload is finished
-

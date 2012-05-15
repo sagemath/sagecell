@@ -64,6 +64,10 @@ except ImportError as e:
     CONFIG.EMBEDDED_MODE["enable_sage"] = enable_sage = False
 
 user_code="""
+import sys
+sys._sage_messages = _sage_messages
+sys._sage_upload_file_pipe = _sage_upload_file_pipe
+
 def _update_interact(id, control_vals):
     import interact_sagecell
     interact_info = interact_sagecell._INTERACTS[id]
@@ -568,11 +572,12 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         file_parent.send(True)
         with output_handler:
             try:
-                interact_sagecell._output_handler = output_handler
                 import user_convenience
 
                 locals={'_sagecell': user_convenience.UserConvenience(output_handler,
-                                                                      upload_send)}
+                                                                      upload_send),
+                        '_sage_messages': output_handler,
+                        '_sage_upload_file_pipe': upload_send}
 
                 if enable_sage and sage_mode:
                     locals['sage'] = sage
