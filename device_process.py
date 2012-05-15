@@ -65,8 +65,9 @@ except ImportError as e:
 
 user_code="""
 import sys
-sys._sage_messages=MESSAGE
-sys._sage_upload_file_pipe=_file_upload_send
+sys._sage_messages = _sage_messages
+sys._sage_upload_file_pipe = _sage_upload_file_pipe
+
 def _update_interact(id, control_vals):
     import interact_sagecell
     interact_info = interact_sagecell._INTERACTS[id]
@@ -569,11 +570,15 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                     fs.copy_file(f,filename=filename, session=session, hmac=fs_hmac)
                 old_files[filename]=-1
         file_parent.send(True)
-        with output_handler as MESSAGE:
+        with output_handler:
             try:
-                locals={'MESSAGE': MESSAGE,
-                        'interact_sagecell': interact_sagecell,
-                        '_file_upload_send': upload_send}
+                import user_convenience
+
+                locals={'_sagecell': user_convenience.UserConvenience(output_handler,
+                                                                      upload_send),
+                        '_sage_messages': output_handler,
+                        '_sage_upload_file_pipe': upload_send}
+
                 if enable_sage and sage_mode:
                     locals['sage'] = sage
 
@@ -604,8 +609,8 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
                 #evalue!
 
                 err_msg={"ename": etype.__name__, "evalue": str(error_value),
-                         "traceback": err.text(etype, evalue, etb, context=3),
-                         "status": "error"}
+                             "traceback": err.text(etype, evalue, etb, context=3),
+                             "status": "error"}
                 output_handler.message_queue.raw_message("execute_reply",
                                                          err_msg)
         upload_send.send_bytes(json.dumps({'msg_type': 'end_exec'}))
