@@ -347,8 +347,9 @@ sagecell.initCell = (function(sagecellInfo) {
                 zipurl.hide();
             }
             queryurl.attr("href", response.queryurl);
-            new sagecell.Session(outputLocation, ".sagecell_output", response.session_id,
+            var session = new sagecell.Session(outputLocation, ".sagecell_output", response.session_id,
                     inputLocation.find(".sagecell_sageModeCheck").attr("checked"));
+            session.lastMessage[null] = data.msg_id;
             outputLocation.find(".sagecell_computationID span").append(response.session_id);
             outputLocation.find(".sagecell_output_elements").show();
         }
