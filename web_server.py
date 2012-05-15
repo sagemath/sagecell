@@ -372,16 +372,25 @@ def favicon():
 def embedded_old():
     return redirect(url_for('embedded'), 301)
 
+
+
 if __name__ == "__main__":
-    # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
-    # sometime in the summer of 2011, and then we can move this to use argparse.
-    from optparse import OptionParser
-    parser = OptionParser(description="The web server component of the notebook")
-    parser.add_option("--db", choices=["mongo", "sqlalchemy"], help="Database to use")
-    parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
-    (sysargs, args) = parser.parse_args()
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="The web server component of the notebook")
+    parser.add_argument("--db", choices=["mongo", "sqlalchemy"], help="Database to use")
+    parser.add_argument("-q", action="store_true", dest="quiet", help="Turn off most logging")
+
+    (sysargs, args) = parser.parse_known_args()
 
     if sysargs.quiet:
         util.LOGGING=False
 
-    app.run(port=8080)
+    # instead of parsing extra arguments, just import them from sagecell_config
+    default_config = {'port': 8080}
+    try:
+        import sagecell_config
+    except:
+        import sagecell_config_default as sagecell_config
+    config = getattr(sagecell_config, 'flaskweb_config', default_config)
+
+    app.run(**config)

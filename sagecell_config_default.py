@@ -24,9 +24,15 @@ mongo_config={
     }
 
 # WEB SERVER
-#webserver='python'
-webserver='twistd'
+webserver='flaskweb'
+#webserver='twistd'
 #webserver='uwsgi'
+
+flaskweb_config={
+    'port': 8080,
+    'processes': 20,
+    'host': '127.0.0.1'
+}
 
 twistd=sage+' -twistd'
 twistd_config={
