@@ -49,6 +49,7 @@ sagecell.Session.prototype.init = function (outputDiv, output, session_id, sage_
             {"src": sagecell.$URL.spinner_img, "alt": "Loading",
              "class": "sagecell_spinner"});
     output.append(this.spinner);
+    this.open_count = 1;
     this.session_title=$('#session_'+this.session_id+'_title');
     this.replace_output={};
     this.lock_output=false;
@@ -199,8 +200,7 @@ sagecell.Session.prototype.get_output_success = function(data) {
                 continue;
             }
             this.sequence += 1;
-            if (typeof(parent_id) !== "undefined" && !$.isEmptyObject(this.lastMessage) && parent_id !== this.lastMessage[output_block] 
-                && output_block !== null && output_block !== undefined) {
+            if (output_block !== null && parent_id !== this.lastMessage[output_block]) {
                 // If another message has been sent to the server since the parent of this one, don't format it for output but log that it was received.
                 // This solves a problem associated with updating complex interacts quicker than the server can reply where output would be printed multiple times.
                 this.appendMsg(msg, "Rejected: ");
@@ -251,7 +251,9 @@ sagecell.Session.prototype.get_output_success = function(data) {
                                                         .replace(/</g,"&lt;")));
                 break;
             case 'execute_reply':
-                this.spinner.style.display = "none";
+                if (--this.open_count === 0) {
+                    this.spinner.style.display = "none";
+                }
                 if(msg.content.status==="error") {
                     // copied from the pyerr case
                     this.output("<pre></pre>",output_block)
@@ -297,6 +299,7 @@ sagecell.Session.prototype.get_output_success = function(data) {
                     break;
                 case "interact_prepare":
                     var interact_id = user_msg.content.interact_id;
+                    this.lastMessage[interact_id] = parent_id;
                     var div_id = "interact_" + interact_id;
                     this.output("<table class='sagecell_interactContainer' id='"+div_id+"'>"+
                                 "<tr><td class='sagecell_interactContainer_top_left'></td><td class='sagecell_interactContainer_top_center'></td><td class='sagecell_interactContainer_top_right'></td></tr>"+
@@ -431,6 +434,7 @@ sagecell.InteractCell.prototype.bindChange = function(interact) {
                 }
                 code += "))";
                 interact.session.spinner.style.display = "";
+                interact.session.open_count++;
                 interact.session.sendMsg(code, interact.msg_id, interact.interact_id);
                 interact.session.replace_output[interact.interact_id]=true;
             } else {
