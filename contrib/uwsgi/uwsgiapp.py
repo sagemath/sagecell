@@ -1,27 +1,16 @@
+"""
+Run with::
+
+    uwsgi --file uwsgiapp.py --touch-reload uwsgiapp.py -p 10 --http-socket :8080 --max-request 1
+
+Then go to localhost:8080
+"""
+
 from flask import Flask
 application = Flask(__name__)
 from flask import request
 from contextlib import contextmanager, nested
-from IPython.core.interactiveshell import InteractiveShell, InteractiveShellABC
-
-class Shell(InteractiveShell):
-    def __init__(self, config=None, ipython_dir=None, profile_dir=None,
-             user_ns=None, user_module=None, custom_exceptions=((),None),
-             usage=None, banner1=None, banner2=None, display_banner=None):
-
-        super(Shell, self).__init__(
-            config=config, profile_dir=profile_dir, user_ns=user_ns,
-            user_module=user_module, custom_exceptions=custom_exceptions
-        )
-
-InteractiveShellABC.register(Shell)
-
-from IPython.zmq.kernelmanager import KernelManager
-class ForkingKernelManager(KernelManager):
-    kernel = Any()
-    
-
-
+from IPython.core.interactiveshell import InteractiveShell
 
 @contextmanager
 def capture():
@@ -37,7 +26,7 @@ def capture():
         out[0] = out[0].getvalue()
         out[1] = out[1].getvalue()
 
-@app.route('/')
+@application.route('/')
 def hello_world():
     # I replace \r\n with \n...this might cause problems for code that has legitimate \r characters in it
     # (like in a string)
