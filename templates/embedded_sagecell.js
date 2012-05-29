@@ -1,10 +1,16 @@
-(function($) {
+(function() {
 // Make a global sagecell namespace for our functions
 window.sagecell = {};
 
 if (!document.head) {
     document.head = document.getElementsByTagName("head")[0];
 }
+
+var $ = jQuery.noConflict(true);
+if (jQuery === undefined) {
+    window.$ = jQuery = $;
+}
+sagecell.jQuery = $;
 
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined)
@@ -648,4 +654,4 @@ sagecell.$URL = {'root': {{request.url_root|tojson|safe}},
 // Purely for backwards compability
 window.singlecell = window.sagecell;
 window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
-})(jQuery);
+})();
