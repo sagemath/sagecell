@@ -18,6 +18,7 @@ static/all.js: submodules/codemirror2/lib/codemirror.js submodules/codemirror2/m
 	cat static/jqueryui/js/jquery-ui-1.8.17.custom.min.js >> static/all.js
 	cat submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js >> static/all.js
 	cat static/colorpicker/js/colorpicker.js >> static/all.js
+	echo ';' >> static/all.js
 	cat static/compute_server.js >> static/all.js
 	cat static/sagecell.js >> static/all.js
 
