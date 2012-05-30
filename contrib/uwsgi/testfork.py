@@ -9,10 +9,17 @@ The kernel object will be in the ``a`` variable.  When you close the
 python session, the forked kernel will be killed.
 """
 
+import sys
+from IPython.config.loader import Config
 from IPython.utils.traitlets import Any
 from IPython.zmq.kernelmanager import KernelManager
+from IPython.zmq.blockingkernelmanager import BlockingKernelManager
 
-class ForkingKernelManager(KernelManager):
+# only using BlockingKernelManager in this case so that it's usable at the bottom.
+# The KernelManager is an incomplete base class, but appropriate for building
+# various subclasses.
+
+class ForkingKernelManager(BlockingKernelManager):
     # the KernelManager insists that `kernel` is a Popen instance
     # but we want to *only* fork and embed, not exec a new process
     kernel = Any()
@@ -55,25 +62,14 @@ class ForkingKernelManager(KernelManager):
 # fork instead of Popen.
 key='45042651-5251-4cc6-af79-0d86c9274060'
 def launcher(fname, **launch_opts):
-    import json
-    from IPython.utils.py3compat import str_to_bytes
-    with open(fname) as f:
-        cfg = json.loads(f.read())
-    kw=dict(ip=cfg['ip'], 
-            shell_port = cfg['shell_port'],
-            stdin_port = cfg['stdin_port'],
-            iopub_port = cfg['iopub_port'],
-            hb_port = cfg['hb_port'],
-            key = str_to_bytes(key),
-            )
-    print "Attempting to set key: %r"%key
     
-    kw.update(launch_opts)
+    cfg = Config()
+    cfg.IPKernelApp.connection_file = fname
     from multiprocessing import Process
-    import IPython.zmq.ipkernel
     from IPython.zmq.ipkernel import embed_kernel
-    print "Starting process with kwargs", kw
-    p=Process(target=embed_kernel, kwargs=kw)
+    print "Starting process with file", fname
+    
+    p=Process(target=embed_kernel, kwargs={'config' : cfg})
     p.start()
 
     # make sure p is killed when we leave the program
@@ -92,9 +88,26 @@ def launcher(fname, **launch_opts):
     
 start_port = 5021
 a=ForkingKernelManager()
-a.shell_port,a.iopub_port,a.stdin_port,a.hb_port=range(start_port,start_port+4)
+# set the key *before* launching, so it will be in the file
+a.session.key = key
+a.shell_port,a.iopub_port,a.stdin_port,a.hb_port = range(start_port,start_port+4)
 a.start_kernel(launcher=launcher)
-a.session.key=key
 a.start_channels()
+
+# now try to use it:
 s=a.shell_channel
-s.execute('1+2')
+
+
+s.execute('print "hello"')
+s.execute('print "world"')
+# get replies:
+s.get_msg()
+s.get_msg()
+
+# display output
+iopub = a.sub_channel
+for msg in iopub.get_msgs():
+    if msg['msg_type'] == 'stream':
+        content = msg['content']
+        print "received %s:" % content['name']
+        print content['data']
