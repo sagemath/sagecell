@@ -9,10 +9,9 @@ The kernel object will be in the ``a`` variable.  When you close the
 python session, the forked kernel will be killed.
 """
 
-from IPython.core.interactiveshell import InteractiveShell, InteractiveShellABC
 from IPython.utils.traitlets import Any
-
 from IPython.zmq.kernelmanager import KernelManager
+
 class ForkingKernelManager(KernelManager):
     # the KernelManager insists that `kernel` is a Popen instance
     # but we want to *only* fork and embed, not exec a new process
@@ -32,9 +31,9 @@ class ForkingKernelManager(KernelManager):
             # Attempt to kill the kernel.
             try:
                 import os
-                print "Killing kernel process %d . . ."%p.pid,
-                os.kill(p.pid,15)
-                p.join()
+                print "Killing kernel process %d . . ."%self.kernel.pid,
+                os.kill(self.kernel.pid,15)
+                self.kernel.join()
             except OSError, e:
                 # In Windows, we will get an Access Denied error if the process
                 # has already terminated. Ignore it.
@@ -54,41 +53,24 @@ class ForkingKernelManager(KernelManager):
 # Another thing to try is to modify 
 # IPython.zmq.entry_point.base_launch_kernel to launch a kernel using
 # fork instead of Popen.
-
-
-
-a=ForkingKernelManager()
+key='45042651-5251-4cc6-af79-0d86c9274060'
 def launcher(fname, **launch_opts):
     import json
     from IPython.utils.py3compat import str_to_bytes
     with open(fname) as f:
         cfg = json.loads(f.read())
-    kw=dict(ip=cfg['ip'], shell_port = cfg['shell_port'],
+    kw=dict(ip=cfg['ip'], 
+            shell_port = cfg['shell_port'],
             stdin_port = cfg['stdin_port'],
             iopub_port = cfg['iopub_port'],
             hb_port = cfg['hb_port'],
-            # do we need the key?
-            #key = str_to_bytes(cfg['key'])
+            key = str_to_bytes(key),
             )
-    print "Key: ",str_to_bytes(cfg['key'])
-    
-    # for some reason, we get an Unsigned Message error.  Possibly related
-    # to not passing some key?
-    
-    #>>> s=a.shell_channel
-    #>>> s.execute('print 1+2')
-    #'8ba36d81-50fb-4ba7-bba7-a0d3810cbbf1'
-    #>>> [IPKernelApp] Invalid Message
-    #Traceback (most recent call last):
-    #  File "/Users/grout/projects/ipython-upstream/IPython/zmq/ipkernel.py", line 202, in dispatch_shell
-    #    msg = self.session.unserialize(msg, content=True, copy=False)
-    #  File "/Users/grout/projects/ipython-upstream/IPython/zmq/session.py", line 719, in unserialize
-    #    raise ValueError("Unsigned Message")
-    #ValueError: Unsigned Message
-
+    print "Attempting to set key: %r"%key
     
     kw.update(launch_opts)
     from multiprocessing import Process
+    import IPython.zmq.ipkernel
     from IPython.zmq.ipkernel import embed_kernel
     print "Starting process with kwargs", kw
     p=Process(target=embed_kernel, kwargs=kw)
@@ -97,6 +79,7 @@ def launcher(fname, **launch_opts):
     # make sure p is killed when we leave the program
     def killpid(p):
         """p is the Process object"""
+        
         import os
         print "Killing kernel process %d . . ."%p.pid,
         os.kill(p.pid,15)
@@ -107,10 +90,11 @@ def launcher(fname, **launch_opts):
     atexit.register(partial(killpid,p))
     return p
     
-a.shell_port=5021
-a.iopub_port=5022
-a.stdin_port=5023
-a.hb_port=5024
+start_port = 5021
+a=ForkingKernelManager()
+a.shell_port,a.iopub_port,a.stdin_port,a.hb_port=range(start_port,start_port+4)
 a.start_kernel(launcher=launcher)
+a.session.key=key
 a.start_channels()
-
+s=a.shell_channel
+s.execute('1+2')
