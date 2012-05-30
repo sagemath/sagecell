@@ -60,7 +60,6 @@ class ForkingKernelManager(BlockingKernelManager):
 # Another thing to try is to modify 
 # IPython.zmq.entry_point.base_launch_kernel to launch a kernel using
 # fork instead of Popen.
-key='45042651-5251-4cc6-af79-0d86c9274060'
 def launcher(fname, **launch_opts):
     
     cfg = Config()
@@ -86,10 +85,11 @@ def launcher(fname, **launch_opts):
     atexit.register(partial(killpid,p))
     return p
     
-start_port = 5021
+start_port = randrange(10000,60000)
 a=ForkingKernelManager()
 # set the key *before* launching, so it will be in the file
-a.session.key = key
+from uuid import uuid4
+a.session.key = str(uuid4())
 a.shell_port,a.iopub_port,a.stdin_port,a.hb_port = range(start_port,start_port+4)
 a.start_kernel(launcher=launcher)
 a.start_channels()
