@@ -65,7 +65,6 @@ def launcher(fname, **launch_opts):
     cfg = Config()
     cfg.IPKernelApp.connection_file = fname
     from multiprocessing import Process
-    from IPython.zmq.ipkernel import embed_kernel
     print "Starting process with file", fname
     
     p=Process(target=embed_kernel, kwargs={'config' : cfg})
@@ -85,29 +84,62 @@ def launcher(fname, **launch_opts):
     atexit.register(partial(killpid,p))
     return p
     
-start_port = randrange(10000,60000)
-a=ForkingKernelManager()
-# set the key *before* launching, so it will be in the file
-from uuid import uuid4
-a.session.key = str(uuid4())
-a.shell_port,a.iopub_port,a.stdin_port,a.hb_port = range(start_port,start_port+4)
-a.start_kernel(launcher=launcher)
-a.start_channels()
+    
+    
+def embed_kernel(**kwargs):
+    """Embed and start an IPython kernel in a given scope.
+    
+    Parameters
+    ----------
+    kwargs : various, optional
+        Further keyword args are relayed to the KernelApp constructor,
+        allowing configuration of the Kernel.  Will only have an effect
+        on the first embed_kernel call for a given process.
+    
+    """
+    from IPython.zmq.ipkernel import IPKernelApp
+    # get the app if it exists, or set it up if it doesn't
+    if IPKernelApp.initialized():
+        app = IPKernelApp.instance()
+    else:
+        app = IPKernelApp.instance(**kwargs)
+        app.initialize([])
+        # TODO: is this needed???
+        # Undo unnecessary sys module mangling from init_sys_modules.
+        # This would not be necessary if we could prevent it
+        # in the first place by using a different InteractiveShell
+        # subclass, as in the regular embed case.
+        main = app.kernel.shell._orig_sys_modules_main_mod
+        if main is not None:
+            sys.modules[app.kernel.shell._orig_sys_modules_main_name] = main
 
-# now try to use it:
-s=a.shell_channel
+    app.start()
 
-
-s.execute('print "hello"')
-s.execute('print "world"')
-# get replies:
-s.get_msg()
-s.get_msg()
-
-# display output
-iopub = a.sub_channel
-for msg in iopub.get_msgs():
-    if msg['msg_type'] == 'stream':
-        content = msg['content']
-        print "received %s:" % content['name']
-        print content['data']
+if __name__ == '__main__':
+    # an example
+    start_port = randrange(10000,60000)
+    a=ForkingKernelManager()
+    # set the key *before* launching, so it will be in the file
+    from uuid import uuid4
+    a.session.key = str(uuid4())
+    a.shell_port,a.iopub_port,a.stdin_port,a.hb_port = range(start_port,start_port+4)
+    a.start_kernel(launcher=launcher)
+    a.start_channels()
+    
+    # now try to use it:
+    s=a.shell_channel
+    
+    
+    s.execute('print "hello"')
+    s.execute('print "world"')
+    # get replies:
+    s.get_msg()
+    s.get_msg()
+    
+    # display output
+    iopub = a.sub_channel
+    for msg in iopub.get_msgs():
+        if msg['msg_type'] == 'stream':
+            content = msg['content']
+            print "received %s:" % content['name']
+            print content['data']
