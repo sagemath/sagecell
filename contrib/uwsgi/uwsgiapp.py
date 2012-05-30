@@ -9,22 +9,10 @@ Then go to localhost:8080
 from flask import Flask
 application = Flask(__name__)
 from flask import request
-from contextlib import contextmanager, nested
-from IPython.core.interactiveshell import InteractiveShell
+from uuid import uuid4
+from random import randrange
 
-@contextmanager
-def capture():
-    import sys
-    from cStringIO import StringIO
-    oldout,olderr = sys.stdout, sys.stderr
-    try:
-        out=[StringIO(), StringIO()]
-        sys.stdout,sys.stderr = out
-        yield out
-    finally:
-        sys.stdout,sys.stderr = oldout, olderr
-        out[0] = out[0].getvalue()
-        out[1] = out[1].getvalue()
+from forkingkernelmanager import ForkingKernelManager
 
 @application.route('/')
 def forkkernel():
@@ -32,20 +20,13 @@ def forkkernel():
     if len(code)==0:
         return "<form><textarea name='c' cols='100' rows='20'></textarea><br/><input type='submit'></form>"
     print "processing"
-    from random import randrange
     start_port = randrange(10000,60000)
-    from forkingkernelmanager import ForkingKernelManager, launcher
     a=ForkingKernelManager()
-    # set the key *before* launching, so it will be in the file
-    from uuid import uuid4
     a.session.key = str(uuid4())
     a.shell_port,a.iopub_port,a.stdin_port,a.hb_port = range(start_port,start_port+4)
-    #app.kernel.user_module = module
-    print 'hi'
-    import IPython
-    print 'b'
     print "Starting kernel...",
-    a.start_kernel(launcher=launcher)
+    a.start_kernel()
+    #app.kernel.user_module = module
     #a.kernel.user_ns = {'test':IPython} 
     a.start_channels()
     print "started"
@@ -79,7 +60,24 @@ def forkkernel():
     return '<pre>%s</pre>'%result
 
 
+from contextlib import contextmanager, nested
+@contextmanager
+def capture():
+    import sys
+    from cStringIO import StringIO
+    oldout,olderr = sys.stdout, sys.stderr
+    try:
+        out=[StringIO(), StringIO()]
+        sys.stdout,sys.stderr = out
+        yield out
+    finally:
+        sys.stdout,sys.stderr = oldout, olderr
+        out[0] = out[0].getvalue()
+        out[1] = out[1].getvalue()
+
 def hello_world():
+    from IPython.core.interactiveshell import InteractiveShell
+
     # I replace \r\n with \n...this might cause problems for code that has legitimate \r characters in it
     # (like in a string)
     code = request.values.get('c','').replace('\r\n','\n')
