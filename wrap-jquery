@@ -3,6 +3,6 @@
 # Wrap a JavaScript file with a function that gives it the Sage Cell's version
 # of jQuery
 
-echo "(function ($, jQuery) {"
+echo "(function (jQuery) {"
 cat $1
-echo "}(sagecell.jQuery, sagecell.jQuery));"
+echo "}(sagecell.jQuery));"

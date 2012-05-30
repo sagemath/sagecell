@@ -20,4 +20,4 @@ files/*
 submodules/jsmin-bin
 static/all*
 static/jquery.min.js
-static/jqueryui/js/*.wrap.js
+static/*.wrap.js
