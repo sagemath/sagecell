@@ -13,7 +13,7 @@ import sys
 from multiprocessing import Process
 
 from IPython.config.loader import Config
-from IPython.utils.traitlets import Any
+from IPython.utils.traitlets import Any, Dict
 from IPython.zmq.kernelmanager import KernelManager
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.zmq.blockingkernelmanager import BlockingKernelManager
@@ -32,6 +32,8 @@ class ForkingKernelManager(BlockingKernelManager):
     # the KernelManager insists that `kernel` is a Popen instance
     # but we want to *only* fork and embed, not exec a new process
     kernel = Any()
+    user_ns = Dict()
+    user_module = Any()
     def __init__(self, *args, **kwargs):
         super(ForkingKernelManager, self    ).__init__(*args, **kwargs)
     # later on, we can override the _bind_socket function
@@ -45,7 +47,11 @@ class ForkingKernelManager(BlockingKernelManager):
         cfg.IPKernelApp.iopub_port = self.iopub_port
         cfg.IPKernelApp.stdin_port = self.stdin_port
         cfg.IPKernelApp.hb_port = self.hb_port
+        # for some reason, this is not setting the user namespace
+        cfg.IPKernelApp.user_ns = self.user_ns
+        cfg.IPKernelApp.user_module = self.user_module
         cfg.Session.key = self.session.key
+        print "Config: ",cfg, self.user_ns
         
         p = Process(target=kernel_target_f, args=(cfg,))
         p.start()
@@ -100,6 +106,7 @@ if __name__ == '__main__':
     start_port = randrange(10000,60000)
     a=ForkingKernelManager()
     a.session.key = str(uuid4())
+    a.user_ns = {'cookie': 'monster'}
     a.shell_port,a.iopub_port,a.stdin_port,a.hb_port = range(start_port,start_port+4)
     a.start_kernel()
     a.start_channels()
