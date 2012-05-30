@@ -11,13 +11,23 @@ static/all.min.js: submodules/jsmin-bin static/all.js
 	rm -f static/all.min.js
 	submodules/jsmin-bin < static/all.js > static/all.min.js
 
-static/all.js: submodules/codemirror2/lib/codemirror.js submodules/codemirror2/mode/python/python.js static/jmol/appletweb/Jmol.js static/jqueryui/js/jquery-ui-1.8.17.custom.min.js submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js static/colorpicker/js/colorpicker.js static/compute_server.js static/sagecell.js
+static/jquery-ui-1.8.17.custom.min.wrap.js: wrap-jquery static/jqueryui/js/jquery-ui-1.8.17.custom.min.js
+	./wrap-jquery static/jqueryui/js/jquery-ui-1.8.17.custom.min.js > static/jquery-ui-1.8.17.custom.min.wrap.js
+
+static/colorpicker.min.wrap.js: wrap-jquery static/colorpicker/js/colorpicker.min.js
+	./wrap-jquery static/colorpicker/js/colorpicker.min.js > static/colorpicker.min.wrap.js
+
+static/jquery.ui.touch-punch.min.wrap.js: wrap-jquery submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
+	./wrap-jquery submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js > static/jquery.ui.touch-punch.min.wrap.js
+
+static/all.js: submodules/codemirror2/lib/codemirror.js submodules/codemirror2/mode/python/python.js static/jmol/appletweb/Jmol.js static/jquery-ui-1.8.17.custom.min.wrap.js static/jquery.ui.touch-punch.min.wrap.js static/colorpicker.min.wrap.js static/compute_server.js static/sagecell.js
 	echo '' > static/all.js
 	cat submodules/codemirror2/lib/codemirror.js submodules/codemirror2/mode/python/python.js >> static/all.js
 	cat static/jmol/appletweb/Jmol.js >> static/all.js
-	cat static/jqueryui/js/jquery-ui-1.8.17.custom.min.js >> static/all.js
-	cat submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js >> static/all.js
-	cat static/colorpicker/js/colorpicker.js >> static/all.js
+	cat static/jquery-ui-1.8.17.custom.min.wrap.js >> static/all.js
+	cat static/jquery.ui.touch-punch.min.wrap.js >> static/all.js
+	cat static/colorpicker.min.wrap.js >> static/all.js
+	echo ';' >> static/all.js
 	cat static/compute_server.js >> static/all.js
 	cat static/sagecell.js >> static/all.js
 

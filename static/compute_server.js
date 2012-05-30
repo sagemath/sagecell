@@ -15,9 +15,6 @@
 //    which argues that it is more inefficient to make objects out of
 //    closures instead of using the prototype property and "new"
 
-
-jQuery.noConflict();
-
 (function($) {
 
 
@@ -1305,4 +1302,4 @@ sagecell.InteractData.Slider.prototype.finishRender = function(location) {
 jmolInitialize(sagecell.$URL.root + '/static/jmol');
 jmolSetCallback("menuFile", sagecell.$URL.root + "/static/jmol/appletweb/SageMenu.mnu");
 
-})(jQuery);
+})(sagecell.jQuery);
