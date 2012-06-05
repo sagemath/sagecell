@@ -92,6 +92,12 @@ def root(db,fs):
         options['autoeval'] = 'false' if 'autoeval' in request.args and request.args['autoeval'] == 'false' else 'true'
     return render_template('root.html', **options)
 
+@app.route("/static/mathjax/fonts/HTML-CSS/TeX/<fontformat>/<filename>")
+def webfont(fontformat, filename):
+    response = send_file("static/mathjax/fonts/HTML-CSS/TeX/%s/%s" % (fontformat, filename))
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
 @app.route("/eval", methods=['POST'])
 @get_db
 def evaluate(db,fs):
