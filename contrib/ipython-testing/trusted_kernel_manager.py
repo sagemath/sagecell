@@ -11,6 +11,14 @@ class TrustedMultiKernelManager:
         self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max", #}
         self.context = zmq.Context()
 
+    def get_kernel_ids(self, comp = None):
+        ids = []
+        if comp is not None and comp in self._comps:
+            ids = self._comps[comp]["kernels"].keys()
+        else:
+            ids = self._kernels.keys()
+        return ids
+
     def setup_initial_comps(self):
         """ Tries to read a config file containing initial computer information """
         tmp_comps = {}
@@ -164,12 +172,16 @@ if __name__ == "__main__":
 
     trutest.setup_initial_comps()
 
-    for i in xrange(60):
+    for i in xrange(10):
         test_id = trutest.new_session()
-        trutest.end_session(test_id)
+        # trutest.end_session(test_id)
 
-    trutest.new_session()
+#    trutest.new_session()
 
-    for i in trutest._comps.values():
-        print i["kernels"]
+    vals = trutest._comps.values()
+    for i in xrange(len(vals)):
+        print "Computer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
+#    i["kernels"]
+
+    print trutest.get_kernel_ids()
 
