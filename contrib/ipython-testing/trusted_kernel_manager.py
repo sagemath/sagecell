@@ -6,7 +6,7 @@ class TrustedMultiKernelManager:
     def __init__(self):
 
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "ports": [hb, iopub, shell, stdin]}
-        self._comps = {} #comp_id: {"port": ssh_port, "kernels": {}, "max", #}
+        self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max", #}
 
     def setup_initial_comps(self):
         """ Tries to read a config file containing initial computer information """
