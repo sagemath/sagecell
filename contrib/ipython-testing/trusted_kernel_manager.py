@@ -1,12 +1,15 @@
 import uuid, random
+import zmq
+from zmq.eventloop.zmqstream import ZMQStream
 
 class TrustedMultiKernelManager:
     """A class for managing multiple kernels on the trusted side."""
 
     def __init__(self):
 
-        self._kernels = {} #kernel_id: {"comp_id": comp_id, "ports": [hb, iopub, shell, stdin]}
+        self._kernels = {} #kernel_id: {"comp_id": comp_id, "ports": {"hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max", #}
+        self.context = zmq.Context()
 
     def setup_initial_comps(self):
         """ Tries to read a config file containing initial computer information """
@@ -22,7 +25,7 @@ class TrustedMultiKernelManager:
                 i["kernels"] = {}
                 # this is a hack
                 i["port"] = UntrustedMultiKernelManager()
-                comp_id = uuid.uuid4()
+                comp_id = str(uuid.uuid4())
                 tmp_comps[comp_id] = i
 
         self._comps = tmp_comps
@@ -83,8 +86,35 @@ class TrustedMultiKernelManager:
             return found_id
         else:
             raise IOError("Could not find open computer. There are %d computers available."%len(ids))
+
+    def _create_connected_stream(self, host, port, socket_type):
+        sock = self.context.socket(socket_type)
+        addr = "tcp://%s:%i" % (host, port)
+        print "Connecting to: %s" % addr
+        sock.connect(addr)
+        return ZMQStream(sock)
     
-        
+    def create_iopub_stream(self, kernel_id):
+        comp_id = self._kernels[kernel_id]["comp_id"]
+        host = self._comps[comp_id]["host"]
+        ports = self._kernels[kernel_id]["ports"]
+        iopub_stream = self._create_connected_stream(host, ports["iopub_port"], zmq.SUB)
+        iopub_stream.socket.setsockopt(zmq.SUBSCRIBE, b"")
+        return iopub_stream
+
+    def create_shell_stream(self, kernel_id):
+        comp_id = self._kernels[kernel_id]["comp_id"]
+        host = self._comps[comp_id]["host"]
+        ports = self._kernels[kernel_id]["ports"]
+        shell_stream = self._create_connected_stream(host, ports["shell_port"], zmq.DEALER)
+        return shell_stream
+
+    def create_hb_stream(self, kernel_id):
+        comp_id = self._kernels[kernel_id]["comp_id"]
+        host = self._comps[comp_id]["host"]
+        ports = self._kernels[kernel_id]["ports"]
+        hb_stream = self._create_connected_stream(host, ports["hb_port"], zmq.REQ)
+        return hb_stream
 
 """ TO DO:
 
@@ -94,6 +124,8 @@ class TrustedMultiKernelManager:
 """
 
 
+from IPython.zmq.kernelmanager import KernelManager #used for testing
+
 
 class UntrustedMultiKernelManager:
     """ This just emulates how a UMKM should work """
@@ -101,12 +133,23 @@ class UntrustedMultiKernelManager:
         self._kernels = {}
 
     def start_kernel(self):
-        info = (str(uuid.uuid4()), [random.randrange(50000,60000) for i in xrange(4)])
-        self._kernels[info[0]] = info[1]
-        return info
+        k_id = str(uuid.uuid4())
+        km = KernelManager() #used for testing
+
+        km.start_kernel()
+
+        self._kernels[k_id] = km
+
+        ports = dict(shell_port = km.shell_port, 
+                     iopub_port = km.iopub_port,
+                     stdin_port = km.stdin_port,
+                     hb_port = km.hb_port)
+        return (k_id, ports)
+
     def kill_kernel(self, k_id):
-        retval = False
+        retval = False    
         try:
+            self._kernels[k_id].kill_kernel()
             del self._kernels[k_id]
             retval = True
         except:
