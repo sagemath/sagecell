@@ -55,70 +55,11 @@ _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 Tornado Handlers
 """
 
-class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
-    def open(self, kernel_id):
-        self.km = self.application.km
-        self.kernel_id = kernel_id
-        self.session = Session()
+from handlers import ShellHandler, IOPubHandler
 
-    def _reserialize_reply(self, msg_list):
-        idents, msg_list = self.session.feed_identities(msg_list)
-        msg = self.session.unserialize(msg_list)
-        try:
-            msg["header"].pop("date")
-        except KeyError:
-            pass
-        msg.pop("buffers")
-        return jsonapi.dumps(msg)
-
-    def _on_zmq_reply(self, msg_list):
-        try:
-            message = self._reserialize_reply(msg_list)
-            print "IOPUB HANDLER MESSAGE RECEIVED: ", message
-            self.write_message(message)
-        except:
-            pass
-        
-
-class ShellHandler(ZMQStreamHandler):
-    def open(self, kernel_id):
-        print "*"*10, " BEGIN SHELL HANDLER ", "*"*10
-
-        super(ShellHandler, self).open(kernel_id)
-
-        self.shell_stream = self.km.create_shell_stream(self.kernel_id)
-        print "shell stream created for %s"%kernel_id
-        print "*"*10, " END SHELL HANDLER ", "*"*10
-
-    def on_message(self, message):
-        print "SHELL HANDLER MESSAGE RECEIVED: ", message
-        msg = json.loads(message)
-        self.session.send(self.shell_stream, msg)
-        self.set_status
-
-    def on_close(self):
-        if self.shell_stream is not None and not self.shell_stream.closed():
-            self.shell_stream.close()
-
-class IOPubHandler(ZMQStreamHandler):
-    def open(self, kernel_id):
-        print "*"*10, " BEGIN IOPUB HANDLER ", "*"*10
-        super(IOPubHandler, self).open(kernel_id)
-
-        self.iopub_stream = self.km.create_iopub_stream(self.kernel_id)
-        self.iopub_stream.on_recv(self._on_zmq_reply)
-        print "iopub_stream created for %s"%kernel_id
-        print "*"*10, " END IOPUB HANDLER ", "*"*10
-
-    def on_message(self, msg):
-        pass
-
-    def on_close(self):
-        if self.iopub_stream is not None and not self.iopub_stream.closed():
-            self.iopub_stream.on_recv(None)
-            self.iopub_stream.close()
-
-
+"""
+Web Server
+"""
 
 class SageCellServer(tornado.web.Application):
     def __init__(self):

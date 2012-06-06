@@ -19,6 +19,11 @@ class TrustedMultiKernelManager:
             ids = self._kernels.keys()
         return ids
 
+    def get_hb_info(self, kernel_id):
+        comp_id = self._kernels[kernel_id]["comp_id"]
+        comp = self._comps[comp_id]
+        return (comp["beat_interval"], comp["first_beat"])
+
     def setup_initial_comps(self):
         """ Tries to read a config file containing initial computer information """
         tmp_comps = {}
