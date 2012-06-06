@@ -153,8 +153,8 @@ sagecell.makeSagecell = function (args) {
                 settings.inputLocation = "#" + id;
             } else {
                 inputLocation.html(body);
-                inputLocation.find(".sagecell_commands").val(settings.code);
             }
+            inputLocation.find(".sagecell_commands").val(settings.code);
             if (inputLocation !== outputLocation) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
             }
