@@ -88,8 +88,10 @@ sagecell.makeSagecell = function (args) {
             args.code = $(args.codeLocation).html();
         } else if ($(args.inputLocation).children("script").length > 0) {
             args.code = $(args.inputLocation).children("script").html();
-        } else {
+        } else if ($(args.inputLocation).is("textarea")) {
             args.code = $(args.inputLocation).val();
+        } else {
+            args.code = $(args.inputLocation).text();
         }
     }
     defaults = {"editor": "codemirror",
@@ -141,7 +143,7 @@ sagecell.makeSagecell = function (args) {
                 inputLocation = $(document.createElement("div")).insertBefore(inputLocation);
                 inputLocation.html(body);
                 ta.addClass("sagecell_commands");
-                ta.attr({"autocapitalize": "off", "autocorrect": "off"});
+                ta.attr({"autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
                 inputLocation.find(".sagecell_commands").replaceWith(ta);
                 var id = "input_" + sagecell.functions.uuid4();
                 inputLocation[0].id = id;
