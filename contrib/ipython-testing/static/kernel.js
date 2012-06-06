@@ -306,11 +306,13 @@ var IPython = (function (IPython) {
     }
 
     Kernel.prototype._handle_shell_reply = function(e) {
-        $("#message_output").append(document.createElement("div")).children().last().text(e.data);
+        $("#message_output").append(document.createElement("div")).children().last().text("SHELL MESSAGE ::: " + e.data);
     }
 
 
-    Kernel.prototype._handle_iopub_reply = Kernel.prototype._handle_shell_reply;
+    Kernel.prototype._handle_iopub_reply = function(e) {
+        $("#message_output").append(document.createElement("div")).children().last().text("IOPUB MESSAGFE ::: " + e.data);
+    }
 
     
     /*
