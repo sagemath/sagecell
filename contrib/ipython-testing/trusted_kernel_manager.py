@@ -8,7 +8,7 @@ class TrustedMultiKernelManager:
     def __init__(self):
 
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "ports": {"hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
-        self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max", #}
+        self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
         self.context = zmq.Context()
 
     def get_kernel_ids(self, comp = None):
@@ -28,35 +28,38 @@ class TrustedMultiKernelManager:
         except:
             config = object()
 
+        defaults = {"max": 10, "beat_interval": 3.0, "first_beat": 5.0}
+
         if hasattr(config, "computers"):
             for i in config.computers:
                 i["kernels"] = {}
                 # this is a hack
                 i["port"] = UntrustedMultiKernelManager()
                 comp_id = str(uuid.uuid4())
-                tmp_comps[comp_id] = i
+                x = dict(defaults.items() + i.items())
+                tmp_comps[comp_id] = x
 
         self._comps = tmp_comps
 
-    def purge_kernels(self, c_id):
+    def purge_kernels(self, comp_id):
         """ Kills all kernels on a given computer. """
-        comp = self._comps[c_id]["port"]
-        for i in self._comps[c_id]["kernels"].keys():
+        comp = self._comps[comp_id]["port"]
+        for i in self._comps[comp_id]["kernels"].keys():
             comp.kill_kernel(i)
 
     def add_computer(self, config):
         """ Adds a tracked computer. """
-        c_id = uuid.uuid4()
-        self._comps[c_id] = config
+        comp_id = uuid.uuid4()
+        self._comps[comp_id] = config
 
-    def remove_computer(self, c_id):
+    def remove_computer(self, comp_id):
         """ Removes a tracked computer. """
-        self.purge_kernels(c_id)
-        del self._comps[c_id]
+        self.purge_kernels(comp_id)
+        del self._comps[comp_id]
 
     def new_session(self):
         """Starts a new kernel on an open computer."""
-        comp_id = self.find_open_computer()
+        comp_id = self._find_open_computer()
         comp =  self._comps[comp_id]["port"] #once ssh is implemented this must be changed
         (k_id, k_ports) = comp.start_kernel()
         self._kernels[k_id] = {"comp_id": comp_id, "ports": k_ports}
@@ -75,7 +78,7 @@ class TrustedMultiKernelManager:
         else:
             print "error ending kernel"
         
-    def find_open_computer(self):
+    def _find_open_computer(self):
         """Returns the comp_id of a computer able to start a new kernel."""
         
         ids = self._comps.keys()
@@ -141,24 +144,24 @@ class UntrustedMultiKernelManager:
         self._kernels = {}
 
     def start_kernel(self):
-        k_id = str(uuid.uuid4())
+        kernel_id = str(uuid.uuid4())
         km = KernelManager() #used for testing
 
         km.start_kernel()
 
-        self._kernels[k_id] = km
+        self._kernels[kernel_id] = km
 
         ports = dict(shell_port = km.shell_port, 
                      iopub_port = km.iopub_port,
                      stdin_port = km.stdin_port,
                      hb_port = km.hb_port)
-        return (k_id, ports)
+        return (kernel_id, ports)
 
-    def kill_kernel(self, k_id):
+    def kill_kernel(self, kernel_id):
         retval = False    
         try:
-            self._kernels[k_id].kill_kernel()
-            del self._kernels[k_id]
+            self._kernels[kernel_id].kill_kernel()
+            del self._kernels[kernel_id]
             retval = True
         except:
             pass
