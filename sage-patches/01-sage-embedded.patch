@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent 93511b36e569848a8f1ec4d04a22cd49273efcdc
+# Parent 6c808335768ba3b56de74dc18835211a821d1511
 imported patch embedded.patch
 
 diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
@@ -106,15 +106,15 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
 --- a/sage/interfaces/r.py
 +++ b/sage/interfaces/r.py
 @@ -212,7 +212,7 @@
+ ##########################################################################
  
- from keyword import iskeyword
  from expect import Expect, ExpectElement, ExpectFunction, FunctionElement
 -from sage.misc.misc import DOT_SAGE
 +from sage.misc.misc import EMBEDDED_MODE, DOT_SAGE
- from sage.misc.latex import LatexExpr
  import re
  import sage.rings.integer
-@@ -360,7 +360,6 @@
+ 
+@@ -363,7 +363,6 @@
          if "TRUE" not in s+t:
              raise RuntimeError, "R was not compiled with PNG support"
  
@@ -122,7 +122,7 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
          if EMBEDDED_MODE:
              self.setwd('"%s"'%os.path.abspath('.'))
          return RFunction(self, 'png')(*args, **kwds)
-@@ -698,8 +697,7 @@
+@@ -714,8 +713,7 @@
              This is similar to typing r.command?. 
          """
          s = self.eval('help("%s")'%command).strip()     # ?cmd is only an unsafe shortcut
@@ -132,7 +132,7 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
              s = s.replace('_\x08','')
          return HelpExpression(s)
  
-@@ -1009,7 +1007,6 @@
+@@ -1034,7 +1032,6 @@
          """
          # We have to define this to override the plot function defined in the
          # superclass.
@@ -310,17 +310,26 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/interpreter.py b/sage/misc/interpreter.py
 --- a/sage/misc/interpreter.py
 +++ b/sage/misc/interpreter.py
-@@ -424,10 +424,6 @@
-     return InteractiveShell._prefilter(self, block2, continuation)
+@@ -87,19 +87,6 @@
+ from preparser import (preparse, preparse_file, load_wrap,
+                        modified_attached_files, attached_files)
  
- 
--import sage.server.support
 -def embedded():
+-    """
+-    Returns True if Sage is being run from the notebook.
+-
+-    EXAMPLES::
+-    
+-        sage: from sage.misc.interpreter import embedded
+-        sage: embedded()
+-        False
+-    """
+-    import sage.server.support
 -    return sage.server.support.EMBEDDED_MODE
 -
- ipython_prefilter = InteractiveShell.prefilter
- do_preparse=True
- def preparser(on=True):
+ 
+ #TODO: This global variable do_preparse should be associtated with an
+ #IPython InteractiveShell as opposed to a global variable in this
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
@@ -390,7 +399,7 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
  def sage_makedirs(dir):
      """
      Python version of ``mkdir -p``: try to create a directory, and also
-@@ -2155,19 +2162,6 @@
+@@ -2160,19 +2167,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -439,7 +448,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
  
-@@ -737,7 +737,6 @@
+@@ -777,7 +777,6 @@
      if not interact:
          return results
  
@@ -447,9 +456,9 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1322,7 +1321,6 @@
-             raise OSError, """The document '%s' does not exist.  Please build it
- with 'sage -docbuild %s html --jsmath' and try again.""" %(name, name)
+@@ -1342,7 +1341,6 @@
+         if testing:
+             return (url, path)
  
 -        from sage.server.support import EMBEDDED_MODE
          if EMBEDDED_MODE:
