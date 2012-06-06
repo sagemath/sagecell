@@ -381,6 +381,9 @@ sagecell.initCell = (function(sagecellInfo) {
     if (sagecellInfo.code && sagecellInfo.autoeval) {
         sagecellInfo.submit();
     }
+    if (sagecellInfo.callback) {
+        sagecellInfo.callback();
+    }
     return sagecellInfo;
 });
 
