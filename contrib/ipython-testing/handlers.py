@@ -86,7 +86,7 @@ class IOPubHandler(ZMQStreamHandler):
             self.iopub_stream.on_recv(None)
             self.iopub_stream.close()
         if self.hb_stream is not None and not self.hb_stream.closed():
-            self.hb_stream.close()
+            self.stop_hb()
 
     def start_hb(self, callback):
         if not self._beating:
@@ -135,6 +135,7 @@ Only start the hb loop if we haven't been closed during the wait.
             self._hb_periodic_callback.stop()
             if not self.hb_stream.closed():
                 self.hb_stream.on_recv(None)
+                self.hb_stream.close()
 
     def kernel_died(self):
         self.application.km.end_session(self.kernel_id)
