@@ -136,8 +136,6 @@ sagecell.makeSagecell = function (args) {
             var outputLocation = $(settings.outputLocation);
             var evalButtonText = settings.evalButtonText;
 
-            inputLocation.addClass("sagecell");
-            outputLocation.addClass("sagecell");
             if (inputLocation.is("textarea")) {
                 var ta = inputLocation;
                 inputLocation = $(document.createElement("div")).insertBefore(inputLocation);
@@ -154,6 +152,8 @@ sagecell.makeSagecell = function (args) {
             } else {
                 inputLocation.html(body);
             }
+            inputLocation.addClass("sagecell");
+            outputLocation.addClass("sagecell");
             inputLocation.find(".sagecell_commands").val(settings.code);
             if (inputLocation !== outputLocation) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
