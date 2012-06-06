@@ -267,6 +267,16 @@ This sets whether the Sage Cell will immediately evalute the code from the
    autoeval: boolean
    .. }
 
+Callback
+^^^^^^^^^^^^^^^^^^^^
+
+This is a function with no arguments that will be called after the Sage Cell
+has finished loading::
+
+   { ..
+   callback: function
+   .. }
+
 Hiding Sage Cell elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
