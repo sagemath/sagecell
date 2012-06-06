@@ -1,6 +1,8 @@
 import uuid, random
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
+import paramiko
+import os
 
 class TrustedMultiKernelManager:
     """A class for managing multiple kernels on the trusted side."""
@@ -9,6 +11,8 @@ class TrustedMultiKernelManager:
 
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "ports": {"hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
+        self._clients = {} #comp_id: zmq req socket object
+        
         self.context = zmq.Context()
 
     def get_kernel_ids(self, comp = None):
@@ -38,19 +42,32 @@ class TrustedMultiKernelManager:
         if hasattr(config, "computers"):
             for i in config.computers:
                 i["kernels"] = {}
-                # this is a hack
-                i["port"] = UntrustedMultiKernelManager()
                 comp_id = str(uuid.uuid4())
                 x = dict(defaults.items() + i.items())
                 tmp_comps[comp_id] = x
-
+                context = zmq.Context()
+                req = context.socket(zmq.REQ)
+                port = req.bind_to_random_port("tcp://127.0.0.1")
+                client = self.setup_ssh_connection(x["host"],x["username"])
+                client.exec_command("python '%s/receiver.py' %d" % (os.getcwd(), port))
+                req.send("")
+                if(req.recv() == "handshake"):
+                    self._clients[comp_id] = req
+                    print "ZMQ Connection with computer %s at port %d established." %(comp_id, port)
+                
         self._comps = tmp_comps
+
+    def setup_ssh_connection(self, host, username):
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(host, username=username)
+        return ssh
 
     def purge_kernels(self, comp_id):
         """ Kills all kernels on a given computer. """
-        comp = self._comps[comp_id]["port"]
-        for i in self._comps[comp_id]["kernels"].keys():
-            comp.kill_kernel(i)
+        req = self._clients[comp_id]
+        req.send("purge_kernels")
+        print req.recv()
 
     def add_computer(self, config):
         """ Adds a tracked computer. """
@@ -65,19 +82,31 @@ class TrustedMultiKernelManager:
     def new_session(self):
         """Starts a new kernel on an open computer."""
         comp_id = self._find_open_computer()
-        comp =  self._comps[comp_id]["port"] #once ssh is implemented this must be changed
-        (k_id, k_ports) = comp.start_kernel()
-        self._kernels[k_id] = {"comp_id": comp_id, "ports": k_ports}
-        self._comps[comp_id]["kernels"][k_id] = None
-        print "Kernels ::: ", self._kernels
-        return k_id
+        
+        req = self._clients[comp_id]
+        req.send("start_kernel")
+        
+        x = req.recv_pyobj()
+        kernel_id=x["kernel_id"]
+        kernel_ports=x["ports"]
+
+        self._kernels[kernel_id] = {"comp_id": comp_id, "ports": kernel_ports}
+        self._comps[comp_id]["kernels"][kernel_id] = None
+        #print "Kernels ::: ", self._kernels
+        return kernel_id
 
     def end_session(self, kernel_id):
         """Kills an existing kernel on a given computer."""
         comp_id = self._kernels[kernel_id]["comp_id"]
-        comp = self._comps[comp_id]["port"]
-        print "Killing Kernel ::: %s at %s"%(kernel_id, str(comp))
-        if (comp.kill_kernel(kernel_id)):
+
+        req = self._clients[comp_id]
+        req.send("kill_kernel")
+        print "Killing Kernel ::: %s at %s"%(kernel_id, (comp_id))
+        req.recv()
+        req.send(kernel_id)
+        status = req.recv_pyobj()
+        
+        if (status):
             del self._kernels[kernel_id]
             del self._comps[comp_id]["kernels"][kernel_id]
         else:
@@ -139,57 +168,25 @@ class TrustedMultiKernelManager:
 
 """
 
-
-from IPython.zmq.kernelmanager import KernelManager #used for testing
-
-
-class UntrustedMultiKernelManager:
-    """ This just emulates how a UMKM should work """
-    def __init__(self):
-        self._kernels = {}
-
-    def start_kernel(self):
-        kernel_id = str(uuid.uuid4())
-        km = KernelManager() #used for testing
-
-        km.start_kernel()
-
-        self._kernels[kernel_id] = km
-
-        ports = dict(shell_port = km.shell_port, 
-                     iopub_port = km.iopub_port,
-                     stdin_port = km.stdin_port,
-                     hb_port = km.hb_port)
-        return (kernel_id, ports)
-
-    def kill_kernel(self, kernel_id):
-        retval = False    
-        try:
-            self._kernels[kernel_id].kill_kernel()
-            del self._kernels[kernel_id]
-            retval = True
-        except:
-            pass
-
-        return retval
-
-
-
+from time import sleep
 if __name__ == "__main__":
     trutest = TrustedMultiKernelManager()
 
     trutest.setup_initial_comps()
 
-    for i in xrange(10):
+    for i in xrange(5):
         test_id = trutest.new_session()
-        # trutest.end_session(test_id)
-
-#    trutest.new_session()
+        #trutest.end_session(test_id)
 
     vals = trutest._comps.values()
     for i in xrange(len(vals)):
-        print "Computer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
-#    i["kernels"]
+        print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
 
-    print trutest.get_kernel_ids()
+    print "\nList of all kernel ids ::: " + str(trutest.get_kernel_ids())
+        
+
+
+    y=trutest._clients.keys()
+    for i in y:
+        trutest.purge_kernels(i)
 
