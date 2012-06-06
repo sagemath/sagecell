@@ -137,9 +137,10 @@ evaluate button::
    inputLocation: "#..."
    .. }
 
-The ``inputLocation`` argument should be a
+The ``inputLocation`` argument (required) should be a
 `jQuery selector <http://api.jquery.com/category/selectors/>`_
-for a single DOM node. It is required and cannot be omitted.
+for a single DOM node. If the DOM node is a textarea, the textarea will be used
+as the basis for the code input box.
 
 Output Location
 ^^^^^^^^^^^^^^^
