@@ -86,8 +86,10 @@ sagecell.makeSagecell = function (args) {
     if (args.code === undefined) {
         if (args.codeLocation !== undefined) {
             args.code = $(args.codeLocation).html();
-        } else {
+        } else if ($(args.inputLocation).children("script").length > 0) {
             args.code = $(args.inputLocation).children("script").html();
+        } else {
+            args.code = $(args.inputLocation).html();
         }
     }
     defaults = {"editor": "codemirror",
@@ -134,8 +136,24 @@ sagecell.makeSagecell = function (args) {
 
             inputLocation.addClass("sagecell");
             outputLocation.addClass("sagecell");
-            inputLocation.html(body);
-            inputLocation.find(".sagecell_commands").val(settings.code);
+            if (inputLocation.is("textarea")) {
+                var ta = inputLocation;
+                inputLocation = $(document.createElement("div")).insertBefore(inputLocation);
+                inputLocation.html(body);
+                ta.addClass("sagecell_commands");
+                ta.attr({"autocapitalize": "off", "autocorrect": "off"});
+                ta.val(ta.html());
+                inputLocation.find(".sagecell_commands").replaceWith(ta);
+                var id = "input_" + sagecell.functions.uuid4();
+                inputLocation[0].id = id;
+                if (settings.outputLocation === settings.inputLocation) {
+                    outputLocation = $(settings.outputLocation = "#" + id);
+                }
+                settings.inputLocation = "#" + id;
+            } else {
+                inputLocation.html(body);
+                inputLocation.find(".sagecell_commands").val(settings.code);
+            }
             if (inputLocation !== outputLocation) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
             }
@@ -196,10 +214,6 @@ sagecell.initCell = (function(sagecellInfo) {
     var textArea = inputLocation.find(".sagecell_commands");
     var files = [];
     var editorData, temp;
-
-    if (sagecellInfo.code !== undefined) {
-        textArea.val(sagecellInfo.code);
-    }
     if (! sagecellInfo.sageMode) {
         sageMode.attr("checked", false);
     }
