@@ -737,17 +737,15 @@ def run_zmq(db_address, fs_address, workers, interact_timeout, resource_limits=N
            resource_limits=resource_limits)
 
 if __name__ == "__main__":
-    # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
-    # sometime in the summer of 2011, and then we can move this to use argparse.
     import os
-    #os.setsid()
+    os.setsid()
     print "PROCESS GROUP ID: ",os.getpgid(0)
     from argparse import ArgumentParser
     parser = ArgumentParser(description="Run one or more devices to process commands from the client.")
     parser.add_argument("--db", choices=["mongo", "sqlalchemy", "zmq"], help="Database to use")
-    parser.add_argument("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
-    parser.add_argument("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
-    parser.add_argument("-w", type=int, default=1, dest="workers",
+    parser.add_argument("--dbaddress", help="ZMQ address for db connection; only for --db zmq")
+    parser.add_argument("--fsaddress", help="ZMQ address for fs connection; only for --db zmq")
+    parser.add_argument("-w", "--workers", type=int, default=1,
                       help="Number of workers to start")
     parser.add_argument("-t", "--timeout", type=int, default=60,
                       dest="interact_timeout",
@@ -758,8 +756,8 @@ if __name__ == "__main__":
     parser.add_argument("--mem", type=float, default=-1,
                       dest="memory_limit",
                       help="Memory (MB) allotted to each session (hard limit)")
-    parser.add_argument("--keyfile", dest="keyfile")
-    parser.add_argument("-q", action="store_true", dest="quiet", help="Turn off most logging")
+    parser.add_argument("--keyfile")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Turn off most logging")
     args = parser.parse_args()
 
     if args.quiet:
