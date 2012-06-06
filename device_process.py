@@ -745,37 +745,37 @@ if __name__ == "__main__":
     # We don't use argparse because Sage has an old version of python.  This will probably be upgraded
     # sometime in the summer of 2011, and then we can move this to use argparse.
     import os
-    os.setsid()
+    #os.setsid()
     print "PROCESS GROUP ID: ",os.getpgid(0)
-    from optparse import OptionParser
-    parser = OptionParser(description="Run one or more devices to process commands from the client.")
-    parser.add_option("--db", choices=["mongo", "sqlalchemy", "zmq"], help="Database to use")
-    parser.add_option("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
-    parser.add_option("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
-    parser.add_option("-w", type=int, default=1, dest="workers",
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description="Run one or more devices to process commands from the client.")
+    parser.add_argument("--db", choices=["mongo", "sqlalchemy", "zmq"], help="Database to use")
+    parser.add_argument("--dbaddress", dest="dbaddress", help="ZMQ address for db connection; only for --db zmq")
+    parser.add_argument("--fsaddress", dest="fsaddress", help="ZMQ address for fs connection; only for --db zmq")
+    parser.add_argument("-w", type=int, default=1, dest="workers",
                       help="Number of workers to start")
-    parser.add_option("-t", "--timeout", type=int, default=60,
+    parser.add_argument("-t", "--timeout", type=int, default=60,
                       dest="interact_timeout",
                       help="Worker idle timeout if an interact command is detected")
-    parser.add_option("--cpu", type=float, default=-1,
+    parser.add_argument("--cpu", type=float, default=-1,
                       dest="cpu_limit",
                       help="CPU time (seconds) allotted to each session (hard limit)")
-    parser.add_option("--mem", type=float, default=-1,
+    parser.add_argument("--mem", type=float, default=-1,
                       dest="memory_limit",
                       help="Memory (MB) allotted to each session (hard limit)")
-    parser.add_option("--keyfile", dest="keyfile")
-    parser.add_option("-q", action="store_true", dest="quiet", help="Turn off most logging")
-    (sysargs, args) = parser.parse_args()
+    parser.add_argument("--keyfile", dest="keyfile")
+    parser.add_argument("-q", action="store_true", dest="quiet", help="Turn off most logging")
+    args = parser.parse_args()
 
-    if sysargs.quiet:
+    if args.quiet:
         util.LOGGING=False
 
     import resource
     resource_limits=[]
-    if sysargs.cpu_limit>=0:
-        resource_limits.append((resource.RLIMIT_CPU, (sysargs.cpu_limit, sysargs.cpu_limit)))
-    if sysargs.memory_limit>=0:
-        mem_bytes=sysargs.memory_limit*(2**20)
+    if args.cpu_limit>=0:
+        resource_limits.append((resource.RLIMIT_CPU, (args.cpu_limit, args.cpu_limit)))
+    if args.memory_limit>=0:
+        mem_bytes=args.memory_limit*(2**20)
         # on OSX 10.7, RLIMIT_AS is an alias for RLIMIT_RSS, which is just a *suggestion* 
         # about how much memory to use.
         resource_limits.append((resource.RLIMIT_AS, (mem_bytes, mem_bytes)))
@@ -784,13 +784,13 @@ if __name__ == "__main__":
 
     outQueue=RawQueue()
 
-    filename=sysargs.keyfile
+    filename=args.keyfile
     with open(filename,"rb") as f:
         keys=f.read().split('KEY_SEPARATOR')
     os.remove(filename)
 
     import misc
-    db, fs = misc.select_db(sysargs)
+    db, fs = misc.select_db(args)
 
-    device(db=db, fs=fs, workers=sysargs.workers, interact_timeout=sysargs.interact_timeout,
+    device(db=db, fs=fs, workers=args.workers, interact_timeout=args.interact_timeout,
            keys=keys, resource_limits=resource_limits)
