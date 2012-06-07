@@ -73,6 +73,7 @@ class TrustedMultiKernelManager:
         """ Adds a tracked computer. """
         comp_id = uuid.uuid4()
         self._comps[comp_id] = config
+        return comp_id
 
     def remove_computer(self, comp_id):
         """ Removes a tracked computer. """
@@ -186,7 +187,7 @@ if __name__ == "__main__":
         
 
 
-    y=trutest._clients.keys()
+    y=trutest._comps.keys()
     for i in y:
         trutest.purge_kernels(i)
 
