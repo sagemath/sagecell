@@ -1,39 +1,32 @@
-from IPython.zmq.kernelmanager import KernelManager #used for testing
 import uuid
+import zmq
+from IPython.zmq.kernelmanager import KernelManager
+from multiprocessing import Process, Pipe
 
 class UntrustedMultiKernelManager:
-    """ This just emulates how a UMKM should work """
     def __init__(self):
-        self._kernels = {}
+        self.kernel_pipes = {}
 
     def start_kernel(self):
-        self.kernel_id = str(uuid.uuid4())
-        km = KernelManager() #used for testing
-
-        km.start_kernel()
-
-        self._kernels[self.kernel_id] = km
-
-        ports = dict(shell_port = km.shell_port, 
-                     iopub_port = km.iopub_port,
-                     stdin_port = km.stdin_port,
-                     hb_port = km.hb_port)
-        return {"kernel_id": self.kernel_id, "ports": ports}
+        p, q = Pipe()
+        kernel_id = str(uuid.uuid4())
+        Process(target=self.fork_kernel, args=(q,)).start()
+        self.kernel_pipes[kernel_id] = p
+        shell, iopub, stdin, hb = p.recv()
+        return {"kernel_id": kernel_id,
+                 "ports": {"shell_port": shell, "iopub_port": iopub,
+                           "stdin_port": stdin, "hb_port": hb}}
 
     def kill_kernel(self, kernel_id):
-        retval = False    
-        try:
-            import os
-            #pid = self._kernels[kernel_id].pid
-            #print pid
-            self._kernels[kernel_id].shutdown_kernel()
-            #os.killpg(os.getpgid(pid))
-            del self._kernels[kernel_id]
-            retval = True
-        except:
-            raise
+        self.kernel_pipes[kernel_id].send("")
+        del self.kernel_pipes[kernel_id]
 
-        return retval
+    def fork_kernel(self, c):
+        km = KernelManager()
+        km.start_kernel()
+        c.send((km.shell_port, km.iopub_port, km.stdin_port, km.hb_port))
+        c.recv()
+        km.shutdown_kernel()
 
 if __name__ == "__main__":
     x = UntrustedMultiKernelManager()
@@ -41,5 +34,4 @@ if __name__ == "__main__":
     print y
     from time import sleep 
     sleep(2)
-    val = x.kill_kernel(y["kernel_id"])
-    print val
+    x.kill_kernel(y["kernel_id"])
