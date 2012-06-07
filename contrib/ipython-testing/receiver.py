@@ -21,3 +21,13 @@ while True:
         for i in km._kernels.keys():
             km.kill_kernel(i)
         rep.send("got em!")
+    elif x == "restart_kernel":
+        rep.send("")
+        kernel_id = rep.recv()
+        km.restart_kernel(kernel_id)
+        rep.send("kernel %s restarted." % (kernel_id))
+    elif x == "interrupt_kernel":
+        rep.send("")
+        kernel_id = rep.recv()
+        km.interrupt_kernel(kernel_id)
+        rep.send("kernel %s was interrupted." % (kernel_id))

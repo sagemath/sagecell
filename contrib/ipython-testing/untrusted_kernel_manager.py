@@ -23,7 +23,7 @@ class UntrustedMultiKernelManager:
     def kill_kernel(self, kernel_id):
         retval = False    
         try:
-            import os
+            #import os
             #pid = self._kernels[kernel_id].pid
             #print pid
             self._kernels[kernel_id].shutdown_kernel()
@@ -34,6 +34,13 @@ class UntrustedMultiKernelManager:
             raise
 
         return retval
+
+    def restart_kernel(self, kernel_id):
+        self._kernels[kernel_id].restart_kernel()
+
+    def interrupt_kernel(self, kernel_id):
+        self._kernels[kernel_id].interrupt_kernel()
+        
 
 if __name__ == "__main__":
     x = UntrustedMultiKernelManager()
