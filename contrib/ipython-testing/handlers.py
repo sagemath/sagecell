@@ -17,30 +17,40 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     def _reserialize_reply(self, msg_list):
         idents, msg_list = self.session.feed_identities(msg_list)
         msg = self.session.unserialize(msg_list)
+
         try:
             msg["header"].pop("date")
         except KeyError:
             pass
+        try:
+            msg["parent_header"].pop("date")
+        except KeyError:
+            pass
+        try:
+            msg["header"].pop("started")
+        except KeyError:
+            pass
         msg.pop("buffers")
+
         return jsonapi.dumps(msg)
 
     def _on_zmq_reply(self, msg_list):
         try:
             message = self._reserialize_reply(msg_list)
-            print "IOPUB HANDLER MESSAGE RECEIVED: ", message
-            self.write_message(message)
         except:
             pass
+        else:
+            self.write_message(message)
 
 class ShellHandler(ZMQStreamHandler):
     def open(self, kernel_id):
         print "*"*10, " BEGIN SHELL HANDLER ", "*"*10
         super(ShellHandler, self).open(kernel_id)
         self.shell_stream = self.km.create_shell_stream(self.kernel_id)
+        self.shell_stream.on_recv(self._on_zmq_reply)
         print "*"*10, " END SHELL HANDLER ", "*"*10
 
     def on_message(self, message):
-        print "SHELL HANDLER MESSAGE RECEIVED: ", message
         msg = jsonapi.loads(message)
         self.session.send(self.shell_stream, msg)
         self.set_status
@@ -76,7 +86,7 @@ class IOPubHandler(ZMQStreamHandler):
             self.iopub_stream.on_recv(None)
             self.iopub_stream.close()
         if self.hb_stream is not None and not self.hb_stream.closed():
-            self.hb_stream.close()
+            self.stop_hb()
 
     def start_hb(self, callback):
         if not self._beating:
@@ -125,6 +135,7 @@ Only start the hb loop if we haven't been closed during the wait.
             self._hb_periodic_callback.stop()
             if not self.hb_stream.closed():
                 self.hb_stream.on_recv(None)
+                self.hb_stream.close()
 
     def kernel_died(self):
         self.application.km.end_session(self.kernel_id)
