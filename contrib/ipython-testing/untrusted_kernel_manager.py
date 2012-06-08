@@ -8,15 +8,13 @@ class UntrustedMultiKernelManager:
         return self.fkm.start_kernel()
 
     def kill_kernel(self, kernel_id):
-        self.fkm.kill_kernel(kernel_id)
+        return self.fkm.kill_kernel(kernel_id)
 
     def interrupt_kernel(self, kernel_id):
-        self.fkm.interrupt_kernel(kernel_id)
+        return self.fkm.interrupt_kernel(kernel_id)
 
     def restart_kernel(self, kernel_id, *args, **kwargs):
-        self.fkm.restart_kernel(kernel_id)
-    def interrupt_kernel(self, kernel_id):
-        self._kernels[kernel_id].interrupt_kernel()
+        return self.fkm.restart_kernel(kernel_id)
         
 
 if __name__ == "__main__":
@@ -25,6 +23,6 @@ if __name__ == "__main__":
     print y
     from time import sleep 
     sleep(2)
-    x.restart_kernel(y["kernel_id"])
+    print x.restart_kernel(y["kernel_id"])
     sleep(2)
     x.kill_kernel(y["kernel_id"])
