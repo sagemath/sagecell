@@ -15,6 +15,9 @@ class UntrustedMultiKernelManager:
 
     def restart_kernel(self, kernel_id, *args, **kwargs):
         self.fkm.restart_kernel(kernel_id)
+    def interrupt_kernel(self, kernel_id):
+        self._kernels[kernel_id].interrupt_kernel()
+        
 
 if __name__ == "__main__":
     x = UntrustedMultiKernelManager()

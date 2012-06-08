@@ -19,6 +19,8 @@ class TrustedMultiKernelManager:
         ids = []
         if comp is not None and comp in self._comps:
             ids = self._comps[comp]["kernels"].keys()
+        elif comp is not None and comp not in self._comps:
+            pass
         else:
             ids = self._kernels.keys()
         return ids
@@ -79,6 +81,22 @@ class TrustedMultiKernelManager:
         """ Removes a tracked computer. """
         self.purge_kernels(comp_id)
         del self._comps[comp_id]
+
+    def restart_kernel(self, kernel_id):
+        comp_id = self._kernels[kernel_id]["comp_id"]
+        req = self._clients[comp_id]
+        req.send("restart_kernel")
+        req.recv()
+        req.send(kernel_id)
+        print req.recv()
+
+    def interrupt_kernel(self, kernel_id):
+        comp_id = self._kernels[kernel_id]["comp_id"]
+        req = self._clients[comp_id]
+        req.send("interrupt_kernel")
+        req.recv()
+        req.send(kernel_id)
+        print req.recv()
 
     def new_session(self):
         """Starts a new kernel on an open computer."""
@@ -172,6 +190,8 @@ class TrustedMultiKernelManager:
 from time import sleep
 if __name__ == "__main__":
     trutest = TrustedMultiKernelManager()
+    
+    print trutest.context
 
     trutest.setup_initial_comps()
 
@@ -184,10 +204,9 @@ if __name__ == "__main__":
         print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
 
     print "\nList of all kernel ids ::: " + str(trutest.get_kernel_ids())
-        
+    
+    y = trutest.get_kernel_ids()
+    sleep(5)
 
-
-    y=trutest._comps.keys()
     for i in y:
-        trutest.purge_kernels(i)
-
+        trutest.interrupt_kernel(i)
