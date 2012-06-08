@@ -549,17 +549,16 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         # TODO: we probably ought not prepend our own code, in case the user has some 
         # "from __future__ import ..." statements, which *must* occur at the top of the code block
         # alternatively, we could move any such statements above our statements
-        code=""
+        code = re.sub(r"^\s*(>>>|sage:|In \[\d\]:|\.{3}(\.*:)?) ", "", msg['content']['code'].encode('utf8'), flags=re.MULTILINE)
 
         CONFIG.EMBEDDED_MODE["sage_mode"] =  sage_mode = msg['content']['sage_mode']
         if enable_sage and sage_mode:
             from sage.misc.preparser import preparse_file
-            code = user_code_sage + "\n" + preparse_file(msg['content']['code'].encode('utf8'))
+            code = user_code_sage + "\n" + preparse_file(code)
         elif sage_mode:
-            code = "print 'NOTE: Sage Mode is unavailable, which may cause errors if using Sage-specific syntax.'\n" + user_code + msg['content']['code']
+            code = "print 'NOTE: Sage Mode is unavailable, which may cause errors if using Sage-specific syntax.'\n" + user_code + code
         else:
-            code = user_code + msg['content']['code']
-        code = re.sub(r"^\s*(>>>|sage:|In \[\d\]:|\.{3}(\.*:)?) ", "", code, flags=re.MULTILINE)
+            code = user_code + code
         code = displayhook_hack(code)
         # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
         code += '\n'
