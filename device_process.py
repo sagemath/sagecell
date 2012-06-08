@@ -494,6 +494,7 @@ def displayhook_hack(string):
 import tempfile
 import shutil
 import os
+import re
 
 def execProcess(session, message_queue, output_handler, resource_limits, sysargs, fs_secret):
     """
@@ -558,6 +559,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
             code = "print 'NOTE: Sage Mode is unavailable, which may cause errors if using Sage-specific syntax.'\n" + user_code + msg['content']['code']
         else:
             code = user_code + msg['content']['code']
+        code = re.sub(r"^\s*(>>>|sage:|In \[\d\]:|\.{3}(\.*:)?) ", "", code, flags=re.MULTILINE)
         code = displayhook_hack(code)
         # always add a newline to avoid this bug in Python versions < 2.7: http://bugs.python.org/issue1184112
         code += '\n'
