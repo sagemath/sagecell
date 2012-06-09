@@ -33,7 +33,7 @@ canvas.click(function(e) {
             newcell.addClass('markdowncell');
 	    (function() { 
                 var data;
-
+                newcell.text("Double-click to edit");
 		newcell.editable(function(value, settings) {
 		    data = value;
 		    setTimeout(function() {MathJax.Hub.Queue(["Typeset",MathJax.Hub,id]);}, 100);
@@ -43,8 +43,11 @@ canvas.click(function(e) {
                     indicator: 'Saving...',
 		    submit: 'Save',
                     event: "dblclick",
+                    tooltip: "Double-click to edit",
+                    placeholder: "Double-click to edit",
 		    data: function(value, settings){return data;},
 		   });
+                newcell.dblclick();
 	    })();
 	} else {
             newcell.addClass('interactivesagecell');
