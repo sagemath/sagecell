@@ -79,8 +79,14 @@ canvas.click(function(e) {
             $(this).clone().appendTo(body);
         });
         savebody.append(body);
-        $('#downloadlink').empty().append($('<a target="_blank">Download file</a>').attr({href: base64.toDataURL(savebody.html(), 'text/html')}));
+        return base64.toDataURL(savebody.html(), 'text/html');
     }
+
+    $('#freezepage').click(function (event){
+        var url = encodepage();
+        window.open(url, "Frozen Cell Canvas");
+        event.preventDefault();
+    });
 });
 
 // From http://stackoverflow.com/questions/9687358/does-a-pagedown-plugin-exist-for-jeditable
