@@ -93,8 +93,14 @@ canvas.click(function(e) {
         savebody[0].appendChild(scripttag({text: "$(function() {"+cellsInit+"})"}));
 
         canvas.find('.markdowncell').each(function() {
-            // Be smarter about mathjax stuff.  Really, we should just re-convert to html (but not Typeset with mathjax)
-            // and *then* take that text.  The frozen page should call Mathjax itself.
+            // Be smarter about mathjax stuff.  Really, we should just
+            // re-convert to html (but not Typeset with mathjax) and
+            // *then* take that text.  The frozen page should call
+            // Mathjax itself.
+
+            // Also, if the editor is currently open, things mess up a
+            // lot.  Either the editor should be closed or the data
+            // should just be converted.
             $(this).clone().appendTo(body);
         });
         savebody.append(body);
@@ -134,7 +140,6 @@ $.editable.addInputType('markdown', {
         panel.append('<div id="wmd-preview' + editorId + '" />');
 
         $(this).append(panel);
-        console.log(panel);
         return (textarea);
     },
     plugin: function(settings, original) {
