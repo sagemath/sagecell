@@ -37,8 +37,10 @@ canvas.click(function(e) {
                 newcell.text("Double-click to edit");
 		newcell.editable(function(value, settings) {
 		    data = value;
+                    renderedHtml = converter.makeHtml(value);
+                    $(this).data('cellcanvas_renderedHtml', renderedHtml) 
 		    setTimeout(function() {MathJax.Hub.Queue(["Typeset",MathJax.Hub,id]);}, 100);
-		    return(converter.makeHtml(value));
+		    return(renderedHtml);
 		}, {type: 'markdown', rows: 7, columns: 30,
                     onblur: 'ignore',
                     indicator: 'Saving...',
@@ -76,23 +78,24 @@ canvas.click(function(e) {
     };
 
     window.encodepage = function() {
-        savebody = $(document.createElement('div'));
-        savebody[0].appendChild(scripttag({src: "http://aleph.sagemath.org/static/jquery.min.js"}));
-        savebody[0].appendChild(scripttag({src: "http://aleph.sagemath.org/embedded_sagecell.js"}));
-        savebody[0].appendChild(scripttag({text: "var celltemplate = "+JSON.stringify(celltemplate)+";"}));
-        $('head style[title=cellcanvas]').clone().appendTo(savebody);
+        var savehead;
+        var savebody;
 
-        body = $(document.createElement('div'));
+        savehead = $(document.createElement('div'));
+        savehead[0].appendChild(scripttag({src: "http://aleph.sagemath.org/static/jquery.min.js"}));
+        savehead[0].appendChild(scripttag({src: "http://aleph.sagemath.org/embedded_sagecell.js"}));
+        savehead[0].appendChild(scripttag({text: "var celltemplate = "+JSON.stringify(celltemplate)+";"}));
+        $('head style[title=cellcanvas]').clone().appendTo(savehead);
+
+        savebody = $(document.createElement('div'));
         var cellsInit = "";
         var codecell;
         canvas.find('.interactivesagecell').each(function() {
             // We clone so we get all the css, the id, etc.
-            codecell = $(this).clone().empty().appendTo(body);
+            codecell = $(this).clone().empty().appendTo(savebody);
             codecell[0].appendChild(scripttag({type: 'text/x-sage', text: $(this).find('.sagecell_commands').val()}));
             cellsInit += "sagecell.makeSagecell({inputLocation: '#"+this.id+"', template:celltemplate});\n";
         });
-        savebody[0].appendChild(scripttag({text: "$(function() {"+cellsInit+"})"}));
-
         canvas.find('.markdowncell').each(function() {
             // Be smarter about mathjax stuff.  Really, we should just
             // re-convert to html (but not Typeset with mathjax) and
@@ -100,19 +103,50 @@ canvas.click(function(e) {
             // Mathjax itself.
 
             // Also, if the editor is currently open, things mess up a
-            // lot.  Either the editor should be closed or the data
+            // lot.  Either the editor should be closed or the dataMathJax.Hub.Queue(["Typeset",MathJax.Hub]);
             // should just be converted.
-            $(this).clone().appendTo(body);
+            var newcell = $(this).clone().empty().appendTo(savebody);
+            var renderedHtml;
+            var text = $(this).find("form textarea").val();
+
+            if (text === undefined) {
+                console.log('getting prerendered text');
+                // Must be saved cell.  Get the pre-rendered text.
+                renderedHtml = $(this).data('cellcanvas_renderedHtml');
+            } else {
+                renderedHtml = converter.makeHtml(text);
+            }
+            console.log(renderedHtml);
+            newcell.html(renderedHtml);
+            // I can't run MathJax from with data URLs, so commenting this out for now...
+            //cellsInit += 'MathJax.Hub.Queue(["Typeset",MathJax.Hub,"'+this.id+'"]);'
         });
-        savebody.append(body);
-        return base64.toDataURL(savebody.html(), 'text/html');
+        savebody[0].appendChild(scripttag({text: "$(function() {sagecell.init(function() {"+cellsInit+"})})"}));
+        //jstext = "$(function() {sagecell.init(function() {"+cellsInit+"})})"
+        //savebody[0].appendChild(scripttag({src: base64.toDataURL(jstext)}));
+        html = "<html><head>"+savehead.html()+"</head><body>"+savebody.html()+"</body></html>"
+        console.log(savehead);
+        console.log(savebody);
+        console.log(html);
+        return html
     }
 
     $('#freezepage').click(function (event){
-        var url = encodepage();
-        window.open(url, "Frozen Cell Canvas");
+        var html = encodepage()
+        var data = base64.toDataURL(html, 'text/html')
+        window.open(data, "Frozen Cell Canvas");
+        //$('body').prepend('<a href="'+data+'" download="test">Download</a>');
+        //$('body').append('<iframe src="'+data+'" ></iframe>');
+        
         event.preventDefault();
     });
+/*    $('#jsfiddleform').submit(function() {
+        // Stymied because Chrome detects that the javascript going out is the same javascript that is being executed in the next page!
+        var html = encodepage();
+        $(this).find('#html').val(html);
+    });
+*/
+
 });
 
 // From http://stackoverflow.com/questions/9687358/does-a-pagedown-plugin-exist-for-jeditable
