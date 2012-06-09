@@ -4,12 +4,37 @@
 	    <meta charset="utf-8">
 	    <meta name="viewport" content="width=device-width">
 	    <title>Sage Cell Server</title>
-	    <script src="http://aleph.sagemath.org/static/jquery.min.js"></script>
+
+            <script src="http://aleph.sagemath.org/static/jquery.min.js"></script>
 	    <script src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
-	    <script src="cellcanvas.js"></script>
-		<link rel="stylesheet" type="text/css" href="cellcanvas.css" />
+            <script>sagecell.init(function(){$('#mycanvas').css('background-color', 'white')})</script>
+
+	    <script src="base64.js"></script>
+	    <script src="markdown/Markdown.Converter.js"></script>
+	    <script src="markdown/Markdown.Editor.js"></script>
+	    <script src="markdown/Markdown.Sanitizer.js"></script>
+	    <script src="jquery.jeditable.mini.js"></script>
+            <script src="cellcanvas.js"></script>
+<!-- we don't use a separate css stylesheet because we need to copy these styles when we make a static page. -->
+<style type="text/css" title="cellcanvas">
+#mycanvas {
+    border: solid black 1px;
+    min-width: 600px;
+    min-height: 600px;
+}
+.cell{
+    border: solid black 1px;
+    width: 400px;
+    background-color: white;
+    opacity: 1;
+    min-height: 30px;
+}
+</style>
+	    <link rel="stylesheet" type="text/css" href="markdown/demo.css" />
 	</head>
 	<body>
-		<div id="mycanvas"></div>
-	</body>
+<button onclick="encodepage()">Save to file</button><span id="downloadlink"></span>
+<div id="mycanvas" style="background-color: grey"></div>
+
+                </body>
 </html>
