@@ -15,7 +15,8 @@ canvas.click(function(e) {
         .appendTo(canvas);
     // for some reason (a race condition?) the draggable and resizable methods don't work immediately
     setTimeout(function() {
-        newcell.draggable({snap: canvas, grid: [50,50], cancel: '.sagecell_commands,.CodeMirror'});
+        newcell.draggable({cancel: '.sagecell_commands,.CodeMirror'});
+        //newcell.draggable({snap: canvas, grid: [50,50], cancel: '.sagecell_commands,.CodeMirror'});
 
         // Here are some not-so-successful attempts at resizability.
             //.resizable({ snap: canvas, grid: [50,50]});
