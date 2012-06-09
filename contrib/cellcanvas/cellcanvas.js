@@ -9,10 +9,9 @@ canvas.click(function(e) {
         return;
     }
     var id = 'cell-'+divnum;
-    var newcell = $('<div class="cell clearfix ui-draggable" id="'+id+'"></div>').appendTo(canvas).offset({
-        top: e.offsetY,
-        left: e.offsetX
-    });
+    var newcell = $('<div class="cell ui-draggable" id="'+id+'"></div>')
+        .offset({top: e.offsetY, left: e.offsetX})
+        .appendTo(canvas);
 	if (e.shiftKey) {
             newcell.addClass('markdowncell').draggable();
 	    (function() { 

@@ -21,6 +21,10 @@
     border: solid black 1px;
     min-width: 600px;
     min-height: 600px;
+    /* need to set position to relative to make sure
+       the included cells absolute positions are relative
+       to the canvas */
+    position: relative;
 }
 .cell{
     border: solid black 1px;
@@ -28,6 +32,7 @@
     background-color: white;
     opacity: 1;
     min-height: 30px;
+    position: absolute;
 }
 </style>
 	    <link rel="stylesheet" type="text/css" href="markdown/demo.css" />
@@ -45,8 +50,7 @@ around Sage cells however you want.
 
   <li>Frozen pages: to save your creation as a web page, click "Frozen
   page".  You can download the resulting html page using File, Save As</p>
-
-<p>
+</ul>
 <a id="freezepage" onclick="encodepage()">Frozen page</a>
 <div id="mycanvas" style="background-color: grey"></div>
 
