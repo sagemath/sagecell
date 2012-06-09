@@ -4,16 +4,33 @@ var divnum = 0;
 var celltemplate = {
     hide: ['sagemode', 'files']
 };
+
 canvas.click(function(e) {
     if (e.target !== this) {
         return;
     }
     var id = 'cell-'+divnum;
-    var newcell = $('<div class="cell ui-draggable" id="'+id+'"></div>')
+    var newcell = $('<div class="cell" id="'+id+'"></div>')
         .offset({top: e.offsetY, left: e.offsetX})
         .appendTo(canvas);
+    // for some reason (a race condition?) the draggable and resizable methods don't work immediately
+    setTimeout(function() {
+        newcell.draggable({snap: canvas, grid: [50,50], cancel: '.sagecell_commands,.CodeMirror'});
+
+        // Here are some not-so-successful attempts at resizability.
+            //.resizable({ snap: canvas, grid: [50,50]});
+        /*      resize: function() {
+                    var codemirror=$(this).find(".CodeMirror-scroll");
+                    codemirror.height($(this).height());
+                    //codemirror.width($(this).find('.CodeMirror').width());
+                    $(this).find('.CodeMirror')[0].CodeMirror.refresh();
+                    }
+        */
+
+    },400);
+
 	if (e.shiftKey) {
-            newcell.addClass('markdowncell').draggable();
+            newcell.addClass('markdowncell');
 	    (function() { 
                 var data;
 
@@ -29,14 +46,12 @@ canvas.click(function(e) {
 		    data: function(value, settings){return data;},
 		   });
 	    })();
-
-
 	} else {
             newcell.addClass('interactivesagecell');
 	    sagecell.makeSagecell({
 	        inputLocation: '#'+id,
 	        template: celltemplate,
-	       	callback: function() {newcell.draggable({cancel: '.sagecell_commands,.CodeMirror'});}
+	       	//callback: function() {newcell;}
 	    });
 	}
     divnum += 1;
