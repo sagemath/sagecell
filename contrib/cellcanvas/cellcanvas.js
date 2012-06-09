@@ -19,7 +19,7 @@ canvas.click(function(e) {
 
 		newcell.editable(function(value, settings) {
 		    data = value;
-		    setTimeout(function() {MathJax.Hub.Queue(["Typeset",MathJax.Hub,id]);}, 400);
+		    setTimeout(function() {MathJax.Hub.Queue(["Typeset",MathJax.Hub,id]);}, 100);
 		    return(converter.makeHtml(value));
 		}, {type: 'markdown', rows: 7, columns: 30,
                     onblur: 'ignore',
@@ -75,6 +75,8 @@ canvas.click(function(e) {
         savebody[0].appendChild(scripttag({text: "$(function() {"+cellsInit+"})"}));
 
         canvas.find('.markdowncell').each(function() {
+            // Be smarter about mathjax stuff.  Really, we should just re-convert to html (but not Typeset with mathjax)
+            // and *then* take that text.  The frozen page should call Mathjax itself.
             $(this).clone().appendTo(body);
         });
         savebody.append(body);
@@ -90,7 +92,6 @@ canvas.click(function(e) {
 
 // From http://stackoverflow.com/questions/9687358/does-a-pagedown-plugin-exist-for-jeditable
 var converter = Markdown.getSanitizingConverter();
-//var converter = new Markdown.Converter();
 
 $.editable.addInputType('markdown', {
     element: function(settings, original) {
@@ -121,6 +122,9 @@ $.editable.addInputType('markdown', {
     plugin: function(settings, original) {
         var editorId = original.id.substring(original.id.lastIndexOf("-"));
         var editor = new Markdown.Editor(converter, editorId);
+        editor.hooks.chain("onPreviewRefresh", function () {
+            MathJax.Hub.Queue(["Typeset",MathJax.Hub,original.id]);
+        });
         editor.run();
     }
 });
