@@ -107,7 +107,6 @@ canvas.click(function(e) {
                 renderedHtml = converter.makeHtml(text);
             }
             newcell.html(renderedHtml);
-            cellsInit += 'MathJax.Hub.Queue(["Typeset",MathJax.Hub,"'+this.id+'"]);'
         });
         savebody[0].appendChild(scripttag({text: "$(function() {sagecell.init(function() {"+cellsInit+"})})"}));
         html = "<html><head>"+savehead.html()+"</head><body>"+savebody.html()+"</body></html>"
