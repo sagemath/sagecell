@@ -57,7 +57,6 @@ canvas.click(function(e) {
 	    sagecell.makeSagecell({
 	        inputLocation: '#'+id,
 	        template: celltemplate,
-	       	//callback: function() {newcell;}
 	    });
 	}
     divnum += 1;
@@ -97,56 +96,31 @@ canvas.click(function(e) {
             cellsInit += "sagecell.makeSagecell({inputLocation: '#"+this.id+"', template:celltemplate});\n";
         });
         canvas.find('.markdowncell').each(function() {
-            // Be smarter about mathjax stuff.  Really, we should just
-            // re-convert to html (but not Typeset with mathjax) and
-            // *then* take that text.  The frozen page should call
-            // Mathjax itself.
-
-            // Also, if the editor is currently open, things mess up a
-            // lot.  Either the editor should be closed or the dataMathJax.Hub.Queue(["Typeset",MathJax.Hub]);
-            // should just be converted.
             var newcell = $(this).clone().empty().appendTo(savebody);
             var renderedHtml;
             var text = $(this).find("form textarea").val();
 
             if (text === undefined) {
-                console.log('getting prerendered text');
                 // Must be saved cell.  Get the pre-rendered text.
                 renderedHtml = $(this).data('cellcanvas_renderedHtml');
             } else {
                 renderedHtml = converter.makeHtml(text);
             }
-            console.log(renderedHtml);
             newcell.html(renderedHtml);
-            // I can't run MathJax from with data URLs, so commenting this out for now...
-            //cellsInit += 'MathJax.Hub.Queue(["Typeset",MathJax.Hub,"'+this.id+'"]);'
+            cellsInit += 'MathJax.Hub.Queue(["Typeset",MathJax.Hub,"'+this.id+'"]);'
         });
         savebody[0].appendChild(scripttag({text: "$(function() {sagecell.init(function() {"+cellsInit+"})})"}));
-        //jstext = "$(function() {sagecell.init(function() {"+cellsInit+"})})"
-        //savebody[0].appendChild(scripttag({src: base64.toDataURL(jstext)}));
         html = "<html><head>"+savehead.html()+"</head><body>"+savebody.html()+"</body></html>"
-        console.log(savehead);
-        console.log(savebody);
-        console.log(html);
         return html
     }
 
     $('#freezepage').click(function (event){
-        var html = encodepage()
-        var data = base64.toDataURL(html, 'text/html')
-        window.open(data, "Frozen Cell Canvas");
-        //$('body').prepend('<a href="'+data+'" download="test">Download</a>');
-        //$('body').append('<iframe src="'+data+'" ></iframe>');
-        
+        var w = window.open();
+        w.document.write(encodepage());
+        w.document.close();
         event.preventDefault();
     });
-/*    $('#jsfiddleform').submit(function() {
-        // Stymied because Chrome detects that the javascript going out is the same javascript that is being executed in the next page!
-        var html = encodepage();
-        $(this).find('#html').val(html);
-    });
-*/
-
+    
 });
 
 // From http://stackoverflow.com/questions/9687358/does-a-pagedown-plugin-exist-for-jeditable
