@@ -361,10 +361,10 @@ sagecell.initCell = (function(sagecellInfo) {
             var queryurl = outputLocation.find(".sagecell_queryurl");
             if (response.zipurl.length < 1024) {
                 zipurl.attr("href", response.zipurl);
-                queryurl.css("padding-left", "1em");
+                queryurl.css("margin-left", "1em");
                 zipurl.show();
             } else {
-                queryurl.css("padding-left", "0");
+                queryurl.css("margin-left", "0");
                 zipurl.hide();
             }
             queryurl.attr("href", response.queryurl);
