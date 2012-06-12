@@ -63,7 +63,7 @@ class TestTrustedMultiKernelManager:
         try:
             (b, c) = self.a.get_hb_info("blah")
         except:
-            
+            pass
         
 
 

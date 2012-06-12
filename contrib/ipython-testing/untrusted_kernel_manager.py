@@ -3,9 +3,12 @@ from forking_kernel_manager import ForkingKernelManager
 class UntrustedMultiKernelManager:
     def __init__(self):
         self.fkm = ForkingKernelManager()
+        self._kernels = {}
     
     def start_kernel(self):
-        return self.fkm.start_kernel()
+        x = self.fkm.start_kernel()
+        self._kernels[x["kernel_id"]] = None #just need to track kernel_ids
+        return x
 
     def kill_kernel(self, kernel_id):
         return self.fkm.kill_kernel(kernel_id)

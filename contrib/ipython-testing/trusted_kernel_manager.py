@@ -41,17 +41,18 @@ class TrustedMultiKernelManager:
 
         defaults = {"max": 10, "beat_interval": 3.0, "first_beat": 5.0}
 
+        context = self.context
+
         if hasattr(config, "computers"):
             for i in config.computers:
                 i["kernels"] = {}
                 comp_id = str(uuid.uuid4())
                 x = dict(defaults.items() + i.items())
                 tmp_comps[comp_id] = x
-                context = zmq.Context()
                 req = context.socket(zmq.REQ)
                 port = req.bind_to_random_port("tcp://127.0.0.1")
                 client = self.setup_ssh_connection(x["host"],x["username"])
-                client.exec_command("python '%s/receiver.py' %d" % (os.getcwd(), port))
+                client.exec_command("sage '%s/receiver.py' %d" % (os.getcwd(), port))
                 req.send("")
                 if(req.recv() == "handshake"):
                     self._clients[comp_id] = req
@@ -65,11 +66,15 @@ class TrustedMultiKernelManager:
         ssh.connect(host, username=username)
         return ssh
 
-    def purge_kernels(self, comp_id):
+    def purge_kernels(self, comp_id): #need to update data structures
         """ Kills all kernels on a given computer. """
         req = self._clients[comp_id]
         req.send("purge_kernels")
         print req.recv()
+        for i in self._comps[comp_id]["kernels"]:
+            #del self._kernels[i]
+            pass
+        del self._comps[comp_id]["kernels"]
 
     def add_computer(self, config):
         """ Adds a tracked computer. """
@@ -79,7 +84,11 @@ class TrustedMultiKernelManager:
 
     def remove_computer(self, comp_id):
         """ Removes a tracked computer. """
-        self.purge_kernels(comp_id)
+        req = self._clients[comp_id]
+        req.send("remove_computer")
+        print req.recv()
+        for i in self._comps[comp_id]["kernels"]:
+            del self._kernels[i]
         del self._comps[comp_id]
 
     def restart_kernel(self, kernel_id):
@@ -112,6 +121,9 @@ class TrustedMultiKernelManager:
         self._kernels[kernel_id] = {"comp_id": comp_id, "ports": kernel_ports}
         self._comps[comp_id]["kernels"][kernel_id] = None
         #print "Kernels ::: ", self._kernels
+        self.create_iopub_stream(kernel_id)
+        self.create_shell_stream(kernel_id)
+        self.create_hb_stream(kernel_id)
         return kernel_id
 
     def end_session(self, kernel_id):
@@ -187,26 +199,56 @@ class TrustedMultiKernelManager:
 
 """
 
-from time import sleep
+
+
+
 if __name__ == "__main__":
-    trutest = TrustedMultiKernelManager()
+    try:
+        t = TrustedMultiKernelManager()
+        
+        print t.context
+
+        t.setup_initial_comps()
+
+        for i in xrange(10):
+            t.new_session()
+
+        vals = t._comps.values()
+        for i in xrange(len(vals)):
+            print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
+
+        print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+        
+        y = t.get_kernel_ids()
+
+        for i in y:
+            t.interrupt_kernel(i)
+            #t.restart_kernel(i) appears broken...
+            import random
+            if random.randrange(0,2):
+                t.end_session(i)
+
+        vals = t._comps.values()
+        for i in xrange(len(vals)):
+            print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
+
+        print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+
+        x = t._comps.keys()
+
+        t.remove_computer(x[1])
+
+        vals = t._comps.values()
+        for i in xrange(len(vals)):
+            print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
+
+        print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+        
+    except:
+        print "errorrrr"
+    finally:
+        #for the moment to ensure all receivers are killed...
+        for i in t._comps.keys():
+            t.remove_computer(i)
     
-    print trutest.context
-
-    trutest.setup_initial_comps()
-
-    for i in xrange(5):
-        test_id = trutest.new_session()
-        #trutest.end_session(test_id)
-
-    vals = trutest._comps.values()
-    for i in xrange(len(vals)):
-        print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
-
-    print "\nList of all kernel ids ::: " + str(trutest.get_kernel_ids())
-    
-    y = trutest.get_kernel_ids()
-    sleep(5)
-
-    for i in y:
-        trutest.interrupt_kernel(i)
+        

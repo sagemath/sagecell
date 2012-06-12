@@ -3,13 +3,14 @@ import zmq
 import sys
 
 km = UntrustedMultiKernelManager()
+listen = True
 
 context = zmq.Context()
 rep = context.socket(zmq.REP)
 rep.connect("tcp://127.0.0.1:%s" % (sys.argv[1],))
 rep.recv()
 rep.send("handshake")
-while True:
+while listen:
     x = rep.recv()
     if x == "start_kernel":
         rep.send_pyobj(km.start_kernel())
@@ -20,14 +21,29 @@ while True:
     elif x == "purge_kernels":
         for i in km._kernels.keys():
             km.kill_kernel(i)
-        rep.send("got em!")
+        rep.send("Kernels purged.")
     elif x == "restart_kernel":
         rep.send("")
         kernel_id = rep.recv()
         km.restart_kernel(kernel_id)
-        rep.send("kernel %s restarted." % (kernel_id))
+        rep.send("Kernel %s restarted." % (kernel_id))
     elif x == "interrupt_kernel":
         rep.send("")
         kernel_id = rep.recv()
-        km.interrupt_kernel(kernel_id)
-        rep.send("kernel %s was interrupted." % (kernel_id))
+        x = km.interrupt_kernel(kernel_id)
+        if x:
+            rep.send("Kernel %s was interrupted." % (kernel_id))
+        else:
+            rep.send("Error interrupting kernel.")
+    elif x == "remove_computer":
+        listen = False
+        for i in km._kernels.keys():
+            km.kill_kernel(i)
+        rep.send("Ended kernel manager.")
+        
+"""
+from time import sleep
+for i in km._kernels.keys():
+    km.kill_kernel(i)
+    sleep(1)
+"""
