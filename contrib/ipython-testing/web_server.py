@@ -39,9 +39,6 @@ import tornado.web
 import tornado.wsgi
 import tornado.websocket
 
-from IPython.zmq.session import Session
-
-
 wsgi_app = tornado.wsgi.WSGIContainer(app)
 
 

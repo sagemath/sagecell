@@ -12,7 +12,7 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     def open(self, kernel_id):
         self.km = self.application.km
         self.kernel_id = kernel_id
-        self.session = Session()
+        self.session = self.km._sessions[self.kernel_id]
 
     def _reserialize_reply(self, msg_list):
         idents, msg_list = self.session.feed_identities(msg_list)

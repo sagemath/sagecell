@@ -32,9 +32,9 @@ class ForkingKernelManager:
         p.recv()
         p.close()
         with open(connection_file) as f:
-            ports = json.loads(f.read())
-        self.kernels[kernel_id] = (proc, ports)
-        return {"kernel_id": kernel_id, "ports": ports}
+            connection = json.loads(f.read())
+        self.kernels[kernel_id] = (proc, connection)
+        return {"kernel_id": kernel_id, "connection": connection}
 
     def send_signal(self, kernel_id, signal):
         """Send a signal to a running kernel."""

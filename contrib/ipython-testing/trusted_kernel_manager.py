@@ -1,6 +1,7 @@
 import uuid, random
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
+from IPython.zmq.session import Session
 import paramiko
 import os
 
@@ -9,9 +10,10 @@ class TrustedMultiKernelManager:
 
     def __init__(self):
 
-        self._kernels = {} #kernel_id: {"comp_id": comp_id, "ports": {"hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
+        self._kernels = {} #kernel_id: {"comp_id": comp_id, "connections": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
         self._clients = {} #comp_id: zmq req socket object
+        self._sessions = {} # kernel_id: Session
         
         self.context = zmq.Context()
 
@@ -113,17 +115,13 @@ class TrustedMultiKernelManager:
         
         req = self._clients[comp_id]
         req.send("start_kernel")
-        
         x = req.recv_pyobj()
         kernel_id=x["kernel_id"]
-        kernel_ports=x["ports"]
+        kernel_connection=x["connection"]
 
-        self._kernels[kernel_id] = {"comp_id": comp_id, "ports": kernel_ports}
+        self._kernels[kernel_id] = {"comp_id": comp_id, "connection": kernel_connection}
         self._comps[comp_id]["kernels"][kernel_id] = None
-        #print "Kernels ::: ", self._kernels
-        self.create_iopub_stream(kernel_id)
-        self.create_shell_stream(kernel_id)
-        self.create_hb_stream(kernel_id)
+        self._sessions[kernel_id] = Session(key=kernel_connection["key"])
         return kernel_id
 
     def end_session(self, kernel_id):
@@ -173,23 +171,23 @@ class TrustedMultiKernelManager:
     def create_iopub_stream(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
         host = self._comps[comp_id]["host"]
-        ports = self._kernels[kernel_id]["ports"]
-        iopub_stream = self._create_connected_stream(host, ports["iopub_port"], zmq.SUB)
+        connection = self._kernels[kernel_id]["connection"]
+        iopub_stream = self._create_connected_stream(host, connection["iopub_port"], zmq.SUB)
         iopub_stream.socket.setsockopt(zmq.SUBSCRIBE, b"")
         return iopub_stream
 
     def create_shell_stream(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
         host = self._comps[comp_id]["host"]
-        ports = self._kernels[kernel_id]["ports"]
-        shell_stream = self._create_connected_stream(host, ports["shell_port"], zmq.DEALER)
+        connection = self._kernels[kernel_id]["connection"]
+        shell_stream = self._create_connected_stream(host, connection["shell_port"], zmq.DEALER)
         return shell_stream
 
     def create_hb_stream(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
         host = self._comps[comp_id]["host"]
-        ports = self._kernels[kernel_id]["ports"]
-        hb_stream = self._create_connected_stream(host, ports["hb_port"], zmq.REQ)
+        connection = self._kernels[kernel_id]["connection"]
+        hb_stream = self._create_connected_stream(host, connection["hb_port"], zmq.REQ)
         return hb_stream
 
 """ TO DO:
