@@ -237,7 +237,7 @@ var IPython = (function (IPython) {
 
         var content = {
             code : code,
-            silent : true,
+            silent : false,
             user_variables : [],
             user_expressions : {},
             allow_stdin : false

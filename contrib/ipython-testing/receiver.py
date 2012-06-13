@@ -19,7 +19,7 @@ while listen:
         kernel_id = rep.recv()
         rep.send_pyobj(km.kill_kernel(kernel_id))
     elif x == "purge_kernels":
-        for i in km._kernels.keys():
+        for i in km._kernels:
             km.kill_kernel(i)
         rep.send("Kernels purged.")
     elif x == "restart_kernel":
@@ -37,13 +37,13 @@ while listen:
             rep.send("Error interrupting kernel.")
     elif x == "remove_computer":
         listen = False
-        for i in km._kernels.keys():
+        for i in km._kernels:
             km.kill_kernel(i)
         rep.send("Ended kernel manager.")
         
 """
 from time import sleep
-for i in km._kernels.keys():
+for i in km._kernels:
     km.kill_kernel(i)
     sleep(1)
 """

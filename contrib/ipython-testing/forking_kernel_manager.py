@@ -14,6 +14,7 @@ class ForkingKernelManager:
 
     def fork_kernel(self, config, connection_file, q):
         ka = KernelApp.instance(config=config)
+        ka.kernel_class = "IPython.zmq.ipkernel.Kernel"
         ka.connection_file = connection_file
         ka.initialize([])
         q.send("")
