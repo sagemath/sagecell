@@ -34,7 +34,7 @@ class ForkingKernelManager:
         p.close()
         with open(connection_file) as f:
             connection = json.loads(f.read())
-        self.kernels[kernel_id] = (proc, connection)
+        self.kernels[kernel_id] = (proc, connection, connection_file)
         return {"kernel_id": kernel_id, "connection": connection}
 
     def send_signal(self, kernel_id, signal):
@@ -54,6 +54,10 @@ class ForkingKernelManager:
         """Kill a running kernel."""
         try:
             self.send_signal(kernel_id, signal.SIGTERM)
+            try:
+                os.remove(self.kernels[kernel_id][2])
+            except:
+                pass
             del self.kernels[kernel_id]
             return True
         except:
