@@ -84,6 +84,13 @@ class TrustedMultiKernelManager:
         self._comps[comp_id] = config
         return comp_id
 
+    def shutdown(self):
+        """Ends all kernel processes on all computers"""
+        for i in self._comps.keys():
+            req = self._clients[i]
+            req.send("remove_computer")
+            req.recv()
+
     def remove_computer(self, comp_id):
         """ Removes a tracked computer. """
         req = self._clients[comp_id]
@@ -150,7 +157,7 @@ class TrustedMultiKernelManager:
         done = False
         index = 0        
 
-        while (index < len(ids) - 1 and not done):
+        while (index < len(ids) and not done):
             found_id = ids[index]
             if len(self._comps[found_id]["kernels"].keys()) < self._comps[found_id]["max"]:
                 done = True

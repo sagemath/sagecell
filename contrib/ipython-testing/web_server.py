@@ -75,4 +75,8 @@ class SageCellServer(tornado.web.Application):
 if __name__ == "__main__":
     application = SageCellServer()
     application.listen(8888)
-    tornado.ioloop.IOLoop.instance().start()
+    try:
+        tornado.ioloop.IOLoop.instance().start()
+    except KeyboardInterrupt:
+        print "\nEnding processes."
+        application.km.shutdown()

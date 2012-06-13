@@ -53,7 +53,6 @@ class ShellHandler(ZMQStreamHandler):
     def on_message(self, message):
         msg = jsonapi.loads(message)
         self.session.send(self.shell_stream, msg)
-        self.set_status
 
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():
