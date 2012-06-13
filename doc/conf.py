@@ -224,4 +224,4 @@ intersphinx_mapping = {'python': ('http://docs.python.org/release/2.7.2/', None)
                        'pymongo': ('http://api.mongodb.org/python/current/', None),
                        'pyzmq': ('http://zeromq.github.com/pyzmq/', None),
                        'sqlalchemy': ('http://docs.sqlalchemy.org/en/rel_0_5/', None),
-                       'sage': ('http://www.sagemath.org/doc/reference/', None)}
+                       'sage': ('http://www.sagemath.org/doc/', None)}
