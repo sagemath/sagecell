@@ -12,23 +12,24 @@ class ForkingKernelManager:
     def __init__(self):
         self.kernels = {}
 
-    def fork_kernel(self, config, connection_file, q):
-        ka = KernelApp.instance(config=config)
+    def fork_kernel(self, sage_dict, config, connection_file, q):
+        ka = KernelApp.instance(config=config, kernel_class="IPython.zmq.ipkernel.Kernel")
         ka.kernel_class = "IPython.zmq.ipkernel.Kernel"
         ka.connection_file = connection_file
         ka.initialize([])
+        ka.kernel.shell.user_ns.update(sage_dict)
         q.send("")
         q.close()
         ka.start()
 
-    def start_kernel(self, kernel_id=None, config=None):
+    def start_kernel(self, sage_dict={}, kernel_id=None, config=None):
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
             config = Config()
         connection_file = "%s/%s.json" % (tempfile.gettempdir(), kernel_id)
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(config, connection_file, q))
+        proc = Process(target=self.fork_kernel, args=(sage_dict, config, connection_file, q))
         proc.start()
         p.recv()
         p.close()
@@ -71,10 +72,10 @@ class ForkingKernelManager:
         except:
             return False
 
-    def restart_kernel(self, kernel_id):
+    def restart_kernel(self, sage_dict, kernel_id):
         ports = self.kernels[kernel_id][1]
         self.kill_kernel(kernel_id)
-        return self.start_kernel(kernel_id, Config({"IPKernelApp": ports}))
+        return self.start_kernel(sage_dict, kernel_id, Config({"IPKernelApp": ports}))
 
 if __name__ == "__main__":
     a = ForkingKernelManager()

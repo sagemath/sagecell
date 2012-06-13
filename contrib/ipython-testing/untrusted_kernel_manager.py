@@ -4,9 +4,14 @@ class UntrustedMultiKernelManager:
     def __init__(self):
         self.fkm = ForkingKernelManager()
         self._kernels = set()
+        try:
+            import sage.all
+            self.sage_dict = {n: getattr(sage.all, n) for n in dir(sage.all) if not n.startswith("_")}
+        except:
+            self.sage_dict = {}
     
     def start_kernel(self):
-        x = self.fkm.start_kernel()
+        x = self.fkm.start_kernel(self.sage_dict)
         self._kernels.add(x["kernel_id"])
         return x
 
@@ -17,7 +22,7 @@ class UntrustedMultiKernelManager:
         return self.fkm.interrupt_kernel(kernel_id)
 
     def restart_kernel(self, kernel_id, *args, **kwargs):
-        return self.fkm.restart_kernel(kernel_id)
+        return self.fkm.restart_kernel(self.sage_dict, kernel_id)
         
 
 if __name__ == "__main__":

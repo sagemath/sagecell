@@ -14,7 +14,6 @@ class TrustedMultiKernelManager:
         self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
         self._clients = {} #comp_id: zmq req socket object
         self._sessions = {} # kernel_id: Session
-        
         self.context = zmq.Context()
 
     def get_kernel_ids(self, comp = None):
