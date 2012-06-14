@@ -305,17 +305,7 @@ var IPython = (function (IPython) {
         this._msg_callbacks[msg_id] = callbacks;
     }
 
-    Kernel.prototype._handle_shell_reply = function(e) {
-        $("#message_output").append(document.createElement("div")).children().last().text("SHELL MESSAGE ::: " + e.data);
-    }
-
-
-    Kernel.prototype._handle_iopub_reply = function(e) {
-        $("#message_output").append(document.createElement("div")).children().last().text("IOPUB MESSAGFE ::: " + e.data);
-    }
-
     
-    /*
     Kernel.prototype._handle_shell_reply = function (e) {
         reply = $.parseJSON(e.data);
         var header = reply.header;
@@ -334,7 +324,6 @@ var IPython = (function (IPython) {
             this._handle_payload(callbacks.cell, payload);
         }
     };
-
 
     Kernel.prototype._handle_payload = function (cell, payload) {
         var l = payload.length;
@@ -384,7 +373,6 @@ var IPython = (function (IPython) {
             }
         };
     };
-    */
 
     IPython.Kernel = Kernel;
 
