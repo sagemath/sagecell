@@ -143,6 +143,10 @@ $(function() {
                     } else {
                         comp.style.display = "none";
                     }
+                } else if (event.keyCode === 13 && event.shiftKey) {
+                    event.preventDefault();
+                    document.getElementById("completion").style.display = "none";
+                    $("#evalbutton").click();
                 } else {
                     document.getElementById("completion").style.display = "none"
                 }

@@ -1,4 +1,4 @@
-
+#! /usr/bin/env python
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
 
 
