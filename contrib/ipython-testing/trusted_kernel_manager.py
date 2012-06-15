@@ -2,8 +2,14 @@ import uuid, random
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 from IPython.zmq.session import Session
+from zmq import ssh
 import paramiko
 import os
+
+try:
+    import config
+except:
+    import config_default as config
 
 class TrustedMultiKernelManager:
     """A class for managing multiple kernels on the trusted side."""
@@ -33,39 +39,46 @@ class TrustedMultiKernelManager:
 
     def setup_initial_comps(self):
         """ Tries to read a config file containing initial computer information """
-        tmp_comps = {}
-
-        try:
-            import config
-        except:
-            config = object()
-
-        defaults = {"max": 10, "beat_interval": 3.0, "first_beat": 5.0}
-
-        context = self.context
 
         if hasattr(config, "computers"):
-            for i in config.computers:
-                i["kernels"] = {}
-                comp_id = str(uuid.uuid4())
-                x = dict(defaults.items() + i.items())
-                tmp_comps[comp_id] = x
-                req = context.socket(zmq.REQ)
-                port = req.bind_to_random_port("tcp://127.0.0.1")
-                client = self.setup_ssh_connection(x["host"],x["username"])
-                client.exec_command("sage '%s/receiver.py' %d > /tmp/err" % (os.getcwd(), port))
-                req.send("")
-                if(req.recv() == "handshake"):
-                    self._clients[comp_id] = req
-                    print "ZMQ Connection with computer %s at port %d established." %(comp_id, port)
-                
-        self._comps = tmp_comps
+            for comp in config.computers:
+                print comp
+                self.add_computer(comp)
+
+    def add_computer(self, config):
+
+        defaults = {"max": 10, "beat_interval": 3.0, "first_beat": 5.0, "kernels": {}}
+        comp_id = str(uuid.uuid4())
+        cfg = dict(defaults.items() + config.items())
+
+        req = self.context.socket(zmq.REQ)
+
+        port = ssh.tunnel.select_random_ports(1)[0]
+
+        client = self.setup_ssh_connection(cfg["host"], cfg["username"])
+        
+        code = "python '%s/receiver.py' %d > /tmp/err"%(os.getcwd(), port)
+        client.exec_command(code)
+
+        ssh.tunnel_connection(req, "tcp://%s:%s"%(cfg["host"], port), "%s@%s" %(cfg["username"], cfg["host"]), paramiko = True)
+
+        req.send("")
+        response = req.recv()
+        
+        if(response == "handshake"):
+            self._clients[comp_id] = req
+            self._comps[comp_id] = cfg
+            print "ZMQ Connection with computer %s at port %d established." %(comp_id, port)
+        else:
+            print "ZMQ Connection with computer %s at port %d failed!" %(comp_id, port)
+
+        return comp_id
 
     def setup_ssh_connection(self, host, username):
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(host, username=username)
-        return ssh
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(host, username=username)
+        return ssh_client
 
     def purge_kernels(self, comp_id): #need to update data structures
         """ Kills all kernels on a given computer. """
@@ -76,12 +89,6 @@ class TrustedMultiKernelManager:
             #del self._kernels[i]
             pass
         del self._comps[comp_id]["kernels"]
-
-    def add_computer(self, config):
-        """ Adds a tracked computer. """
-        comp_id = uuid.uuid4()
-        self._comps[comp_id] = config
-        return comp_id
 
     def shutdown(self):
         """Ends all kernel processes on all computers"""
@@ -249,7 +256,8 @@ if __name__ == "__main__":
         print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
         
     except:
-        print "errorrrr"
+        # print "errorrrr"
+        raise
     finally:
         #for the moment to ensure all receivers are killed...
         for i in t._comps.keys():

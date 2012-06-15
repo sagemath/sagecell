@@ -7,7 +7,7 @@ listen = True
 
 context = zmq.Context()
 rep = context.socket(zmq.REP)
-rep.connect("tcp://127.0.0.1:%s" % (sys.argv[1],))
+rep.bind("tcp://127.0.0.1:%s" % (sys.argv[1],))
 rep.recv()
 rep.send("handshake")
 while listen:
