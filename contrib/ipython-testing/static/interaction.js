@@ -9,14 +9,11 @@ $(function() {
     }
 
     function should_complete(textbox) {
-        if (!textbox.jquery) {
-            textbox = $(textbox);
-        }
-        if (!(textbox[0].selectionStart !== undefined &&
-            textbox[0].selectionStart === textbox[0].selectionEnd)) {
+        if (!(textbox.selectionStart !== undefined &&
+            textbox.selectionStart === textbox.selectionEnd)) {
             return false;
         }
-        var line = cursor_line(textbox.val(), textbox[0].selectionStart);
+        var line = cursor_line(textbox.value, textbox.selectionStart);
         return !line[1].substring(0,line[0]).match(/^\s*$/);
     }
 
@@ -61,13 +58,13 @@ $(function() {
         dest.style.display = "inherit";
     }
 
-    function update_interact(interact_id) {
+    function update_interact(interact_id, ui) {
         var python_string = "sys._interacts[\"" + interact_id + "\"](";
         var controls = interacts[interact_id].controls;
         var control_args = [];
         for (var c in controls) {
             if (controls.hasOwnProperty(c)) {
-                control_args.push(c + "=" + controls[c].evaluator(controls[c].arg));
+                control_args.push(c + "=" + controls[c].evaluator(controls[c].arg, ui));
             }
         }
         python_string += control_args.join(",") + ")";
@@ -80,6 +77,9 @@ $(function() {
         "input": function (input) {
             return "\"" + input.value.replace(/\\/g, "\\\\")
                                       .replace(/"/g, "\\\"") + "\"";
+        },
+        "slider": function (slider, ui) {
+            return ui.value.toString();
         }
     };
 
@@ -124,9 +124,19 @@ $(function() {
                         control.value = controls[name]["default"];
                         events = "keyup";
                         controls[name] = {"evaluator": interact_evaluators.input, "arg": control};
+                    } else if (controls[name].control_type === "slider") {
+                        control = document.createElement("div");
+                        control.style.width = "300px";
+                        control.style.marginLeft = "30px";
+                        $(control).slider({"min": controls[name].min,
+                                           "max": controls[name].max,
+                                           "step": controls[name].step,
+                                           "value": controls[name].default});
+                        events = "slidechange";
+                        controls[name] = {"evaluator": interact_evaluators.slider, "arg": control};
                     }
-                    $(control).on(events, function (event) {
-                        update_interact(content.content.interact_id);
+                    $(control).on(events, function (event, ui) {
+                        update_interact(content.content.new_interact_id, ui);
                     });
                     control_col.appendChild(control);
                     row.appendChild(name_col);
@@ -135,9 +145,10 @@ $(function() {
                 }
             }
             var interact_output = document.createElement("div");
+            interact_output.style.marginLeft = "2em";
             interact.appendChild(control_table);
             interact.appendChild(interact_output);
-            interacts[content.content.interact_id] = {"output": interact_output, "controls": controls};
+            interacts[content.content.new_interact_id] = {"output": interact_output, "controls": controls};
             output.appendChild(interact);
         }       
     };
@@ -159,7 +170,7 @@ $(function() {
                     event.preventDefault();
                     var lines = codebox.val().split("\n");
                     var line = cursor_line(codebox.val(), codebox[0].selectionStart);
-                    if (should_complete(codebox)) {
+                    if (should_complete(codebox[0])) {
                         test_kernel.complete(line[1], line[0], {"complete_reply": function (content) {
                             completions = content.matches;
                             if (completions.length > 1) {
@@ -172,8 +183,10 @@ $(function() {
                             }
                         }});
                     } else if (codebox[0].selectionStart === codebox[0].selectionEnd) {
-                        codebox.val(codebox.val().substring(0, codebox[0].selectionBegin) + "\t" +
+                        var i = codebox[0].selectionStart;
+                        codebox.val(codebox.val().substring(0, codebox[0].selectionStart) + "\t" +
                                 codebox.val().substring(codebox[0].selectionEnd, codebox.val().length));
+                        codebox[0].selectionStart = codebox[0].selectionEnd = i + 1;
                     }
                 } else if (event.keyCode === 8 || String.fromCharCode(event.charCode).match(/\w/) && 
                     !(event.ctrlKey || event.altKey || event.metaKey || (event.shiftKey && event.keyCode === 8))) {

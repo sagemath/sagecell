@@ -3,22 +3,34 @@ import sys
 import io
 
 class InteractControl(object):
-    control_type = None
-    default = None
+    def control_dict(self):
+        raise NotImplementedError
 
-    def __init__(self, label=None, default=None):
+class InputBox(InteractControl):
+    def __init__(self, default="", label=None):
+        self.default = default
         self.label = label
-        if default is not None:
-            self.default = default
 
     def control_dict(self):
-        return {"control_type": self.control_type,
+        return {"control_type": "input_box",
                  "label": self.label,
                  "default": self.default}
 
-class InputBox(InteractControl):
-    control_type = "input_box"
-    default = ""
+class Slider(InteractControl):
+    def __init__(self, min, max, step=1, default=None, label=None):
+        self.min = min
+        self.max = max
+        self.step = step
+        self.default = default if default is not None else min
+        self.label = label
+
+    def control_dict(self):
+        return {"control_type": "slider",
+                 "label": self.label,
+                 "default": self.default,
+                 "min": self.min,
+                 "max": self.max,
+                 "step": self.step}
 
 class InteractStream(io.StringIO):
     def __init__(self, session, pub_socket, name, interact_id, parent_header):
@@ -43,7 +55,9 @@ class InteractStream(io.StringIO):
         self.session.send(self.pub_socket, msg)
 
 def interact_func(session, pub_socket):
-    def interact(controls=[], **kwargs):
+    def interact(controls=None, **kwargs):
+        if controls is None:
+            controls = []
         def interact_decorator(f):
             msg_id = str(uuid.uuid4())
             interact_id = str(uuid.uuid4())
@@ -60,19 +74,21 @@ def interact_func(session, pub_socket):
                    "parent_header": getattr(sys.stdout, "parent_header", {}),
                    "content": {"msg_type": "interact_prepare",
                                "content": {"controls": {name: control.control_dict() for name, control in cs},
-                                           "interact_id": interact_id}}}
+                                           "new_interact_id": interact_id}}}
+            if hasattr(sys.stdout, "interact_id"):
+                msg["content"]["interact_id"] = sys.stdout.interact_id
             session.send(pub_socket, msg)
-            def adapted_function(*args, **kwargs):
+            def adapted_function(**kwargs):
                 old_streams = (sys.stdout, sys.stderr)
                 sys.stdout = InteractStream(session, pub_socket, "stdout", interact_id, getattr(sys.stdout, "parent_header", {}))
                 sys.stderr = InteractStream(session, pub_socket, "stderr", interact_id, getattr(sys.stderr, "parent_header", {}))
-                f(*args, **kwargs)
+                f(**kwargs)
                 sys.stdout, sys.stderr = old_streams
             interacts[interact_id] = adapted_function
             adapted_function(**{c[0]: c[1].default for c in cs})
         return interact_decorator
     return interact
 
-classes = {"InputBox": InputBox}
+classes = {"InputBox": InputBox, "Slider": Slider}
 
 interacts = {}
