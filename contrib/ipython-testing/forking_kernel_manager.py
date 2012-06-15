@@ -4,6 +4,7 @@ import os
 import signal
 import tempfile
 import json
+import interact
 from IPython.zmq.kernelapp import KernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
@@ -13,11 +14,13 @@ class ForkingKernelManager:
         self.kernels = {}
 
     def fork_kernel(self, sage_dict, config, connection_file, q):
-        ka = KernelApp.instance(config=config, kernel_class="IPython.zmq.ipkernel.Kernel")
-        ka.kernel_class = "IPython.zmq.ipkernel.Kernel"
-        ka.connection_file = connection_file
+        ka = KernelApp.instance(config=config, kernel_class="IPython.zmq.ipkernel.Kernel",
+                                connection_file=connection_file)
         ka.initialize([])
         ka.kernel.shell.user_ns.update(sage_dict)
+        ka.kernel.shell.user_ns.update(interact.classes)
+        ka.kernel.shell.user_ns["sys"]._interacts = interact.interacts
+        ka.kernel.shell.user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
         q.send("")
         q.close()
         ka.start()

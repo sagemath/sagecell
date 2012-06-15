@@ -223,7 +223,7 @@ var IPython = (function (IPython) {
         //
         // http://ipython.org/ipython-doc/dev/development/messaging.html#execute
         //
-        // The output_callback will be passed msg_type ('stream','display_data','pyout','pyerr')
+        // The output_callback will be passed msg_type ('stream','display_data','pyout','pyerr','extension')
         // of the output and the content object of the PUB/SUB channel that contains the
         // output:
         //
@@ -351,7 +351,7 @@ var IPython = (function (IPython) {
             // callbacks to handle it.
             return;
         }
-        var output_types = ['stream','display_data','pyout','pyerr'];
+        var output_types = ['stream','display_data','pyout','pyerr','extension'];
         if (output_types.indexOf(msg_type) >= 0) {
             var cb = callbacks['output'];
             if (cb !== undefined) {

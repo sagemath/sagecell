@@ -53,7 +53,7 @@ class TrustedMultiKernelManager:
                 req = context.socket(zmq.REQ)
                 port = req.bind_to_random_port("tcp://127.0.0.1")
                 client = self.setup_ssh_connection(x["host"],x["username"])
-                client.exec_command("sage '%s/receiver.py' %d" % (os.getcwd(), port))
+                client.exec_command("sage '%s/receiver.py' %d > /tmp/err" % (os.getcwd(), port))
                 req.send("")
                 if(req.recv() == "handshake"):
                     self._clients[comp_id] = req

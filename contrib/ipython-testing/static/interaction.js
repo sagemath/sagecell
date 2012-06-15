@@ -61,29 +61,86 @@ $(function() {
         dest.style.display = "inherit";
     }
 
+    function update_interact(interact_id) {
+        var python_string = "sys._interacts[\"" + interact_id + "\"](";
+        var controls = interacts[interact_id].controls;
+        var control_args = [];
+        for (var c in controls) {
+            if (controls.hasOwnProperty(c)) {
+                control_args.push(c + "=" + controls[c].evaluator(controls[c].arg));
+            }
+        }
+        python_string += control_args.join(",") + ")";
+        should_empty[interact_id] = true;
+        test_kernel.set_callbacks_for_msg(last_request[interact_id], {});
+        last_request[interact_id] = test_kernel.execute(python_string, {"output": output_callback});
+    }
+
+    var interact_evaluators = {
+        "input": function (input) {
+            return "\"" + input.value.replace(/\\/g, "\\\\")
+                                      .replace(/"/g, "\\\"") + "\"";
+        }
+    };
+
     var base_url = "kernel";
     var test_kernel = new IPython.Kernel(base_url);
+    var interacts = {undefined: {"output": document.getElementById("output")}};
+    var should_empty = {};
+    var last_request = {};
     test_kernel.start();
     console.log(test_kernel); // Successful startup
-    var output_callback = function (type, msg) {
+    var output_callback = function (type, content) {
+        var output = interacts[content.interact_id].output;
+        if (should_empty[content.interact_id]) {
+            $(output).empty();
+            should_empty[content.interact_id] = false;
+        }
         var text;
-        if (type === "stream") {
-            text = msg.data;
-        } else if (type === "pyout") {
-            text = msg.data["text/plain"];
-        } else if (type === "pyerr") {
-            text = msg.traceback.join("\n");
-        }
-        var output = document.getElementById("output");
-        var span = document.createElement("span");
-        if (type !== "pyerr") {
-            $(span).text(text);
-        } else {
-            $(span).html(IPython.utils.fixConsole(text));
-        }
-        $("#output").append(span);
+        if (type === "stream" || type === "pyout" || type === "pyerr") {
+            var text;
+            if (type === "stream") {
+                output.appendChild(document.createTextNode(content.data));
+            } else if (type === "pyout") {
+                output.appendChild(document.createTextNode(content.data["text/plain"]));
+            } else if (type === "pyerr") {
+                output.innerHTML += IPython.utils.fixConsole(content.traceback.join("\n"));
+            }
+            output.normalize();
+        } else if (type === "extension" && content.msg_type === "interact_prepare") {
+            var interact = document.createElement("div");
+            var control_table = document.createElement("table");
+            var controls = content.content.controls;
+            for (var name in controls) {
+                if (controls.hasOwnProperty(name)) {
+                    var row = document.createElement("tr");
+                    var name_col = document.createElement("td");
+                    var label = controls[name].label !== null ? controls[name].label : name;
+                    name_col.appendChild(document.createTextNode(label));
+                    var control_col = document.createElement("td");
+                    var control, events;
+                    if (controls[name].control_type === "input_box") {
+                        control = document.createElement("input");
+                        control.value = controls[name]["default"];
+                        events = "keyup";
+                        controls[name] = {"evaluator": interact_evaluators.input, "arg": control};
+                    }
+                    $(control).on(events, function (event) {
+                        update_interact(content.content.interact_id);
+                    });
+                    control_col.appendChild(control);
+                    row.appendChild(name_col);
+                    row.appendChild(control_col);
+                    control_table.appendChild(row);
+                }
+            }
+            var interact_output = document.createElement("div");
+            interact.appendChild(control_table);
+            interact.appendChild(interact_output);
+            interacts[content.content.interact_id] = {"output": interact_output, "controls": controls};
+            output.appendChild(interact);
+        }       
     };
-    var callbacks = {"output": output_callback};
 
     (function f() {
         if (test_kernel.shell_channel === null || test_kernel.iopub_channel === null) {
@@ -155,10 +212,11 @@ $(function() {
                 document.getElementById("completion").style.display = "none"
             });
             $("#evalbutton").on("click", function(event) {
-                $("#message_output").empty();
-                $("#output").empty();
+                should_empty[undefined] = true;
                 var code = $("#codebox").val();
-                test_kernel.execute(code, callbacks);
+                should_empty[undefined] = true;
+                test_kernel.set_callbacks_for_msg(last_request[undefined], {});
+                last_request[undefined] = test_kernel.execute(code, {"output": output_callback});
             });
 
         }
