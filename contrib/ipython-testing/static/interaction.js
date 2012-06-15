@@ -79,7 +79,7 @@ $(function() {
                                       .replace(/"/g, "\\\"") + "\"";
         },
         "slider": function (slider, ui) {
-            return ui.value.toString();
+            return ui.handle.parentNode === slider ? ui.value : $(slider).slider("option", "value");
         }
     };
 
@@ -111,44 +111,56 @@ $(function() {
             var interact = document.createElement("div");
             var control_table = document.createElement("table");
             var controls = content.content.controls;
-            for (var name in controls) {
-                if (controls.hasOwnProperty(name)) {
-                    var row = document.createElement("tr");
-                    var name_col = document.createElement("td");
-                    var label = controls[name].label !== null ? controls[name].label : name;
-                    name_col.appendChild(document.createTextNode(label));
-                    var control_col = document.createElement("td");
-                    var control, events;
-                    if (controls[name].control_type === "input_box") {
-                        control = document.createElement("input");
-                        control.value = controls[name]["default"];
-                        events = "keyup";
-                        controls[name] = {"evaluator": interact_evaluators.input, "arg": control};
-                    } else if (controls[name].control_type === "slider") {
-                        control = document.createElement("div");
-                        control.style.width = "300px";
-                        control.style.marginLeft = "30px";
-                        $(control).slider({"min": controls[name].min,
-                                           "max": controls[name].max,
-                                           "step": controls[name].step,
-                                           "value": controls[name].default});
-                        events = "slidechange";
-                        controls[name] = {"evaluator": interact_evaluators.slider, "arg": control};
-                    }
-                    $(control).on(events, function (event, ui) {
-                        update_interact(content.content.new_interact_id, ui);
-                    });
+            var control_info = {};
+            for (var i = 0; i < controls.length; i++) {
+                var name = controls[i][0];
+                var control_dict = controls[i][1];
+                var row = document.createElement("tr");
+                var name_col = document.createElement("td");
+                var label = control_dict.label !== null ? control_dict.label : name;
+                name_col.appendChild(document.createTextNode(label));
+                var control_col = document.createElement("td");
+                var control, events;
+                if (control_dict.control_type === "input_box") {
+                    control = document.createElement("input");
+                    control.value = control_dict.default;
                     control_col.appendChild(control);
-                    row.appendChild(name_col);
-                    row.appendChild(control_col);
-                    control_table.appendChild(row);
+                    events = "keyup";
+                    control_info[name] = {"evaluator": interact_evaluators.input, "arg": control};
+                } else if (control_dict.control_type === "slider") {
+                    control = document.createElement("div");
+                    control.style.width = "300px";
+                    control.style.marginLeft = "30px";
+                    control.style.display = "inline-block";
+                    control.style.marginRight = "20px";
+                    $(control).slider({"min": control_dict.min,
+                                       "max": control_dict.max,
+                                       "step": control_dict.step,
+                                       "value": control_dict.default});
+                    var value = document.createElement("span");
+                    value.appendChild(document.createTextNode(control_dict.default.toString()));
+                    control_col.appendChild(control);
+                    control_col.appendChild(value);
+                    (function (textNode) {
+                        $(control).on("slide", function (event, ui) {
+                            textNode.nodeValue = ui.value.toString();
+                        });
+                    }(value.firstChild));
+                    events = "slidechange";
+                    control_info[name] = {"evaluator": interact_evaluators.slider, "arg": control};
                 }
+                $(control).on(events, function (event, ui) {
+                    update_interact(content.content.new_interact_id, ui);
+                });
+                row.appendChild(name_col);
+                row.appendChild(control_col);
+                control_table.appendChild(row);
             }
             var interact_output = document.createElement("div");
             interact_output.style.marginLeft = "2em";
             interact.appendChild(control_table);
             interact.appendChild(interact_output);
-            interacts[content.content.new_interact_id] = {"output": interact_output, "controls": controls};
+            interacts[content.content.new_interact_id] = {"output": interact_output, "controls": control_info};
             output.appendChild(interact);
         }       
     };

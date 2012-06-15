@@ -73,7 +73,7 @@ def interact_func(session, pub_socket):
                    "msg_type": "extension",
                    "parent_header": getattr(sys.stdout, "parent_header", {}),
                    "content": {"msg_type": "interact_prepare",
-                               "content": {"controls": {name: control.control_dict() for name, control in cs},
+                               "content": {"controls": [(name, control.control_dict()) for name, control in cs],
                                            "new_interact_id": interact_id}}}
             if hasattr(sys.stdout, "interact_id"):
                 msg["content"]["interact_id"] = sys.stdout.interact_id
@@ -85,10 +85,9 @@ def interact_func(session, pub_socket):
                 f(**kwargs)
                 sys.stdout, sys.stderr = old_streams
             interacts[interact_id] = adapted_function
-            adapted_function(**{c[0]: c[1].default for c in cs})
+            adapted_function(**{name: control.default for name, control in cs})
         return interact_decorator
     return interact
 
 classes = {"InputBox": InputBox, "Slider": Slider}
-
 interacts = {}
