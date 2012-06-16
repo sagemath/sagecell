@@ -180,33 +180,33 @@ class TrustedMultiKernelManager:
         else:
             raise IOError("Could not find open computer. There are %d computers available."%len(ids))
 
-    def _create_connected_stream(self, host, port, socket_type):
+    def _create_connected_stream(self, cfg, port, socket_type):
         sock = self.context.socket(socket_type)
-        addr = "tcp://%s:%i" % (host, port)
+        addr = "tcp://%s:%i" % (cfg["host"], port)
         print "Connecting to: %s" % addr
-        sock.connect(addr)
+        ssh.tunnel_connection(sock, "tcp://%s:%s"%(cfg["host"], port), "%s@%s"%(cfg["username"], cfg["host"]), paramiko = True)
         return ZMQStream(sock)
     
     def create_iopub_stream(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
-        host = self._comps[comp_id]["host"]
+        cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
-        iopub_stream = self._create_connected_stream(host, connection["iopub_port"], zmq.SUB)
+        iopub_stream = self._create_connected_stream(cfg, connection["iopub_port"], zmq.SUB)
         iopub_stream.socket.setsockopt(zmq.SUBSCRIBE, b"")
         return iopub_stream
 
     def create_shell_stream(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
-        host = self._comps[comp_id]["host"]
+        cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
-        shell_stream = self._create_connected_stream(host, connection["shell_port"], zmq.DEALER)
+        shell_stream = self._create_connected_stream(cfg, connection["shell_port"], zmq.DEALER)
         return shell_stream
 
     def create_hb_stream(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
-        host = self._comps[comp_id]["host"]
+        cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
-        hb_stream = self._create_connected_stream(host, connection["hb_port"], zmq.REQ)
+        hb_stream = self._create_connected_stream(cfg, connection["hb_port"], zmq.REQ)
         return hb_stream
 
 """ TO DO:
