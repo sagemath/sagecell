@@ -42,7 +42,6 @@ class TrustedMultiKernelManager:
 
         if hasattr(config, "computers"):
             for comp in config.computers:
-                print comp
                 self.add_computer(comp)
 
     def add_computer(self, config):
@@ -57,14 +56,14 @@ class TrustedMultiKernelManager:
 
         client = self.setup_ssh_connection(cfg["host"], cfg["username"])
         
-        code = "python '%s/receiver.py' %d > /tmp/err"%(os.getcwd(), port)
+        code = "python '%s/receiver.py' %d"%(os.getcwd(), port)
         client.exec_command(code)
 
         ssh.tunnel_connection(req, "tcp://%s:%s"%(cfg["host"], port), "%s@%s" %(cfg["username"], cfg["host"]), paramiko = True)
 
-        req.send("")
+        req.send("handshake")
         response = req.recv()
-        
+
         if(response == "handshake"):
             self._clients[comp_id] = req
             self._comps[comp_id] = cfg
@@ -83,8 +82,8 @@ class TrustedMultiKernelManager:
     def purge_kernels(self, comp_id): #need to update data structures
         """ Kills all kernels on a given computer. """
         req = self._clients[comp_id]
-        req.send("purge_kernels")
-        print req.recv()
+        req.send_pyobj({"type": "purge_kernels"})
+        print req.recv_pyobj()
         for i in self._comps[comp_id]["kernels"]:
             #del self._kernels[i]
             pass
@@ -92,16 +91,14 @@ class TrustedMultiKernelManager:
 
     def shutdown(self):
         """Ends all kernel processes on all computers"""
-        for i in self._comps.keys():
-            req = self._clients[i]
-            req.send("remove_computer")
-            req.recv()
+        for comp_id in self._comps.keys():
+            self.remove_computer(comp_id)
 
     def remove_computer(self, comp_id):
         """ Removes a tracked computer. """
         req = self._clients[comp_id]
-        req.send("remove_computer")
-        print req.recv()
+        req.send_pyobj({"type": "remove_computer"})
+        print req.recv_pyobj()
         for i in self._comps[comp_id]["kernels"]:
             del self._kernels[i]
         del self._comps[comp_id]
@@ -109,50 +106,59 @@ class TrustedMultiKernelManager:
     def restart_kernel(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
         req = self._clients[comp_id]
-        req.send("restart_kernel")
-        req.recv()
-        req.send(kernel_id)
-        print req.recv()
+        req.send_pyobj({"type":"restart_kernel",
+                        "content":{"kernel_id":kernel_id}})
+        response = req.recv_pyobj()
+        print response
 
     def interrupt_kernel(self, kernel_id):
         comp_id = self._kernels[kernel_id]["comp_id"]
         req = self._clients[comp_id]
-        req.send("interrupt_kernel")
-        req.recv()
-        req.send(kernel_id)
-        print req.recv()
+        req.send_pyobj({"type":"interrupt_kernel",
+                        "content": {"kernel_id": kernel_id}})
+
+        reply = req.recv_pyobj()
+
+        if reply["type"] == "success":
+            print "Kernel %s interrupted."%kernel_id
+        else:
+            print "Kernel %s not interrupted!"%kernel_id
 
     def new_session(self):
         """Starts a new kernel on an open computer."""
         comp_id = self._find_open_computer()
-        
         req = self._clients[comp_id]
-        req.send("start_kernel")
-        x = req.recv_pyobj()
-        kernel_id=x["kernel_id"]
-        kernel_connection=x["connection"]
 
-        self._kernels[kernel_id] = {"comp_id": comp_id, "connection": kernel_connection}
-        self._comps[comp_id]["kernels"][kernel_id] = None
-        self._sessions[kernel_id] = Session(key=kernel_connection["key"])
-        return kernel_id
+        req.send_pyobj({"type":"start_kernel"})
+
+        reply = req.recv_pyobj()
+
+        if reply["type"] == "success":
+            reply_content = reply["content"]
+            kernel_id = reply_content["kernel_id"]
+            kernel_connection = reply_content["connection"]
+            self._kernels[kernel_id] = {"comp_id": comp_id, "connection": kernel_connection}
+            self._comps[comp_id]["kernels"][kernel_id] = None
+            self._sessions[kernel_id] = Session(key=kernel_connection["key"])
+            return kernel_id
+        else:
+            return False
 
     def end_session(self, kernel_id):
         """Kills an existing kernel on a given computer."""
         comp_id = self._kernels[kernel_id]["comp_id"]
 
         req = self._clients[comp_id]
-        req.send("kill_kernel")
+        req.send_pyobj({"type":"kill_kernel",
+                        "content": {"kernel_id": kernel_id}})
         print "Killing Kernel ::: %s at %s"%(kernel_id, (comp_id))
-        req.recv()
-        req.send(kernel_id)
-        status = req.recv_pyobj()
+        response = req.recv_pyobj()
         
-        if (status):
+        if (response["type"] == "error"):
+            print "Error ending kernel!"
+        else:
             del self._kernels[kernel_id]
             del self._comps[comp_id]["kernels"][kernel_id]
-        else:
-            print "error ending kernel"
         
     def _find_open_computer(self):
         """Returns the comp_id of a computer able to start a new kernel."""
@@ -217,11 +223,9 @@ if __name__ == "__main__":
     try:
         t = TrustedMultiKernelManager()
         
-        print t.context
-
         t.setup_initial_comps()
 
-        for i in xrange(10):
+        for i in xrange(3):
             t.new_session()
 
         vals = t._comps.values()
@@ -233,12 +237,12 @@ if __name__ == "__main__":
         y = t.get_kernel_ids()
 
         for i in y:
-            t.interrupt_kernel(i)
-            #t.restart_kernel(i) appears broken...
+            # t.interrupt_kernel(i) is broken (?)
+            t.restart_kernel(i)
             import random
             if random.randrange(0,2):
                 t.end_session(i)
-
+            
         vals = t._comps.values()
         for i in xrange(len(vals)):
             print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()

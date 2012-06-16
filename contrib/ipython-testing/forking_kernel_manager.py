@@ -17,10 +17,13 @@ class ForkingKernelManager:
         ka = KernelApp.instance(config=config, kernel_class="IPython.zmq.ipkernel.Kernel",
                                 connection_file=connection_file)
         ka.initialize([])
+
+        """ These are commented out because they're causing the entire thing to hang
         ka.kernel.shell.user_ns.update(sage_dict)
         ka.kernel.shell.user_ns.update(interact.classes)
         ka.kernel.shell.user_ns["sys"]._interacts = interact.interacts
         ka.kernel.shell.user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
+        """
         q.send("")
         q.close()
         ka.start()
