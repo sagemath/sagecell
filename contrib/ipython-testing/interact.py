@@ -7,7 +7,7 @@ class InteractControl(object):
         raise NotImplementedError
 
 class InputBox(InteractControl):
-    def __init__(self, default="", label=None):
+    def __init__(self, default=u"", label=None):
         self.default = default
         self.label = label
 

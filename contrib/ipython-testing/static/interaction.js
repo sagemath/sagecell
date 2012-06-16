@@ -75,7 +75,7 @@ $(function() {
 
     var interact_evaluators = {
         "input": function (input) {
-            return "\"" + input.value.replace(/\\/g, "\\\\")
+            return "u\"" + input.value.replace(/\\/g, "\\\\")
                                       .replace(/"/g, "\\\"") + "\"";
         },
         "slider": function (slider, ui) {
