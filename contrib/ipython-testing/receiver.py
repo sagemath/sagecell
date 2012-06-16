@@ -40,29 +40,27 @@ class Receiver:
     """
     Message Handlers
     """
-    def invalid_message(self, content):
+    def invalid_message(self, msg_content):
         """Handler for unsupported messages."""
         return self._form_message({"status": "Invalid message!"}, error = True)
 
-    def start_kernel(self, content):
+    def start_kernel(self, msg_content):
         """Handler for start_kernel messages."""
-        print "start kernel"
-        content = self.km.start_kernel()
-        print content
-        return self._form_message(content)
+        reply_content = self.km.start_kernel()
+        return self._form_message(reply_content)
 
-    def kill_kernel(self, content):
+    def kill_kernel(self, msg_content):
         """Handler for kill_kernel messages."""
-        kernel_id = content["kernel_id"]
+        kernel_id = msg_content["kernel_id"]
         success = self.km.kill_kernel(kernel_id)
 
-        content = {"status": "Kernel %s killed!"%(kernel_id)}
+        reply_content = {"status": "Kernel %s killed!"%(kernel_id)}
         if not success:
-            content["status"] = "Could not kill kernel %s!"%(kernel_id)
+            reply_content["status"] = "Could not kill kernel %s!"%(kernel_id)
 
-        return self._form_message(content, error=(not success))
+        return self._form_message(reply_content, error=(not success))
     
-    def purge_kernels(self, content):
+    def purge_kernels(self, msg_content):
         """Handler for purge_kernels messages."""
         failures = []
         for kernel_id in self.km._kernels:
@@ -70,31 +68,31 @@ class Receiver:
             if not success:
                 failures.append(kernel_id)
 
-        content = {"status": "All kernels killed!"}
+        reply_content = {"status": "All kernels killed!"}
         success = (len(failures) > 0)
         if not success:
-            content["status"] = "Could not kill kernels %s!"%(failures)
-        return self._form_message(content, error=(not success))
+            reply_content["status"] = "Could not kill kernels %s!"%(failures)
+        return self._form_message(reply_content, error=(not success))
 
     def restart_kernel(self, content):
         """Handler for restart_kernel messages."""
         kernel_id = content["kernel_id"]
         return self._form_message(self.km.restart_kernel(kernel_id))
 
-    def interrupt_kernel(self, content):
+    def interrupt_kernel(self, msg_content):
         """Handler for interrupt_kernel messages."""
-        kernel_id = content["kernel_id"]
+        kernel_id = msg_content["kernel_id"]
 
-        content = {"status": "Kernel %s interrupted!"%(kernel_id)}
+        reply_content = {"status": "Kernel %s interrupted!"%(kernel_id)}
         success = self.km.interrupt_kernel(kernel_id)
         if not success:
-            content["status"] = "Could not interrupt kernel %s!"%(kernel_id)
-        return self._form_message(content, error=(not success))
+            reply_content["status"] = "Could not interrupt kernel %s!"%(kernel_id)
+        return self._form_message(repy_content, error=(not success))
 
-    def remove_computer(self, content):
+    def remove_computer(self, msg_content):
         """Handler for remove_computer messages."""
         listen = False
-        return self.purge_kernels(content)
+        return self.purge_kernels(msg_content)
 
 
 port = sys.argv[1]
