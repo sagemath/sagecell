@@ -225,7 +225,7 @@ if __name__ == "__main__":
         
         t.setup_initial_comps()
 
-        for i in xrange(3):
+        for i in xrange(5):
             t.new_session()
 
         vals = t._comps.values()
@@ -251,6 +251,7 @@ if __name__ == "__main__":
 
         x = t._comps.keys()
 
+        # This presumes more than one computer is running...
         t.remove_computer(x[1])
 
         vals = t._comps.values()
