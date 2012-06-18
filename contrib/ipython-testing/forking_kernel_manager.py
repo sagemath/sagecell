@@ -4,6 +4,7 @@ import os
 import signal
 import tempfile
 import json
+import random
 import interact
 from IPython.zmq.kernelapp import KernelApp
 from IPython.config.loader import Config
@@ -29,6 +30,7 @@ class ForkingKernelManager:
         ka.start()
 
     def start_kernel(self, sage_dict={}, kernel_id=None, config=None):
+        random.seed()
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
