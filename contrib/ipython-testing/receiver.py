@@ -69,7 +69,7 @@ class Receiver:
                 failures.append(kernel_id)
 
         reply_content = {"status": "All kernels killed!"}
-        success = (len(failures) > 0)
+        success = (len(failures) == 0)
         if not success:
             reply_content["status"] = "Could not kill kernels %s!"%(failures)
         return self._form_message(reply_content, error=(not success))

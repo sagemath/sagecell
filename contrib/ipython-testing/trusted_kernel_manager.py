@@ -70,7 +70,7 @@ class TrustedMultiKernelManager:
 
         port = ssh.tunnel.select_random_ports(1)[0]
 
-        client = self.setup_ssh_connection(cfg["host"], cfg["username"])
+        client = self._setup_ssh_connection(cfg["host"], cfg["username"])
         
         code = "python '%s/receiver.py' %d"%(os.getcwd(), port)
         client.exec_command(code)
@@ -105,7 +105,7 @@ class TrustedMultiKernelManager:
     def purge_kernels(self, comp_id):
         """ Kills all kernels on a given computer. 
 
-        :arg str comp_id: the id of the computer whose kernels you want to purge
+            :arg str comp_id: the id of the computer whose kernels you want to purge
         """
         req = self._clients[comp_id]
         req.send_pyobj({"type": "purge_kernels"})
@@ -114,11 +114,6 @@ class TrustedMultiKernelManager:
             del self._kernels[i]
         self._comps[comp_id]["kernels"] = {}
 
-
-        :arg dict config: configuration dictionary of the computer to be added
-        :returns: computer id assigned to added computer
-        :rtype: string
-        """
     def shutdown(self):
         """ Ends all kernel processes on all computers. """
         for comp_id in self._comps.keys():
@@ -184,7 +179,8 @@ class TrustedMultiKernelManager:
             kernel_connection = reply_content["connection"]
             self._kernels[kernel_id] = {"comp_id": comp_id, "connection": kernel_connection}
             self._comps[comp_id]["kernels"][kernel_id] = None
-            self._sessions[kernel_id] = Session(key=kernel_connection["key"])
+            print "CONNECTION FILE ::: ", kernel_connection
+            self._sessions[kernel_id] = Session(key=kernel_connection["key"], debug=True)
             return kernel_id
         else:
             return False
