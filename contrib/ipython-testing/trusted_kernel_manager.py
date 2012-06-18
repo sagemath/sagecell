@@ -68,26 +68,43 @@ class TrustedMultiKernelManager:
 
         req = self.context.socket(zmq.REQ)
 
-        port = ssh.tunnel.select_random_ports(1)[0]
-
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
         
-        code = "python '%s/receiver.py' %d"%(os.getcwd(), port)
-        client.exec_command(code)
+        code = "python '%s/receiver.py'"%(os.getcwd(),)
+        ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
+        stdout_channel = ssh_stdout.channel
 
-        ssh.tunnel_connection(req, "tcp://%s:%s"%(cfg["host"], port), "%s@%s" %(cfg["username"], cfg["host"]), paramiko = True)
+        "Wait for untrusted side to respond with the bound port"
+        failure = True
+        from time import sleep
+        for i in xrange(10):
+            if stdout_channel.recv_ready():
+                port = stdout_channel.recv(1024)
+                failure = False
+                break;
+            sleep(0.5)
 
-        req.send("handshake")
-        response = req.recv()
+        retval = None
+        if failure:
+            print "Computer %s did not respond, connected failed!"%comp_id
 
-        if(response == "handshake"):
-            self._clients[comp_id] = req
-            self._comps[comp_id] = cfg
-            print "ZMQ Connection with computer %s at port %d established." %(comp_id, port)
         else:
-            print "ZMQ Connection with computer %s at port %d failed!" %(comp_id, port)
+            addr = "tcp://%s:%s"%(cfg["host"], port)
+            req.connect(addr)
+            
+            req.send("handshake")
+            response = req.recv()
 
-        return comp_id
+            if(response == "handshake"):
+                self._clients[comp_id] = req
+                self._comps[comp_id] = cfg
+                print "ZMQ Connection with computer %s at port %s established." %(comp_id, port)
+            else:
+                print "ZMQ Connection with computer %s at port %s failed!" %(comp_id, port)
+
+            retval = comp_id
+
+        return retval
 
     def _setup_ssh_connection(self, host, username):
         """ Returns a paramiko SSH client connected to the given host. 
@@ -305,13 +322,10 @@ if __name__ == "__main__":
             print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
 
         print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
-        
     except:
         # print "errorrrr"
         raise
     finally:
         #for the moment to ensure all receivers are killed...
         for i in t._comps.keys():
-            t.remove_computer(i)
-    
-        
+           t.remove_computer(i)

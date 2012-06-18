@@ -1,16 +1,18 @@
 from untrusted_kernel_manager import UntrustedMultiKernelManager
 import zmq
+from zmq import ssh
 import sys
 
 class Receiver:
-    def __init__(self, port):
-        self.port = port
+    def __init__(self):
         self.context = zmq.Context()
         self.km = UntrustedMultiKernelManager()
+        self.rep = self.context.socket(zmq.REP)
+        self.port = self.rep.bind_to_random_port("tcp://127.0.0.1")
+        sys.stdout.write(str(self.port))
+        sys.stdout.flush()
 
     def start(self):
-        self.rep = self.context.socket(zmq.REP)
-        self.rep.bind("tcp://127.0.0.1:%s" % self.port)
         handshake = self.rep.recv()
         self.rep.send(handshake)
         
@@ -91,10 +93,9 @@ class Receiver:
 
     def remove_computer(self, msg_content):
         """Handler for remove_computer messages."""
-        listen = False
+        self.listen = False
         return self.purge_kernels(msg_content)
 
 
-port = sys.argv[1]
-receiver = Receiver(port)
+receiver = Receiver()
 receiver.start()
