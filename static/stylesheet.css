@@ -135,10 +135,12 @@
 .sagecell_editorToggle {
     float: right;
     margin: 2px;
-    padding: 5px;
+    font-size: 80%;
 }
 
 .sagecell_advancedFrame {
+    border-radius: 5px;
+    background-color: #ddf;
     border: 1px solid;
     padding: 0.2em;
     display: inline-block;
@@ -151,7 +153,12 @@
 
 .sagecell_advancedTitle {
     cursor: default;
-    border-bottom: 1px solid;
+}
+
+.sagecell_advancedFields {
+    border: 1px solid gray;
+    background-color: white;
+    padding: 5px;
 }
 
 .sagecell_fileList li {
