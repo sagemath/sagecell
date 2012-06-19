@@ -85,7 +85,7 @@ def interact_func(session, pub_socket):
                 f(**kwargs)
                 sys.stdout, sys.stderr = old_streams
             interacts[interact_id] = adapted_function
-            adapted_function(**{name: control.default for name, control in cs})
+            adapted_function(**dict([(name,control.default) for name, control in cs]))
         return interact_decorator
     return interact
 

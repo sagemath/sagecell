@@ -6,7 +6,7 @@ class UntrustedMultiKernelManager:
         self._kernels = set()
         try:
             import sage.all
-            self.sage_dict = {n: getattr(sage.all, n) for n in dir(sage.all) if not n.startswith("_")}
+            self.sage_dict = dict([(n,getattr(sage.all, n)) for n in dir(sage.all) if not n.startswith("_")])
         except:
             self.sage_dict = {}
     
