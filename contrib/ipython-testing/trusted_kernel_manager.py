@@ -16,7 +16,7 @@ class TrustedMultiKernelManager:
     def __init__(self):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
-        self._clients = {} #comp_id: zmq req socket object
+        self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
         self.context = zmq.Context()
 
@@ -98,7 +98,7 @@ class TrustedMultiKernelManager:
             response = req.recv()
 
             if(response == "handshake"):
-                self._clients[comp_id] = req
+                self._clients[comp_id] = {"socket": req, "ssh": client}
                 self._comps[comp_id] = cfg
                 print "ZMQ Connection with computer %s at port %s established." %(comp_id, port)
             else:
@@ -126,7 +126,7 @@ class TrustedMultiKernelManager:
 
             :arg str comp_id: the id of the computer whose kernels you want to purge
         """
-        req = self._clients[comp_id]
+        req = self._clients[comp_id]["socket"]
         req.send_pyobj({"type": "purge_kernels"})
         print req.recv_pyobj()
         for i in self._comps[comp_id]["kernels"].keys():
@@ -143,11 +143,13 @@ class TrustedMultiKernelManager:
 
         :arg str comp_id: the id of the computer that you want to remove
         """
-        req = self._clients[comp_id]
+        ssh_client = self._clients[comp_id]["ssh"]
+        req = self._clients[comp_id]["socket"]
         req.send_pyobj({"type": "remove_computer"})
         print req.recv_pyobj()
         for i in self._comps[comp_id]["kernels"].keys():
             del self._kernels[i]
+        ssh_client.close()
         del self._comps[comp_id]
 
     def restart_kernel(self, kernel_id):
@@ -156,7 +158,7 @@ class TrustedMultiKernelManager:
         :arg str kernel_id: the id of the kernel you want restarted
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        req = self._clients[comp_id]
+        req = self._clients[comp_id]["socket"]
         req.send_pyobj({"type":"restart_kernel",
                         "content":{"kernel_id":kernel_id}})
         response = req.recv_pyobj()
@@ -168,7 +170,7 @@ class TrustedMultiKernelManager:
         :arg str kernel_id: the id of the kernel you want interrupted
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        req = self._clients[comp_id]
+        req = self._clients[comp_id]["socket"]
         req.send_pyobj({"type":"interrupt_kernel",
                         "content": {"kernel_id": kernel_id}})
 
@@ -186,7 +188,7 @@ class TrustedMultiKernelManager:
         :rtype: string
         """
         comp_id = self._find_open_computer()
-        req = self._clients[comp_id]
+        req = self._clients[comp_id]["socket"]
 
         req.send_pyobj({"type":"start_kernel"})
 
@@ -211,7 +213,7 @@ class TrustedMultiKernelManager:
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
 
-        req = self._clients[comp_id]
+        req = self._clients[comp_id]["socket"]
         req.send_pyobj({"type":"kill_kernel",
                         "content": {"kernel_id": kernel_id}})
         print "Killing Kernel ::: %s at %s"%(kernel_id, (comp_id))
