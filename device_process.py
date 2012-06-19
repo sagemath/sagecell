@@ -48,6 +48,7 @@ from json import dumps, loads
 from hashlib import sha1
 import interact_sagecell
 import sagecell_exec_config as CONFIG
+import re
 
 try:
     import sage
@@ -106,6 +107,8 @@ import sage.misc.misc
 import sagecell_exec_config
 sage.misc.misc.EMBEDDED_MODE=sagecell_exec_config.EMBEDDED_MODE
 """+user_code
+
+line_prefix = re.compile(r"^[ \t]*(>>>|sage:|In \[\d+\]:|\.{3}(\.*:)?) ", re.MULTILINE)
 
 class QueueOut(StringIO.StringIO):
     """
@@ -494,7 +497,6 @@ def displayhook_hack(string):
 import tempfile
 import shutil
 import os
-import re
 
 def execProcess(session, message_queue, output_handler, resource_limits, sysargs, fs_secret):
     """
@@ -549,7 +551,7 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
         # TODO: we probably ought not prepend our own code, in case the user has some 
         # "from __future__ import ..." statements, which *must* occur at the top of the code block
         # alternatively, we could move any such statements above our statements
-        code = re.sub(r"^[ \t]*(>>>|sage:|In \[\d+\]:|\.{3}(\.*:)?) ", "", msg['content']['code'].encode('utf8'), flags=re.MULTILINE)
+        code = line_prefix.sub("", msg['content']['code'].encode('utf8'))
 
         CONFIG.EMBEDDED_MODE["sage_mode"] =  sage_mode = msg['content']['sage_mode']
         if enable_sage and sage_mode:
