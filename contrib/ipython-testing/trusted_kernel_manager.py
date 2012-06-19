@@ -249,7 +249,7 @@ class TrustedMultiKernelManager:
         sock = self.context.socket(socket_type)
         addr = "tcp://%s:%i" % (cfg["host"], port)
         print "Connecting to: %s" % addr
-        ssh.tunnel_connection(sock, "tcp://%s:%s"%(cfg["host"], port), "%s@%s"%(cfg["username"], cfg["host"]), paramiko = True)
+        sock.connect(addr)
         return ZMQStream(sock)
     
     def create_iopub_stream(self, kernel_id):
