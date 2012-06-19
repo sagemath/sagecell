@@ -164,6 +164,9 @@ restrictions; this account will be executing arbitrary user code).
    :file:`{$SERVER}/sagecell/sagecell_config.py.default` and make the
    following changes:
 
+   * Change the value of ``untrusted-account`` from ``'localhost'`` to
+     :samp:`'{<UNTRUSTED_USER>}@localhost'`.
+
    * If you are using MongoDB, the ``mongo_uri`` variable should be set to
      :samp:`'mongodb://{<SAGECELL_USER>}:{<SAGECELL_PASSWORD}>@localhost:{<MONGODB_PORT>}'`
      and the ``db`` variable should be set to ``'mongo'``.
