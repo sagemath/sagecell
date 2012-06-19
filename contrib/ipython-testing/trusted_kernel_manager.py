@@ -74,7 +74,9 @@ class TrustedMultiKernelManager:
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
-        "Wait for untrusted side to respond with the bound port"
+        # Wait for untrusted side to respond with the bound port using paramiko channels
+        # Another option would be to have a short-lived ZMQ socket bound on the trusted
+        # side and have the untrusteed side connect to that and send the port
         failure = True
         from time import sleep
         for i in xrange(10):
