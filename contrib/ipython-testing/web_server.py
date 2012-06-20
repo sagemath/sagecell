@@ -32,6 +32,7 @@ _VALID_QUERY_CHARS = set(string.letters+string.digits+"-")
 
 @app.route("/")
 def root():
+    db = application.db
     options = {}
     if "c" in request.values:
         # If the code is explicitly specified
@@ -50,11 +51,11 @@ def root():
             options["code"] = "# Error decompressing code: %s"%e
     elif "q" in request.values and set(request.values["q"]).issubset(_VALID_QUERY_CHARS):
         # If the code is referenced by a permalink identifier
-        options["code"] = db.get_exec_msg(["q"])
+        options["code"] = db.get_exec_msg(request.values["q"])
     if "code" in options:
         if isinstance(options["code"], unicode):
             options["code"] = options["code"].encode("utf8")
-        options["code"] = urllib.quote(options["code"])
+        options["code"] = options["code"]
         options["autoeval"] = "false" if "autoeval" in request.args and request.args["autoeval"] == "false" else "true"
     return render_template("root.html", **options)
 
@@ -82,7 +83,7 @@ def get_permalink():
         db = application.db
         try:
             message = json.loads(request.values["message"])
-            permalink = db.new_exec_message(message)
+            permalink = db.new_exec_msg(message)
             rval["permalink"] = permalink
         except:
             pass
@@ -133,7 +134,7 @@ class SageCellServer(tornado.web.Application):
         self.km = TMKM(comps = initial_comps)
 
         self.db = DB(misc.get_db_file(self.config))
-        
+
         super(SageCellServer, self).__init__(handlers)
 
 if __name__ == "__main__":
