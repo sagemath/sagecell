@@ -9,7 +9,7 @@
   <body>
     <label>
       <b>Code to Execute:</b>
-      <textarea style="width:100%;tab-size:4;-moz-tab-size:4;height:15em;" id="codebox" spellcheck="false">print "Hello, World!"</textarea>
+      <textarea style="width:100%;tab-size:4;-moz-tab-size:4;height:15em;" id="codebox" spellcheck="false">{% if code %} {{code}} {% endif %}</textarea>
     </label>
     <button id="evalbutton">Evaluate</button>
     <div id="completion" style="display:none;border:1px solid black;background:yellow;overflow-x:auto;"></div>

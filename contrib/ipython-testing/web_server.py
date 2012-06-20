@@ -1,16 +1,62 @@
 #! /usr/bin/env python
-from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
 
+"""
+System imports
+"""
+import uuid, os, json, urllib, string
 
+"""
+Flask imports
+"""
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json, Response, abort, make_response
 
-import uuid, os
+"""
+Sagecell imports
+"""
+import misc
 
+from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
+from db_sqlalchemy import DB
+
+try:
+    import config
+except ImportError:
+    import config_default as config
+
+"""
+Flask webserver
+"""
 app = Flask(__name__)
+
+_VALID_QUERY_CHARS = set(string.letters+string.digits+"-")
 
 @app.route("/")
 def root():
-    return render_template("root.html")
+    options = {}
+    if "c" in request.values:
+        # If the code is explicitly specified
+        options["code"] = request.values["c"]
+    elif "z" in request.values:
+        # If the code is base64 compressed
+        import zlib, base64
+        try:
+            z = request.values["z"].encode("ascii")
+            # We allow the user to strip off the = padding at the end
+            # so that the URL doesn't have to have any escaping
+            # here we add back the = padding if we need it
+            z += "="*((4-(len(z)%4))%4)
+            options["code"] = zlib.decompress(base64.urlsafe_b64decode(z))
+        except Exception as e:
+            options["code"] = "# Error decompressing code: %s"%e
+    elif "q" in request.values and set(request.values["q"]).issubset(_VALID_QUERY_CHARS):
+        # If the code is referenced by a permalink identifier
+        options["code"] = db.get_exec_msg(["q"])
+    if "code" in options:
+        if isinstance(options["code"], unicode):
+            options["code"] = options["code"].encode("utf8")
+        options["code"] = urllib.quote(options["code"])
+        options["autoeval"] = "false" if "autoeval" in request.args and request.args["autoeval"] == "false" else "true"
+    return render_template("root.html", **options)
 
 @app.route("/kernel", methods=["POST"])
 def main_kernel():
@@ -29,8 +75,25 @@ def main_kernel():
     print "%s END MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
     return r
 
+@app.route("/permalink", methods=["POST"])
+def get_permalink():
+    rval = {"permalink": None}
+    if request.values.get("message") is not None:
+        db = application.db
+        try:
+            message = json.loads(request.values["message"])
+            permalink = db.new_exec_message(message)
+            rval["permalink"] = permalink
+        except:
+            pass
+    r = Response(json.dumps(rval), mimetype="application/json")
+    return r
+    
 
-import zmq, os
+"""
+Tornado / zmq imports
+"""
+import zmq
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 ioloop.install()
@@ -45,19 +108,16 @@ wsgi_app = tornado.wsgi.WSGIContainer(app)
 """
 Globals
 """
-
 _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 
 """
 Tornado Handlers
 """
-
 from handlers import ShellHandler, IOPubHandler
 
 """
-Web Server
+Tornado Web Server
 """
-
 class SageCellServer(tornado.web.Application):
     def __init__(self):
         handlers = [
@@ -66,11 +126,15 @@ class SageCellServer(tornado.web.Application):
             (r".*", tornado.web.FallbackHandler, {'fallback': wsgi_app})
             ]
 
-        self.km = TMKM()
-        self.km.setup_initial_comps()
+        self.config = misc.Config()
+
+        initial_comps = self.config.get_config("computers")
+
+        self.km = TMKM(comps = initial_comps)
+
+        self.db = DB(misc.get_db_file(self.config))
         
         super(SageCellServer, self).__init__(handlers)
-
 
 if __name__ == "__main__":
     application = SageCellServer()
