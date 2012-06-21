@@ -2,9 +2,9 @@ import random, os
 
 sage = ""
 if sage == "":
-    sage = os.environ("SAGE_ROOT")+"/sage "
+    sage = os.environ["SAGE_ROOT"]+"/sage -python"
 
 computers = []
 
 for i in xrange(2):
-    computers.append({"host": "localhost", "username": "testssh"})
+    computers.append({"host": "localhost", "username": "", "python": sage})
