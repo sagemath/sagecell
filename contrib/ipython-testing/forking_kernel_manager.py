@@ -33,7 +33,7 @@ class ForkingKernelManager(object):
         ka = IPKernelApp.instance(config=config)
         ka.initialize([])
         # this should really be handled in the config, not set separately.
-        ka.kernel.shell.input_splitter = SageIPythonInputSplitter()#sage.misc.interpreter.SageIPythonInputSplitter()
+        ka.kernel.shell.input_splitter = SageIPythonInputSplitter()
         user_ns = ka.kernel.shell.user_ns
         user_ns.update(sage_dict)
         user_ns.update(interact.classes)

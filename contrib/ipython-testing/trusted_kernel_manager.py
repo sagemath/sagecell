@@ -85,8 +85,6 @@ class TrustedMultiKernelManager(object):
                 failure = False
                 break;
             sleep(2)
-        else:
-            print "Timed out waiting for response"
             
         retval = None
         if failure:

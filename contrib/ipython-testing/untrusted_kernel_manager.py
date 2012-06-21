@@ -21,8 +21,6 @@ class UntrustedMultiKernelManager(object):
                 sage.all.plot(lambda x: x, (0,1)).save(StringIO.StringIO())
             except Exception as e:
                 logging.debug('plotting exception: %s'%e)
-            # effectively do import *
-            #self.sage_dict = dict([(n,getattr(sage.all, n)) for n in dir(sage.all) if not n.startswith("_")])
             self.sage_dict = {'sage': sage}
             sage_code = """
 from sage.all import *
