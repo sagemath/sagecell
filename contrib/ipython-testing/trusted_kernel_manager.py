@@ -11,11 +11,11 @@ try:
 except:
     import config_default as config
 
-class TrustedMultiKernelManager:
+class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
-        self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
+        self._comps = {} #comp_id: {"host": "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
         self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
         self.context = zmq.Context()
@@ -84,8 +84,10 @@ class TrustedMultiKernelManager:
                 port = stdout_channel.recv(1024)
                 failure = False
                 break;
-            sleep(0.5)
-
+            sleep(2)
+        else:
+            print "Timed out waiting for response"
+            
         retval = None
         if failure:
             print "Computer %s did not respond, connected failed!"%comp_id
