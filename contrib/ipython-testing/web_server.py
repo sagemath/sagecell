@@ -32,6 +32,20 @@ _VALID_QUERY_CHARS = set(string.letters+string.digits+"-")
 
 @app.route("/")
 def root():
+    """
+    Root URL request handler.
+
+    This renders templates/root.html, which optionally inserts
+    specified preloaded code during the rendering process.
+
+    There are three ways currently supported to specify
+    preloading code:
+
+    ``<root_url>?c=<code>`` loads 'plaintext' code
+    ``<root_url>?z=<base64>`` loads base64-compressed code
+    ```<root_url>?q=<uuid>`` loads code from a database based
+        upon a unique identifying permalink (uuid4-based)
+    """
     db = application.db
     options = {}
     if "c" in request.values:
@@ -61,6 +75,24 @@ def root():
 
 @app.route("/kernel", methods=["POST"])
 def main_kernel():
+    """
+    Kernel startup request handler.
+
+    This starts up an iPython kernel on an untrusted account
+    and returns the associated kernel id and a url to request
+    websocket connections for a websocket-ZMQ bridge back to
+    the kernel in a JSON-compatible message.
+
+    The returned websocket url is not entirely complete, in
+    that it is the base url to be used for two different
+    websocket connections (corresponding to the shell and
+    iopub streams) of the iPython kernel. It is the
+    responsiblity of the client to request the correct URLs
+    for these websockets based on the following pattern:
+
+    ``<ws_url>/iopub`` is the expected iopub stream url
+    ``<ws_url>/shell`` is the expected shell stream url
+    """
     print "%s BEGIN MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
 
     ws_url = request.url_root.replace("http","ws")
@@ -78,13 +110,26 @@ def main_kernel():
 
 @app.route("/permalink", methods=["POST"])
 def get_permalink():
+    """
+    Permalink generation request handler.
+
+    This accepts the string version of an iPython
+    execute_request message, and stores the code associated
+    with that request in a database linked to a unique id,
+    which is returned to the requester in a JSON-compatible
+    form.
+
+    The specified id can be used to generate permalinks
+    with the format ``<root_url>?q=<id>``.
+    """
     rval = {"permalink": None}
     if request.values.get("message") is not None:
         db = application.db
         try:
             message = json.loads(request.values["message"])
-            permalink = db.new_exec_msg(message)
-            rval["permalink"] = permalink
+            if message["msg_type"] == "execute_request":
+                permalink = db.new_exec_msg(message)
+                rval["permalink"] = permalink
         except:
             pass
     r = Response(json.dumps(rval), mimetype="application/json")
@@ -103,12 +148,16 @@ import tornado.web
 import tornado.wsgi
 import tornado.websocket
 
+"""
+Allow Flask and Tornado to work together.
+"""
 wsgi_app = tornado.wsgi.WSGIContainer(app)
 
 
 """
 Globals
 """
+# This matches a kernel id (uuid4 format) from a url
 _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 
 """
