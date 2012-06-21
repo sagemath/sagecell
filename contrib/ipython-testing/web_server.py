@@ -55,7 +55,7 @@ def root():
     if "code" in options:
         if isinstance(options["code"], unicode):
             options["code"] = options["code"].encode("utf8")
-        options["code"] = options["code"]
+        options["code"] = urllib.quote(options["code"])
         options["autoeval"] = "false" if "autoeval" in request.args and request.args["autoeval"] == "false" else "true"
     return render_template("root.html", **options)
 

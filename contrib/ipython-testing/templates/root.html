@@ -21,5 +21,15 @@
     <script src="{{url_for('.static', filename='utils.js', _external=True)}}"></script>
     <script src="{{url_for('.static', filename='kernel.js', _external=True)}}"></script>
     <script src="{{url_for('.static', filename='interaction.js', _external=True)}}"></script>
+    <script type="text/javascript">
+// This is currently a hack to allow root_url?c=code requests to work
+// since script tags are not allowed in text areas. Once a more robust
+// JS embedding / loading system is in place, that can take care of
+// decoding preloaded code.
+$(function() {
+    var codebox = $("#codebox");
+    codebox.val(decodeURIComponent(codebox.val()));
+})();
+    </script>
   </body>
 </html>
