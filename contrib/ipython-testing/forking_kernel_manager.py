@@ -10,29 +10,52 @@ import interact
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
+import logging
+import sage
+import sage.all
+from sage.misc.interpreter import SageInputSplitter
+from IPython.core.inputsplitter import IPythonInputSplitter
 
-class ForkingKernelManager:
+
+class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
+    """
+    This class merely exists so that the IPKernelApp.kernel.shell class does not complain.  It requires
+    a subclass of IPythonInputSplitter, but SageInputSplitter is a subclass of InputSplitter instead.
+    """
+    pass
+
+class ForkingKernelManager(object):
     def __init__(self):
         self.kernels = {}
 
-    def fork_kernel(self, sage_dict, config, q):
+    def fork_kernel(self, sage_dict, config, pipe):
+        logging.basicConfig(filename='LOG',format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
         ka = IPKernelApp.instance(config=config)
         ka.initialize([])
-        ka.kernel.shell.user_ns.update(sage_dict)
-        ka.kernel.shell.user_ns.update(interact.classes)
-        if "sys" in ka.kernel.shell.user_ns:
-            ka.kernel.shell.user_ns["sys"]._interacts = interact.interacts
+        # this should really be handled in the config, not set separately.
+        ka.kernel.shell.input_splitter = SageIPythonInputSplitter()#sage.misc.interpreter.SageIPythonInputSplitter()
+        user_ns = ka.kernel.shell.user_ns
+        user_ns.update(sage_dict)
+        user_ns.update(interact.classes)
+        sage_code = """
+sage.misc.session.init()
+
+# Ensure unique random state after forking
+set_random_seed()
+"""
+        exec sage_code in user_ns
+        if "sys" in user_ns:
+            user_ns["sys"]._interacts = interact.interacts
         else:
             sys._interacts = interact.interacts
-            ka.kernel.shell.user_ns["sys"] = sys
-        ka.kernel.shell.user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
-        q.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
+            user_ns["sys"] = sys
+        user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
+        pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
                 "stdin_port": ka.stdin_port, "hb_port": ka.hb_port, "iopub_port": ka.iopub_port})
-        q.close()
+        pipe.close()
         ka.start()
 
     def start_kernel(self, sage_dict=None, kernel_id=None, config=None):
-        random.seed()
         if sage_dict is None:
             sage_dict = {}
         if kernel_id is None:
