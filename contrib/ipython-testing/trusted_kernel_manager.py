@@ -286,9 +286,12 @@ class TrustedMultiKernelManager(object):
 
 if __name__ == "__main__":
     try:
-        t = TrustedMultiKernelManager()
+        import misc
+        config = misc.Config()
 
-        t.setup_initial_comps()
+        initial_comps = config.get_config("computers")
+
+        t = TrustedMultiKernelManager(comps = initial_comps)
 
         for i in xrange(5):
             t.new_session()
