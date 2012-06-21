@@ -69,8 +69,8 @@ class TrustedMultiKernelManager(object):
         req = self.context.socket(zmq.REQ)
 
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
-        
-        code = "python '%s/receiver.py'"%(os.getcwd(),)
+        code = "%s '%s/receiver.py'"%(cfg['python'], os.getcwd())
+        print "executing %s"%code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
