@@ -37,10 +37,9 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     def _on_zmq_reply(self, msg_list):
         try:
             message = self._reserialize_reply(msg_list)
+            self.write_message(message)
         except:
             pass
-        else:
-            self.write_message(message)
 
 class ShellHandler(ZMQStreamHandler):
     def open(self, kernel_id):

@@ -75,11 +75,10 @@ $(function() {
 
     var interact_evaluators = {
         "input": function (input) {
-            return "u\"" + input.value.replace(/\\/g, "\\\\")
-                                      .replace(/"/g, "\\\"") + "\"";
+            return "u" + JSON.stringify(input.value);
         },
         "slider": function (slider, ui) {
-            return ui.handle.parentNode === slider ? ui.value : $(slider).slider("option", "value");
+            return ui && ui.handle.parentNode === slider ? ui.value : $(slider).slider("option", "value");
         }
     };
 
@@ -172,7 +171,7 @@ $(function() {
         } else {
             var codebox = $("#codebox");
             codebox.keydown(function (event) {
-                if (event.keyCode === 9) {
+                if (event.keyCode === 900) {
                     event.preventDefault();
                 }
             });
@@ -233,7 +232,7 @@ $(function() {
                     document.getElementById("completion").style.display = "none"
                 }
             });
-            $("#codebox").on("click focus blur", function () {
+            $("#codebox").on("click focus", function () {
                 document.getElementById("completion").style.display = "none"
             });
             $("#evalbutton").on("click", function(event) {
