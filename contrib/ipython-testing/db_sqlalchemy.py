@@ -71,6 +71,5 @@ class ExecMessage(Base):
     Table of input messages in JSON form.
     """
     __tablename__ = "exec_messages"
-    n = Column(Integer, primary_key = True)
-    ident = Column(String)
+    ident = Column(String, primary_key = True, index = True)
     code = Column(String)

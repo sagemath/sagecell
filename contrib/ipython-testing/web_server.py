@@ -108,7 +108,7 @@ def main_kernel():
     print "%s END MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
     return r
 
-@app.route("/permalink", methods=["POST"])
+@app.route("/permalink", methods=["POST", "GET"])
 def get_permalink():
     """
     Permalink generation request handler.
@@ -127,7 +127,7 @@ def get_permalink():
         db = application.db
         try:
             message = json.loads(request.values["message"])
-            if message["msg_type"] == "execute_request":
+            if message["header"]["msg_type"] == "execute_request":
                 permalink = db.new_exec_msg(message)
                 rval["permalink"] = permalink
         except:

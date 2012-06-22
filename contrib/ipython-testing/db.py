@@ -24,7 +24,7 @@ class DB(object):
         retrieved by :meth:`get_exec_msg`.
 
         :arg dict msg: a JSON-compatible message containing
-        code to be executed by the kernel.
+            code to be executed by the kernel.
         """
         raise NotImplementedError
 
