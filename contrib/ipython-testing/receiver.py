@@ -4,11 +4,12 @@ from zmq import ssh
 import sys
 
 class Receiver:
-    def __init__(self):
+    def __init__(self, filename):
         self.context = zmq.Context()
-        self.km = UntrustedMultiKernelManager()
+        self.km = UntrustedMultiKernelManager(filename)
         self.rep = self.context.socket(zmq.REP)
         self.port = self.rep.bind_to_random_port("tcp://127.0.0.1")
+        self.filename = filename
         sys.stdout.write(str(self.port))
         sys.stdout.flush()
 
@@ -94,10 +95,11 @@ class Receiver:
 
 
 if __name__ == '__main__':
+    filename = sys.argv[1]
     import logging
     import uuid
-    logging.basicConfig(filename='LOG',format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+    logging.basicConfig(filename=filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
     logging.debug('started')
-    receiver = Receiver()
+    receiver = Receiver(filename)
     receiver.start()
     logging.debug('ended')

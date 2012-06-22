@@ -2,8 +2,9 @@ from forking_kernel_manager import ForkingKernelManager
 import logging
 
 class UntrustedMultiKernelManager(object):
-    def __init__(self):
-        self.fkm = ForkingKernelManager()
+    def __init__(self, filename):
+        self.filename = filename
+        self.fkm = ForkingKernelManager(filename)
         self._kernels = set()
         self.setup_sage()
 

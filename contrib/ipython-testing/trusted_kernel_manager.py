@@ -70,14 +70,17 @@ class TrustedMultiKernelManager(object):
         req = self.context.socket(zmq.REQ)
 
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
-        code = "%s '%s/receiver.py'"%(cfg['python'], os.getcwd())
+        logfile = cfg.get("log_file")
+        if logfile is None:
+            logfile = os.devnull
+        code = "%s '%s/receiver.py' '%s'"%(cfg['python'], os.getcwd(), cfg["log_file"])
         print "executing %s"%code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
         # Wait for untrusted side to respond with the bound port using paramiko channels
         # Another option would be to have a short-lived ZMQ socket bound on the trusted
-        # side and have the untrusteed side connect to that and send the port
+        # side and have the untrusted side connect to that and send the port
         failure = True
         from time import sleep
         for i in xrange(10):
@@ -89,7 +92,7 @@ class TrustedMultiKernelManager(object):
             
         retval = None
         if failure:
-            print "Computer %s did not respond, connected failed!"%comp_id
+            print "Computer %s did not respond, connecting failed!"%comp_id
 
         else:
             addr = "tcp://%s:%s"%(cfg["host"], port)

@@ -26,15 +26,16 @@ class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
     pass
 
 class ForkingKernelManager(object):
-    def __init__(self):
+    def __init__(self, filename):
         self.kernels = {}
+        self.filename = filename
 
-    def fork_kernel(self, sage_dict, config, pipe, resource_limits):
-        logging.basicConfig(filename='LOG',format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+    def fork_kernel(self, sage_dict, config, pipe, resource_limits, logfile):
         os.setpgrp()
-        from resource import setrlimit
+        logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+        import resource
         for r, limit in resource_limits.iteritems():
-            setrlimit(r, (limit, limit))
+            resource.setrlimit(getattr(resource, r), (limit, limit))
         ka = IPKernelApp.instance(config=config)
         ka.initialize([])
         # this should really be handled in the config, not set separately.
@@ -60,7 +61,7 @@ set_random_seed()
         pipe.close()
         ka.start()
 
-    def start_kernel(self, sage_dict=None, kernel_id=None, config=None, resource_limits=None):
+    def start_kernel(self, sage_dict=None, kernel_id=None, config=None, resource_limits=None, logfile = None):
         if sage_dict is None:
             sage_dict = {}
         if kernel_id is None:
@@ -70,7 +71,7 @@ set_random_seed()
         if resource_limits is None:
             resource_limits = {}
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(sage_dict, config, q, resource_limits))
+        proc = Process(target=self.fork_kernel, args=(sage_dict, config, q, resource_limits, logfile))
         proc.start()
         connection = p.recv()
         p.close()
