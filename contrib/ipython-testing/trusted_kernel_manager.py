@@ -12,11 +12,11 @@ except:
     print "Error importing config, using defaults.\n"
     import config_default as config
 
-class TrustedMultiKernelManager:
+class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
-        self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
+        self._comps = {} #comp_id: {"host:"", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
         self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
         self.context = zmq.Context()
@@ -70,8 +70,8 @@ class TrustedMultiKernelManager:
         req = self.context.socket(zmq.REQ)
 
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
-        
-        code = "python '%s/receiver.py'"%(os.getcwd(),)
+        code = "%s '%s/receiver.py'"%(cfg['python'], os.getcwd())
+        print "executing %s"%code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
@@ -85,8 +85,8 @@ class TrustedMultiKernelManager:
                 port = stdout_channel.recv(1024)
                 failure = False
                 break;
-            sleep(0.5)
-
+            sleep(2)
+            
         retval = None
         if failure:
             print "Computer %s did not respond, connected failed!"%comp_id

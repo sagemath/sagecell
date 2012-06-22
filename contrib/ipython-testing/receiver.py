@@ -93,5 +93,11 @@ class Receiver:
         return self.purge_kernels(msg_content)
 
 
-receiver = Receiver()
-receiver.start()
+if __name__ == '__main__':
+    import logging
+    import uuid
+    logging.basicConfig(filename='LOG',format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+    logging.debug('started')
+    receiver = Receiver()
+    receiver.start()
+    logging.debug('ended')
