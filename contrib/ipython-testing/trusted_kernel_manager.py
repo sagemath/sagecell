@@ -9,13 +9,14 @@ import os
 try:
     import config
 except:
+    print "Error importing config, using defaults.\n"
     import config_default as config
 
 class TrustedMultiKernelManager:
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
-        self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
+        self._comps = {} #comp_id: {"host", "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
         self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
         self.context = zmq.Context()
@@ -189,11 +190,9 @@ class TrustedMultiKernelManager:
         """
         comp_id = self._find_open_computer()
         req = self._clients[comp_id]["socket"]
-
-        req.send_pyobj({"type":"start_kernel"})
-
+        resource_limits = self._comps[comp_id].get("resource_limits")
+        req.send_pyobj({"type":"start_kernel", "content": {"resource_limits": resource_limits}})
         reply = req.recv_pyobj()
-
         if reply["type"] == "success":
             reply_content = reply["content"]
             kernel_id = reply_content["kernel_id"]

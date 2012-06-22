@@ -48,7 +48,8 @@ class Receiver:
 
     def start_kernel(self, msg_content):
         """Handler for start_kernel messages."""
-        reply_content = self.km.start_kernel()
+        resource_limits = msg_content.get("resource_limits")
+        reply_content = self.km.start_kernel(resource_limits=resource_limits)
         return self._form_message(reply_content)
 
     def kill_kernel(self, msg_content):
@@ -64,12 +65,7 @@ class Receiver:
     
     def purge_kernels(self, msg_content):
         """Handler for purge_kernels messages."""
-        failures = []
-        for kernel_id in self.km._kernels:
-            success = self.km.kill_kernel(kernel_id)
-            if not success:
-                failures.append(kernel_id)
-
+        failures = self.km.purge_kernels()
         reply_content = {"status": "All kernels killed!"}
         success = (len(failures) == 0)
         if not success:
