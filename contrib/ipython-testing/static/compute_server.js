@@ -24,27 +24,32 @@
 * 
 **************************************************************/
 
-sagecell.Session = function (outputDiv, output_selector, code) {
+sagecell.Session = function (outputDiv, hide) {
     this.outputDiv = outputDiv;
     this.last_requests = {};
     this.sessionContinue = true;
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": console.log};
+    this.opened = false;
+    this.deferred_code = [];
     this.kernel = new IPython.Kernel(sagecell.$URL.kernel);
     var that = this;
     this.kernel._kernel_started = function (json) {
         this._kernel_started = IPython.Kernel.prototype._kernel_started;
         this._kernel_started(json);
         this.shell_channel.onopen = function () {
-            that.execute(code);
-        }
+            that.opened = true;
+            while (that.deferred_code.length > 0) {
+                that.execute(that.deferred_code.shift());
+            }
+        };
         this.iopub_channel.onopen = undefined;
     };
     this.kernel.start(IPython.utils.uuid());
     this.output_blocks = {};
     var ce = sagecell.util.createElement;
-    this.outputDiv.find(output_selector).prepend(
-        ce("div", {"class": "sagecell_sessionContainer"}, [
+    this.outputDiv.find(".sagecell_output").prepend(
+        this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.$URL.spinner_img,
                         "alt": "Loading", "class": "sagecell_spinner"})
@@ -55,18 +60,25 @@ sagecell.Session = function (outputDiv, output_selector, code) {
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
+    if (hide) {
+        $(this.session_container).hide();
+    }
     this.open_count = 1;
-    this.replace_output={};
-    this.lock_output=false;
+    this.replace_output = {};
+    this.lock_output = false;
     this.files = {};
     this.eventHandlers = {};
     this.interacts = {};
 };
 
 sagecell.Session.prototype.execute = function (code) {
-    var callbacks = {"execute_reply": $.proxy(this.handle_execute_reply, this),
-                     "output": $.proxy(this.handle_output, this)};
-    this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false}));
+    if (this.opened) {
+        var callbacks = {"execute_reply": $.proxy(this.handle_execute_reply, this),
+                         "output": $.proxy(this.handle_output, this)};
+        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false}));
+    } else {
+        this.deferred_code.push(code);
+    }
 };
 
 sagecell.Session.prototype.set_last_request = function (interact_id, msg_id) {

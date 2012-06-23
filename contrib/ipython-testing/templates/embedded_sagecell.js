@@ -38,6 +38,8 @@ sagecell.init = function (callback) {
 
     sagecell.init_callback = callback
     sagecell.dependencies_loaded = false;
+    sagecell.last_session = {}
+    sagecell.next_session = {};
 
     // many stylesheets that have been smashed together into all.min.css
     var stylesheets = [{{url_for(".static", filename="all.min.css", _external=True)|tojson|safe}},
@@ -321,15 +323,20 @@ sagecell.initCell = (function(sagecellInfo) {
         inputLocation.find(".sagecell_fileList").empty();
         return false;
     });
-    sagecellInfo.submit = function() {
-        if (replaceOutput) {
-            outputLocation.find(".sagecell_output").empty();
+    sagecellInfo.submit = function(evt) {
+        if (replaceOutput && sagecell.last_session[evt.target]) {
+            $(sagecell.last_session[evt.target].session_container).remove();
         }
 
         if (editorData.save !== undefined) {
             editorData.save();
         }
-        var session = new sagecell.Session(outputLocation, ".sagecell_output", textArea.val());
+        var session = sagecell.next_session[evt.target] ||
+                      new sagecell.Session(outputLocation, false);
+        sagecell.next_session[evt.target] = new sagecell.Session(outputLocation, true);
+        $(session.session_container).show();
+        session.execute(textArea.val());
+        sagecell.last_session[evt.target] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
         outputLocation.find(".sagecell_output_elements").show();
