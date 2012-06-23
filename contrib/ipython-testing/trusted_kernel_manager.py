@@ -6,19 +6,18 @@ from zmq import ssh
 import paramiko
 import os
 
-try:
-    import config
-except:
-    import config_default as config
-
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
-    def __init__(self):
+    def __init__(self, computers = None):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host": "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
         self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
         self.context = zmq.Context()
+
+        if computers is not None:
+            for comp in computers:
+                self.add_computer(comp)
 
     def get_kernel_ids(self, comp = None):
         """ A function for obtaining kernel ids of a particular computer.
@@ -47,13 +46,6 @@ class TrustedMultiKernelManager(object):
         comp_id = self._kernels[kernel_id]["comp_id"]
         comp = self._comps[comp_id]
         return (comp["beat_interval"], comp["first_beat"])
-
-    def setup_initial_comps(self):
-        """ Tries to read a config file containing initial computer information. """
-
-        if hasattr(config, "computers"):
-            for comp in config.computers:
-                self.add_computer(comp)
 
     def add_computer(self, config):
         """ Adds a tracked computer. 
@@ -294,9 +286,12 @@ class TrustedMultiKernelManager(object):
 
 if __name__ == "__main__":
     try:
-        t = TrustedMultiKernelManager()
+        import misc
+        config = misc.Config()
 
-        t.setup_initial_comps()
+        initial_comps = config.get_config("computers")
+
+        t = TrustedMultiKernelManager(comps = initial_comps)
 
         for i in xrange(5):
             t.new_session()
