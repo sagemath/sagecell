@@ -15,26 +15,55 @@ class Config(object):
     be instantiated by some base application and the relevant
     attributes can be passed to whatever classes / functions
     are needed.
+
+    This class tracks both the default and user-specified
+    configuration files
     """
     def __init__(self):
+        import config_default
+
+        self.config = None
+        self.config_default = config_default
+
         try:
             import config
+            self.config = config
         except ImportError:
-            import config_default as config
-        self.config = config
+            pass
 
     def get_config(self, attr):
         """
-        Get a config attribute
+        Get a config attribute. If the attribute is defined
+        in the user-specified file, that is used, otherwise
+        the default config file attribute is used if
+        possible.
 
         :arg attr str: the name of the attribute to get
+        :returns: the value of the named attribute, or
+            None if the attribute does not exist.
+        """
+        config_val = self.get_default_config(attr)
+
+        if self.config is not None:
+            try:
+                config_val = getattr(self.config, attr)
+            except AttributeError:
+                pass
+
+        return config_val
+
+    def get_default_config(self, attr):
+        """
+        Get a config attribute from the default config file.
+
+        :arg attr str: the name of the attribute toget
         :returns: the value of the named attribute, or
             None if the attribute does not exist.
         """
         config_val = None
 
         try:
-            config_val = getattr(self.config, attr)
+            config_val = getattr(self.config_default, attr)
         except AttributeError:
             pass
 

@@ -18,11 +18,6 @@ import misc
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
 from db_sqlalchemy import DB
 
-try:
-    import config
-except ImportError:
-    import config_default as config
-
 """
 Flask webserver
 """
@@ -70,7 +65,7 @@ def root():
         if isinstance(options["code"], unicode):
             options["code"] = options["code"].encode("utf8")
         options["code"] = urllib.quote(options["code"])
-        options["autoeval"] = "false" if "autoeval" in request.args and request.args["autoeval"] == "false" else "true"
+        options["autoeval"] = False if "autoeval" in request.args and request.args["autoeval"] == "false" else True
     return render_template("root.html", **options)
 
 @app.route("/kernel", methods=["POST"])
@@ -180,7 +175,7 @@ class SageCellServer(tornado.web.Application):
 
         initial_comps = self.config.get_config("computers")
 
-        self.km = TMKM(comps = initial_comps)
+        self.km = TMKM(computers = initial_comps)
 
         self.db = DB(misc.get_db_file(self.config))
 

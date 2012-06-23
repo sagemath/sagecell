@@ -1,8 +1,6 @@
 import random, os
 
-sage = ""
-if sage == "":
-    sage = os.environ["SAGE_ROOT"]+"/sage"
+sage = "sage"
 
 db = "sqlalchemy"
 db_config = {}
