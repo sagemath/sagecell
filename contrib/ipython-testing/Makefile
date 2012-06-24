@@ -19,8 +19,7 @@ cssmin         = submodules/cssmin/src/cssmin.py
 jsmin          = submodules/jsmin/jsmin.c
 jsmin-bin      = submodules/jsmin-bin
 # Set the SAGE_ROOT environmental variable to root of the Sage installation
-#ip-js          = $(SAGE_ROOT)/local/lib/python2.7/site-packages/IPython/frontend/html/notebook/static/js
-ip-js          = $(IPYTHON_ROOT)/frontend/html/notebook/static/js
+ip-js          = $(SAGE_ROOT)/local/lib/python2.7/site-packages/IPython/frontend/html/notebook/static/js
 ip-kernel      = $(ip-js)/kernel.js
 ip-utils       = $(ip-js)/utils.js
 ip-namespace   = $(ip-js)/namespace.js
