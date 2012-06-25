@@ -319,15 +319,6 @@ if __name__ == "__main__":
             print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
 
         print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
-
-        # This presumes more than one computer is running...
-        t.remove_computer(x[1])
-
-        vals = t._comps.values()
-        for i in xrange(len(vals)):
-            print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
-
-        print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
     except:
         # print "errorrrr"
         raise
