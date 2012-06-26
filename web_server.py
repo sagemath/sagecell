@@ -378,9 +378,9 @@ if __name__ == "__main__":
     from argparse import ArgumentParser
     parser = ArgumentParser(description="The web server component of the notebook")
     parser.add_argument("--db", choices=["mongo", "sqlalchemy"], help="Database to use")
-    parser.add_argument("-q", action="store_true", dest="quiet", help="Turn off most logging")
-
-    (sysargs, args) = parser.parse_known_args()
+    parser.add_argument("-q", "--quiet", action="store_true", 
+                        help="Turn off most logging")
+    sysargs = parser.parse_args()
 
     if sysargs.quiet:
         util.LOGGING=False

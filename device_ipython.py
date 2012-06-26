@@ -130,8 +130,10 @@ if __name__ == "__main__":
         from IPython.external import argparse
         ArgumentParser=argparse.ArgumentParser
     parser=ArgumentParser(description="Run one or more devices to process commands from the client.")
-    parser.add_argument("--db", choices=["mongo", "sqlalchemy"], help="Database to use")
-    parser.add_argument("-w", type=int, default=1, dest="workers", help="Number of workers to start.")
+    parser.add_argument("--db", choices=["mongo", "sqlalchemy"], 
+                        help="Database to use")
+    parser.add_argument("-w", "--workers", type=int, default=1, 
+                        help="Number of workers to start.")
     sysargs=parser.parse_args()
     db, fs = misc.select_db(sysargs)
     run_ip_pool(db, fs, workers=sysargs.workers)
