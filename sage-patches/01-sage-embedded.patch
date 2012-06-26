@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent 93511b36e569848a8f1ec4d04a22cd49273efcdc
+# Parent 86f55434bf9b3d9095094b08ad04e0675ae2d5e1
 imported patch embedded.patch
 
 diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
@@ -106,15 +106,15 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
 --- a/sage/interfaces/r.py
 +++ b/sage/interfaces/r.py
 @@ -212,7 +212,7 @@
+ ##########################################################################
  
- from keyword import iskeyword
  from expect import Expect, ExpectElement, ExpectFunction, FunctionElement
 -from sage.misc.misc import DOT_SAGE
 +from sage.misc.misc import EMBEDDED_MODE, DOT_SAGE
- from sage.misc.latex import LatexExpr
  import re
  import sage.rings.integer
-@@ -360,7 +360,6 @@
+ 
+@@ -363,7 +363,6 @@
          if "TRUE" not in s+t:
              raise RuntimeError, "R was not compiled with PNG support"
  
@@ -122,7 +122,7 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
          if EMBEDDED_MODE:
              self.setwd('"%s"'%os.path.abspath('.'))
          return RFunction(self, 'png')(*args, **kwds)
-@@ -698,8 +697,7 @@
+@@ -714,8 +713,7 @@
              This is similar to typing r.command?. 
          """
          s = self.eval('help("%s")'%command).strip()     # ?cmd is only an unsafe shortcut
@@ -132,7 +132,7 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
              s = s.replace('_\x08','')
          return HelpExpression(s)
  
-@@ -1009,7 +1007,6 @@
+@@ -1034,7 +1032,6 @@
          """
          # We have to define this to override the plot function defined in the
          # superclass.
@@ -140,38 +140,6 @@ diff --git a/sage/interfaces/r.py b/sage/interfaces/r.py
          if EMBEDDED_MODE:
              self.setwd('"%s"'%os.path.abspath('.'))
          RFunction(self, 'plot')(*args, **kwds)
-diff --git a/sage/matrix/matrix0.pyx b/sage/matrix/matrix0.pyx
---- a/sage/matrix/matrix0.pyx
-+++ b/sage/matrix/matrix0.pyx
-@@ -1920,7 +1920,7 @@
- 
-         Note that size-zero subdivisions are ignored in the notebook::
-             
--            sage: sage.server.support.EMBEDDED_MODE = True
-+            sage: sage.misc.misc.EMBEDDED_MODE = {'frontend': 'notebook'}
-             sage: latex(B)
-             \left(\begin{array}{rr}
-             \left(\begin{array}{rrr}
-@@ -1937,7 +1937,7 @@
-             0
-             \end{array}\right)
-             \end{array}\right)
--            sage: sage.server.support.EMBEDDED_MODE = False
-+            sage: sage.server.support.EMBEDDED_MODE = {}
-         """
-         latex = sage.misc.latex.latex
-         matrix_delimiters = latex.matrix_delimiters()
-@@ -1957,7 +1957,9 @@
-         # jsmath doesn't know the command \hline, so have to do things
-         # differently (and not as attractively) in embedded mode:
-         # construct an array with a subarray for each block.
--        if len(row_divs) + len(col_divs) > 0 and EMBEDDED_MODE:
-+        import sage.misc.misc as misc
-+        if (len(row_divs) + len(col_divs) > 0 
-+            and misc.EMBEDDED_MODE):
-             for r in range(len(row_divs)+1):
-                 s = ""
-                 for c in range(len(col_divs)+1):
 diff --git a/sage/misc/hg.py b/sage/misc/hg.py
 --- a/sage/misc/hg.py
 +++ b/sage/misc/hg.py
@@ -214,8 +182,8 @@ diff --git a/sage/misc/hg.py b/sage/misc/hg.py
 diff --git a/sage/misc/html.py b/sage/misc/html.py
 --- a/sage/misc/html.py
 +++ b/sage/misc/html.py
-@@ -171,7 +171,14 @@
-             t += s[:i] + '<span class="math">%s</span>'%\
+@@ -178,7 +178,14 @@
+             t += s[:i] + '<script type="math/tex">%s</script>'%\
                       latex(sage_eval(s[6+i:j], locals=locals))
              s = s[j+7:] 
 -        print "<html><font color='black'>%s</font></html>"%t
@@ -230,7 +198,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
          return ''
  
      def table(self, x, header = False):
-@@ -238,7 +245,7 @@
+@@ -245,7 +252,7 @@
              </table>
              </div>
              </html>
@@ -239,7 +207,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
              sage: html.table([(x,n(sin(x), digits=2)) for x in [0..3]], header = ["$x$", "$\sin(x)$"])
              <html>
              <div class="notruncate">
-@@ -270,9 +277,13 @@
+@@ -277,9 +284,13 @@
              </html>
  
          """
@@ -253,7 +221,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
          if isinstance(x, types.GeneratorType):
              x = list(x)
          if isinstance(x, (list, tuple)):
-@@ -280,24 +291,25 @@
+@@ -287,24 +298,25 @@
              if rows > 0:
                  # if the table has less then 100 rows, don't truncate the output in the notebook
                  if rows <= 100:
@@ -288,7 +256,21 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
  
      def _table_columns(self, row, header=False):
          r"""
-@@ -320,13 +332,15 @@
+@@ -312,11 +324,11 @@
+ 
+         TESTS::
+         
+-            sage: html._table_columns(["a $x^2$",1, sin(x)])
++            sage: s = html._table_columns(["a $x^2$",1, sin(x)]); print s
+             <td>a <script type="math/tex">x^2</script></td>
+             <td><script type="math/tex">1</script></td>
+             <td><script type="math/tex">\sin\left(x\right)</script></td>
+-            sage: html._table_columns("a", header=True)
++            sage: s = html._table_columns("a", header=True); print s
+             <th>a</th>
+         """        
+         column_tag = "<th>%s</th>" if header else "<td>%s</td>"
+@@ -327,13 +339,15 @@
          elif not isinstance(row, (list, tuple)):
              row = [row]
  
@@ -301,8 +283,8 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 -                print column_tag % math_parse(row[column])
 +                ret += column_tag % math_parse(row[column])
              else:
--                print column_tag % ('<span class="math">%s</span>' % latex(row[column]))
-+                ret += column_tag % ('<span class="math">%s</span>' % latex(row[column]))
+-                print column_tag % ('<script type="math/tex">%s</script>' % latex(row[column]))
++                ret += column_tag % ('<script type="math/tex">%s</script>' % latex(row[column]))
 +        return ret
  
      def iframe(self, url, height=400, width=800):
@@ -310,17 +292,26 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/interpreter.py b/sage/misc/interpreter.py
 --- a/sage/misc/interpreter.py
 +++ b/sage/misc/interpreter.py
-@@ -424,10 +424,6 @@
-     return InteractiveShell._prefilter(self, block2, continuation)
+@@ -87,19 +87,6 @@
+ from preparser import (preparse, preparse_file, load_wrap,
+                        modified_attached_files, attached_files)
  
- 
--import sage.server.support
 -def embedded():
+-    """
+-    Returns True if Sage is being run from the notebook.
+-
+-    EXAMPLES::
+-    
+-        sage: from sage.misc.interpreter import embedded
+-        sage: embedded()
+-        False
+-    """
+-    import sage.server.support
 -    return sage.server.support.EMBEDDED_MODE
 -
- ipython_prefilter = InteractiveShell.prefilter
- do_preparse=True
- def preparser(on=True):
+ 
+ #TODO: This global variable do_preparse should be associtated with an
+ #IPython InteractiveShell as opposed to a global variable in this
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
@@ -341,22 +332,46 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
  from sage.misc.sage_ostools import have_program
  from sage.misc.cachefunc import cached_function, cached_method
  
-@@ -1980,12 +1979,12 @@
+@@ -238,10 +237,10 @@
+ 
+     TESTS::
+ 
+-        sage: sage.misc.latex.EMBEDDED_MODE = True
++        sage: sage.misc.latex.EMBEDDED_MODE = {'frontend': 'notebook'}
+         sage: builtin_constant_function(True)
+         '{\\rm True}'
+-        sage: sage.misc.latex.EMBEDDED_MODE = False
++        sage: sage.misc.latex.EMBEDDED_MODE = {}
+     """
+     if EMBEDDED_MODE:
+         return "{\\rm %s}"%x
+@@ -1961,14 +1960,14 @@
  
      EXAMPLES::
  
 -        sage: sage.misc.latex.EMBEDDED_MODE = True
 +        sage: sage.misc.latex.EMBEDDED_MODE = {'frontend': 'notebook'}
          sage: view(3)
-         <html><span class="math">\newcommand{\Bold}[1]{\mathbf{#1}}3</span></html>
+         <html><script type="math/tex">\newcommand{\Bold}[1]{\mathbf{#1}}3</script></html>
          sage: view(3, mode='display')
-         <html><div class="math">\newcommand{\Bold}[1]{\mathbf{#1}}3</div></html>
+         <html><script type="math/tex; mode=display">\newcommand{\Bold}[1]{\mathbf{#1}}3</script></html>
+         sage: view((x,2), combine_all=True) # trac 11775
+         <html><script type="math/tex">\newcommand{\Bold}[1]{\mathbf{#1}}\left(x, 2\right)</script></html>
 -        sage: sage.misc.latex.EMBEDDED_MODE = False
 +        sage: sage.misc.latex.EMBEDDED_MODE = {}
  
      TESTS::
  
-@@ -2224,14 +2223,14 @@
+@@ -1986,7 +1985,7 @@
+         Traceback (most recent call last):
+         ...
+         ValueError: Unsupported LaTeX engine.
+-        sage: sage.misc.latex.EMBEDDED_MODE = True
++        sage: sage.misc.latex.EMBEDDED_MODE = {'frontend':'notebook'}
+         sage: view(4, engine="garbage", viewer="pdf")
+         Traceback (most recent call last):
+         ...
+@@ -2213,14 +2212,14 @@
  
          sage: sage.misc.latex.print_or_typeset(3)
          3
@@ -367,7 +382,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          sage: TEMP = sys.displayhook
          sage: sys.displayhook = sage.misc.latex.pretty_print
          sage: sage.misc.latex.print_or_typeset(3)
-         <html><span class="math">\newcommand{\Bold}[1]{\mathbf{#1}}3</span></html>
+         <html><script type="math/tex">\newcommand{\Bold}[1]{\mathbf{#1}}3</script></html>
 -        sage: sage.misc.latex.EMBEDDED_MODE=False
 +        sage: sage.misc.latex.EMBEDDED_MODE={}
          sage: sys.displayhook = TEMP
@@ -390,7 +405,7 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
  def sage_makedirs(dir):
      """
      Python version of ``mkdir -p``: try to create a directory, and also
-@@ -2155,19 +2162,6 @@
+@@ -2160,19 +2167,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -439,7 +454,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
  
-@@ -737,7 +737,6 @@
+@@ -766,7 +766,6 @@
      if not interact:
          return results
  
@@ -447,9 +462,9 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1322,7 +1321,6 @@
-             raise OSError, """The document '%s' does not exist.  Please build it
- with 'sage -docbuild %s html --jsmath' and try again.""" %(name, name)
+@@ -1331,7 +1330,6 @@
+         if testing:
+             return (url, path)
  
 -        from sage.server.support import EMBEDDED_MODE
          if EMBEDDED_MODE:
@@ -466,7 +481,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
  
  def isclassinstance(obj):
      r"""
-@@ -1139,7 +1138,8 @@
+@@ -1147,7 +1146,8 @@
          # sometimes s contains "*args" or "**keywds", and the
          # asterisks confuse ReST/sphinx/docutils, so escape them:
          # change * to \*, and change ** to \**.
@@ -476,7 +491,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
              s = s.replace('**', '\\**')  # replace ** with \**
              t = ''
              while True:  # replace * with \*
-@@ -1256,13 +1256,14 @@
+@@ -1264,13 +1264,14 @@
      - extensions by Nick Alexander
      """
      import sage.misc.sagedoc

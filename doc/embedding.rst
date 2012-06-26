@@ -137,9 +137,10 @@ evaluate button::
    inputLocation: "#..."
    .. }
 
-The ``inputLocation`` argument should be a
+The ``inputLocation`` argument (required) should be a
 `jQuery selector <http://api.jquery.com/category/selectors/>`_
-for a single DOM node. It is required and cannot be omitted.
+for a single DOM node. If the DOM node is a textarea, the textarea will be used
+as the basis for the code input box.
 
 Output Location
 ^^^^^^^^^^^^^^^
@@ -264,6 +265,16 @@ This sets whether the Sage Cell will immediately evalute the code from the
 
    { ..
    autoeval: boolean
+   .. }
+
+Callback
+^^^^^^^^^^^^^^^^^^^^
+
+This is a function with no arguments that will be called after the Sage Cell
+has finished loading::
+
+   { ..
+   callback: function
    .. }
 
 Hiding Sage Cell elements

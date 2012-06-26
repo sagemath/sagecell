@@ -86,8 +86,12 @@ sagecell.makeSagecell = function (args) {
     if (args.code === undefined) {
         if (args.codeLocation !== undefined) {
             args.code = $(args.codeLocation).html();
-        } else {
+        } else if ($(args.inputLocation).children("script").length > 0) {
             args.code = $(args.inputLocation).children("script").html();
+        } else if ($(args.inputLocation).is("textarea")) {
+            args.code = $(args.inputLocation).val();
+        } else {
+            args.code = $(args.inputLocation).text();
         }
     }
     defaults = {"editor": "codemirror",
@@ -132,9 +136,24 @@ sagecell.makeSagecell = function (args) {
             var outputLocation = $(settings.outputLocation);
             var evalButtonText = settings.evalButtonText;
 
+            if (inputLocation.is("textarea")) {
+                var ta = inputLocation;
+                inputLocation = $(document.createElement("div")).insertBefore(inputLocation);
+                inputLocation.html(body);
+                ta.addClass("sagecell_commands");
+                ta.attr({"autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
+                inputLocation.find(".sagecell_commands").replaceWith(ta);
+                var id = "input_" + sagecell.functions.uuid4();
+                inputLocation[0].id = id;
+                if (settings.outputLocation === settings.inputLocation) {
+                    outputLocation = $(settings.outputLocation = "#" + id);
+                }
+                settings.inputLocation = "#" + id;
+            } else {
+                inputLocation.html(body);
+            }
             inputLocation.addClass("sagecell");
             outputLocation.addClass("sagecell");
-            inputLocation.html(body);
             inputLocation.find(".sagecell_commands").val(settings.code);
             if (inputLocation !== outputLocation) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
@@ -196,10 +215,6 @@ sagecell.initCell = (function(sagecellInfo) {
     var textArea = inputLocation.find(".sagecell_commands");
     var files = [];
     var editorData, temp;
-
-    if (sagecellInfo.code !== undefined) {
-        textArea.val(sagecellInfo.code);
-    }
     if (! sagecellInfo.sageMode) {
         sageMode.attr("checked", false);
     }
@@ -346,10 +361,10 @@ sagecell.initCell = (function(sagecellInfo) {
             var queryurl = outputLocation.find(".sagecell_queryurl");
             if (response.zipurl.length < 1024) {
                 zipurl.attr("href", response.zipurl);
-                queryurl.css("padding-left", "1em");
+                queryurl.css("margin-left", "1em");
                 zipurl.show();
             } else {
-                queryurl.css("padding-left", "0");
+                queryurl.css("margin-left", "0");
                 zipurl.hide();
             }
             queryurl.attr("href", response.queryurl);
@@ -365,6 +380,9 @@ sagecell.initCell = (function(sagecellInfo) {
     inputLocation.find(".sagecell_evalButton").click(sagecellInfo.submit);
     if (sagecellInfo.code && sagecellInfo.autoeval) {
         sagecellInfo.submit();
+    }
+    if (sagecellInfo.callback) {
+        sagecellInfo.callback();
     }
     return sagecellInfo;
 });
