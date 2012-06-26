@@ -9,12 +9,23 @@ from zmq.utils import jsonapi
 from IPython.zmq.session import Session
 
 class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
+    """
+    Base class for a websocket-ZMQ bridge using ZMQStream.
+
+    At minimum, subclasses should define their own ``open``,
+    ``on_close``, and ``on_message` functions depending on
+    what type of ZMQStream is used.
+    """
     def open(self, kernel_id):
         self.km = self.application.km
         self.kernel_id = kernel_id
         self.session = self.km._sessions[self.kernel_id]
 
     def _reserialize_reply(self, msg_list):
+        """
+        Converts a multipart list of received messages into
+        one coherent JSON message.
+        """
         idents, msg_list = self.session.feed_identities(msg_list)
         msg = self.session.unserialize(msg_list)
 
@@ -43,6 +54,10 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
             self.write_message(message)
 
 class ShellHandler(ZMQStreamHandler):
+    """
+    This handles the websocket-ZMQ bridge for the shell
+    stream of an iPython kernel.
+    """
     def open(self, kernel_id):
         print "*"*10, " BEGIN SHELL HANDLER ", "*"*10
         super(ShellHandler, self).open(kernel_id)
@@ -59,6 +74,14 @@ class ShellHandler(ZMQStreamHandler):
             self.shell_stream.close()
 
 class IOPubHandler(ZMQStreamHandler):
+    """
+    This handles the websocket-ZMQ bridge for the iopub
+    stream of an iPython kernel. It also handles the
+    heartbeat (hb) stream that same kernel, but there is no
+    associated websocket connection. The iopub websocket is
+    instead used to notify the client if the heartbeat
+    stream fails.
+    """
     def open(self, kernel_id):
         print "*"*10, " BEGIN IOPUB HANDLER ", "*"*10
 
@@ -88,6 +111,13 @@ class IOPubHandler(ZMQStreamHandler):
             self.stop_hb()
 
     def start_hb(self, callback):
+        """
+        Starts a series of delayed callbacks to send and
+        receive small messages from the heartbeat stream of
+        an iPython kernel. The specific delay paramaters for
+        the callbacks are set by configuration values in a
+        kernel manager associated with the web application.
+        """
         if not self._beating:
             self._kernel_alive = True
 
@@ -121,9 +151,10 @@ class IOPubHandler(ZMQStreamHandler):
             self._beating= True
 
     def _really_start_hb(self):
-        """callback for delayed heartbeat start
-Only start the hb loop if we haven't been closed during the wait.
-"""
+        """
+        callback for delayed heartbeat start
+        Only start the hb loop if we haven't been closed during the wait.
+        """
         if self._beating and not self.hb_stream.closed():
             self._hb_periodic_callback.start()
 
