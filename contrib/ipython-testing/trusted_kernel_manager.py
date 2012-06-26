@@ -73,7 +73,7 @@ class TrustedMultiKernelManager(object):
         logfile = cfg.get("log_file")
         if logfile is None:
             logfile = os.devnull
-        code = "%s '%s/receiver.py' '%s'"%(cfg['python'], os.getcwd(), cfg["log_file"])
+        code = "%s '%s/receiver.py' '%s'"%(cfg['python'], os.getcwd(), logfile)
         print "executing %s"%code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
