@@ -19,6 +19,7 @@ for i in xrange(1):
 # for more information (section 35.13.1)
 
 # Note: RLIMIT_NPROC doesn't really work
+# Note: RLIMIT_AS is more of a suggestion than a hard limit in Mac OS X
 # Note: All other resource limits seem to be working, but besides RLIMIT_CPU and
 # RLIMIT_AS they don't actually kill off offending processes
                       "resource_limits": {"RLIMIT_CPU": 30, # CPU time in seconds

@@ -33,9 +33,6 @@ class ForkingKernelManager(object):
     def fork_kernel(self, sage_dict, config, pipe, resource_limits, logfile):
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
-        import resource
-        for r, limit in resource_limits.iteritems():
-            resource.setrlimit(getattr(resource, r), (limit, limit))
         ka = IPKernelApp.instance(config=config)
         ka.initialize([])
         # this should really be handled in the config, not set separately.
@@ -56,6 +53,8 @@ set_random_seed()
             sys._interacts = interact.interacts
             user_ns["sys"] = sys
         user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
+        for r, limit in resource_limits.iteritems():
+            resource.setrlimit(getattr(resource, r), (limit, limit))
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
                 "stdin_port": ka.stdin_port, "hb_port": ka.hb_port, "iopub_port": ka.iopub_port})
         pipe.close()

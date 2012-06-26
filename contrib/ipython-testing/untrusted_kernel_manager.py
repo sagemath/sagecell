@@ -4,7 +4,7 @@ import logging
 class UntrustedMultiKernelManager(object):
     def __init__(self, filename):
         self.filename = filename
-        self.fkm = ForkingKernelManager(filename)
+        self.fkm = ForkingKernelManager(self.filename)
         self._kernels = set()
         self.setup_sage()
 
@@ -64,7 +64,9 @@ from sagenb.misc.support import automatic_names
         return failures
 
 if __name__ == "__main__":
-    x = UntrustedMultiKernelManager()
+    import os
+    filename = os.devnull
+    x = UntrustedMultiKernelManager(filename)
     y = x.start_kernel()
     print y
     from time import sleep 
