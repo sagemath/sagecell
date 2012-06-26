@@ -12,7 +12,6 @@ else:
 
 config = getattr(sagecell_config, webserver+'_config', {})
 
-pidfile=''
 if webserver=='uwsgi':
     command=sagecell_config.uwsgi+' --module web_server:app'
 elif webserver=='twistd':
@@ -20,10 +19,7 @@ elif webserver=='twistd':
 elif webserver=='flaskweb':
     command = sagecell_config.python+" ./web_server.py"
 
-for k,v in config.items():
-    if k=='pidfile':
-        pidfile=v
-    command+=' --%s %r '%(k,v)
+pidfile = config.get('pidfile', '')
 
 import os
 print 'Executing: ', command
