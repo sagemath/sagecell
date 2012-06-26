@@ -6,7 +6,6 @@ from zmq import ssh
 import paramiko
 import os
 
-    print "Error importing config, using defaults.\n"
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self, computers = None):
@@ -293,8 +292,7 @@ if __name__ == "__main__":
 
         initial_comps = config.get_config("computers")
 
-        t = TrustedMultiKernelManager(comps = initial_comps)
-
+        t = TrustedMultiKernelManager(computers = initial_comps)
         for i in xrange(5):
             t.new_session()
 
