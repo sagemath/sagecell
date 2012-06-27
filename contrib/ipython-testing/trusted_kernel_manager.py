@@ -5,6 +5,7 @@ from IPython.zmq.session import Session
 from zmq import ssh
 import paramiko
 import os
+import time
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
@@ -54,7 +55,7 @@ class TrustedMultiKernelManager(object):
         :returns: computer id assigned to added computer
         :rtype: string
         """
-        defaults = {"max": 10, "beat_interval": 3.0, "first_beat": 5.0, "kernels": {}}
+        defaults = {"max": 10, "beat_interval": 1.0, "first_beat": 5.0, "kernels": {}}
         comp_id = str(uuid.uuid4())
         cfg = dict(defaults.items() + config.items())
 
@@ -191,7 +192,9 @@ class TrustedMultiKernelManager(object):
             reply_content = reply["content"]
             kernel_id = reply_content["kernel_id"]
             kernel_connection = reply_content["connection"]
-            self._kernels[kernel_id] = {"comp_id": comp_id, "connection": kernel_connection}
+            self._kernels[kernel_id] = {"comp_id": comp_id,
+                                        "connection": kernel_connection,
+                                        "executing": True}
             self._comps[comp_id]["kernels"][kernel_id] = None
             print "CONNECTION FILE ::: ", kernel_connection
             self._sessions[kernel_id] = Session(key=kernel_connection["key"], debug=True)
@@ -211,12 +214,12 @@ class TrustedMultiKernelManager(object):
                         "content": {"kernel_id": kernel_id}})
         print "Killing Kernel ::: %s at %s"%(kernel_id, (comp_id))
         response = req.recv_pyobj()
-        
         if (response["type"] == "error"):
             print "Error ending kernel!"
         else:
             del self._kernels[kernel_id]
             del self._comps[comp_id]["kernels"][kernel_id]
+            print "Kernel %s successfully killed."%(kernel_id)
         
     def _find_open_computer(self):
         """ Randomly searches through computers in _comps to find one that can start a new kernel.

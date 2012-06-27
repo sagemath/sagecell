@@ -8,6 +8,9 @@ from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
 
+# Constant for the maximum amount of time a kernel can run for:
+_max_interact_timeout = 60
+
 class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     """
     Base class for a websocket-ZMQ bridge using ZMQStream.
@@ -20,6 +23,7 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
         self.km = self.application.km
         self.kernel_id = kernel_id
         self.session = self.km._sessions[self.kernel_id]
+        #self.session.debug = False
 
     def _reserialize_reply(self, msg_list):
         """
@@ -42,6 +46,24 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
         except KeyError:
             pass
         msg.pop("buffers")
+
+        if "execute_reply" in msg["msg_type"]:
+            timeout = msg["content"]["user_variables"].get("__sagecell_interact__")
+
+            try:
+                timeout = float(timeout) # in case user manually puts in a string
+            # also handles the case where a KeyError is raised if no timeout is specified
+            except:
+                timeout = .01
+
+            if timeout > _max_interact_timeout:
+                timeout = _max_interact_timeout
+
+            if timeout <= .01: # kill the kernel before the heartbeat is able to
+                self.km.end_session(self.kernel_id)
+            else:
+                self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
+                self.km._kernels[self.kernel_id]["executing"] = False
 
         return jsonapi.dumps(msg)
 
@@ -67,6 +89,10 @@ class ShellHandler(ZMQStreamHandler):
 
     def on_message(self, message):
         msg = jsonapi.loads(message)
+        if "execute_request" in msg["header"]["msg_type"]:
+            msg["content"]["user_variables"] = ['__sagecell_interact__']
+            self.km._kernels[self.kernel_id]["executing"] = True
+            
         self.session.send(self.shell_stream, msg)
 
     def on_close(self):
@@ -123,6 +149,16 @@ class IOPubHandler(ZMQStreamHandler):
 
             def ping_or_dead():
                 self.hb_stream.flush()
+                try:
+                    if not self.km._kernels[self.kernel_id]["executing"]:
+                        timeout = self.km._kernels[self.kernel_id]["timeout"]
+
+                        if time.time() > timeout:
+                            print "Kernel %s timeout reached." %(self.kernel_id)
+                            self._kernel_alive = False
+                except:
+                    self._kernel_alive = False
+
                 if self._kernel_alive:
                     self._kernel_alive = False
                     self.hb_stream.send(b'ping')
@@ -168,7 +204,10 @@ class IOPubHandler(ZMQStreamHandler):
                 self.hb_stream.close()
 
     def kernel_died(self):
-        self.application.km.end_session(self.kernel_id)
+        try: # in case kernel has already been killed
+            self.application.km.end_session(self.kernel_id)
+        except:
+            pass
         self.write_message(
             {'header': {'msg_type': 'status'},
              'parent_header': {},
