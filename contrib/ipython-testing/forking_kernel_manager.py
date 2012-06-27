@@ -6,7 +6,8 @@ import tempfile
 import json
 import random
 import sys
-import interact
+import interact_sagecell
+import interact_compatibility
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
@@ -19,13 +20,14 @@ class ForkingKernelManager:
         ka = IPKernelApp.instance(config=config)
         ka.initialize([])
         ka.kernel.shell.user_ns.update(sage_dict)
-        ka.kernel.shell.user_ns.update(interact.classes)
+        ka.kernel.shell.user_ns.update(interact_sagecell.imports)
+        ka.kernel.shell.user_ns.update(interact_compatibility.imports)
         if "sys" in ka.kernel.shell.user_ns:
-            ka.kernel.shell.user_ns["sys"]._interacts = interact.interacts
+            ka.kernel.shell.user_ns["sys"]._update_interact = interact_sagecell.update_interact
         else:
-            sys._interacts = interact.interacts
+            sys._update_interact = interact_sagecell.update_interact
             ka.kernel.shell.user_ns["sys"] = sys
-        ka.kernel.shell.user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
+        ka.kernel.shell.user_ns["interact"] = interact_sagecell.interact_func(ka.session, ka.iopub_socket)
         q.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
                 "stdin_port": ka.stdin_port, "hb_port": ka.hb_port, "iopub_port": ka.iopub_port})
         q.close()

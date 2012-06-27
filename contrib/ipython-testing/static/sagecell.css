@@ -17,6 +17,7 @@
 
 .sagecell_multiSliderContainer {
     margin-left: 1.0em;
+    whitespace: nowrap;
 }
 
 .sagecell_multiSliderControl {
@@ -27,9 +28,14 @@
 }
 
 .sagecell_colorSelector {
+    display: inline-block;
     width: 2em;
-    border: none;
-    padding: 10px;
+    height: 2em;
+    border: 2px solid gray;
+    border-radius: 3px;
+    padding: 1px;
+    cursor: pointer;
+    vertical-align: middle;
 }
 
 .error, .stderr {
@@ -110,9 +116,18 @@
 }
 
 .sagecell_interactValueBox {
+    border: 1px solid transparent;
     background-color: transparent;
     vertical-align: top;
     font-family: monospace;  /* Required since dynamic input box size is determined by monospaced fonts */
+}
+
+.sagecell_interactValueBox:hover {
+    border-color: lightgray;
+}
+
+.sagecell_interactValueBox:focus {
+    border-color: gray;
 }
 
 .sagecell_dirtyControl {

@@ -56,7 +56,9 @@ sagecell.Session = function (outputDiv, hide) {
             ]),
             ce("div", {"class": "sagecell_poweredBy"}, [
                 document.createTextNode("Powered by "),
-                ce("img", {"src": sagecell.$URL.powered_by_img, "alt": "Sage"})
+                ce("a", {"href": "http://www.sagemath.org"}, [
+                    ce("img", {"src": sagecell.$URL.powered_by_img, "alt": "Sage"})
+                ]),
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
@@ -68,7 +70,6 @@ sagecell.Session = function (outputDiv, hide) {
     this.lock_output = false;
     this.files = {};
     this.eventHandlers = {};
-    this.interacts = {};
 };
 
 sagecell.Session.prototype.execute = function (code) {
@@ -82,7 +83,8 @@ sagecell.Session.prototype.execute = function (code) {
 };
 
 sagecell.Session.prototype.set_last_request = function (interact_id, msg_id) {
-    this.kernel.set_callbacks_for_msg(this.last_requests[interact_id]);
+    this.kernel.set_callbacks_for_msg(this.last_requests[interact_id],
+        {"execute_reply": $.proxy(this.handle_execute_reply, this)});
     this.last_requests[interact_id] = msg_id;
 };
 
@@ -153,13 +155,11 @@ sagecell.Session.prototype.handle_output = function (msg_type, content) {
         break;
 */
     case 'pyerr':
-        this.output("<pre></pre>", output_id)
+        this.output("<pre></pre>", block_id)
             .html(IPython.utils.fixConsole(content.traceback.join("\n")));
         break;
-/*
     case 'extension':
-        var user_msg=msg.content;
-        switch(user_msg.msg_type) {
+        switch(content.msg_type) { /*
         case "files":
             output_block = "files_"+this.session_id;
             this.replace_output[output_block] = true;
@@ -189,27 +189,12 @@ sagecell.Session.prototype.handle_output = function (msg_type, content) {
             }
             this.clearQuery();
             this.sessionContinue = false;
-            break;
+            break; */
         case "interact_prepare":
-            var interact_id = user_msg.content.interact_id;
-            this.lastMessage[interact_id] = parent_id;
-            var div_id = "interact_" + interact_id;
-            this.output("<table class='sagecell_interactContainer' id='"+div_id+"'>"+
-                        "<tr><td class='sagecell_interactContainer_top_left'></td><td class='sagecell_interactContainer_top_center'></td><td class='sagecell_interactContainer_top_right'></td></tr>"+
-                        "<tr><td class='sagecell_interactContainer_left'></td><td class='sagecell_interactOutput'><div id='output_"+interact_id+"'></div></td><td class='sagecell_interactContainer_right'></tr>"+
-                        "<tr><td class='sagecell_interactContainer_bottom_left'></td><td class='sagecell_interactContainer_bottom_center'></td><td class='sagecell_interactContainer_bottom_right'></td></tr></table>", output_block);
-
-            this.interacts[interact_id] = 1;
-            new sagecell.InteractCell("#" + div_id, {
-                'interact_id': interact_id,
-                'layout': user_msg.content.layout,
-                'controls': user_msg.content.controls,
-                'update': user_msg.content.update,
-                'session': this});
+            new sagecell.InteractCell(this, content.content, block_id);
             break;
         }
         break;
-        */
     }
 
     this.appendMsg(content, "Accepted: ");
@@ -233,129 +218,54 @@ sagecell.Session.prototype.handle_execute_reply = function (content) {
 * 
 **************************************************************/
 
-sagecell.InteractCell = function (selector, data) {
-    this.element = $(selector);
-    this.interact_id = data.interact_id;
+sagecell.InteractCell = function (session, data, parent_block) {
+    this.interact_id = data.new_interact_id;
     this.function_code = data.function_code;
     this.controls = {};
+    this.session = session;
     this.update = data.update;
     this.layout = data.layout;
-    this.session = data.session;
     this.msg_id = data.msg_id;
 
     var controls = data.controls;
-    var args = {
-        "control": "",
-        "interact_id": this.interact_id,
-        "name": "",
-        "session_id": this.session.session_id
+    for (var name in controls) {
+        if (controls.hasOwnProperty(name)) {
+            this.controls[name] = new sagecell.InteractData.control_types[controls[name].control_type](controls[name]);
+        }
+    }
+    this.renderCanvas(parent_block);
+    this.bindChange();
+}
+
+sagecell.InteractCell.prototype.bindChange = function () {
+    var that = this;
+    var handler = function (event, ui) {
+        var code = "sys._update_interact(" + JSON.stringify(that.interact_id) + ", {";
+        var kwargs = []
+        for (var name in that.controls) {
+            if (that.controls.hasOwnProperty(name)) {
+                kwargs.push(JSON.stringify(name) + ":" + that.controls[name].py_value(ui));
+            }
+        }
+        code += kwargs.join(",") + "})";
+        that.session.spinner.style.display = "";
+        that.session.open_count++;
+        that.session.replace_output[that.interact_id] = true;
+        that.session.execute(code);
     };
-
-    for (i in controls) {
-        args["control"] = controls[i];
-        args["name"] = i;
-        var control_type = controls[i]["control_type"];
-
-        if (control_type === "button") {
-            this.controls[i] = new sagecell.InteractData.Button(args);
-        } else if (control_type === "button_bar") {
-            this.controls[i] = new sagecell.InteractData.ButtonBar(args);
-        } else if (control_type === "checkbox") {
-            this.controls[i] = new sagecell.InteractData.Checkbox(args);
-        } else if (control_type === "color_selector") {
-            this.controls[i] = new sagecell.InteractData.ColorSelector(args);
-        } else if (control_type === "html_box") {
-            this.controls[i] = new sagecell.InteractData.HtmlBox(args);
-        } else if (control_type === "input_box") {
-            this.controls[i] = new sagecell.InteractData.InputBox(args);
-        } else if (control_type === "input_grid") {
-            this.controls[i] = new sagecell.InteractData.InputGrid(args);
-        } else if (control_type === "multi_slider") {
-            this.controls[i] = new sagecell.InteractData.MultiSlider(args);
-        } else if (control_type === "selector") {
-            this.controls[i] = new sagecell.InteractData.Selector(args);
-        } else if (control_type === "slider") {
-            this.controls[i] = new sagecell.InteractData.Slider(args);
-        }
-    }
-
-    this.renderCanvas();
-    this.bindChange(this);
-}
-
-sagecell.InteractCell.prototype.bindChange = function(interact) {
-    var id = ".urn_uuid_" + this.interact_id;
-    var elements = this.controls;
-    var events = {};
-
-    for (var i in elements) {
-        var handlers = this.controls[i].changeHandlers();
-        for (var j = 0, j_max = handlers.length; j < j_max; j ++) {
-            if (events[handlers[j]] === undefined) {
-                events[handlers[j]] = [i];
-            } else {
-                events[handlers[j]].push(i);
-            }
-        }
-    }
-
-    this.session.eventHandlers[id] = {};
-    for (var i in events) {
-        this.session.eventHandlers[id][i] = events[i];
-        $(id).live(i, function(e){
-            if (!interact.session.sessionContinue) {
-                // If the session ended, don't try to send more messages
-                return false;
-            }
-            var parentSpan = $(e.target).parentsUntil("span[class^='sagecell_var_']");
-            if (parentSpan.length === 0) {
-                parentSpan = $(e.target).parent();
-            } else {
-                parentSpan = parentSpan.parent();
-            }
-            var changedControl = parentSpan.attr("class").replace("sagecell_var_",""); // Get changed variable name
-
-            if (interact.update[changedControl] !== undefined) {
-                var changes = interact.getChanges(interact.update, changedControl, interact.interact_id);
-                var code = "_update_interact('"+interact.interact_id+"',control_vals=dict(";
-
-                for (j in changes) {
-                    if (interact.controls[j]["control"]["raw"]) {
-                        code += j + "=" +  changes[j] + ",";
-                    } else {
-                        code += j + "='" + changes[j].replace(/'/g, "\\'") + "',";
-                    }
+    for (var name in this.controls) {
+        if (this.controls.hasOwnProperty(name)) {
+            var events = this.controls[name].changeHandlers();
+            for (var e in events) {
+                if (events.hasOwnProperty(e)) {
+                    $(events[e]).on(e, handler);
                 }
-                code += "))";
-                interact.session.spinner.style.display = "";
-                interact.session.open_count++;
-                interact.session.sendMsg(code, interact.msg_id, interact.interact_id);
-                interact.session.replace_output[interact.interact_id]=true;
-            } else {
-                parentSpan.parent().addClass("sagecell_dirtyControl");
             }
-            return false;
-        });
+        }
     }
-}
+};
 
-sagecell.InteractCell.prototype.getChanges = function(interact_update, changed_control, interact_id) {
-    var params = {};
-    var controls = interact_update[changed_control];
-    var interact_location = $("#interact_"+interact_id);
-
-    for (var i = 0, i_max = controls.length; i < i_max; i++) {
-        params[controls[i]] = this.controls[controls[i]].changes();
-        interact_location
-            .find("span[class^='sagecell_var_"+controls[i]+"']")
-            .parent()
-            .removeClass("sagecell_dirtyControl");
-    }
-
-    return params;
-}
-
-sagecell.InteractCell.prototype.renderCanvas = (function() {
+sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     /*
 
       The template is:
@@ -366,691 +276,383 @@ sagecell.InteractCell.prototype.renderCanvas = (function() {
       <td colspan='2'>{{control html code}}</td>
 
      */
-    var addControl=function(labeltext, name, controlHtml, id) {
-        var html_code = "";
-
-        if (labeltext) {
-            html_code += "<td><label ";
-            if (id) {
-                html_code += "for='"+id+"' ";
+    var cells = {};
+    var ce = sagecell.util.createElement;
+    var locs = [["top_left",    "top_center",    "top_right"   ],
+                ["left",        null,            "right"       ],
+                ["bottom_left", "bottom_center", "bottom_right"]];
+    var table = ce("table", {"class": "sagecell_interactContainer"});
+    for (var row = 0; row < 3; row++) {
+        var tr = ce("tr");
+        for (var col = 0; col < 3; col++) {
+            var td;
+            if (locs[row][col]) {
+                td = ce("td", {"class": "sagecell_interactContainer"});
+                cells[locs[row][col]] = td;
+            } else {
+                td = ce("td", {"class": "sagecell_interactOutput"});
+                this.session.output_blocks[this.interact_id] = td;
             }
-            html_code += " title='"+name+"'>"+labeltext+"</label></td><td>";
-        } else {
-            html_code += "<td colspan='2'>";
+            tr.appendChild(td);
         }
-
-        html_code += controlHtml;
-        html_code += "</td>";
-        return html_code;
+        table.appendChild(tr);
     }
-    var select_labels={};
-    return function() {
-        var container = $("table#interact_"+this.interact_id);
-        var id = "urn_uuid_" + this.interact_id;
-
-        for (var i in this.layout) {
-            var layout_location = this.layout[i]
-            var section = container.find("td.sagecell_interactContainer_"+i);
-            section.html("<table class='sagecell_interactControls'></table>");
-
-            var control_location = section.find(".sagecell_interactControls");
-            
-            for (var j = 0, j_max = layout_location.length; j < j_max; j++) {
-
-                var row = layout_location[j];
-                var row_html = "<tr>";
-                var name = row;
-
-                var control_html = function(info,name) {
-                    var label = info.controls[name]["control"].label;
-                    if (label === null) {
-                        label = name;
-                    }
-                    var control_id = id + "_" + name;
-                    return addControl(label, name, info.controls[name].html(), control_id);
-                };
-
-                if (typeof(row)==="object") {
-                    for (var c = 0, c_max = row.length; c < c_max; c++) {
-                        name = row[c];
-                        row_html += control_html(this,name);
-                    }
+    for (var loc in this.layout) {
+        if (this.layout.hasOwnProperty(loc)) {
+            var table2 = ce("table", {"class": "sagecell_interactControls"});
+            for (var i = 0; i < this.layout[loc].length; i++) {
+                var tr = ce("tr");
+                var id = this.interact_id + "_" + cells[loc][i];
+                var right = ce("td", {}, [
+                    this.controls[this.layout[loc][i]].rendered(id)
+                ]);
+                if (this.controls[this.layout[loc][i]].control.label) {
+                    var left = ce("td", {}, [
+                        ce("label", {"for": id, "title": this.layout[loc][i]}, [
+                            document.createTextNode(this.controls[this.layout[loc][i]].control.label)
+                        ])
+                    ]);
+                    tr.appendChild(left);
                 } else {
-                    row_html += control_html(this,name);
+                    right.setAttribute("colspan", "2");
                 }
-
-        
-                row_html += "</tr>";
-                control_location.append(row_html);
-                this.controls[name].finishRender(control_location);
+                tr.appendChild(right);
+                table2.appendChild(tr);
             }
+            cells[loc].appendChild(table2);
         }
     }
-})();
-
+    this.session.output(table, parent_block);
+}
 
 sagecell.InteractData = {};
 
-sagecell.InteractData.Button = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
+sagecell.InteractData.InteractControl = function () {
+    return function (control) {
+        this.control = control;
+    }
 }
 
-sagecell.InteractData.Button.prototype.changeHandlers = function() {
-    return ["change"];
+sagecell.InteractData.Button = sagecell.InteractData.InteractControl();
+
+sagecell.InteractData.Button.prototype.rendered = function() {
+    this.button = sagecell.util.createElement("button", {}, [
+        document.createTextNode(this.control.text)
+    ]);
+    this.button.style.width = this.control.width;
+    $(this.button).button();
+    return this.button;
+}
+
+sagecell.InteractData.Button.prototype.changeHandlers = function () {
+    return {"click": this.button};
 };
 
-sagecell.InteractData.Button.prototype.changes = function() {
-    var control_out = $(this.location).find("#"+this.control_id+"_value")
-    var value = control_out.val();
-    control_out.val("false");
-    return value;
+sagecell.InteractData.Button.prototype.py_value = function () {
+    return "None";
 }
 
-sagecell.InteractData.Button.prototype.html = function() {
-    return "<span class='sagecell_var_"+this.name+"'>"+
-        "<button class='sagecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_button'>"+
-        "<span>"+this.control["text"]+"</span></button><input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"_value' value='false'></span>";
-}
+sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.Button.prototype.finishRender = function(location) {
-    this.location = location;
-    $(this.location)
-        .delegate("#"+this.control_id+"_button", {
-            "mouseenter": function(e) {
-                $(this).addClass("ui-state-hover");
-            },
-            "mouseleave": function(e) {
-                $(this).removeClass("ui-state-hover");
-            },
-            "mousedown": function(e) {
-                $(this).addClass("ui-state-active");
-            },
-            "mouseup": (function(control_id) {
-                return function(e) {
-                    $(this).removeClass("ui-state-active");
-                    $(this).parent().find("#"+control_id+"_value").val("true").change();
-                }
-            }(this.control_id)),
-            "click": function(e) {
-                e.preventDefault();
-            }
-        })
-        .css("width", this.control["width"]);
-}
-
-
-sagecell.InteractData.ButtonBar = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
-}
-
-sagecell.InteractData.ButtonBar.prototype.changeHandlers = function() {
-    return ["change"];
-}
-
-sagecell.InteractData.ButtonBar.prototype.changes = function() {
-    var control_out = $(this.location).find("#"+this.control_id+"_value")
-    var value = control_out.val();
-    control_out.val("false");
-    return value;
-}
-
-sagecell.InteractData.ButtonBar.prototype.html = function() {
-    var nrows = this.control["nrows"],
-    ncols = this.control["ncols"],
-    value_labels = this.control["value_labels"],
-    html_code = "<span class='sagecell_var_"+this.name+"'>",
-    inner_table = "<table><tbody>";
-
-    for (var r = 0, i = 0; r < nrows; r ++) {
-        inner_table += "<tr>";
-        for (var c = 0; c < ncols; c ++, i++) {
-            inner_table += "<td><button class='"+this.control_id+
-                " sagecell_button ui-widget ui-state-default ui-corner-all'"+
-                " id='"+this.control_id+"_"+i+"'><span>"+value_labels[i]+
-                "</span></button></td>";
+sagecell.InteractData.ButtonBar.prototype.rendered = function (control_id) {
+    var ce = sagecell.util.createElement;
+    var name = "interact_" + control_id;
+    var table = ce("table");
+    var i = -1;
+    this.radios = $();
+    var that = this;
+    for (var row = 0; row < this.control.nrows; row++) {
+        var tr = ce("tr");
+        for (var col = 0; col < this.control.ncols; col++) {
+            var id = name + "_" + ++i;
+            var radio = ce("input", {"type": "radio", "name": name, "id": id});
+            var label = ce("label", {"for": id}, [
+                document.createTextNode(this.control.value_labels[i])
+            ]);
+            $(radio).data("index", i);
+            this.radios = this.radios.add(radio);
+            tr.appendChild(ce("td", {}, [radio, label]));
         }
-        inner_table += "</tr>";
+        table.appendChild(tr);
     }
-    
-    inner_table += "</tbody></table>";
-
-    html_code += inner_table + "<input type='hidden' id='"+this.control_id+
-        "_value' class='"+this.control_class+"' value='None'></span>";
-
-    return html_code;
+    this.radios.button();
+    this.radios.off("change");
+    return table;
 }
 
-sagecell.InteractData.ButtonBar.prototype.finishRender = function(location) {
-    this.location = location;
-    $(this.location).find("."+this.control_id)
-        .css("width", this.control["width"]);
-    for (var i = 0, i_max = this.control["values"]; i < i_max; i ++) {
-        $(this.location)
-            .delegate("#"+this.control_id+"_"+i, {
-                "mouseenter": function(e) {
-                    $(this).addClass("ui-state-hover");
-                },
-                "mouseleave": function(e) {
-                    $(this).removeClass("ui-state-hover");
-                },
-                "mousedown": function(e) {
-                    $(this).addClass("ui-state-active");
-                },
-                "mouseup": (function(location, control_id, i) {
-                    return function(e) {
-                        $(this).removeClass("ui-state-active");
-                        $(location).find("#"+control_id+"_value").val(i)
-                            .change();
-                    }
-                }(this.location, this.control_id, i)),
-                "click": function(e) {
-                    e.preventDefault();
-                }
-            });
+sagecell.InteractData.ButtonBar.prototype.changeHandlers = function () {
+    return {"change": this.radios};
+}
+
+sagecell.InteractData.ButtonBar.prototype.py_value = function () {
+    return this.radios.filter(":checked").data("index");
+}
+
+sagecell.InteractData.Checkbox = sagecell.InteractData.InteractControl();
+
+sagecell.InteractData.Checkbox.prototype.rendered = function () {
+    this.input = sagecell.util.createElement("input", {"type": "checkbox"});
+    this.input.checked = this.control.default;
+    return this.input;
+}
+
+sagecell.InteractData.Checkbox.prototype.changeHandlers = function () {
+    return {"change": this.input};
+}
+
+sagecell.InteractData.Checkbox.prototype.py_value = function () {
+    return this.input.checked ? "True" : "False";
+}
+
+sagecell.InteractData.ColorSelector = sagecell.InteractData.InteractControl();
+
+sagecell.InteractData.ColorSelector.prototype.rendered = function () {
+    var selector = sagecell.util.createElement("span", {"class": "sagecell_colorSelector"});
+    var text = document.createTextNode(this.control.default);
+    this.span = sagecell.util.createElement("span", {}, [selector]);
+    if (!this.control.hide_input) {
+        selector.style.marginRight = "10px";
+        this.span.appendChild(text);
     }
-}
-
-
-sagecell.InteractData.Checkbox = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
-}
-
-sagecell.InteractData.Checkbox.prototype.changeHandlers = function() {
-    return ["change"];
-}
-
-sagecell.InteractData.Checkbox.prototype.changes = function() {
-    var value = $(this.location).find("#"+this.control_id).prop("checked");
-    if (value === true) {
-        return "True";
-    } else {
-        return "False";
-    }
-}
-
-sagecell.InteractData.Checkbox.prototype.html = function() {
-    var html="<span class='sagecell_var_"+this.name+"'>"+
-        "<input type='checkbox' class='"+this.control_class+"' id='"+
-        this.control_id+"'"
-    if(this.control["default"]) {
-        html += " checked ";
-    }
-    html +="></span>";
-    return html
-}
-
-sagecell.InteractData.Checkbox.prototype.finishRender = function(location) {
-    this.location = location;
-}
-
-
-sagecell.InteractData.ColorSelector = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
+    selector.style.backgroundColor = this.control.default;
+    var that = this;
+    $(selector).ColorPicker({
+        "color": this.control.default,
+        "onChange": function (hsb, hex, rgb, el) {
+            text.nodeValue = that.color = selector.style.backgroundColor = "#" + hex;
+        },
+        "onHide": function () {
+            $(that.span).change();
+        }
+    });
+    return this.span;
 }
 
 sagecell.InteractData.ColorSelector.prototype.changeHandlers = function() {
-    return ["change"];
+    return {"change": this.span};
 }
 
-sagecell.InteractData.ColorSelector.prototype.changes = function() {
-    return $(this.location).find("#"+this.control_id+"_value").val();
+sagecell.InteractData.ColorSelector.prototype.py_value = function() {
+    return JSON.stringify(this.color);
 }
 
-sagecell.InteractData.ColorSelector.prototype.html = function() {
-    return "<span class='sagecell_var_"+this.name+"'><input type='text' class='sagecell_colorSelector' id='"+
-        this.control_id+"'><input type='text' class='"+this.control_class+" sagecell_interactValueBox' id='"+
-        this.control_id+"_value' style='border:none' value='"+this.control["default"]+"' readonly='readonly'><span>";
-}
+sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.ColorSelector.prototype.finishRender = function(location) {
-    this.location = location;
-    var default_value = this.control["default"],
-    control_out = $(this.location);
-
-    if (this.control["hide_input"]) {
-        control_out.find("#"+this.control_id+"_value").css("display", "none");
-    }
-
-    $(this.location).find("#"+this.control_id)
-        .css("backgroundColor", default_value)
-        .ColorPicker({
-            color: default_value,
-            onHide: (function(location, control_id) {
-                return function(hsb, hex, rgb, el) {
-                    $(location).find("#"+control_id+"_value").change();
-                }
-            }(this.location, this.control_id)),
-            onSubmit: (function(location, control_id) {
-                return function(hsb, hex, rgb, el) {
-                    $(el).ColorPickerHide();
-                    $(location).find("#"+control_id+"_value")
-                        .val("#"+hex).change();
-                }
-            }(this.location, this.control_id)),
-            onChange: (function(location, control_id) {
-                return function(hsb, hex, rgb, el) {
-                    $(location).find("#"+control_id).css({
-                        "backgroundColor": "#"+hex,
-                        "color": "#"+hex
-                    });
-                    $(location).find("#"+control_id+"_value").val("#"+hex);
-                }
-            }(this.location, this.control_id))
-        });
-}
-
-
-sagecell.InteractData.HtmlBox = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
+sagecell.InteractData.HtmlBox.prototype.rendered = function () {
+    // TODO: replace "cell:" URIs in HTML with URLs for uploaded files
+    this.div = document.createElement("div");
+    $(this.div).html(this.control.value);
+    return this.div;
 }
 
 sagecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
-    return [];
+    return {};
 }
 
-sagecell.InteractData.HtmlBox.prototype.changes = function() {
-    return $(this.location).find("#"+this.control_id).html();
+sagecell.InteractData.HtmlBox.prototype.py_value = function() {
+    return "None";
 }
 
-sagecell.InteractData.HtmlBox.prototype.html = function() {
-    var html = this.control["value"].replace(/cell:\/\//gi, 
-            sagecell.$URL.root + "files/" + this.session_id + '/');
-    return "<span class='sagecell_var_"+this.name+"'><div class='"+this.control_class+"' id='"+this.control_id+"'>"+html+"</div></span>";
-}
+sagecell.InteractData.InputBox = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.HtmlBox.prototype.finishRender = function(location) {
-    this.location = location;
-}
-
-
-sagecell.InteractData.InputBox = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
+sagecell.InteractData.InputBox.prototype.rendered = function () {
+    if (this.control.subtype === "textarea") {
+        this.textbox = sagecell.util.createElement("textarea",
+            {"rows": this.control.height, "cols": this.control.width});
+    } else if (this.control.subtype === "input") {
+        this.textbox = sagecell.util.createElement("input",
+            {"size": this.control.width});
+    }
+    this.textbox.value = this.control.default;
+    return this.textbox;
 }
 
 sagecell.InteractData.InputBox.prototype.changeHandlers = function() {
-    return ["change"];
+    return {"change": this.textbox};
 }
 
-sagecell.InteractData.InputBox.prototype.changes = function() {
-    var value = $(this.location).find("#"+this.control_id).val(),
-    subtype = this.control["subtype"];
-
-    if (subtype === "textarea") {
-        return JSON.stringify(value);
-    } else {
-        return value;
-    }
+sagecell.InteractData.InputBox.prototype.py_value = function () {
+    return "u" + JSON.stringify(this.textbox.value);
 }
 
-sagecell.InteractData.InputBox.prototype.html = function() {
-    var subtype = this.control["subtype"];
+sagecell.InteractData.InputGrid = sagecell.InteractData.InteractControl();
 
-    if (subtype === "textarea") {
-        return "<span class='sagecell_var_"+this.name+"'><textarea class='"+
-            this.control_class+"' id='"+this.control_id+"' rows='"+
-            this.control["height"]+"' cols='"+this.control["width"]+
-            "'>"+this.control["default"]+"</textarea></span>";
-    } else if (subtype === "input") {
-        return "<span class='sagecell_var_"+this.name+"'><input type='text' class='"+
-            this.control_class+"' id='"+this.control_id+"' size="+
-            this.control["width"]+" value='"+
-            this.control["default"].replace(/'/g, "&#039;") + "'></span>";
-    }
-}
-
-sagecell.InteractData.InputBox.prototype.finishRender = function(location) {
-    this.location = location;
-}
-
-
-sagecell.InteractData.InputGrid = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
-}
-
-sagecell.InteractData.InputGrid.prototype.changeHandlers = function() {
-    return ["change"];
-}
-
-sagecell.InteractData.InputGrid.prototype.changes = function() {
-    var control_out = $(this.location);
-    var row = [];
-    var values = "[";
-
-    for (var i = 0, i_max = this.control["nrows"]; i < i_max; i ++) {
-        values += "[";
-        row = [];
-        for (var j =0, j_max = this.control["ncols"]; j < j_max; j ++) {
-            row.push("'"+control_out.find("#"+this.control_id + "_" + i + "_" + j).val().replace(/'/g, "\\'")+"'");
+sagecell.InteractData.InputGrid.prototype.rendered = function () {
+    this.textboxes = $();
+    var ce = sagecell.util.createElement;
+    var table = ce("table");
+    for (var row = 0; row < this.control.nrows; row++) {
+        var tr = ce("tr");
+        for (var col = 0; col < this.control.ncols; col++) {
+            var textbox = ce("input", {"value": this.control.default[row][col],
+                                       "size": this.control.width});
+            this.textboxes = this.textboxes.add(textbox);
+            tr.appendChild(ce("td", {}, [textbox]));
         }
-        values+=row.join(',');
-        values += "],";
+        table.appendChild(tr);
     }
-    values += "]";
-
-    return values;
+    return table;
 }
 
-sagecell.InteractData.InputGrid.prototype.html = function() {
-    var default_values = this.control["default"],
-    width = this.control["width"],
-    html_code = "<span class='sagecell_var_"+this.name+"'><table><tbody>";
+sagecell.InteractData.InputGrid.prototype.changeHandlers = function () {
+    return {"change": this.textboxes};
+}
 
-    for (var r = 0, r_max = this.control["nrows"]; r < r_max; r ++) {
-        html_code += "<tr>";
-        for (var c = 0, c_max = this.control["ncols"]; c < c_max; c ++) {
-            html_code += "<td><input type='text' class='"+this.control_class+
-                "' id='"+this.control_id+"_"+r+"_"+c+"' title='"+this.name+
-                "["+r+"]["+c+"]' value='"+default_values[r][c]+"' size='"+
-                width+"'></td>";
+sagecell.InteractData.InputGrid.prototype.py_value = function () {
+    var string = "[";
+    for (var row = 0; row < this.control.nrows; row++) {
+        string += "[";
+        for (var col = 0; col < this.control.ncols; col++) {
+            string += "u" + JSON.stringify(this.textboxes[row * this.control.ncols + col].value) + ","
         }
-        html_code += "</tr>"
+        string += "],";
     }
-
-    html_code += "</tbody></table></span>";
-    return html_code;
+    return string + "]";
 }
 
-sagecell.InteractData.InputGrid.prototype.finishRender = function(location) {
-    this.location = location;
-}
+sagecell.InteractData.MultiSlider = sagecell.InteractData.InteractControl();
 
-
-sagecell.InteractData.MultiSlider = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
+sagecell.InteractData.MultiSlider.prototype.rendered = function () {
+    var ce = sagecell.util.createElement;
+    var div = ce("div");
+    this.sliders = $();
+    this.value_boxes = $();
+    this.values = this.control.default.slice();
+    for (var i = 0; i < this.control.sliders; i++) {
+        var column = ce("div");
+        column.style.width = "50px";
+        column.style.cssFloat = "left";
+        column.style.textAlign = "center";
+        var slider = ce("span", {"class": "sagecell_multiSliderControl"});
+        slider.style.display = "block";
+        slider.style.margin = "1em 0.5em 1em 0.8em";
+        column.appendChild(slider);
+        var that = this;
+        if (this.control.subtype === "continuous") {
+            var textbox = ce("input", {"class": "sagecell_interactValueBox"});
+            textbox.value = this.values[i].toString();
+            textbox.size = textbox.value.length;
+            textbox.style.display = this.control.display_values ? "" : "none";
+            $(textbox).change((function (i) {
+                return function (event) {
+                    var textbox = event.target;
+                    var val = parseFloat(textbox.value);
+                    if (that.control.range[i][0] <= val && val <= that.control.range[i][1]) {
+                        that.values[i] = val;
+                        $(that.sliders[i]).slider("option", "value", val);
+                        textbox.value = val.toString();
+                    } else {
+                        textbox.value = that.values[i].toString();
+                    }
+                    textbox.size = textbox.value.length;
+                };
+            }(i)));
+            $(textbox).keyup(function (event) {
+                event.target.size = event.target.value.length;
+            });
+            that.value_boxes = that.value_boxes.add(textbox);
+            column.appendChild(textbox);
+        } else {
+            var span = ce("span", {},
+                    [document.createTextNode(this.values[i].toString())]);
+            span.style.fontFamily = "monospace";
+            span.style.display = this.control.display_values ? "" : "none";
+            that.value_boxes = that.value_boxes.add(span);
+            column.appendChild(span);
+        }
+        var slide_handler = (function (i) {
+            return function (event, ui) {
+                that.values[i] = ui.value;
+                var value_box = that.value_boxes[i];
+                if (that.control.subtype === "continuous") {
+                    value_box.value = ui.value.toString();
+                    value_box.size = value_box.value.length;
+                    $(value_box).data("old_value", value_box.value);
+                } else {
+                    $(value_box).text(that.control.values[i][ui.value]);
+                }
+            };
+        }(i));
+        $(slider).slider({"orientation": "vertical",
+                          "value": this.control.default[i],
+                          "min": this.control.range[i][0],
+                          "max": this.control.range[i][1],
+                          "step": this.control.step[i],
+                          "animate": "fast",
+                          "slide": slide_handler});
+        this.sliders = this.sliders.add(slider);
+        div.appendChild(column);
+    }
+    return div;
 }
 
 sagecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
-    var handlers = ["slidestop"];
-    if (this.control["subtype"] === "continuous") {
-        handlers.push("change");
-    }
-    return handlers;
+    return {"slidechange": this.sliders};
 }
 
-sagecell.InteractData.MultiSlider.prototype.changes = function() {
-    var sliders = this.control["sliders"],
-    control_out = $(this.location),
-    input, slider_values = [];
+sagecell.InteractData.MultiSlider.prototype.py_value = function () {
+    return JSON.stringify(this.values);
+}
 
-    if (this.control["subtype"] === "continuous") {
-        for (var i = 0; i < sliders; i ++) {
-            input = control_out.find("#"+this.control_id + "_" + i + "_value")
-                .val();
-            control_out.find("#" + this.control_id + "_" + i)
-                .slider("option", "value", input);
-            slider_values.push(input);
+sagecell.InteractData.Selector = sagecell.InteractData.InteractControl();
+
+sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
+    var ce = sagecell.util.createElement;
+    var that = this;
+    if (this.control.subtype === "list") {
+        var select = ce("select");
+        for (var i = 0; i < this.control.values; i++) {
+            select.appendChild(ce("option", {}, [
+                document.createTextNode(this.control.value_labels[i])
+            ]));
         }
-    } else {
-        for (var i = 0; i < sliders; i ++) {
-            slider_values.push(
-                control_out.find("#" + this.control_id + "_" + i + "_index").val()
-            );
-        }
-    }
-    return "[" + String(slider_values) + "]";
-}
-
-sagecell.InteractData.MultiSlider.prototype.html = function() {
-    var sliders = this.control["sliders"],
-    html_code = "<span class='sagecell_var_"+this.name+"'><div class='" + this.control_class +
-        " sagecell_multiSliderContainer'><span style='whitespace:nowrap'>";
-
-    for (var i = 0; i < sliders; i ++) {
-        html_code = html_code +
-            "<span class='sagecell_multiSliderControl' id='"+this.control_id+"_"+i+"'></span>"+
-            "<input type='text' class='"+this.control_id+" sagecell_interactValueBox' id='"+this.control_id+"_"+i+"_value' style='border:none'>"+
-            "<input type='text' class='"+this.control_id+"' id='"+this.control_id+"_"+i+"_index' style='display:none'>";
-    }
-    html_code = html_code + "</span></div></span>";
-    
-    return html_code;
-}
-
-sagecell.InteractData.MultiSlider.prototype.finishRender = function(location) {
-    this.location = location;
-
-    var sliders = this.control["sliders"],
-    slider_values = this.control["values"],
-    slider_config = {},
-    control_out = $(this.location),
-    default_value;
-    
-    if (this.control["subtype"] === "continuous") {
-        for (var i = 0; i < sliders; i ++) {
-            var default_value = this.control["default"][i];
-
-            control_out.find("#"+this.control_id+"_"+i+"_value")
-                .val(default_value)
-                .addClass(this.control_class)
-                .attr("size", String(default_value).length)
-                .css("display", (this.control["display_values"] ? "" : "none"));
-
-            slider_config = {
-                orientation: "vertical",
-                value: this.control["default"][i],
-                min: this.control["range"][i][0],
-                max: this.control["range"][i][1],
-                step: this.control["step"][i],
-                slide: function(event,ui) {
-                    var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-                    value_box.attr("size", String(ui.value).length)
-                        .val(ui.value);
+        select.selectedIndex = this.control.default;
+        $(select).change(function (event) {
+            that.value = event.target.selectedIndex;
+            $(event.target).trigger("changedone");
+        });
+        this.changing = select;
+        return select;
+    } else if (this.control.subtype === "radio" || this.control.subtype === "button") {
+        this.changing = $();
+        var table = ce("table");
+        var i = -1;
+        for (var row = 0; row < this.control.nrows; row++) {
+            var tr = ce("tr");
+            for (var col = 0; col < this.control.ncols; col++) {
+                var id = control_id + "_" + ++i;
+                var option = ce("input", {"type": "radio", "name": control_id, "id": id});
+                if (i === this.control.default) {
+                    option.checked = true;
                 }
-            };
-
-            control_out.find("#"+this.control_id+"_"+i).slider(slider_config);
-        }
-    } else {
-        control_out.find("."+this.control_id+"_value").attr("readonly","readonly");
-        for (var i = 0; i < sliders; i ++) {
-            default_value = slider_values[i][this.control["default"][i]];
-            control_out.find("#"+this.control_id+"_"+i+"_value")
-                .val(default_value)
-                .attr("size", String(default_value).length)
-                .css("display", (this.control["display_values"] ? "" : "none"));
-            control_out.find("#"+this.control_id+"_"+i+"_index").val(this.control["default"][i]);
-
-            slider_config = {
-                orientation: "vertical",
-                value: this.control["default"][i],
-                min: this.control["range"][i][0],
-                max: this.control["range"][i][1],
-                step: this.control["step"][i],
-                slide: (function(control_out, i) {
-                    return function(event,ui) {
-                        var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-                        var value = slider_values[i][ui.value];
-                        value_box.attr("size", String(value).length)
-                            .val(slider_values[i][ui.value]);
-                        control_out.find("#"+ui.handle.offsetParent.id+"_index").val(ui.value);
-                    }
-                }(control_out, i))
-            }
-
-            control_out.find("#"+this.control_id+"_"+i).slider(slider_config);
-        }
-    }
-}
-
-
-sagecell.InteractData.Selector = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
-}
-
-sagecell.InteractData.Selector.prototype.changeHandlers = function() {
-    return ["change"];
-}
-
-sagecell.InteractData.Selector.prototype.changes = function() {
-    return String($(this.location).find("#"+this.control_id).val());
-}
-
-sagecell.InteractData.Selector.prototype.html = function() {
-    var nrows = this.control["nrows"],
-    ncols = this.control["ncols"],
-    values = this.control["values"],
-    value_labels = this.control["value_labels"],
-    default_index = this.control["default"],
-    subtype = this.control["subtype"],
-    html_code = "<span class='sagecell_var_"+this.name+"'>",
-    inner_table;
-
-    if (subtype === "list") {
-        html_code += "<select class='"+this.control_class+"' id='"+this.control_id+"'>";
-        for (var i = 0; i < values; i ++) {
-            html_code += "<option value='"+i+"'><div>"+value_labels[i]+"</div></option>";
-        }
-        html_code += "</select>";
-
-    } else if (subtype === "radio") {
-        inner_table = "<table><tbody>";
-
-        for (var r = 0, i = 0; r < nrows; r ++) {
-            inner_table += "<tr>";
-            for (var c = 0; c < ncols; c ++, i ++) {
-                inner_table += "<td><input class='"+this.control_id+"' id='"+this.control_id+"_"+i+"' type='radio' name='"+this.control_id+"' value="+i+">"+value_labels[i]+"</td>";
-            }
-            inner_table += "</tr>";
-        }
-        inner_table += "</tbody></table>";
-
-        html_code += inner_table + "<input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"' + value='"+default_index+"'>";
-
-    } else if (subtype === "button") {
-        inner_table = "<table><tbody>";
-
-        for (var r = 0, i = 0; r < nrows; r ++) {
-            inner_table += "<tr>";
-            for (var c = 0; c < ncols; c ++, i ++) {
-                inner_table += "<td><button class='"+this.control_id+" sagecell_button ui-widget ui-state-default ui-corner-all' id='"+this.control_id+"_"+i+"'><span><div>"+value_labels[i]+"</div></span></button></td>";
-            }
-            inner_table += "</tr>";
-        }
-        inner_table += "</tbody></table>";
-        
-        html_code += inner_table + "<input type='hidden' class='"+this.control_class+"' id='"+this.control_id+"' + value='"+default_index+"'></div>";
-
-    }
-    html_code += "</span>";
-    return html_code;
-}
-
-sagecell.InteractData.Selector.prototype.finishRender = function(location) {
-    this.location = location;
-
-    var subtype = this.control["subtype"],
-    control_out = $(this.location),
-    default_id = this.control_id+"_"+this.control["default"];
-
-    if (subtype === "list") {
-        $(control_out.find("#"+this.control_id).children()[this.control["default"]])
-            .attr("selected","selected");
-    } else if (subtype === "radio") {
-        control_out.find("#"+default_id).attr("checked","checked");
-        control_out.delegate("."+this.control_id, "mousedown", (function(control_out, control_id){
-            return function(e) {
-                var etarget = $(e.target);
-                if (! etarget.prop("checked")) {
-                    control_out.find("#"+control_id).val(etarget.val()).change();
-                }
-            }
-        }(control_out, this.control_id)));
-    } else if (subtype === "button") {
-        control_out.find("#"+default_id).addClass("ui-state-active");
-        control_out.find("."+this.control_id).css("width",this.control["width"]);
-        for (var i = 0, i_max = this.control["nrows"] * this.control["ncols"];
-             i < i_max; i ++) {
-            control_out.delegate("#"+this.control_id+"_"+i, {
-                "mouseenter": function(e) {
-                    $(this).addClass("ui-state-hover");
-                },
-                "mouseleave": function(e) {
-                    $(this).removeClass("ui-state-hover");
-                },
-                "mousedown": function (control_id) {
-                    return function (e) {
-                        control_out.find(".ui-state-active." + control_id).removeClass("ui-state-active");
-                        $(this).addClass("ui-state-active");
+                var label = ce("label", {"for": id}, [
+                    document.createTextNode(this.control.value_labels[i])
+                ]);
+                $(option).change(function (i) {
+                    return function (event) {
+                        that.value = i;
+                        $(event.target).trigger("changedone");
                     };
-                }(this.control_id),
-                "mouseup": (function(control_out,i,control_id) {
-                    return function(e) {
-                        if (control_out.find("#"+control_id).val() !== ""+i) {
-                            control_out.find("#"+control_id).val(i).change();
-                        }
-                    }
-                }(control_out, i, this.control_id)),
-                "click": function(e) {
-                    e.preventDefault();
-                }
-            });
+                }(i));
+                this.changing = this.changing.add(option);
+                tr.appendChild(ce("td", {}, [option, label]));
+            }
+            table.appendChild(tr);
         }
+        if (this.control.subtype === "button") {
+            this.changing.button();
+        }
+        return table;
     }
 }
 
+sagecell.InteractData.Selector.prototype.changeHandlers = function () {
+    return {"changedone": this.changing};
+}
+
+sagecell.InteractData.Selector.prototype.py_value = function () {
+    return JSON.stringify(this.value);
+}
 
 sagecell.InteractData.Slider = function (args) {
     this.control = args["control"];
@@ -1183,6 +785,59 @@ sagecell.InteractData.Slider.prototype.finishRender = function(location) {
     }
     control_out.find("#"+this.control_id).slider(slider_config);
 }
+
+sagecell.InteractData.control_types = {
+    "button": sagecell.InteractData.Button,
+    "button_bar": sagecell.InteractData.ButtonBar,
+    "checkbox": sagecell.InteractData.Checkbox,
+    "color_selector": sagecell.InteractData.ColorSelector,
+    "html_box": sagecell.InteractData.HtmlBox,
+    "input_box": sagecell.InteractData.InputBox,
+    "input_grid": sagecell.InteractData.InputGrid,
+    "multi_slider": sagecell.InteractData.MultiSlider,
+    "selector": sagecell.InteractData.Selector,
+    "slider": sagecell.InteractData.Slider
+};
+
+/* This function is copied from IPython's kernel.js
+ * (https://github.com/ipython/ipython/blob/master/IPython/frontend/html/notebook/static/js/kernel.js)
+ * and modified to allow messages of type 'extension'.
+ */
+IPython.Kernel.prototype._handle_iopub_reply = function (e) {
+    var reply = $.parseJSON(e.data);
+    var content = reply.content;
+    var msg_type = reply.header.msg_type;
+    var callbacks = this.get_callbacks_for_msg(reply.parent_header.msg_id);
+    if (msg_type !== 'status' && callbacks === undefined) {
+        // Message not from one of this notebook's cells and there are no
+        // callbacks to handle it.
+        return;
+    }
+    var output_types = ['stream','display_data','pyout','pyerr','extension'];
+    if (output_types.indexOf(msg_type) >= 0) {
+        var cb = callbacks['output'];
+        if (cb !== undefined) {
+            cb(msg_type, content);
+        }
+    } else if (msg_type === 'status') {
+        if (content.execution_state === 'busy') {
+            $([IPython.events]).trigger('status_busy.Kernel');
+        } else if (content.execution_state === 'idle') {
+            $([IPython.events]).trigger('status_idle.Kernel');
+        } else if (content.execution_state === 'dead') {
+            this.stop_channels();
+            $([IPython.events]).trigger('status_dead.Kernel');
+        };
+    } else if (msg_type === 'clear_output') {
+        var cb = callbacks['clear_output'];
+        if (cb !== undefined) {
+            cb(content);
+        }
+    };
+};
+
+
+
 
 // Initialize jmol
 // TODO: move to a better place
