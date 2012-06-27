@@ -531,7 +531,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
         if (this.control.subtype === "continuous") {
             var textbox = ce("input", {"class": "sagecell_interactValueBox"});
             textbox.value = this.values[i].toString();
-            textbox.size = textbox.value.length;
+            textbox.size = textbox.value.length + 1;
             textbox.style.display = this.control.display_values ? "" : "none";
             $(textbox).change((function (i) {
                 return function (event) {
@@ -544,11 +544,11 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
                     } else {
                         textbox.value = that.values[i].toString();
                     }
-                    textbox.size = textbox.value.length;
+                    textbox.size = textbox.value.length + 1;
                 };
             }(i)));
             $(textbox).keyup(function (event) {
-                event.target.size = event.target.value.length;
+                event.target.size = event.target.value.length + 1;
             });
             that.value_boxes = that.value_boxes.add(textbox);
             column.appendChild(textbox);
@@ -566,7 +566,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
                 var value_box = that.value_boxes[i];
                 if (that.control.subtype === "continuous") {
                     value_box.value = ui.value.toString();
-                    value_box.size = value_box.value.length;
+                    value_box.size = value_box.value.length + 1;
                     $(value_box).data("old_value", value_box.value);
                 } else {
                     $(value_box).text(that.control.values[i][ui.value]);
@@ -578,7 +578,6 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
                           "min": this.control.range[i][0],
                           "max": this.control.range[i][1],
                           "step": this.control.step[i],
-                          "animate": "fast",
                           "slide": slide_handler});
         this.sliders = this.sliders.add(slider);
         div.appendChild(column);
@@ -654,136 +653,154 @@ sagecell.InteractData.Selector.prototype.py_value = function () {
     return JSON.stringify(this.value);
 }
 
-sagecell.InteractData.Slider = function (args) {
-    this.control = args["control"];
-    this.interact_id = args["interact_id"];
-    this.location = "*";
-    this.name = args["name"];
-    this.session_id = args["session_id"];
-    
-    this.control_class = "urn_uuid_"+this.interact_id;
-    this.control_id = this.control_class + "_" + this.name;
+sagecell.InteractData.Slider = sagecell.InteractData.InteractControl();
+
+sagecell.InteractData.Slider.prototype.rendered = function () {
+    var ce = sagecell.util.createElement;
+    this.continuous = this.control.subtype === "continuous" ||
+                      this.control.subtype === "continuous_range";
+    this.range = this.control.subtype === "discrete_range" ||
+                 this.control.subtype === "continuous_range";
+    var container = ce("span");
+    container.style.whitespace = "nowrap";
+    this.slider = ce("span", {"class": "sagecell_sliderControl"});
+    container.appendChild(this.slider);
+    var that = this;
+    if (this.continuous) {
+        if (this.range) {
+            this.values = this.control.default.slice();
+            $(this.slider).slider({"min": this.control.range[0],
+                                   "max": this.control.range[1],
+                                   "step": this.control.step,
+                                   "range": true,
+                                   "values": this.values,});
+            var min_text = ce("input", {"class": "sagecell_interactValueBox",
+                                        "value": this.values[0].toString()});
+            var max_text = ce("input", {"class": "sagecell_interactValueBox",
+                                        "value": this.values[1].toString()});
+            min_text.size = min_text.value.length + 1;
+            max_text.size = max_text.value.length + 1;
+            min_text.style.marginTop = max_text.style.marginTop = "3px";
+            $(this.slider).on("slide", function (event, ui) {
+                that.values = ui.values.slice()
+                min_text.value = that.values[0].toString();
+                max_text.value = that.values[1].toString();
+                min_text.size = min_text.value.length + 1;
+                max_text.size = max_text.value.length + 1;
+            });
+            $(min_text).change(function () {
+                var val = parseFloat(min_text.value);
+                if (that.control.range[0] <= val &&
+                        val <= $(that.slider).slider("option", "values")[1]) {
+                    that.values[0] = val;
+                    $(that.slider).slider("option", "values", that.values);
+                    min_text.value = val.toString();
+                } else {
+                    min_text.value = that.values[0].toString();
+                }
+                min_text.size = min_text.value.length + 1;
+            });
+            $(max_text).change(function () {
+                var val = parseFloat(max_text.value);
+                if ($(that.slider).slider("option", "values")[0] <= val &&
+                        val <= that.control.range[1]) {
+                    that.values[1] = val;
+                    $(that.slider).slider("option", "values", that.values);
+                    max_text.value = val.toString();
+                } else {
+                    max_text.value = that.values[1].toString();
+                }
+                max_text.size = max_text.value.length + 1;
+            });
+            $([min_text, max_text]).keyup(function (event) {
+                event.target.size = event.target.value.length + 1;
+            });
+            var span = ce("span", {}, [
+                document.createTextNode("("),
+                min_text,
+                document.createTextNode(", "),
+                max_text,
+                document.createTextNode(")")
+            ]);
+            span.style.fontFamily = "monospace";
+            container.appendChild(span);
+        } else {
+            this.value = this.control.default;
+            $(this.slider).slider({"min": this.control.range[0],
+                                   "max": this.control.range[1],
+                                   "step": this.control.step,
+                                   "value": this.value});
+            var textbox = ce("input", {"class": "sagecell_interactValueBox",
+                                       "value": this.value.toString()});
+            textbox.size = textbox.value.length + 1;
+            $(this.slider).on("slide", function (event, ui) {
+                textbox.value = (that.value = ui.value).toString();
+                textbox.size = textbox.value.length + 1;
+            });
+            $(textbox).change(function () {
+                var val = parseFloat(textbox.value);
+                if (that.control.range[0] <= val && val <= that.control.range[1]) {
+                    that.value = val;
+                    $(that.slider).slider("option", "value", that.value);
+                    textbox.value = val.toString();
+                } else {
+                    textbox.value = that.value.toString();
+                }
+                textbox.size = textbox.value.length + 1;
+            });
+            $(textbox).keyup(function (event) {
+                textbox.size = textbox.value.length + 1;
+            });
+            container.appendChild(textbox);
+        }
+    } else if (this.range) {
+        this.values = this.control.default.slice();
+        $(this.slider).slider({"min": this.control.range[0],
+                               "max": this.control.range[1],
+                               "step": this.control.step,
+                               "range": true,
+                               "values": this.values});
+        var span = ce("span", {}, [
+            document.createTextNode("(" + this.control.values[this.values[0]] +
+                    ", " + this.control.values[this.values[1]] + ")")
+        ]);
+        span.style.fontFamily = "monospace";
+        $(this.slider).on("slide", function (event, ui) {
+            that.values = ui.values.slice()
+            this.values = ui.values.slice();
+            $(span).text("(" + that.control.values[that.values[0]] +
+                         ", " + that.control.values[that.values[1]] + ")");
+        });
+        container.appendChild(span);
+    } else {
+        this.value = this.control.default;
+        $(this.slider).slider({"min": this.control.range[0],
+                               "max": this.control.range[1],
+                               "step": this.control.step,
+                               "value": this.value});
+        var span = ce("span", {}, [
+            document.createTextNode(this.control.values[this.value].toString())
+        ]);
+        span.style.fontFamily = "monospace";
+        $(this.slider).on("slide", function (event, ui) {
+            $(span).text(that.control.values[that.value = ui.value].toString());
+        });
+        container.appendChild(span);
+    }
+    return container;
 }
 
 sagecell.InteractData.Slider.prototype.changeHandlers = function() {
-    var handlers = ["slidestop"];
-    if (this.control["subtype"] === "continuous" || this.control["subtype"] === "continuous_range") {
-        handlers.push("change");
-    }
-    return handlers;
+    return {"slidechange": this.slider};
 }
 
-sagecell.InteractData.Slider.prototype.changes = function() {
-    var subtype = this.control["subtype"],
-    control_out = $(this.location),
-    slider, max, min, val, input, box;
-
-    if (subtype === "continuous") {
-        slider = control_out.find("#"+this.control_id);
-        box = control_out.find("#"+this.control_id+"_value");
-        max = slider.slider("option","max");
-        min = slider.slider("option","min");
-        val = slider.slider("option","value");
-        input = box.val();
-
-        if (isNaN(input) || input === "") {
-            input = val;
-        } else if (input < min) {
-            input = min;
-        } else if (input > max) {
-            input = max;
-        }
-
-        box.val(input);
-        slider.slider("option","value",input);
-        return String(input);
-    } else if (subtype === "continuous_range") {
-        input = String("["+control_out.find("#"+this.control_id+"_value").val()+"]");
-        control_out.find("#"+this.control_id).slider("option","values",JSON.parse(input));
-        return input;
-    } else if (subtype === "discrete") {
-        return String(control_out.find("#"+this.control_id+"_index").val());
-    } else if (subtype === "discrete_range") {
-        return String("["+control_out.find("#"+this.control_id+"_index").val()+"]");
+sagecell.InteractData.Slider.prototype.py_value = function () {
+    if (this.range) {
+            return "(" + JSON.stringify(this.values[0]) + "," +
+                         JSON.stringify(this.values[1]) + ")";
+    } else {
+        return JSON.stringify(this.value);
     }
-}
-
-sagecell.InteractData.Slider.prototype.html = function() {
-    return "<span class='sagecell_var_"+this.name+"' style='whitespace:nowrap'>"+
-        "<span class='" + this.control_class + " sagecell_sliderControl' id='" + this.control_id + "'></span>"+
-        "<input type='text' class='" + this.control_class + " sagecell_interactValueBox' id='" + this.control_id + "_value' style='border:none'>"+
-        "<input type='text' class='" + this.control_class +"' id='" + this.control_id + "_index' style='display:none'></span>";
-}
-
-sagecell.InteractData.Slider.prototype.finishRender = function(location) {
-    this.location = location;
-
-    var slider_config = {
-        min:this.control["range"][0],
-        max:this.control["range"][1],
-        step:this.control["step"]
-    },
-    default_value = this.control["default"],
-    subtype = this.control["subtype"],
-    control_out = $(this.location);
-
-    if (!this.control["display_value"]) {
-        control_out.find("#"+this.control_id+"_value").css("display","none");
-    }
-    
-    if (subtype === "continuous") {
-        control_out.find("#"+this.control_id+"_value")
-            .val(default_value)
-            .attr("size", String(default_value).length);
-        slider_config["slide"] = function(event, ui) {
-            var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-            value_box.attr("size", String(ui.value).length)
-                .val(ui.value);
-        }
-        slider_config["value"] = default_value;
-    } else if (subtype === "continuous_range") {
-        control_out.find("#"+this.control_id+"_value")
-            .val(default_value)
-            .attr("size", String(default_value).length);
-        slider_config["range"] = true;
-        slider_config["slide"] = function(event, ui) {
-            var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-            value_box.attr("size", String(ui.values).length)
-                .val(ui.values);
-        }
-        slider_config["values"] = default_value;
-    } else if (subtype === "discrete") {
-        var values = this.control["values"];
-        control_out.find("#"+this.control_id+"_value")
-            .attr({"readonly": "readonly",
-                   "size": String(values[default_value]).size})
-            .val(values[default_value]);
-        control_out.find("#"+this.control_id+"_index").val(default_value);
-        slider_config["slide"] = function(event,ui) {
-            var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-            value_box.attr("size", String(values[ui.value]).length)
-                .val(values[ui.value]);
-            control_out.find("#" + ui.handle.offsetParent.id + "_index").val(ui.value);
-        }
-        slider_config["value"] = default_value;
-    } else if (subtype === "discrete_range") {
-        var values = this.control["values"];
-        control_out.find("#"+this.control_id+"_value")
-            .attr({"readonly": "readonly",
-                   "size": String([values[default_value[0]],
-                                   values[default_value[1]]]).length})
-            .val([values[default_value[0]], values[default_value[1]]]);
-        control_out.find("#"+this.control_id+"_index").val(default_value);
-        slider_config["range"] = true;
-        slider_config["slide"] = function(event,ui) {
-            var value_box = control_out.find("#"+ui.handle.offsetParent.id+"_value");
-            value_box.attr("size", String([values[ui.values[0]],values[ui.values[1]]]).length)
-                .val([values[ui.values[0]], values[ui.values[1]]]);
-            control_out.find("#" + ui.handle.offsetParent.id + "_index").val(ui.values);
-        }
-        slider_config["values"] = default_value;
-    }
-    control_out.find("#"+this.control_id).slider(slider_config);
 }
 
 sagecell.InteractData.control_types = {

@@ -726,7 +726,7 @@ class DiscreteSlider(InteractControl):
                 'label':self.label}
     def adapter(self,v, globs):
         if self.range_slider:
-            return [self.values[int(i)] for i in v]
+            return tuple(self.values[int(i)] for i in v)
         else:
             return self.values[int(v)]
 
@@ -740,7 +740,7 @@ class ContinuousSlider(InteractControl):
         slider defaults to its minimum
     :arg tuple interval: range of the slider, in the form ``(min, max)``
     :arg int steps: number of steps the slider should have between min and max
-    :arg Number stepsize: size of step for the slider. If both step and stepsized are specified, stepsize takes precedence so long as it is valid.
+    :arg Number stepsize: size of step for the slider. If both step and stepsize are specified, stepsize takes precedence so long as it is valid.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
     :arg str label: the label of the control, ``""`` for no label, and
@@ -756,7 +756,7 @@ class ContinuousSlider(InteractControl):
         
         if self.range_slider:
             self.subtype = "continuous_range"
-            self.default = default if default is not None and len(default) == 2 else [self.interval[0], self.interval[1]]
+            self.default = default if default is not None and len(default) == 2 else (self.interval[0], self.interval[1])
             for i in range(2):
                 if not (self.interval[0] <= self.default[i] <= self.interval[1]):
                     self.default[i] = self.interval[i]
@@ -783,6 +783,7 @@ class ContinuousSlider(InteractControl):
                 'display_value':self.display_value,
                 'default':self.default_return,
                 'step':self.stepsize,
+                'range':self.interval,
                 'raw':True,
                 'label':self.label}
 
