@@ -4,11 +4,12 @@ from zmq import ssh
 import sys
 
 class Receiver:
-    def __init__(self):
+    def __init__(self, filename):
         self.context = zmq.Context()
-        self.km = UntrustedMultiKernelManager()
+        self.km = UntrustedMultiKernelManager(filename)
         self.rep = self.context.socket(zmq.REP)
         self.port = self.rep.bind_to_random_port("tcp://127.0.0.1")
+        self.filename = filename
         sys.stdout.write(str(self.port))
         sys.stdout.flush()
 
@@ -48,7 +49,8 @@ class Receiver:
 
     def start_kernel(self, msg_content):
         """Handler for start_kernel messages."""
-        reply_content = self.km.start_kernel()
+        resource_limits = msg_content.get("resource_limits")
+        reply_content = self.km.start_kernel(resource_limits=resource_limits)
         return self._form_message(reply_content)
 
     def kill_kernel(self, msg_content):
@@ -64,12 +66,7 @@ class Receiver:
     
     def purge_kernels(self, msg_content):
         """Handler for purge_kernels messages."""
-        failures = []
-        for kernel_id in self.km._kernels:
-            success = self.km.kill_kernel(kernel_id)
-            if not success:
-                failures.append(kernel_id)
-
+        failures = self.km.purge_kernels()
         reply_content = {"status": "All kernels killed!"}
         success = (len(failures) == 0)
         if not success:
@@ -97,5 +94,12 @@ class Receiver:
         return self.purge_kernels(msg_content)
 
 
-receiver = Receiver()
-receiver.start()
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    import logging
+    import uuid
+    logging.basicConfig(filename=filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+    logging.debug('started')
+    receiver = Receiver(filename)
+    receiver.start()
+    logging.debug('ended')
