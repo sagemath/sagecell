@@ -6,13 +6,18 @@ from zmq import ssh
 import paramiko
 import os
 
+import sender
+
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self, computers = None):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host:"", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
-        self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
+        self._clients = {} #comp_id: {"ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
+
+        self._sender = sender.AsyncSender() # Manages asynchronous communication
+
         self.context = zmq.Context()
 
         if computers is not None:
@@ -58,8 +63,6 @@ class TrustedMultiKernelManager(object):
         comp_id = str(uuid.uuid4())
         cfg = dict(defaults.items() + config.items())
 
-        req = self.context.socket(zmq.REQ)
-
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
         logfile = cfg.get("log_file")
         if logfile is None:
@@ -86,19 +89,11 @@ class TrustedMultiKernelManager(object):
             print "Computer %s did not respond, connecting failed!"%comp_id
 
         else:
-            addr = "tcp://%s:%s"%(cfg["host"], port)
-            req.connect(addr)
-            
-            req.send("handshake")
-            response = req.recv()
+            comp_id = self._sender.register_computer(cfg["host"], port)
 
-            if(response == "handshake"):
-                self._clients[comp_id] = {"socket": req, "ssh": client}
-                self._comps[comp_id] = cfg
-                print "ZMQ Connection with computer %s at port %s established." %(comp_id, port)
-            else:
-                print "ZMQ Connection with computer %s at port %s failed!" %(comp_id, port)
-
+            self._clients[comp_id] = {"ssh": client}
+            self._comps[comp_id] = cfg
+            print "ZMQ Connection with computer %s at port %s established." %(comp_id, port)
             retval = comp_id
 
         return retval
@@ -121,9 +116,9 @@ class TrustedMultiKernelManager(object):
 
             :arg str comp_id: the id of the computer whose kernels you want to purge
         """
-        req = self._clients[comp_id]["socket"]
-        req.send_pyobj({"type": "purge_kernels"})
-        print req.recv_pyobj()
+        reply = self._sender.send_msg({"type": "purge_kernels"}, comp_id)
+
+        print reply
         for i in self._comps[comp_id]["kernels"].keys():
             del self._kernels[i]
         self._comps[comp_id]["kernels"] = {}
@@ -139,9 +134,8 @@ class TrustedMultiKernelManager(object):
         :arg str comp_id: the id of the computer that you want to remove
         """
         ssh_client = self._clients[comp_id]["ssh"]
-        req = self._clients[comp_id]["socket"]
-        req.send_pyobj({"type": "remove_computer"})
-        print req.recv_pyobj()
+        reply = self._sender.send_msg({"type": "remove_computer"}, comp_id)
+        print reply
         for i in self._comps[comp_id]["kernels"].keys():
             del self._kernels[i]
         ssh_client.close()
@@ -153,11 +147,10 @@ class TrustedMultiKernelManager(object):
         :arg str kernel_id: the id of the kernel you want restarted
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        req = self._clients[comp_id]["socket"]
-        req.send_pyobj({"type":"restart_kernel",
-                        "content":{"kernel_id":kernel_id}})
-        response = req.recv_pyobj()
-        print response
+        reply = self._sender.send_msg({"type": "restart_kernel",
+                                       "content": {"kernel_id": kernel_id}},
+                                      comp_id)
+        print reply
 
     def interrupt_kernel(self, kernel_id):
         """ Interrupts a given kernel. 
@@ -165,11 +158,9 @@ class TrustedMultiKernelManager(object):
         :arg str kernel_id: the id of the kernel you want interrupted
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        req = self._clients[comp_id]["socket"]
-        req.send_pyobj({"type":"interrupt_kernel",
-                        "content": {"kernel_id": kernel_id}})
-
-        reply = req.recv_pyobj()
+        reply = self._sender.send_msg({"type": "interrupt_kerenl",
+                                       "content": {"kernel_id": kernel_id}},
+                                      comp_id)
 
         if reply["type"] == "success":
             print "Kernel %s interrupted."%kernel_id
@@ -183,10 +174,8 @@ class TrustedMultiKernelManager(object):
         :rtype: string
         """
         comp_id = self._find_open_computer()
-        req = self._clients[comp_id]["socket"]
         resource_limits = self._comps[comp_id].get("resource_limits")
-        req.send_pyobj({"type":"start_kernel", "content": {"resource_limits": resource_limits}})
-        reply = req.recv_pyobj()
+        reply = self._sender.send_msg({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id)
         if reply["type"] == "success":
             reply_content = reply["content"]
             kernel_id = reply_content["kernel_id"]
@@ -205,14 +194,12 @@ class TrustedMultiKernelManager(object):
         :arg str kernel_id: the id of the kernel you want to kill
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-
-        req = self._clients[comp_id]["socket"]
-        req.send_pyobj({"type":"kill_kernel",
-                        "content": {"kernel_id": kernel_id}})
         print "Killing Kernel ::: %s at %s"%(kernel_id, (comp_id))
-        response = req.recv_pyobj()
+        reply = self._sender.send_msg({"type":"kill_kernel",
+                                       "content": {"kernel_id": kernel_id}},
+                                      comp_id)
         
-        if (response["type"] == "error"):
+        if (reply["type"] == "error"):
             print "Error ending kernel!"
         else:
             del self._kernels[kernel_id]
@@ -286,36 +273,33 @@ class TrustedMultiKernelManager(object):
 
 
 if __name__ == "__main__":
-    try:
-        import misc
-        config = misc.Config()
+    import misc
+    config = misc.Config()
 
-        initial_comps = config.get_config("computers")
+    initial_comps = config.get_config("computers")
 
-        t = TrustedMultiKernelManager(computers = initial_comps)
-        for i in xrange(5):
-            t.new_session()
-
-        vals = t._comps.values()
-        for i in xrange(len(vals)):
-            print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
-
-        print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+    t = TrustedMultiKernelManager(computers = initial_comps)
+    for i in xrange(5):
+        t.new_session()
         
-        y = t.get_kernel_ids()
-        x = t._comps.keys()
+    vals = t._comps.values()
+    for i in xrange(len(vals)):
+        print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
 
-        t.remove_computer(x[0])
+    print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+        
+    y = t.get_kernel_ids()
+    x = t._comps.keys()
+
+    t.remove_computer(x[0])
             
-        vals = t._comps.values()
-        for i in xrange(len(vals)):
-            print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
+    vals = t._comps.values()
+    print vals
+    for i in xrange(len(vals)):
+        print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
 
-        print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
-    except:
-        # print "errorrrr"
-        raise
-    finally:
-        #for the moment to ensure all receivers are killed...
-        for i in t._comps.keys():
-           t.remove_computer(i)
+    print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+
+    # Kill all kernels
+    for i in t._comps.keys():
+        t.remove_computer(i)
