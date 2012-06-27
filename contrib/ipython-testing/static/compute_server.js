@@ -678,15 +678,15 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                         "value": this.values[0].toString()});
             var max_text = ce("input", {"class": "sagecell_interactValueBox",
                                         "value": this.values[1].toString()});
-            min_text.size = min_text.value.length + 1;
-            max_text.size = max_text.value.length + 1;
+            min_text.size = min_text.value.length;
+            max_text.size = max_text.value.length;
             min_text.style.marginTop = max_text.style.marginTop = "3px";
             $(this.slider).on("slide", function (event, ui) {
                 that.values = ui.values.slice()
                 min_text.value = that.values[0].toString();
                 max_text.value = that.values[1].toString();
-                min_text.size = min_text.value.length + 1;
-                max_text.size = max_text.value.length + 1;
+                min_text.size = min_text.value.length;
+                max_text.size = max_text.value.length;
             });
             $(min_text).change(function () {
                 var val = parseFloat(min_text.value);
@@ -714,6 +714,12 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
             });
             $([min_text, max_text]).keyup(function (event) {
                 event.target.size = event.target.value.length + 1;
+            });
+            $([min_text, max_text]).focus(function (event) {
+                event.target.size = event.target.value.length + 1;
+            });
+            $([min_text, max_text]).blur(function (event) {
+                event.target.size = event.target.value.length;
             });
             var span = ce("span", {}, [
                 document.createTextNode("("),
