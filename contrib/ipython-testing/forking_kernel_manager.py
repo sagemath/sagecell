@@ -135,16 +135,19 @@ def html_msg(html, session):
     """
 
     msg_id = str(uuid.uuid4())
-    return {"header": {"msg_id": msg_id,
-                       "username": session.username,
-                       "session": session.session,
-                       "msg_type": "extension"},
-            "msg_id": msg_id,
-            "msg_type": "extension",
-            "parent_header": getattr(sys.stdout, "parent_header", {}),
-            "content": {"msg_type": "display_data",
-                        "content": {"type": "text/html",
-                                    "data": '<span style="color:black">%s</span>' % html}}}
+    msg = {"header": {"msg_id": msg_id,
+                      "username": session.username,
+                      "session": session.session,
+                      "msg_type": "extension"},
+           "msg_id": msg_id,
+           "msg_type": "extension",
+           "parent_header": getattr(sys.stdout, "parent_header", {}),
+           "content": {"msg_type": "display_data",
+                       "content": {"type": "text/html",
+                                   "data": '<span style="color:black">%s</span>' % html}}}
+    if hasattr(sys.stdout, "interact_id"):
+        msg["content"]["interact_id"] = sys.stdout.interact_id
+    return msg
 
 def eval_func(session, pub_socket, html):
     """
