@@ -118,85 +118,24 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
 sagecell.Session.prototype.handle_output = function (msg_type, content) {
     var block_id = content.interact_id || null;
     // Handle each stream type.  This should probably be separated out into different functions.
-    switch(msg_type) {
-    case 'stream':
+    if (msg_type === "stream") {
         var new_pre = !$(this.output_blocks[block_id]).children().last().hasClass("sagecell_" + content.name);
         var out = this.output("<pre class='sagecell_" + content.name + "'></pre>", block_id, new_pre);
         out.text(out.text() + content.data);
-        break;
-
-    case 'pyout':
+    } else if (msg_type === "pyout") {
         this.output("<pre class='sagecell_pyout'></pre>", block_id).text(content.data['text/plain']);
-        break;
-/*
-    case 'display_data':
-        var filepath=sagecell.$URL.root+'files/'+id+'/', html;
-
-        if(msg.content.data['image/svg+xml']!==undefined) {
-            this.output('<embed  class="sagecell_svgImage" type="image/svg+xml">'+msg.content.data['image/svg+xml']+'</embed>',output_block);
-        }
-        if(msg.content.data['text/html']!==undefined) {
-            html = msg.content.data['text/html'].replace(/cell:\/\//gi, filepath);
-            this.output('<div>'+html+'</div>',output_block);
-        }
-        if(msg.content.data['text/filename']!==undefined) {
-            this.output('<img src="'+filepath+msg.content.data['text/filename']+'" />',output_block);
-        }
-        if(msg.content.data['image/png']!==undefined) {
-            //console.log('making png img with data in src');
-            this.output('<img src="'+msg.content.data['image/png']+'" />',output_block);
-        }
-        if(msg.content.data['application/x-jmol']!==undefined) {
-            //console.log('making jmol applet');
-            jmolSetDocument(false);
-            this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+msg.content.data['application/x-jmol']+'";\n script SCRIPT;\n'),output_block);
-        }
-        
-        break;
-*/
-    case 'pyerr':
+    } else if (msg_type === "pyerr") {
         this.output("<pre></pre>", block_id)
             .html(IPython.utils.fixConsole(content.traceback.join("\n")));
-        break;
-    case 'extension':
-        switch(content.msg_type) { /*
-        case "files":
-            output_block = "files_"+this.session_id;
-            this.replace_output[output_block] = true;
-            var files = user_msg.content.files;
-            var html="<div>\n";
-            for(var j = 0, j_max = files.length; j < j_max; j++) {
-                if (this.files[files[j]] !== undefined) {
-                    this.files[files[j]]++;
-                } else {
-                    this.files[files[j]] = 0;
-                }
-            }
-            for (j in this.files) {
-                //TODO: escape filenames and id
-                html+='<a href="'+sagecell.$URL.root+'files/'+id+'/'+j+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
-            }
-            html+="</div>";
-            this.output(html,output_block).effect("pulsate", {times:1}, 500);
-            break;
-        case "session_end":
-            $(document.getElementById("output_" + this.session_id)).removeClass("sagecell_active");
-            // Unbinds interact change handlers
-            for (var i in this.eventHandlers) {
-                for (var j in this.eventHandlers[i]) {
-                    $(i).die(this.eventHandlers[i][j]);
-                }
-            }
-            this.clearQuery();
-            this.sessionContinue = false;
-            break; */
-        case "interact_prepare":
+    } else if (msg_type === "extension") {
+        if (content.msg_type === "interact_prepare") {
             new sagecell.InteractCell(this, content.content, block_id);
-            break;
+        } else if (content.msg_type === "display_data") {
+            if (content.content.type === "text/html") {
+                this.output("<div></div>", block_id).html(content.content.data);
+            }
         }
-        break;
     }
-
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
     // TODO: this is really too much, as it typesets *all* of the session outputs
