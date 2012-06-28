@@ -783,7 +783,7 @@ class ContinuousSlider(InteractControl):
                 'display_value':self.display_value,
                 'default':self.default_return,
                 'step':self.stepsize,
-                'range':self.interval,
+                'range':[float(i) for i in self.interval],
                 'raw':True,
                 'label':self.label}
 
