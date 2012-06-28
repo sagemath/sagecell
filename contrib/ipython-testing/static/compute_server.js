@@ -116,8 +116,11 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
 };
 
 sagecell.Session.prototype.handle_output = function (msg_type, content) {
-    var block_id = content.interact_id || null;
-    // Handle each stream type.  This should probably be separated out into different functions.
+	var block_id = null;
+	if (content.metadata !== undefined && content.metadata.interact_id !== undefined) {
+		block_id = content.metadata.interact_id;
+	}
+	// Handle each stream type.  This should probably be separated out into different functions.
     if (msg_type === "stream") {
         var new_pre = !$(this.output_blocks[block_id]).children().last().hasClass("sagecell_" + content.name);
         var out = this.output("<pre class='sagecell_" + content.name + "'></pre>", block_id, new_pre);
