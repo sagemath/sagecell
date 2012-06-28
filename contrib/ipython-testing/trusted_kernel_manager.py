@@ -5,7 +5,6 @@ from IPython.zmq.session import Session
 from zmq import ssh
 import paramiko
 import os
-import time
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
@@ -160,10 +159,9 @@ class TrustedMultiKernelManager(object):
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
         req = self._clients[comp_id]["socket"]
-        req.send_pyobj({"type":"restart_kernel",
-                        "content":{"kernel_id":kernel_id}})
-        response = req.recv_pyobj()
-        print response
+        req.send_pyobj({"type": "restart_kernel",
+                        "content": {"kernel_id": kernel_id}})
+        print req.recv_pyobj()
 
     def interrupt_kernel(self, kernel_id):
         """ Interrupts a given kernel. 

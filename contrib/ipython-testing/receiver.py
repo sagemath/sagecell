@@ -86,7 +86,7 @@ class Receiver:
         success = self.km.interrupt_kernel(kernel_id)
         if not success:
             reply_content["status"] = "Could not interrupt kernel %s!"%(kernel_id)
-        return self._form_message(repy_content, error=(not success))
+        return self._form_message(reply_content, error=(not success))
 
     def remove_computer(self, msg_content):
         """Handler for remove_computer messages."""

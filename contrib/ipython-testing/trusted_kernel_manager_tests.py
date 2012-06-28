@@ -304,7 +304,28 @@ class TestTrustedMultiKernelManager:
         y = f.readline()
         assert_equal(y, "")
         
+    def test_interrupt_kernel_success(self): # depends on add_computer, new_session
+        self.a = trusted_kernel_manager.TrustedMultiKernelManager()
 
+        import config as conf
+        sage = conf.sage
+        config = {"host": "localhost",
+                          "username": None,
+                          "python": sage + " -python",
+                          "log_file": None,
+                          "max": 15}
+        x = self.a.add_computer(config)
+        kern1 = self.a.new_session()
+
+        with opened(testlog, "w") as f:
+            with stdout_redirected(f):
+                self.a.interrupt_kernel(kern1)
+
+        f = open(testlog, "r")
+        y = f.readline()
+        assert_equal(" interrupted." in y, True)
+        assert_equal("not" in y, False)
+        
 
 
 
