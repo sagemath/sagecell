@@ -78,7 +78,7 @@ import io
 import sys
 from functools import wraps
 
-interacts={}
+__interacts={}
 
 class InteractStream(io.StringIO):
     u"""
@@ -120,7 +120,7 @@ class InteractStream(io.StringIO):
         self.session.send(self.pub_socket, msg)
 
 def update_interact(interact_id, control_vals):
-    interact_info = interacts[interact_id]
+    interact_info = __interacts[interact_id]
     kwargs = interact_info["state"].copy()
     controls = interact_info["controls"]
     for var,value in control_vals.items():
@@ -128,7 +128,7 @@ def update_interact(interact_id, control_vals):
         kwargs[var] = c.adapter(value, interact_info["globals"])
         if c.preserve_state:
             interact_info["state"][var]=kwargs[var]
-    interacts[interact_id]["function"](control_vals=kwargs)
+    __interacts[interact_id]["function"](control_vals=kwargs)
 
 def decorator_defaults(func):
     """
@@ -350,11 +350,12 @@ def interact_func(session, pub_socket):
             returned=f(**control_vals)
             sys.stdout, sys.stderr = old_streams
             return returned
-        interacts[interact_id] = {"function": adapted_f,
+        # update global __interacts
+        __interacts[interact_id] = {"function": adapted_f,
                                   "controls": dict(zip(names, controls)),
                                   "state": dict(zip(names,[c.adapter(c.default, f.func_globals) for c in controls])),
                                   "globals": f.func_globals}
-        adapted_f(interacts[interact_id]["state"].copy())
+        adapted_f(__interacts[interact_id]["state"].copy())
         return f
     return interact
 
