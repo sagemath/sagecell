@@ -181,6 +181,20 @@ def decorator_defaults(func):
             return _
     return my_wrap
 
+@contextmanager
+def stdouterr_redirected(new_stdout, new_stderr):
+    """
+    Redirect stdout and stderr during context.
+    
+    based on from http://www.python.org/dev/peps/pep-0343/, Example 5
+    """
+    old_streams = (sys.stdout, sys.stderr)
+    sys.stdout, sys.stderr = new_stdout, new_stderr
+    try:
+        yield None
+    finally:
+        sys.stdout, sys.stderr = old_streams
+
 def interact_func(session, pub_socket):
     """
     Create a function to be used as ``interact`` in the user namespace,
@@ -341,14 +355,14 @@ def interact_func(session, pub_socket):
                                        "new_interact_id": interact_id,
                                        "layout": layout}}}
         if hasattr(sys.stdout, "interact_id"):
+            # this interact is inside of another interact; make sure message reflects that
             msg["content"]["interact_id"] = sys.stdout.interact_id
         session.send(pub_socket, msg)
         def adapted_f(control_vals):
-            old_streams = (sys.stdout, sys.stderr)
-            sys.stdout = InteractStream(session, pub_socket, "stdout", interact_id, getattr(sys.stdout, "parent_header", {}))
-            sys.stderr = InteractStream(session, pub_socket, "stderr", interact_id, getattr(sys.stderr, "parent_header", {}))
-            returned=f(**control_vals)
-            sys.stdout, sys.stderr = old_streams
+            new_stdout = InteractStream(session, pub_socket, "stdout", interact_id, getattr(sys.stdout, "parent_header", {}))
+            new_stderr = InteractStream(session, pub_socket, "stderr", interact_id, getattr(sys.stderr, "parent_header", {}))
+            with stdouterr_redirected(new_stdout, new_stderr):
+                returned=f(**control_vals)
             return returned
         # update global __interacts
         __interacts[interact_id] = {"function": adapted_f,
