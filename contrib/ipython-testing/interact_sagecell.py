@@ -327,8 +327,6 @@ def interact_func(session, pub_socket):
         else:
             layout["top_center"] = [n for n in names]
 
-        # UUID would be better, but we can't use it because of a
-        # bug in Python 2.6 on Mac OS X (http://bugs.python.org/issue8621)
         interact_id=str(uuid.uuid4())
         msg_id = str(uuid.uuid4())
         msg = {"header": {"msg_id": msg_id,
