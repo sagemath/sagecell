@@ -74,51 +74,10 @@ Recursively nested interact::
 """
 
 import uuid
-import io
 import sys
-from functools import wraps
-from contextlib import contextmanager
+from misc import stream_metadata, decorator_defaults
 
 __interacts={}
-
-class InteractStream(io.StringIO):
-    u"""
-    A file-like object that can replace stdout and stderr, which will cause
-    any output to be sent over \xd8MQ with an ``interact_id`` field.
-
-    :arg IPython.zmq.session.Session session: an IPython session
-    :arg zmq.Socket pub_socket: the \xd8MQ PUB socket used for the IOPUB stream
-    :arg str name: the name of the stream (``"stdout"`` or ``"stderr"``)
-    :arg str interact_id: a unique identifier for the interact associated
-        with this interact
-    :arg dict parent_header: a dictionary to use in the messages'
-        ``parent_header`` field
-    """
-    def __init__(self, session, pub_socket, name, interact_id, parent_header):
-        self.session = session
-        self.pub_socket = pub_socket
-        self.name = name
-        self.interact_id = interact_id
-        self.parent_header = parent_header
-
-    def write(self, output):
-        """
-        Write to the stream.
-
-        :arg str output: the string to write
-        """
-        msg_id = str(uuid.uuid4())
-        msg = {"header": {"msg_id": msg_id,
-                          "username": self.session.username,
-                          "session": self.session.session,
-                          "msg_type": "stream"},
-               "msg_id": msg_id,
-               "msg_type": "stream",
-               "parent_header": self.parent_header,
-               "content": {"name": self.name,
-                           "data": output,
-                           "interact_id": self.interact_id}}  
-        self.session.send(self.pub_socket, msg)
 
 def update_interact(interact_id, control_vals):
     interact_info = __interacts[interact_id]
@@ -131,74 +90,6 @@ def update_interact(interact_id, control_vals):
             interact_info["state"][var]=kwargs[var]
     __interacts[interact_id]["function"](control_vals=kwargs)
 
-def decorator_defaults(func):
-    """
-    This function allows a decorator to have default arguments.
-
-    Normally, a decorator can be called with or without arguments.
-    However, the two cases call for different types of return values.
-    If a decorator is called with no parentheses, it should be run
-    directly on the function.  However, if a decorator is called with
-    parentheses (i.e., arguments), then it should return a function
-    that is then in turn called with the defined function as an
-    argument.
-
-    This decorator allows us to have these default arguments without
-    worrying about the return type.
-
-    EXAMPLES::
-    
-        sage: from sage.misc.decorators import decorator_defaults
-        sage: @decorator_defaults
-        ... def my_decorator(f,*args,**kwds):
-        ...     print kwds
-        ...     print args
-        ...     print f.__name__
-        ...       
-        sage: @my_decorator
-        ... def my_fun(a,b):
-        ...     return a,b
-        ...  
-        {}
-        ()
-        my_fun
-        sage: @my_decorator(3,4,c=1,d=2)
-        ... def my_fun(a,b):
-        ...     return a,b
-        ...   
-        {'c': 1, 'd': 2}
-        (3, 4)
-        my_fun
-    """
-    from inspect import isfunction
-    @wraps(func)
-    def my_wrap(*args,**kwargs):
-        if len(kwargs)==0 and len(args)==1 and isfunction(args[0]):
-            # call without parentheses
-            return func(*args)
-        else:
-            def _(f):
-                return func(f, *args, **kwargs)
-            return _
-    return my_wrap
-
-@contextmanager
-def stream_metadata(metadata):
-    streams = {'stdout': sys.stdout, 'stderr': sys.stderr}
-    old_metadata={}
-    for k,stream in streams.items():
-        # flush out messages that need old metadata before we update the 
-        # metadata dictionary (since update actually modifies the dictionary)
-        stream.flush()
-        new_metadata = stream.metadata
-        old_metadata[k] = new_metadata.copy()
-        new_metadata.update(metadata)
-    try:
-        yield None
-    finally:
-        for k,stream in streams.items():
-            # set_metadata does the flush for us
-            stream.set_metadata(old_metadata[k])
 
 def interact_func(session, pub_socket):
     """
