@@ -77,6 +77,7 @@ import uuid
 import io
 import sys
 from functools import wraps
+from contextlib import contextmanager
 
 __interacts={}
 
@@ -182,18 +183,22 @@ def decorator_defaults(func):
     return my_wrap
 
 @contextmanager
-def stdouterr_redirected(new_stdout, new_stderr):
-    """
-    Redirect stdout and stderr during context.
-    
-    based on from http://www.python.org/dev/peps/pep-0343/, Example 5
-    """
-    old_streams = (sys.stdout, sys.stderr)
-    sys.stdout, sys.stderr = new_stdout, new_stderr
+def stream_metadata(metadata):
+    streams = {'stdout': sys.stdout, 'stderr': sys.stderr}
+    old_metadata={}
+    for k,stream in streams.items():
+        # flush out messages that need old metadata before we update the 
+        # metadata dictionary (since update actually modifies the dictionary)
+        stream.flush()
+        new_metadata = stream.metadata
+        old_metadata[k] = new_metadata.copy()
+        new_metadata.update(metadata)
     try:
         yield None
     finally:
-        sys.stdout, sys.stderr = old_streams
+        for k,stream in streams.items():
+            # set_metadata does the flush for us
+            stream.set_metadata(old_metadata[k])
 
 def interact_func(session, pub_socket):
     """
@@ -354,14 +359,12 @@ def interact_func(session, pub_socket):
                            "content": {"controls": dict(zip(names, (control.message() for control in controls))),
                                        "new_interact_id": interact_id,
                                        "layout": layout}}}
-        if hasattr(sys.stdout, "interact_id"):
+        if 'interact_id' in sys.stdout.metadata:
             # this interact is inside of another interact; make sure message reflects that
             msg["content"]["interact_id"] = sys.stdout.interact_id
         session.send(pub_socket, msg)
         def adapted_f(control_vals):
-            new_stdout = InteractStream(session, pub_socket, "stdout", interact_id, getattr(sys.stdout, "parent_header", {}))
-            new_stderr = InteractStream(session, pub_socket, "stderr", interact_id, getattr(sys.stderr, "parent_header", {}))
-            with stdouterr_redirected(new_stdout, new_stderr):
+            with stream_metadata({'interact_id': interact_id}):
                 returned=f(**control_vals)
             return returned
         # update global __interacts
