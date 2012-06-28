@@ -252,7 +252,7 @@ def interact_func(session, pub_socket):
                                        "layout": layout}}}
         if 'interact_id' in sys.stdout.metadata:
             # this interact is inside of another interact; make sure message reflects that
-            msg["content"]["interact_id"] = sys.stdout.interact_id
+            msg["content"]["interact_id"] = sys.stdout.metadata['interact_id']
         session.send(pub_socket, msg)
         def adapted_f(control_vals):
             with stream_metadata({'interact_id': interact_id}):
