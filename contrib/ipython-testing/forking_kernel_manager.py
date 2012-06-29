@@ -40,6 +40,7 @@ class ForkingKernelManager(object):
         user_ns = ka.kernel.shell.user_ns
         user_ns.update(sage_dict)
         user_ns.update(interact.classes)
+        user_ns.update({"__kernel_timeout__": 0.0})
         sage_code = """
 sage.misc.session.init()
 
