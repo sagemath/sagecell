@@ -64,6 +64,6 @@ $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
 
 $(jmol-js): $(jmol-sage)
-	rm $(jmol) -f
+	rm -f $(jmol)
 	ln -s $(jmol-sage) $(jmol)
 
