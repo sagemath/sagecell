@@ -233,7 +233,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +        if fig_tight is True:
 +            figure.savefig(filename, dpi=dpi, bbox_inches='tight',
 +                bbox_extra_artists=self.__bbox_extra_artists,
-+                transparent=transparent)
++                transparent=transparent, format=format)
          else:
 -            figure = self.matplotlib(**options)
 -            # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension.
@@ -258,7 +258,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 -                           transparent=transparent)
 -
 +            figure.savefig(filename, dpi=dpi,
-+                       transparent=transparent)
++                       transparent=transparent, format=format)
  
  class GraphicsArray(SageObject):
      """
