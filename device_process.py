@@ -599,7 +599,12 @@ def execProcess(session, message_queue, output_handler, resource_limits, sysargs
             except:
                 (etype, evalue, etb) = sys.exc_info()
 
-                from IPython import ultraTB
+                try:
+                    from IPython.core import ultratb as ultraTB
+                except ImportError:
+                    # Workaround for IPython 0.10
+                    from IPython import ultraTB
+
                 err = ultraTB.VerboseTB(include_vars = 0, tb_offset = 1)
 
                 try: # Check whether the exception has any further details
