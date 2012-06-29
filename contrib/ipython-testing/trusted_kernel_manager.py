@@ -10,7 +10,7 @@ class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self, computers = None):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
-        self._comps = {} #comp_id: {"host": "", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float}
+        self._comps = {} #comp_id: {"host:"", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
         self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
         self.context = zmq.Context()
@@ -61,14 +61,17 @@ class TrustedMultiKernelManager(object):
         req = self.context.socket(zmq.REQ)
 
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
-        code = "%s '%s/receiver.py'"%(cfg['python'], os.getcwd())
+        logfile = cfg.get("log_file")
+        if logfile is None:
+            logfile = os.devnull
+        code = "%s '%s/receiver.py' '%s'"%(cfg['python'], os.getcwd(), logfile)
         print "executing %s"%code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
         # Wait for untrusted side to respond with the bound port using paramiko channels
         # Another option would be to have a short-lived ZMQ socket bound on the trusted
-        # side and have the untrusteed side connect to that and send the port
+        # side and have the untrusted side connect to that and send the port
         failure = True
         from time import sleep
         for i in xrange(10):
@@ -80,7 +83,7 @@ class TrustedMultiKernelManager(object):
             
         retval = None
         if failure:
-            print "Computer %s did not respond, connected failed!"%comp_id
+            print "Computer %s did not respond, connecting failed!"%comp_id
 
         else:
             addr = "tcp://%s:%s"%(cfg["host"], port)
@@ -181,11 +184,9 @@ class TrustedMultiKernelManager(object):
         """
         comp_id = self._find_open_computer()
         req = self._clients[comp_id]["socket"]
-
-        req.send_pyobj({"type":"start_kernel"})
-
+        resource_limits = self._comps[comp_id].get("resource_limits")
+        req.send_pyobj({"type":"start_kernel", "content": {"resource_limits": resource_limits}})
         reply = req.recv_pyobj()
-
         if reply["type"] == "success":
             reply_content = reply["content"]
             kernel_id = reply_content["kernel_id"]
@@ -291,8 +292,7 @@ if __name__ == "__main__":
 
         initial_comps = config.get_config("computers")
 
-        t = TrustedMultiKernelManager(comps = initial_comps)
-
+        t = TrustedMultiKernelManager(computers = initial_comps)
         for i in xrange(5):
             t.new_session()
 
@@ -307,15 +307,6 @@ if __name__ == "__main__":
 
         t.remove_computer(x[0])
             
-        vals = t._comps.values()
-        for i in xrange(len(vals)):
-            print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
-
-        print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
-
-        # This presumes more than one computer is running...
-        t.remove_computer(x[1])
-
         vals = t._comps.values()
         for i in xrange(len(vals)):
             print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()

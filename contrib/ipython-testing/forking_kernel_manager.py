@@ -7,6 +7,7 @@ import json
 import random
 import sys
 import interact
+import resource
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
@@ -25,11 +26,13 @@ class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
     pass
 
 class ForkingKernelManager(object):
-    def __init__(self):
+    def __init__(self, filename):
         self.kernels = {}
+        self.filename = filename
 
-    def fork_kernel(self, sage_dict, config, pipe):
-        logging.basicConfig(filename='LOG',format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+    def fork_kernel(self, sage_dict, config, pipe, resource_limits, logfile):
+        os.setpgrp()
+        logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
         ka = IPKernelApp.instance(config=config)
         ka.initialize([])
         # this should really be handled in the config, not set separately.
@@ -50,55 +53,62 @@ set_random_seed()
             sys._interacts = interact.interacts
             user_ns["sys"] = sys
         user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
+        for r, limit in resource_limits.iteritems():
+            resource.setrlimit(getattr(resource, r), (limit, limit))
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
                 "stdin_port": ka.stdin_port, "hb_port": ka.hb_port, "iopub_port": ka.iopub_port})
         pipe.close()
         ka.start()
 
-    def start_kernel(self, sage_dict=None, kernel_id=None, config=None):
+    def start_kernel(self, sage_dict=None, kernel_id=None, config=None, resource_limits=None, logfile = None):
         if sage_dict is None:
             sage_dict = {}
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
             config = Config()
+        if resource_limits is None:
+            resource_limits = {}
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(sage_dict, config, q))
+        proc = Process(target=self.fork_kernel, args=(sage_dict, config, q, resource_limits, logfile))
         proc.start()
         connection = p.recv()
         p.close()
         self.kernels[kernel_id] = (proc, connection)
         return {"kernel_id": kernel_id, "connection": connection}
 
-    def send_signal(self, kernel_id, signal):
-        """Send a signal to a running kernel."""
+    def kill_kernel(self, kernel_id):
+        """Kill a running kernel."""
+        success = False
+
         if kernel_id in self.kernels:
+            proc = self.kernels[kernel_id][0]
             try:
-                os.kill(self.kernels[kernel_id][0].pid, signal)
-                self.kernels[kernel_id][0].join()
-            except OSError, e:
+                success = True
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                proc.join()
+            except Exception as e:
                 # On Unix, we may get an ESRCH error if the process has already
                 # terminated. Ignore it.
                 from errno import ESRCH
-                if e.errno != ESRCH:
-                    raise
-
-    def kill_kernel(self, kernel_id):
-        """Kill a running kernel."""
-        try:
-            self.send_signal(kernel_id, signal.SIGTERM)
+                if e.errno !=  ESRCH:
+                    success = False
+        if success:
             del self.kernels[kernel_id]
-            return True
-        except:
-            return False
+        return success
 
     def interrupt_kernel(self, kernel_id):
         """Interrupt a running kernel."""
-        try:
-            self.send_signal(kernel_id, signal.SIGINT)
-            return True
-        except:
-            return False
+        success = False
+
+        if kernel_id in self.kernels:
+            try:
+                os.kill(self.kernels[kernel_id][0].pid, signal.SIGINT)
+                success = True
+            except:
+                pass
+
+        return success
 
     def restart_kernel(self, sage_dict, kernel_id):
         ports = self.kernels[kernel_id][1]
