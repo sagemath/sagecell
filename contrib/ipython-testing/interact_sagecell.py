@@ -75,7 +75,7 @@ Recursively nested interact::
 
 import uuid
 import sys
-from misc import stream_metadata, decorator_defaults
+from misc import session_metadata, decorator_defaults
 
 __interacts={}
 
@@ -238,24 +238,14 @@ def interact_func(session, pub_socket):
             layout["top_center"] = [n for n in names]
 
         interact_id=str(uuid.uuid4())
-        msg_id = str(uuid.uuid4())
-        msg = {"header": {"msg_id": msg_id,
-                          "username": session.username,
-                          "session": session.session,
-                          "msg_type": "extension"},
-               "msg_id": msg_id,
-               "msg_type": "extension",
-               "parent_header": getattr(sys.stdout, "parent_header", {}),
-               "content": {"msg_type": "interact_prepare",
-                           "content": {"controls": dict(zip(names, (control.message() for control in controls))),
-                                       "new_interact_id": interact_id,
-                                       "layout": layout}}}
-        if 'interact_id' in sys.stdout.metadata:
-            # this interact is inside of another interact; make sure message reflects that
-            msg["content"]["interact_id"] = sys.stdout.metadata['interact_id']
-        session.send(pub_socket, msg)
+        content = {"msg_type": "interact_prepare",
+                   "content": {"controls": dict(zip(names, (control.message() for control in controls))),
+                               "new_interact_id": interact_id,
+                               "layout": layout}}
+        # we need a better way of getting the parent header...
+        session.send(pub_socket, 'extension', content=content, parent = sys.stdout.parent_header)
         def adapted_f(control_vals):
-            with stream_metadata({'interact_id': interact_id}):
+            with session_metadata({'interact_id': interact_id}):
                 returned=f(**control_vals)
             return returned
         # update global __interacts

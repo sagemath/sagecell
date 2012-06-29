@@ -184,3 +184,24 @@ def stream_metadata(metadata):
         for k,stream in streams.items():
             # set_metadata does the flush for us
             stream.set_metadata(old_metadata[k])
+
+@contextmanager
+def session_metadata(metadata):
+    # flush any messages waiting in buffers
+    sys.stdout.flush()
+    sys.stderr.flush()
+    
+    session = sys.stdout.session
+    old_metadata = session.subheader.get('metadata',None)
+    new_metadata = old_metadata.copy() if old_metadata is not None else {}
+    new_metadata.update(metadata)
+    session.subheader['metadata'] = new_metadata
+    try:
+        yield None
+    finally:
+        sys.stdout.flush()
+        sys.stderr.flush()
+        if old_metadata is None:
+            del session.subheader['metadata']
+        else:
+            session.subheader['metadata'] = old_metadata
