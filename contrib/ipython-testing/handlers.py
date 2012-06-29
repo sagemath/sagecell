@@ -8,9 +8,6 @@ from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
 
-# Constant for the maximum amount of time a kernel can run for:
-_max_interact_timeout = 60
-
 class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     """
     Base class for a websocket-ZMQ bridge using ZMQStream.
@@ -23,7 +20,7 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
         self.km = self.application.km
         self.kernel_id = kernel_id
         self.session = self.km._sessions[self.kernel_id]
-        #self.session.debug = False
+        self.kernel_timeout = self.km.kernel_timeout
 
     def _reserialize_reply(self, msg_list):
         """
@@ -47,25 +44,27 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
             pass
         msg.pop("buffers")
 
-        if "execute_reply" in msg["msg_type"]:
-            timeout = msg["content"]["user_variables"].get("__sagecell_interact__")
+        retval = jsonapi.dumps(msg)
+
+        if "execute_reply" == msg["msg_type"]:
+            timeout = msg["content"]["user_variables"].get("__kernel_timeout__")
 
             try:
                 timeout = float(timeout) # in case user manually puts in a string
             # also handles the case where a KeyError is raised if no timeout is specified
             except:
-                timeout = .01
+                timeout = 0.0
 
-            if timeout > _max_interact_timeout:
-                timeout = _max_interact_timeout
+            if timeout > self.kernel_timeout:
+                timeout = self.kernel_timeout
 
-            if timeout <= .01: # kill the kernel before the heartbeat is able to
+            if timeout <= 0.0: # kill the kernel before the heartbeat is able to
                 self.km.end_session(self.kernel_id)
             else:
                 self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
                 self.km._kernels[self.kernel_id]["executing"] = False
 
-        return jsonapi.dumps(msg)
+        return retval
 
     def _on_zmq_reply(self, msg_list):
         try:
@@ -89,8 +88,8 @@ class ShellHandler(ZMQStreamHandler):
 
     def on_message(self, message):
         msg = jsonapi.loads(message)
-        if "execute_request" in msg["header"]["msg_type"]:
-            msg["content"]["user_variables"] = ['__sagecell_interact__']
+        if "execute_request" == msg["header"]["msg_type"]:
+            msg["content"]["user_variables"] = ['__kernel_timeout__']
             self.km._kernels[self.kernel_id]["executing"] = True
             
         self.session.send(self.shell_stream, msg)

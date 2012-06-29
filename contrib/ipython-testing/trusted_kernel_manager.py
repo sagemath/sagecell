@@ -9,12 +9,17 @@ import time
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
-    def __init__(self, computers = None):
+    def __init__(self, computers = None, default_computer_config = None, kernel_timeout = None):
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host:"", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
         self._clients = {} #comp_id: {"socket": zmq req socket object, "ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
         self.context = zmq.Context()
+        self.default_computer_config = default_computer_config
+
+        self.kernel_timeout = kernel_timeout
+        if kernel_timeout is None:
+            self.kernel_timeout = 0.0
 
         if computers is not None:
             for comp in computers:
@@ -55,10 +60,10 @@ class TrustedMultiKernelManager(object):
         :returns: computer id assigned to added computer
         :rtype: string
         """
-        defaults = {"max": 10, "beat_interval": 1.0, "first_beat": 5.0, "kernels": {}}
+        defaults = self.default_computer_config
         comp_id = str(uuid.uuid4())
         cfg = dict(defaults.items() + config.items())
-
+        cfg["kernels"] = {}
         req = self.context.socket(zmq.REQ)
 
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
@@ -194,7 +199,8 @@ class TrustedMultiKernelManager(object):
             kernel_connection = reply_content["connection"]
             self._kernels[kernel_id] = {"comp_id": comp_id,
                                         "connection": kernel_connection,
-                                        "executing": True}
+                                        "executing": False,
+                                        "timeout": time.time()+self.kernel_timeout}
             self._comps[comp_id]["kernels"][kernel_id] = None
             print "CONNECTION FILE ::: ", kernel_connection
             self._sessions[kernel_id] = Session(key=kernel_connection["key"], debug=True)
@@ -236,7 +242,7 @@ class TrustedMultiKernelManager(object):
 
         while (index < len(ids) and not done):
             found_id = ids[index]
-            if len(self._comps[found_id]["kernels"].keys()) < self._comps[found_id]["max"]:
+            if len(self._comps[found_id]["kernels"].keys()) < self._comps[found_id]["max_kernels"]:
                 done = True
             else:
                 index += 1
@@ -294,8 +300,9 @@ if __name__ == "__main__":
         config = misc.Config()
 
         initial_comps = config.get_config("computers")
+        default_config = config.get_default_config("_default_config")
 
-        t = TrustedMultiKernelManager(computers = initial_comps)
+        t = TrustedMultiKernelManager(computers = initial_comps, default_computer_config = default_config)
         for i in xrange(5):
             t.new_session()
 
