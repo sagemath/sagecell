@@ -123,32 +123,6 @@ set_random_seed()
         self.kill_kernel(kernel_id)
         return self.start_kernel(sage_dict, kernel_id, Config({"IPKernelApp": ports}))
 
-def html_msg(html, session):
-    """
-    Create an IPython message that will cause the Sage Cell to output a block
-    of HTML.
-
-    :arg str html: a string containing the HTML code to print
-    :arg IPython.zmq.session.Session session: an IPython session
-    :returns: the message
-    :rtype: dict
-    """
-
-    msg_id = str(uuid.uuid4())
-    msg = {"header": {"msg_id": msg_id,
-                      "username": session.username,
-                      "session": session.session,
-                      "msg_type": "extension"},
-           "msg_id": msg_id,
-           "msg_type": "extension",
-           "parent_header": getattr(sys.stdout, "parent_header", {}),
-           "content": {"msg_type": "display_data",
-                       "content": {"type": "text/html",
-                                   "data": '<span style="color:black">%s</span>' % html}}}
-    if hasattr(sys.stdout, "interact_id"):
-        msg["content"]["interact_id"] = sys.stdout.interact_id
-    return msg
-
 def eval_func(session, pub_socket, html):
     """
     Create a function to be used as ``HTML.eval`` in the user namespace,
@@ -183,7 +157,11 @@ def eval_func(session, pub_socket, html):
                      html.latex(html.sage_eval(s[6+i:j], locals=locals))
             s = s[j+7:]
 
-        session.send(pub_socket, html_msg(t, session))
+        content = {"data": {"text/html": '<span style="color:black">%s</span>' % t,
+                            "text/plain": s},
+                   "source": "", "metadata": {}}
+        session.send(pub_socket, "display_data", content=content, parent=sys.stdout.parent_header)
+            
         return ''
     return eval
 
@@ -204,7 +182,10 @@ def table_func(session, pub_socket):
         2D graphics will be displayed in the cells.  Expressions will
         be latexed.
         """
-        session.send(pub_socket, html_msg(self.table_str(x, header=header), session))
+        content = {"data": {"text/html": self.table_str(x, header=header),
+                            "text/plain": repr(x)},
+                   "source": "", "metadata": ""}
+        session.send(pub_socket, "display_data", content=content, parent=sys.stdout.parent_header)
     return table
 
 if __name__ == "__main__":

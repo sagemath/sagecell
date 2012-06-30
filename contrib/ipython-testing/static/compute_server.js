@@ -130,13 +130,15 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
     } else if (msg_type === "pyerr") {
         this.output("<pre></pre>", block_id)
             .html(IPython.utils.fixConsole(content.traceback.join("\n")));
+    } else if (msg_type === "display_data") {
+        if (content.data["text/html"]) {
+            this.output("<div></div>", block_id).html(content.data["text/html"]);
+        } else if (content.data["text/plain"]) {
+            this.output("<pre></pre>", block_id).text(content.data["text/plain"]);
+        }
     } else if (msg_type === "extension") {
         if (content.msg_type === "interact_prepare") {
             new sagecell.InteractCell(this, content.content, block_id);
-        } else if (content.msg_type === "display_data") {
-            if (content.content.type === "text/html") {
-                this.output("<div></div>", block_id).html(content.content.data);
-            }
         }
     }
     this.appendMsg(content, "Accepted: ");
@@ -248,10 +250,12 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 var right = ce("td", {}, [
                     this.controls[this.layout[loc][i]].rendered(id)
                 ]);
-                if (this.controls[this.layout[loc][i]].control.label) {
+                if (this.controls[this.layout[loc][i]].control.label !== "") {
                     var left = ce("td", {}, [
                         ce("label", {"for": id, "title": this.layout[loc][i]}, [
-                            document.createTextNode(this.controls[this.layout[loc][i]].control.label)
+                            document.createTextNode(this.controls[
+                                    this.layout[loc][i]].control.label ||
+                                    this.layout[loc][i])
                         ])
                     ]);
                     tr.appendChild(left);
@@ -282,52 +286,64 @@ sagecell.InteractData.Button.prototype.rendered = function() {
         document.createTextNode(this.control.text)
     ]);
     this.button.style.width = this.control.width;
+    var that = this;
+    $(this.button).click(function () {
+        that.clicked = true;
+        $(that.button).trigger("clickdone");
+    });
     $(this.button).button();
+    this.clicked = false;
     return this.button;
 }
 
 sagecell.InteractData.Button.prototype.changeHandlers = function () {
-    return {"click": this.button};
+    return {"clickdone": this.button};
 };
 
 sagecell.InteractData.Button.prototype.py_value = function () {
-    return "None";
+    var c = this.clicked;
+    this.clicked = false;
+    return c ? "True" : "False";
 }
 
 sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.ButtonBar.prototype.rendered = function (control_id) {
+sagecell.InteractData.ButtonBar.prototype.rendered = function () {
     var ce = sagecell.util.createElement;
-    var name = "interact_" + control_id;
     var table = ce("table");
     var i = -1;
-    this.radios = $();
+    this.buttons = $();
     var that = this;
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
-            var id = name + "_" + ++i;
-            var radio = ce("input", {"type": "radio", "name": name, "id": id});
-            var label = ce("label", {"for": id}, [
-                document.createTextNode(this.control.value_labels[i])
+            var button = ce("button", {}, [
+                document.createTextNode(this.control.value_labels[++i])
             ]);
-            $(radio).data("index", i);
-            this.radios = this.radios.add(radio);
-            tr.appendChild(ce("td", {}, [radio, label]));
+            $(button).click(function (i) {
+                return function (event) {
+                    that.index = i;
+                    $(event.target).trigger("clickdone");
+                };
+            }(i));
+            this.buttons = this.buttons.add(button);
+            tr.appendChild(ce("td", {}, [button]));
         }
         table.appendChild(tr);
     }
-    this.radios.button();
-    this.radios.off("change");
+    this.index = null;
+    this.buttons.button();
     return table;
 }
 
 sagecell.InteractData.ButtonBar.prototype.changeHandlers = function () {
-    return {"change": this.radios};
+    return {"clickdone": this.buttons};
 }
 
 sagecell.InteractData.ButtonBar.prototype.py_value = function () {
-    return this.radios.filter(":checked").data("index");
+    var i = this.index;
+    this.index = null;
+    return i !== null ? i : "None";
 }
 
 sagecell.InteractData.Checkbox = sagecell.InteractData.InteractControl();
@@ -547,7 +563,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
                 document.createTextNode(this.control.value_labels[i])
             ]));
         }
-        select.selectedIndex = this.control.default;
+        this.value = select.selectedIndex = this.control.default;
         $(select).change(function (event) {
             that.value = event.target.selectedIndex;
             $(event.target).trigger("changedone");
@@ -565,6 +581,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
                 var option = ce("input", {"type": "radio", "name": control_id, "id": id});
                 if (i === this.control.default) {
                     option.checked = true;
+                    this.value = i;
                 }
                 var label = ce("label", {"for": id}, [
                     document.createTextNode(this.control.value_labels[i])

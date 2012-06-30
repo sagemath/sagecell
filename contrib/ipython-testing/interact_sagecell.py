@@ -147,6 +147,7 @@ def interact_func(session, pub_socket):
                     controls[i]=(name, None)
                 elif not isinstance(name[0], str):
                     raise ValueError("interact control must have a string name, but %s isn't a string"%(name[0],))
+        listed_controls = [c[0] for c in controls]
 
         import inspect
         (args, varargs, varkw, defaults) = inspect.getargspec(f)
@@ -243,9 +244,13 @@ def interact_func(session, pub_socket):
                                "new_interact_id": interact_id,
                                "layout": layout}}
         # we need a better way of getting the parent header...
-        session.send(pub_socket, 'extension', content=content, parent = sys.stdout.parent_header)
+        session.send(pub_socket, 'extension', content=content, parent=sys.stdout.parent_header)
         def adapted_f(control_vals):
             with session_metadata({'interact_id': interact_id}):
+                for c in listed_controls:
+                    if c in control_vals:
+                        f.func_globals[c] = control_vals[c]
+                        del control_vals[c]
                 returned=f(**control_vals)
             return returned
         # update global __interacts
@@ -1121,8 +1126,7 @@ def automatic_control(control, var=None):
     else:
         from sage.all import sage_eval
         C = InputBox(default = control, label=label, evaluate=True)
-
-        if CONFIG.EMBEDDED_MODE["sage_mode"] and CONFIG.EMBEDDED_MODE["enable_sage"]:
+        try:
             from sagenb.misc.misc import Color
             from sage.structure.all import is_Vector, is_Matrix
             from sage.all import parent
@@ -1141,6 +1145,8 @@ def automatic_control(control, var=None):
                               default = default_value, adapter=lambda x, globs: parent(control)(x[0]))
             elif isinstance(control, Color):
                 C = ColorSelector(default = control, label = label)
+        except:
+            pass
     
     return C
 

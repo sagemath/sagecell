@@ -152,7 +152,7 @@ sagecell.makeSagecell = function (args) {
                 ta.addClass("sagecell_commands");
                 ta.attr({"autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
                 inputLocation.find(".sagecell_commands").replaceWith(ta);
-                var id = "input_" + sagecell.util.uuid4();
+                var id = "input_" + IPython.utils.uuid();
                 inputLocation[0].id = id;
                 if (settings.outputLocation === settings.inputLocation) {
                     outputLocation = $(settings.outputLocation = "#" + id);
@@ -415,7 +415,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     } else {
         // Use a form submission to send POST requests
         var iframe = document.createElement("iframe");
-        iframe.name = sagecell.util.uuid4();
+        iframe.name = IPython.utils.uuid();
         var form = sagecell.util.createElement("form",
                 {"method": method, "action": url, "target": iframe.name});
         for (var k in data) {
