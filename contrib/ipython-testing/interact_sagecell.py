@@ -242,7 +242,8 @@ def interact_func(session, pub_socket):
         content = {"msg_type": "interact_prepare",
                    "content": {"controls": dict(zip(names, (control.message() for control in controls))),
                                "new_interact_id": interact_id,
-                               "layout": layout}}
+                               "layout": layout,
+                               "update": update}}
         # we need a better way of getting the parent header...
         session.send(pub_socket, 'extension', content=content, parent=sys.stdout.parent_header)
         def adapted_f(control_vals):

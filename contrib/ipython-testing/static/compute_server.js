@@ -184,7 +184,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
 sagecell.InteractCell.prototype.bindChange = function () {
     var that = this;
     var handler = function (event, ui) {
-        var code = "sys._update_interact(" + JSON.stringify(that.interact_id) + ", {";
+        var code = "sys._sage_.update_interact(" + JSON.stringify(that.interact_id) + ", {";
         var kwargs = []
         for (var name in that.controls) {
             if (that.controls.hasOwnProperty(name)) {
