@@ -1122,25 +1122,25 @@ def automatic_control(control, var=None):
         from sage.all import sage_eval
         C = InputBox(default = control, label=label, evaluate=True)
 
-        if CONFIG.EMBEDDED_MODE["sage_mode"] and CONFIG.EMBEDDED_MODE["enable_sage"]:
-            from sagenb.misc.misc import Color
-            from sage.structure.all import is_Vector, is_Matrix
-            from sage.all import parent
-            if is_Matrix(control):
-                nrows = control.nrows()
-                ncols = control.ncols()
-                default_value = control.list()
-                default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
-                C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=lambda x, globs: parent(control)(x))
-            elif is_Vector(control):
-                default_value = [control.list()]
-                nrows = 1
-                ncols = len(control)
-                C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=lambda x, globs: parent(control)(x[0]))
-            elif isinstance(control, Color):
-                C = ColorSelector(default = control, label = label)
+        #if we are in Sage, we can also do the following
+        from sagenb.misc.misc import Color
+        from sage.structure.all import is_Vector, is_Matrix
+        from sage.all import parent
+        if is_Matrix(control):
+            nrows = control.nrows()
+            ncols = control.ncols()
+            default_value = control.list()
+            default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
+            C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
+                          default = default_value, adapter=lambda x, globs: parent(control)(x))
+        elif is_Vector(control):
+            default_value = [control.list()]
+            nrows = 1
+            ncols = len(control)
+            C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
+                          default = default_value, adapter=lambda x, globs: parent(control)(x[0]))
+        elif isinstance(control, Color):
+            C = ColorSelector(default = control, label = label)
     
     return C
 
