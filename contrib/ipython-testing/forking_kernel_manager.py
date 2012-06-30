@@ -9,6 +9,7 @@ import sys
 import resource
 import interact_sagecell
 import interact_compatibility
+import misc
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
@@ -18,6 +19,7 @@ import sage.all
 from sage.misc.interpreter import SageInputSplitter
 from IPython.core.inputsplitter import IPythonInputSplitter
 
+sage.misc.misc.EMBEDDED_MODE = {'frontend': 'sagecell'}
 
 class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
     """
@@ -49,18 +51,17 @@ sage.misc.session.init()
 set_random_seed()
 """
         exec sage_code in user_ns
-        if "sys" in user_ns:
-            user_ns["sys"]._update_interact = interact_sagecell.update_interact
-        else:
-            sys._update_interact = interact_sagecell.update_interact
-            user_ns["sys"] = sys
-        try:
-            user_ns["sage"].misc.html.HTML.eval = \
-                eval_func(ka.session, ka.iopub_socket, user_ns["sage"].misc.html)
-            user_ns["sage"].misc.html.HTML.table = table_func(ka.session, ka.iopub_socket)
-        except:
+
+        class TempClass(object):
             pass
+        _sage_ = TempClass()
+        _sage_.display_message = misc.display_message
+        _sage_.update_interact = interact_sagecell.update_interact
+        sys._sage_ = _sage_
+
+        # overwrite Sage's interact command with our own
         user_ns["interact"] = interact_sagecell.interact_func(ka.session, ka.iopub_socket)
+        
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,

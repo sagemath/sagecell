@@ -133,10 +133,10 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
     } else if (msg_type === "extension") {
         if (content.msg_type === "interact_prepare") {
             new sagecell.InteractCell(this, content.content, block_id);
-        } else if (content.msg_type === "display_data") {
-            if (content.content.type === "text/html") {
-                this.output("<div></div>", block_id).html(content.content.data);
-            }
+        }
+    } else if (msg_type === "display_data") {
+        if (content.data['text/html'] !== undefined) {
+            this.output("<div></div>", block_id).html(content.data['text/html']);
         }
     }
     this.appendMsg(content, "Accepted: ");
@@ -182,7 +182,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
 sagecell.InteractCell.prototype.bindChange = function () {
     var that = this;
     var handler = function (event, ui) {
-        var code = "sys._update_interact(" + JSON.stringify(that.interact_id) + ", {";
+        var code = "sys._sage_.update_interact(" + JSON.stringify(that.interact_id) + ", {";
         var kwargs = []
         for (var name in that.controls) {
             if (that.controls.hasOwnProperty(name)) {
