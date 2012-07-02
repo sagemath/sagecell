@@ -1,4 +1,4 @@
-import time
+import time, string, urllib, zlib, base64
 
 import tornado.web
 import tornado.websocket
@@ -7,6 +7,144 @@ from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
+
+class RootHandler(tornado.web.RequestHandler):
+    """
+    Root URL request handler.
+    
+    This renders templates/root.html, which optionally inserts
+    specified preloaded code during the rendering process.
+    
+    There are three ways currently supported to specify
+    preloading code:
+    
+    ``<root_url>?c=<code>`` loads 'plaintext' code
+    ``<root_url>?z=<base64>`` loads base64-compressed code
+    ```<root_url>?q=<uuid>`` loads code from a database based
+    upon a unique identifying permalink (uuid4-based)
+    """
+    def _root_url(self):
+        valid_query_chars = set(string.letters+string.digits+"-")
+        db = self.application.db
+        options = {}
+
+        args = self.request.arguments
+
+        if "c" in args:
+            # If the code is explicitly specified
+            options["code"] = "".join(args["c"])
+
+        elif "z" in args:
+            # If the code is base64-compressed
+            try:
+                z = "".join(args["z"])
+                # We allow the user to strip off the ``=`` padding at the end
+                # so that the URL doesn't have to have any escaping.
+                # Here we add back the ``=`` padding if we need it.
+                z += "=" * ((4 - (len(z) % 4)) % 4)
+                print z
+                options["code"] = zlib.decompress(base64.urlsafe_b64decode(z))
+            except Exception as e:
+                options["code"] = "# Error decompressing code %s"%e
+
+        elif "q" in args:
+            # if the code is referenced by a permalink identifier
+            q = "".join(args["q"])
+            if set(q).issubset(valid_query_chars):
+                options["code"] = db.get_exec_msg(q)
+
+        if "code" in options:
+            if isinstance(options["code"], unicode):
+                options["code"] = options["code"].encode("utf8")
+            options["code"] = urllib.quote(options["code"])
+            options["autoeval"] = False if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else True
+        else:
+            options["code"] = None
+
+        self.render("root.html", **options)
+
+    def get(self):
+        return self._root_url()
+
+class KernelHandler(tornado.web.RequestHandler):
+    """
+    Kernel startup request handler.
+    
+    This starts up an iPython kernel on an untrusted account
+    and returns the associated kernel id and a url to request
+    websocket connections for a websocket-ZMQ bridge back to
+    the kernel in a JSON-compatible message.
+    
+    The returned websocket url is not entirely complete, in
+    that it is the base url to be used for two different
+    websocket connections (corresponding to the shell and
+    iopub streams) of the iPython kernel. It is the
+    responsiblity of the client to request the correct URLs
+    for these websockets based on the following pattern:
+    
+    ``<ws_url>/iopub`` is the expected iopub stream url
+    ``<ws_url>/shell`` is the expected shell stream url
+    """
+    def _start_kernel(self):
+        print "%s BEGIN MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
+
+        proto = self.request.protocol.replace("http", "ws")
+        host = self.request.host
+
+        ws_url = "%s://%s/" % (proto, host)
+
+        km = self.application.km
+        
+        kernel_id = km.new_session()
+        
+        print "kernel started with id ::: %s"%kernel_id
+        
+        data = {"ws_url": ws_url, "kernel_id": kernel_id}
+
+        print "%s END MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
+
+        self.write(data)
+        self.finish()
+
+    def post(self):
+        return self._start_kernel()
+
+class PermalinkHandler(tornado.web.RequestHandler):
+    """
+    Permalink generation request handler.
+
+    This accepts the string version of an iPython
+    execute_request message, and stores the code associated
+    with that request in a database linked to a unique id,
+    which is returned to the requester in a JSON-compatible
+    form.
+
+    The specified id can be used to generate permalinks
+    with the format ``<root_url>?q=<id>``.
+    """
+
+    def _get_permalink(self):
+        """
+        """
+
+        args = self.request.arguments
+
+        rval = {"permalink": None}
+        if "message" in args:
+            db = self.application.db
+            try:
+                message = jsonapi.loads("".join(args["message"]))
+                if message["header"]["msg_type"] == "execute_request":
+                    rval["permalink"] = db.new_exec_msg(message)
+            except:
+                pass
+        self.write(rval)
+        self.finish()
+
+    def get(self):
+        return self._get_permalink()
+    def post(self):
+        return self._get_permalink()
 
 class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     """
