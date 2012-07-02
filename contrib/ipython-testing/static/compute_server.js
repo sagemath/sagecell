@@ -320,6 +320,7 @@ sagecell.InteractData.ButtonBar.prototype.rendered = function () {
             var button = ce("button", {}, [
                 document.createTextNode(this.control.value_labels[++i])
             ]);
+            button.style.width = this.control.width;
             $(button).click(function (i) {
                 return function (event) {
                     that.index = i;
@@ -568,6 +569,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
             that.value = event.target.selectedIndex;
             $(event.target).trigger("changedone");
         });
+        select.style.width = this.control.width;
         this.changing = select;
         return select;
     } else if (this.control.subtype === "radio" || this.control.subtype === "button") {
@@ -577,7 +579,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
         for (var row = 0; row < this.control.nrows; row++) {
             var tr = ce("tr");
             for (var col = 0; col < this.control.ncols; col++) {
-                var id = control_id + "_" + ++i;
+                var id = control_id + "_" + (++i);
                 var option = ce("input", {"type": "radio", "name": control_id, "id": id});
                 if (i === this.control.default) {
                     option.checked = true;
@@ -586,6 +588,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
                 var label = ce("label", {"for": id}, [
                     document.createTextNode(this.control.value_labels[i])
                 ]);
+                label.style.width = this.control.width;
                 $(option).change(function (i) {
                     return function (event) {
                         that.value = i;
