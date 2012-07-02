@@ -5,6 +5,7 @@ from IPython.zmq.session import Session
 from zmq import ssh
 import paramiko
 import os
+import time
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
