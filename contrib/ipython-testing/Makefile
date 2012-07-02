@@ -18,13 +18,13 @@ jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
 cssmin         = submodules/cssmin/src/cssmin.py
 jsmin          = submodules/jsmin/jsmin.c
 jsmin-bin      = submodules/jsmin-bin
-# Set the SAGE_ROOT environmental variable to root of the Sage installation
-ip-js          = $(SAGE_ROOT)/local/lib/python2.7/site-packages/IPython/frontend/html/notebook/static/js
+sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
+ip-js          = $(sage-root)/local/lib/python2.7/site-packages/IPython/frontend/html/notebook/static/js
 ip-kernel      = $(ip-js)/kernel.js
 ip-utils       = $(ip-js)/utils.js
 ip-namespace   = $(ip-js)/namespace.js
 jquery-url     = http://code.jquery.com/jquery-1.7.2.min.js
-jmol-sage      = $(SAGE_ROOT)/local/share/jmol
+jmol-sage      = $(sage-root)/local/share/jmol
 wrapped        = $(foreach file,$(1),static/$(notdir $(basename $(file)).wrap$(suffix $(file))))
 
 all: submodules $(jquery) $(all-min-js) $(all-min-css)
