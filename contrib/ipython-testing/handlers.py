@@ -146,7 +146,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
     def post(self):
         return self._get_permalink()
 
-class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
+class ZMQStreamHandler(object):
     """
     Base class for a websocket-ZMQ bridge using ZMQStream.
 
@@ -210,7 +210,10 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
         except:
             pass
         else:
-            self.write_message(message)
+            self._output_message(message)
+    
+    def _output_message(self, message):
+        raise NotImplementedError
 
 class ShellHandler(ZMQStreamHandler):
     """
@@ -345,7 +348,7 @@ class IOPubHandler(ZMQStreamHandler):
             self.application.km.end_session(self.kernel_id)
         except:
             pass
-        self.write_message(
+        self._output_message(
             {'header': {'msg_type': 'status'},
              'parent_header': {},
              'content': {'execution_state':'dead'}
@@ -353,5 +356,34 @@ class IOPubHandler(ZMQStreamHandler):
         )
         self.on_close()
 
+class ShellServiceHandler(ShellHandler):
+    def __init__(self, application):
+        self.application = application
 
+    def open(self, kernel_id, output_list):
+        super(ShellServiceHandler, self).open(kernel_id)
+        self.output_list = output_list
 
+    def _output_message(self, message):
+        print message
+        self.output_list.append(message)
+
+class IOPubServiceHAndler(IOPubHandler):
+    def __init__(self, application):
+        self.application = application
+
+    def open(self, kernel_id, output_list):
+        super(IOPubServiceHAndler, self).open(kernel_id)
+        self.output_list = output_list
+
+    def _output_message(self, message):
+        print message
+        self.output_list.append(message)
+
+class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
+    def _output_message(self, message):
+        self.write_message(message)
+
+class IOPubWebHandler(IOPubHandler, tornado.websocket.WebSocketHandler):
+    def _output_message(self, message):
+        self.write_message(message)

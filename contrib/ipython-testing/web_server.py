@@ -32,7 +32,7 @@ _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 """
 Tornado Handlers
 """
-from handlers import ShellHandler, IOPubHandler, RootHandler, KernelHandler, PermalinkHandler
+from handlers import ShellWebHandler, IOPubWebHandler, RootHandler, KernelHandler, PermalinkHandler
 
 """
 Tornado Web Server
@@ -42,8 +42,8 @@ class SageCellServer(tornado.web.Application):
         handlers = [
             (r"/", RootHandler),
             (r"/kernel", KernelHandler),
-            (r"/kernel/%s/iopub" % _kernel_id_regex, IOPubHandler),
-            (r"/kernel/%s/shell" % _kernel_id_regex, ShellHandler),
+            (r"/kernel/%s/iopub" % _kernel_id_regex, IOPubWebHandler),
+            (r"/kernel/%s/shell" % _kernel_id_regex, ShellWebHandler),
             (r"/permalink", PermalinkHandler),
             ]
 
