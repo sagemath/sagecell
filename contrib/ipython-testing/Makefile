@@ -37,8 +37,7 @@ $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)','$(jquery)')"
 
 $(all-min-js): $(jsmin-bin) $(all-js)
-#	$(jsmin-bin) < 
-	cp $(all-js) $(all-min-js)
+	$(jsmin-bin) < $(all-js) > $(all-min-js)
 
 $(call wrapped,$(jquery-ui)): $(wrap-jquery) $(jquery-ui)
 	$(wrap-jquery) $(jquery-ui) > $(call wrapped,$(jquery-ui))
