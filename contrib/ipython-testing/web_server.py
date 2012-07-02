@@ -32,7 +32,7 @@ _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 """
 Tornado Handlers
 """
-from handlers import ShellWebHandler, IOPubWebHandler, RootHandler, KernelHandler, PermalinkHandler
+from handlers import ShellWebHandler, IOPubWebHandler, RootHandler, KernelHandler, PermalinkHandler, ServiceHandler
 
 """
 Tornado Web Server
@@ -45,6 +45,7 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel/%s/iopub" % _kernel_id_regex, IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, ShellWebHandler),
             (r"/permalink", PermalinkHandler),
+            (r"/service", ServiceHandler),
             ]
 
         settings = dict(
@@ -59,8 +60,8 @@ class SageCellServer(tornado.web.Application):
         kernel_timeout = self.config.get_config("max_kernel_timeout")
 
         self.km = TMKM(computers = initial_comps, default_computer_config = default_comp, kernel_timeout = kernel_timeout)
-
         self.db = DB(misc.get_db_file(self.config))
+        self.ioloop = ioloop.IOLoop.instance()
 
         super(SageCellServer, self).__init__(handlers, **settings)
 
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     application = SageCellServer()
     application.listen(8888)
     try:
-        tornado.ioloop.IOLoop.instance().start()
+        application.ioloop.start()
     except KeyboardInterrupt:
         print "\nEnding processes."
         application.km.shutdown()

@@ -1,4 +1,4 @@
-import time, string, urllib, zlib, base64
+import time, string, urllib, zlib, base64, uuid
 
 import tornado.web
 import tornado.websocket
@@ -122,29 +122,113 @@ class PermalinkHandler(tornado.web.RequestHandler):
     The specified id can be used to generate permalinks
     with the format ``<root_url>?q=<id>``.
     """
-
     def _get_permalink(self):
         """
         """
 
         args = self.request.arguments
 
-        rval = {"permalink": None}
+        retval = {"permalink": None}
         if "message" in args:
             db = self.application.db
             try:
                 message = jsonapi.loads("".join(args["message"]))
                 if message["header"]["msg_type"] == "execute_request":
-                    rval["permalink"] = db.new_exec_msg(message)
+                    retval["permalink"] = db.new_exec_msg(message)
             except:
                 pass
-        self.write(rval)
+        self.write(retval)
         self.finish()
 
     def get(self):
         return self._get_permalink()
     def post(self):
         return self._get_permalink()
+
+class ServiceHandler(tornado.web.RequestHandler):
+    """
+    Implements a blocking web service to execute a single
+    computation the server.
+
+    The code to be executed can be specified using the
+    URL format ``<root_url>/service?code=<code>``.
+    """
+    def _service(self):
+        retval = {"success": False,
+                  "output": ""}
+        args = self.request.arguments
+
+        if "code" in args:
+            code = "".join(args["code"])
+
+            default_timeout = 30 # seconds
+            poll_interval = 0.1 # seconds
+
+            km = self.application.km
+            kernel_id = km.new_session()
+
+            shell_messages = []
+            iopub_messages = []
+
+            shell_handler = ShellServiceHandler(self.application)
+            iopub_handler = IOPubServiceHandler(self.application)
+            
+            shell_handler.open(kernel_id, shell_messages)
+            iopub_handler.open(kernel_id, iopub_messages)
+            
+            msg_id = str(uuid.uuid4())
+            
+            exec_message = {"parent_header": {},
+                            "header": {"msg_id": msg_id,
+                                       "username": "",
+                                       "session": kernel_id,
+                                       "msg_type": "execute_request",
+                                       },
+                            "content": {"code": code,
+                                        "silent": False,
+                                        "user_variables": [],
+                                        "user_expressions": {},
+                                        "allow_stdin": False,
+                                        },
+                            }
+            
+            shell_handler.on_message(jsonapi.dumps(exec_message))
+            
+            end_time = time.time()+default_timeout
+
+            done = False
+            while not done and time.time() < end_time:
+                shell_handler.shell_stream.flush()
+                iopub_handler.iopub_stream.flush()
+                
+                for msg_string in shell_messages:
+                    msg = jsonapi.loads(msg_string)
+                    msg_type = msg.get("msg_type")
+                    content = msg["content"]
+                    if msg_type == "execute_reply":
+                        if content["status"] == "ok":
+                            retval["success"] = True
+                        done = True
+                        break
+
+                time.sleep(poll_interval)
+
+            for msg_string in iopub_messages:
+                msg = jsonapi.loads(msg_string)
+                msg_type = msg.get("msg_type")
+                content = msg["content"]
+                
+                if msg_type == "stream" and content["name"] == "stdout":
+                    retval["output"] += content["data"]
+
+        self.write(retval)
+        self.finish()
+
+    def get(self):
+        return self._service()
+    def post(self):
+        return self._service()
+
 
 class ZMQStreamHandler(object):
     """
@@ -365,19 +449,17 @@ class ShellServiceHandler(ShellHandler):
         self.output_list = output_list
 
     def _output_message(self, message):
-        print message
         self.output_list.append(message)
 
-class IOPubServiceHAndler(IOPubHandler):
+class IOPubServiceHandler(IOPubHandler):
     def __init__(self, application):
         self.application = application
 
     def open(self, kernel_id, output_list):
-        super(IOPubServiceHAndler, self).open(kernel_id)
+        super(IOPubServiceHandler, self).open(kernel_id)
         self.output_list = output_list
 
     def _output_message(self, message):
-        print message
         self.output_list.append(message)
 
 class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
