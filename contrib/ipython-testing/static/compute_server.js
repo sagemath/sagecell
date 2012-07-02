@@ -126,9 +126,9 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
         var out = this.output("<pre class='sagecell_" + content.name + "'></pre>", block_id, new_pre);
         out.text(out.text() + content.data);
     } else if (msg_type === "pyout") {
-        this.output("<pre class='sagecell_pyout'></pre>", block_id).text(content.data['text/plain']);
+        this.output('<pre class="sagecell_pyout"></pre>', block_id).text(content.data["text/plain"]);
     } else if (msg_type === "pyerr") {
-        this.output("<pre></pre>", block_id)
+        this.output('<pre class="sagecell_pyerr"></pre>', block_id)
             .html(IPython.utils.fixConsole(content.traceback.join("\n")));
     } else if (msg_type === "display_data") {
         if (content.data["text/html"]) {
@@ -184,25 +184,30 @@ sagecell.InteractCell = function (session, data, parent_block) {
 sagecell.InteractCell.prototype.bindChange = function () {
     var that = this;
     var handler = function (event, ui) {
-        var code = "sys._sage_.update_interact(" + JSON.stringify(that.interact_id) + ", {";
-        var kwargs = []
-        for (var name in that.controls) {
-            if (that.controls.hasOwnProperty(name)) {
-                kwargs.push(JSON.stringify(name) + ":" + that.controls[name].py_value(ui));
+        $(that.rows[event.data.name]).addClass("sagecell_dirtyControl");
+        if (that.update[event.data.name]) {
+            var code = "sys._sage_.update_interact(" + JSON.stringify(that.interact_id) + ",{";
+            var kwargs = [];
+            for (var name in that.controls) {
+                if (that.controls.hasOwnProperty(name) &&
+                        that.update[event.data.name].indexOf(name) !== -1) {
+                    kwargs.push(JSON.stringify(name) + ":" + that.controls[name].py_value(ui));
+                    $(that.rows[name]).removeClass("sagecell_dirtyControl");
+                }
             }
+            code += kwargs.join(",") + "})";
+            that.session.spinner.style.display = "";
+            that.session.open_count++;
+            that.session.replace_output[that.interact_id] = true;
+            that.session.execute(code);
         }
-        code += kwargs.join(",") + "})";
-        that.session.spinner.style.display = "";
-        that.session.open_count++;
-        that.session.replace_output[that.interact_id] = true;
-        that.session.execute(code);
     };
     for (var name in this.controls) {
         if (this.controls.hasOwnProperty(name)) {
             var events = this.controls[name].changeHandlers();
             for (var e in events) {
                 if (events.hasOwnProperty(e)) {
-                    $(events[e]).on(e, handler);
+                    $(events[e]).on(e, {"name": name}, handler);
                 }
             }
         }
@@ -241,6 +246,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
         }
         table.appendChild(tr);
     }
+    this.rows = {};
     for (var loc in this.layout) {
         if (this.layout.hasOwnProperty(loc)) {
             var table2 = ce("table", {"class": "sagecell_interactControls"});
@@ -264,6 +270,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 }
                 tr.appendChild(right);
                 table2.appendChild(tr);
+                this.rows[this.layout[loc][i]] = tr;
             }
             cells[loc].appendChild(table2);
         }
