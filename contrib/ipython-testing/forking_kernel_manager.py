@@ -44,7 +44,6 @@ class ForkingKernelManager(object):
         user_ns.update(sage_dict)
         user_ns.update(interact_sagecell.imports)
         user_ns.update(interact_compatibility.imports)
-        user_ns.update({"__kernel_timeout__": 0.0})
         sage_code = """
 sage.misc.session.init()
 
@@ -58,6 +57,7 @@ set_random_seed()
         _sage_ = TempClass()
         _sage_.display_message = misc.display_message
         _sage_.update_interact = interact_sagecell.update_interact
+        _sage_.kernel_timeout = 0.0
         sys._sage_ = _sage_
 
         # overwrite Sage's interact command with our own

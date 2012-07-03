@@ -38,8 +38,7 @@ sagecell.init = function (callback) {
 
     sagecell.init_callback = callback
     sagecell.dependencies_loaded = false;
-    sagecell.last_session = {}
-    sagecell.next_session = {};
+    sagecell.last_session = {};
 
     // many stylesheets that have been smashed together into all.min.css
     var stylesheets = [{{url_for(".static", filename="all.min.css", _external=True)|tojson|safe}},
@@ -331,13 +330,7 @@ sagecell.initCell = (function(sagecellInfo) {
         if (replaceOutput && sagecell.last_session[id]) {
             $(sagecell.last_session[id].session_container).remove();
         }
-        if (editorData.save !== undefined) {
-            editorData.save();
-        }
-        var session = sagecell.next_session[id] ||
-                      new sagecell.Session(outputLocation, false);
-        sagecell.next_session[id] = new sagecell.Session(outputLocation, true);
-        $(session.session_container).show();
+        var session = new sagecell.Session(outputLocation, false);
         session.execute(textArea.val());
         sagecell.last_session[id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,

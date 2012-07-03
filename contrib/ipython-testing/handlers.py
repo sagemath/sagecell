@@ -47,7 +47,7 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
         retval = jsonapi.dumps(msg)
 
         if "execute_reply" == msg["msg_type"]:
-            timeout = msg["content"]["user_variables"].get("__kernel_timeout__")
+            timeout = msg["content"]["user_expressions"].get("timeout")
 
             try:
                 timeout = float(timeout) # in case user manually puts in a string
@@ -57,7 +57,7 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
 
             if timeout > self.kernel_timeout:
                 timeout = self.kernel_timeout
-
+            print timeout, self.kernel_timeout
             if timeout <= 0.0: # kill the kernel before the heartbeat is able to
                 self.km.end_session(self.kernel_id)
             else:
@@ -88,7 +88,7 @@ class ShellHandler(ZMQStreamHandler):
     def on_message(self, message):
         msg = jsonapi.loads(message)
         if "execute_request" == msg["header"]["msg_type"]:
-            msg["content"]["user_variables"] = ['__kernel_timeout__']
+            msg["content"]["user_expressions"] = {"timeout": "sys._sage_.kernel_timeout"}
             self.km._kernels[self.kernel_id]["executing"] = True
             
         self.session.send(self.shell_stream, msg)
