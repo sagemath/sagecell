@@ -324,19 +324,22 @@ sagecell.initCell = (function(sagecellInfo) {
         return false;
     });
     sagecellInfo.submit = function(evt) {
-        if (replaceOutput && sagecell.last_session[evt.target]) {
-            $(sagecell.last_session[evt.target].session_container).remove();
+        var id = $(evt.target).data("id");
+        if (!id) {
+            $(evt.target).data("id", id = IPython.utils.uuid());
         }
-
+        if (replaceOutput && sagecell.last_session[id]) {
+            $(sagecell.last_session[id].session_container).remove();
+        }
         if (editorData.save !== undefined) {
             editorData.save();
         }
-        var session = sagecell.next_session[evt.target] ||
+        var session = sagecell.next_session[id] ||
                       new sagecell.Session(outputLocation, false);
-        sagecell.next_session[evt.target] = new sagecell.Session(outputLocation, true);
+        sagecell.next_session[id] = new sagecell.Session(outputLocation, true);
         $(session.session_container).show();
         session.execute(textArea.val());
-        sagecell.last_session[evt.target] = session;
+        sagecell.last_session[id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
         outputLocation.find(".sagecell_output_elements").show();
@@ -437,7 +440,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         form.style.display = iframe.style.display = "none";
         document.body.appendChild(iframe);
         document.body.appendChild(form);
-        listen = function(evt) {
+        listen = function (evt) {
             if (evt.source === iframe.contentWindow &&
                 evt.origin + "/" === sagecell.$URL.root) {
                 if (window.removeEventListener) {
@@ -576,12 +579,9 @@ sagecell.util = {
     }
 };
 
-// TODO: Make websockets use external URLs so the Sage Cell can be embedded
-//       from another server
-
 // Make the script root available to jquery
 sagecell.$URL = {'root': {{request.url_root|tojson|safe}},
-        'kernel': 'kernel',
+        'kernel': {{url_for('main_kernel', _external=True)|tojson|safe}},
         'powered_by_img': {{url_for('.static', filename='sagelogo.png', _external=True)|tojson|safe}},
         'spinner_img': {{url_for('.static', filename='spinner.gif', _external=True)|tojson|safe}}}
 

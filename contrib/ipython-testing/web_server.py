@@ -81,7 +81,6 @@ def main_kernel():
     ``<ws_url>/iopub`` is the expected iopub stream url
     ``<ws_url>/shell`` is the expected shell stream url
     """
-    print "%s BEGIN MAIN KERNEL HANDLER %s" % ("*" * 10, "*" * 10)
 
     ws_url = request.url_root.replace("http", "ws")
 
@@ -91,10 +90,13 @@ def main_kernel():
     print "kernel started with id ::: %s" % kernel_id
 
     data = json.dumps({"ws_url": ws_url, "kernel_id": kernel_id})
-    r = Response(data, mimetype="application/json")
-
-    print "%s END MAIN KERNEL HANDLER %s"%("*" * 10, "*" * 10)
-    return r
+    if (request.values.get("frame") is not None):
+        return Response("<script>parent.postMessage(" + json.dumps(data) +
+                ",\"*\");</script>")
+    else:
+        r = Response(data, mimetype="application/json")
+        r.headers["Access-Control-Allow-Origin"] = "*"
+        return r
 
 _embedded_sagecell_cache = None
 @app.route("/embedded_sagecell.js")
@@ -113,7 +115,7 @@ def embedded():
         response.headers['Etag'] = datahash
     return response
 
-@app.route("/permalink", methods=["POST", "GET"])
+@app.route("/permalink", methods=["POST"])
 def get_permalink():
     """
     Permalink generation request handler.

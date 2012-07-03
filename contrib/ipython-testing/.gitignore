@@ -6,4 +6,4 @@ config.py
 # generated web files
 static/all*
 static/jquery.min.js
-static/*.wrap.js
+static/wrap.js

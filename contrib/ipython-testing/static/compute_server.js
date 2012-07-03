@@ -30,11 +30,18 @@ sagecell.Session = function (outputDiv, hide) {
     this.sessionContinue = true;
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": console.log};
+    $.post = function (url, callback) {
+        sagecell.sendRequest("POST", url, {}, function (data) {
+            callback(JSON.parse(data));
+        });
+    }
     this.opened = false;
     this.deferred_code = [];
     this.kernel = new IPython.Kernel(sagecell.$URL.kernel);
     var that = this;
     this.kernel._kernel_started = function (json) {
+        // Strip the hostname from the beginning of the base_url
+        this.base_url = this.base_url.replace(/^\w+:\/\/.*?\//, "");
         this._kernel_started = IPython.Kernel.prototype._kernel_started;
         this._kernel_started(json);
         this.shell_channel.onopen = function () {
@@ -828,9 +835,6 @@ IPython.Kernel.prototype._handle_iopub_reply = function (e) {
         }
     };
 };
-
-
-
 
 // Initialize jmol
 // TODO: move to a better place
