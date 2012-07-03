@@ -101,14 +101,39 @@ class TestTrustedMultiKernelManager:
     def test_get_hb_info_invalid_kernel_id(self):
         assert_raises(KeyError, self.a.get_hb_info, "blah")
 
-    def test_add_computer_success(self):
+    def test_ssh_untrusted(self):
         import config as conf
         sage = conf.sage
         config = {"host": "localhost",
-                          "username": None,
-                          "python": sage + " -python",
-                          "log_file": None,
-                          "max": 15}
+                  "username": None,
+                  "python": sage + " -python",
+                  "log_file": None,
+                  "max": 15}
+        client = self.a._setup_ssh_connection(config["host"], config["username"])
+        with opened(testlog, "w") as f:
+            with stdout_redirected(f):
+                x = self.a._ssh_untrusted(config, client)
+
+        assert_equal(x == None, False)
+        assert_equal(len(x), 5)
+
+        f = open(testlog, "r")
+        y = f.readline()
+        assert_equal("executing " in y, True)
+        assert_equal("-python " in y, True)
+        assert_equal("receiver.py" in y, True)
+        assert_equal("/dev/null" in y, True)
+        y = f.readline()
+        assert_equal(y, "")
+
+    def test_add_computer_success(self): # depends on _setup_ssh_connection, _ssh_untrusted
+        import config as conf
+        sage = conf.sage
+        config = {"host": "localhost",
+                  "username": None,
+                  "python": sage + " -python",
+                  "log_file": None,
+                  "max": 15}
         with opened(testlog, "w") as f:
             with stdout_redirected(f):
                 x = self.a.add_computer(config)
@@ -132,13 +157,13 @@ class TestTrustedMultiKernelManager:
         assert_equal("executing " in y, True)
         assert_equal("-python " in y, True)
         assert_equal("receiver.py" in y, True)
+        assert_equal("/dev/null" in y, True)
         y = f.readline()
         assert_equal("ZMQ Connection with computer " in y, True)
         assert_equal(" at port " in y, True)
         assert_equal(" established." in y, True)
         y = f.readline()
         assert_equal(y, "")
-                
 
     def test_setup_ssh_connection_success(self):
         x = self.a._setup_ssh_connection("localhost", username=None)
@@ -175,7 +200,6 @@ class TestTrustedMultiKernelManager:
         assert_equal(y, "")
         assert_equal(self.a._comps[x]["kernels"], {})
         assert_equal(self.a._kernels, {})
-
 
     def test_purge_kernels_success(self): # depends on add_computer, new_session
         self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
@@ -242,10 +266,6 @@ class TestTrustedMultiKernelManager:
         assert_equal(y["type"], "success")
         y = f.readline()
         assert_equal(y, "")
-        client = self.a._clients[x]["ssh"]
-        # ensures the client is closed, but perhaps remove_computer should delete it from tmkm._clients instead?
-        # we also leave the request socket in _clients... maybe should clean up?
-        assert_raises(AttributeError, client.exec_command, "print 'hi'")
         assert_equal(kern1 in self.a._kernels, False)
         assert_equal(kern2 in self.a._kernels, False)
         assert_equal(x in self.a._comps, False)
@@ -267,8 +287,6 @@ class TestTrustedMultiKernelManager:
         assert_equal(y["type"], "success")
         y = f.readline()
         assert_equal(y, "")
-        client = self.a._clients[b]["ssh"]
-        assert_raises(AttributeError, client.exec_command, "print 'hi'")
         assert_equal(b in self.a._comps, False)
 
     def test_restart_kernel_success(self): # depends on add_computer, new_session
