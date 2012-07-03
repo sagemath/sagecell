@@ -21,9 +21,10 @@ jsmin-bin      = submodules/jsmin-bin
 wrap-js        = static/wrap.js
 sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
 ip-js          = $(sage-root)/local/lib/python2.7/site-packages/IPython/frontend/html/notebook/static/js
-ip-kernel      = $(ip-js)/kernel.js
-ip-utils       = $(ip-js)/utils.js
 ip-namespace   = $(ip-js)/namespace.js
+ip-events      = $(ip-js)/events.js
+ip-utils       = $(ip-js)/utils.js
+ip-kernel      = $(ip-js)/kernel.js
 jquery-url     = http://code.jquery.com/jquery-1.7.2.min.js
 jmol-sage      = $(sage-root)/local/share/jmol
 
@@ -45,10 +46,10 @@ $(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(codemirror-py) \
 	echo ';' >> $(all-js)
 	cat $(compute_server) $(sagecell) >> $(all-js)
 
-$(wrap-js): $(wrap-jquery) $(ip-utils) $(ip-kernel) \
+$(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
             $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
-	cat $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) $(colorpicker) | \
-	    $(wrap-jquery) > $(wrap-js)
+	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
+	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
 
 $(all-min-css): $(codemirror-css) $(sagecell-css)
 	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)

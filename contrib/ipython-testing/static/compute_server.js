@@ -69,10 +69,18 @@ sagecell.Session = function (outputDiv, hide) {
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
+    $([IPython.events]).on({
+        "status_busy.Kernel": function () {
+            that.spinner.style.display = "";
+        }, "status_idle.Kernel": function () {
+            that.spinner.style.display = "none";
+        }, "status_dead.Kernel": function () {
+            $(that.output_blocks[null]).removeClass("sagecell_active");
+        }
+    });
     if (hide) {
         $(this.session_container).hide();
     }
-    this.open_count = 1;
     this.replace_output = {};
     this.lock_output = false;
     this.files = {};
@@ -81,8 +89,7 @@ sagecell.Session = function (outputDiv, hide) {
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
-        var callbacks = {"execute_reply": $.proxy(this.handle_execute_reply, this),
-                         "output": $.proxy(this.handle_output, this)};
+        var callbacks = {"output": $.proxy(this.handle_output, this)};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false}));
     } else {
         this.deferred_code.push(code);
@@ -90,8 +97,7 @@ sagecell.Session.prototype.execute = function (code) {
 };
 
 sagecell.Session.prototype.set_last_request = function (interact_id, msg_id) {
-    this.kernel.set_callbacks_for_msg(this.last_requests[interact_id],
-        {"execute_reply": $.proxy(this.handle_execute_reply, this)});
+    this.kernel.set_callbacks_for_msg(this.last_requests[interact_id]);
     this.last_requests[interact_id] = msg_id;
 };
 
@@ -157,12 +163,6 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
     MathJax.Hub.Queue([function () {$(output).find(".math").removeClass('math');}]);
 };
 
-sagecell.Session.prototype.handle_execute_reply = function (content) {
-    if (--this.open_count === 0) {
-        this.spinner.style.display = "none";
-    }
-};
-
 /**************************************************************
 * 
 * InteractCell Class
@@ -203,8 +203,6 @@ sagecell.InteractCell.prototype.bindChange = function () {
                 }
             }
             code += kwargs.join(",") + "})";
-            that.session.spinner.style.display = "";
-            that.session.open_count++;
             that.session.replace_output[that.interact_id] = true;
             that.session.execute(code);
         }
