@@ -1,26 +1,19 @@
 #! /usr/bin/env python
 
-"""
-System imports
-"""
+# System imports
 import uuid, os, json, urllib, string
 
-"""
-Flask imports
-"""
+# Flask imports
 from flask import Flask, request, render_template, redirect, url_for, jsonify, send_file, json, Response, abort, make_response
+from hashlib import sha1
 
-"""
-Sagecell imports
-"""
+# Sage Cell imports
 import misc
 
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
 from db_sqlalchemy import DB
 
-"""
-Flask webserver
-"""
+# Flask webserver
 app = Flask(__name__)
 
 _VALID_QUERY_CHARS = set(string.letters+string.digits+"-")
@@ -88,26 +81,44 @@ def main_kernel():
     ``<ws_url>/iopub`` is the expected iopub stream url
     ``<ws_url>/shell`` is the expected shell stream url
     """
-    print "%s BEGIN MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
 
-    ws_url = request.url_root.replace("http","ws")
+    ws_url = request.url_root.replace("http", "ws")
 
     km = application.km
     kernel_id = km.new_session()
 
-    print "kernel started with id ::: %s"%kernel_id
+    print "kernel started with id ::: %s" % kernel_id
 
     data = json.dumps({"ws_url": ws_url, "kernel_id": kernel_id})
-    r = Response(data, mimetype="application/json")
+    if (request.values.get("frame") is not None):
+        return Response("<script>parent.postMessage(" + json.dumps(data) +
+                ",\"*\");</script>")
+    else:
+        r = Response(data, mimetype="application/json")
+        r.headers["Access-Control-Allow-Origin"] = "*"
+        return r
 
-    print "%s END MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
-    return r
+_embedded_sagecell_cache = None
+@app.route("/embedded_sagecell.js")
+def embedded():
+    global _embedded_sagecell_cache
+    if _embedded_sagecell_cache is None:
+        data = Response(render_template("embedded_sagecell.js"),
+                        content_type='application/javascript')
+        _embedded_sagecell_cache = (data, sha1(repr(data)).hexdigest())
+    data,datahash = _embedded_sagecell_cache
+    if request.environ.get('HTTP_IF_NONE_MATCH', None) == datahash:
+        response = make_response('', 304)
+    else:
+        response = make_response(data)
+        response.headers['Content-Type'] = 'application/javascript; charset=utf-8'
+        response.headers['Etag'] = datahash
+    return response
 
-@app.route("/permalink", methods=["POST", "GET"])
+@app.route("/permalink", methods=["POST"])
 def get_permalink():
     """
     Permalink generation request handler.
-
     This accepts the string version of an iPython
     execute_request message, and stores the code associated
     with that request in a database linked to a unique id,
@@ -137,32 +148,23 @@ Tornado / zmq imports
 import zmq
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
-ioloop.install()
-
 import tornado.web
 import tornado.wsgi
 import tornado.websocket
 
-"""
-Allow Flask and Tornado to work together.
-"""
+# Tornado Handlers
+from handlers import ShellHandler, IOPubHandler
+
+ioloop.install()
+
+# Allow Flask and Tornado to work together.
 wsgi_app = tornado.wsgi.WSGIContainer(app)
-
-
-"""
-Globals
-"""
+# Globals
 # This matches a kernel id (uuid4 format) from a url
 _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 
-"""
-Tornado Handlers
-"""
-from handlers import ShellHandler, IOPubHandler
-
-"""
-Tornado Web Server
-"""
+# Tornado Web Server
+# Web Server
 class SageCellServer(tornado.web.Application):
     def __init__(self):
         handlers = [
@@ -170,7 +172,6 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel/%s/shell" % _kernel_id_regex, ShellHandler),
             (r".*", tornado.web.FallbackHandler, {'fallback': wsgi_app})
             ]
-
         self.config = misc.Config()
 
         initial_comps = self.config.get_config("computers")

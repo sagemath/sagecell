@@ -47,7 +47,7 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
         retval = jsonapi.dumps(msg)
 
         if "execute_reply" == msg["msg_type"]:
-            timeout = msg["content"]["user_variables"].get("__kernel_timeout__")
+            timeout = msg["content"]["user_expressions"].get("timeout")
 
             try:
                 timeout = float(timeout) # in case user manually puts in a string
@@ -57,7 +57,6 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
 
             if timeout > self.kernel_timeout:
                 timeout = self.kernel_timeout
-
             if timeout <= 0.0: # kill the kernel before the heartbeat is able to
                 self.km.end_session(self.kernel_id)
             else:
@@ -69,10 +68,9 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     def _on_zmq_reply(self, msg_list):
         try:
             message = self._reserialize_reply(msg_list)
+            self.write_message(message)
         except:
             pass
-        else:
-            self.write_message(message)
 
 class ShellHandler(ZMQStreamHandler):
     """
@@ -87,12 +85,12 @@ class ShellHandler(ZMQStreamHandler):
         print "*"*10, " END SHELL HANDLER ", "*"*10
 
     def on_message(self, message):
-        msg = jsonapi.loads(message)
-        if "execute_request" == msg["header"]["msg_type"]:
-            msg["content"]["user_variables"] = ['__kernel_timeout__']
-            self.km._kernels[self.kernel_id]["executing"] = True
-            
-        self.session.send(self.shell_stream, msg)
+        if self.km._kernels.get(self.kernel_id) is not None:
+            msg = jsonapi.loads(message)
+            if "execute_request" == msg["header"]["msg_type"]:
+                msg["content"]["user_expressions"] = {"timeout": "sys._sage_.kernel_timeout"}
+                self.km._kernels[self.kernel_id]["executing"] = True
+                self.session.send(self.shell_stream, msg)
 
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():

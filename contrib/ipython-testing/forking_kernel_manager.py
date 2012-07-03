@@ -6,8 +6,10 @@ import tempfile
 import json
 import random
 import sys
-import interact
 import resource
+import interact_sagecell
+import interact_compatibility
+import misc
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
@@ -17,6 +19,7 @@ import sage.all
 from sage.misc.interpreter import SageInputSplitter
 from IPython.core.inputsplitter import IPythonInputSplitter
 
+sage.misc.misc.EMBEDDED_MODE = {'frontend': 'sagecell'}
 
 class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
     """
@@ -39,8 +42,8 @@ class ForkingKernelManager(object):
         ka.kernel.shell.input_splitter = SageIPythonInputSplitter()
         user_ns = ka.kernel.shell.user_ns
         user_ns.update(sage_dict)
-        user_ns.update(interact.classes)
-        user_ns.update({"__kernel_timeout__": 0.0})
+        user_ns.update(interact_sagecell.imports)
+        user_ns.update(interact_compatibility.imports)
         sage_code = """
 sage.misc.session.init()
 
@@ -48,12 +51,18 @@ sage.misc.session.init()
 set_random_seed()
 """
         exec sage_code in user_ns
-        if "sys" in user_ns:
-            user_ns["sys"]._interacts = interact.interacts
-        else:
-            sys._interacts = interact.interacts
-            user_ns["sys"] = sys
-        user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
+
+        class TempClass(object):
+            pass
+        _sage_ = TempClass()
+        _sage_.display_message = misc.display_message
+        _sage_.update_interact = interact_sagecell.update_interact
+        _sage_.kernel_timeout = 0.0
+        sys._sage_ = _sage_
+
+        # overwrite Sage's interact command with our own
+        user_ns["interact"] = interact_sagecell.interact_func(ka.session, ka.iopub_socket)
+        
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
