@@ -37,6 +37,7 @@ sagecell.Session = function (outputDiv, hide) {
     }
     this.opened = false;
     this.deferred_code = [];
+    this.interacts = [];
     this.kernel = new IPython.Kernel(sagecell.$URL.kernel);
     var that = this;
     this.kernel._kernel_started = function (json) {
@@ -75,6 +76,9 @@ sagecell.Session = function (outputDiv, hide) {
         }, "status_idle.Kernel": function () {
             that.spinner.style.display = "none";
         }, "status_dead.Kernel": function () {
+            for (var i = 0; i < that.interacts.length; i++) {
+                that.interacts[i].disable();
+            }
             $(that.output_blocks[null]).removeClass("sagecell_active");
         }
     });
@@ -151,7 +155,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
         }
     } else if (msg_type === "extension") {
         if (content.msg_type === "interact_prepare") {
-            new sagecell.InteractCell(this, content.content, block_id);
+            this.interacts.push(new sagecell.InteractCell(this, content.content, block_id));
         }
     }
     this.appendMsg(content, "Accepted: ");
@@ -257,7 +261,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             var table2 = ce("table", {"class": "sagecell_interactControls"});
             for (var i = 0; i < this.layout[loc].length; i++) {
                 var tr = ce("tr");
-                var id = this.interact_id + "_" + cells[loc][i];
+                var id = this.interact_id + "_" + this.layout[loc][i];
                 var right = ce("td", {}, [
                     this.controls[this.layout[loc][i]].rendered(id)
                 ]);
@@ -281,6 +285,14 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
         }
     }
     this.session.output(table, parent_block);
+}
+
+sagecell.InteractCell.prototype.disable = function () {
+    for (var name in this.controls) {
+        if (this.controls.hasOwnProperty(name)) {
+            this.controls[name].disable();
+        }
+    }
 }
 
 sagecell.InteractData = {};
@@ -316,6 +328,10 @@ sagecell.InteractData.Button.prototype.py_value = function () {
     var c = this.clicked;
     this.clicked = false;
     return c ? "True" : "False";
+}
+
+sagecell.InteractData.Button.prototype.disable = function () {
+    $(this.button).button("option", "disabled", true);
 }
 
 sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
@@ -359,6 +375,10 @@ sagecell.InteractData.ButtonBar.prototype.py_value = function () {
     return i !== null ? i : "None";
 }
 
+sagecell.InteractData.ButtonBar.prototype.disable = function () {
+    this.buttons.button("option", "disabled", true);
+}
+
 sagecell.InteractData.Checkbox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Checkbox.prototype.rendered = function () {
@@ -373,6 +393,10 @@ sagecell.InteractData.Checkbox.prototype.changeHandlers = function () {
 
 sagecell.InteractData.Checkbox.prototype.py_value = function () {
     return this.input.checked ? "True" : "False";
+}
+
+sagecell.InteractData.Checkbox.prototype.disable = function () {
+    this.input.disabled = true;
 }
 
 sagecell.InteractData.ColorSelector = sagecell.InteractData.InteractControl();
@@ -407,6 +431,11 @@ sagecell.InteractData.ColorSelector.prototype.py_value = function() {
     return JSON.stringify(this.color);
 }
 
+sagecell.InteractData.ColorSelector.prototype.disable = function () {
+    $(this.span.firstChild).off("click");
+    this.span.firstChild.style.cursor = "default";
+}
+
 sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.HtmlBox.prototype.rendered = function () {
@@ -423,6 +452,8 @@ sagecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
 sagecell.InteractData.HtmlBox.prototype.py_value = function() {
     return "None";
 }
+
+sagecell.InteractData.HtmlBox.prototype.disable = function () {}
 
 sagecell.InteractData.InputBox = sagecell.InteractData.InteractControl();
 
@@ -444,6 +475,10 @@ sagecell.InteractData.InputBox.prototype.changeHandlers = function() {
 
 sagecell.InteractData.InputBox.prototype.py_value = function () {
     return "u" + JSON.stringify(this.textbox.value);
+}
+
+sagecell.InteractData.InputBox.prototype.disable = function () {
+    this.textbox.disabled = true;
 }
 
 sagecell.InteractData.InputGrid = sagecell.InteractData.InteractControl();
@@ -479,6 +514,10 @@ sagecell.InteractData.InputGrid.prototype.py_value = function () {
         string += "],";
     }
     return string + "]";
+}
+
+sagecell.InteractData.InputGrid.prototype.disable = function () {
+    this.textboxes.attr("disabled", true);
 }
 
 sagecell.InteractData.MultiSlider = sagecell.InteractData.InteractControl();
@@ -564,6 +603,11 @@ sagecell.InteractData.MultiSlider.prototype.py_value = function () {
     return JSON.stringify(this.values);
 }
 
+sagecell.InteractData.MultiSlider.prototype.disable = function () {
+    this.sliders.slider("option", "disabled", true);
+    this.value_boxes.attr("disabled", true);
+}
+
 sagecell.InteractData.Selector = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
@@ -627,6 +671,16 @@ sagecell.InteractData.Selector.prototype.py_value = function () {
     return JSON.stringify(this.value);
 }
 
+sagecell.InteractData.Selector.prototype.disable = function () {
+    if (this.control.subtype === "list") {
+        this.changing.disabled = true;
+    } else if (this.control.subtype === "radio") {
+        this.changing.attr("disabled", true);
+    } else {
+        this.changing.button("option", "disabled", true);
+    }   
+}
+
 sagecell.InteractData.Slider = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Slider.prototype.rendered = function () {
@@ -636,6 +690,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
     this.range = this.control.subtype === "discrete_range" ||
                  this.control.subtype === "continuous_range";
     var container = ce("span");
+    this.value_boxes = $();
     container.style.whitespace = "nowrap";
     this.slider = ce("span", {"class": "sagecell_sliderControl"});
     container.appendChild(this.slider);
@@ -702,6 +757,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                 max_text,
                 document.createTextNode(")")
             ]);
+            this.value_boxes = $([min_text, max_text]);
             span.style.fontFamily = "monospace";
             container.appendChild(span);
         } else {
@@ -732,6 +788,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                 textbox.size = textbox.value.length + 1;
             });
             container.appendChild(textbox);
+            this.value_boxes = $(textbox);
         }
     } else if (this.range) {
         this.values = this.control.default.slice();
@@ -781,6 +838,11 @@ sagecell.InteractData.Slider.prototype.py_value = function () {
     } else {
         return JSON.stringify(this.value);
     }
+}
+
+sagecell.InteractData.Slider.prototype.disable = function () {
+    $(this.slider).slider("option", "disabled", true);
+    this.value_boxes.attr("disabled", true);
 }
 
 sagecell.InteractData.control_types = {
