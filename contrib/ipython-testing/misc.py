@@ -39,19 +39,24 @@ class Config(object):
         Get a config attribute. If the attribute is defined
         in the user-specified file, that is used, otherwise
         the default config file attribute is used if
-        possible.
+        possible. If the attribute is a dictionary, the items
+        in config and default_config will be merged.
 
         :arg attr str: the name of the attribute to get
         :returns: the value of the named attribute, or
             None if the attribute does not exist.
         """
-        config_val = self.get_default_config(attr)
+        default_config_val = self.get_default_config(attr)
+        config_val = default_config_val
 
         if self.config is not None:
             try:
                 config_val = getattr(self.config, attr)
             except AttributeError:
                 pass
+
+        if isinstance(config_val, dict):
+            config_val = dict(default_config_val.items() + config_val.items())
 
         return config_val
 

@@ -44,6 +44,7 @@ class ForkingKernelManager(object):
         user_ns.update(sage_dict)
         user_ns.update(interact_sagecell.imports)
         user_ns.update(interact_compatibility.imports)
+        user_ns.update({"__kernel_timeout__": 0.0})
         sage_code = """
 sage.misc.session.init()
 
