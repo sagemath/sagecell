@@ -214,6 +214,4 @@ def session_metadata(metadata):
 def display_message(data):
     session = sys.stdout.session
     content = {'data': data, 'source': 'sagecell'}
-    import logging
-    logging.debug('SENDING DISPLAY MESSAGE: %s'%content)
     session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header)

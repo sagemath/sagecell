@@ -57,7 +57,6 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
 
             if timeout > self.kernel_timeout:
                 timeout = self.kernel_timeout
-            print timeout, self.kernel_timeout
             if timeout <= 0.0: # kill the kernel before the heartbeat is able to
                 self.km.end_session(self.kernel_id)
             else:
