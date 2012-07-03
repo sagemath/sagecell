@@ -85,12 +85,12 @@ class ShellHandler(ZMQStreamHandler):
         print "*"*10, " END SHELL HANDLER ", "*"*10
 
     def on_message(self, message):
-        msg = jsonapi.loads(message)
-        if "execute_request" == msg["header"]["msg_type"]:
-            msg["content"]["user_expressions"] = {"timeout": "sys._sage_.kernel_timeout"}
-            self.km._kernels[self.kernel_id]["executing"] = True
-            
-        self.session.send(self.shell_stream, msg)
+        if self.km._kernels.get(self.kernel_id) is not None:
+            msg = jsonapi.loads(message)
+            if "execute_request" == msg["header"]["msg_type"]:
+                msg["content"]["user_expressions"] = {"timeout": "sys._sage_.kernel_timeout"}
+                self.km._kernels[self.kernel_id]["executing"] = True
+                self.session.send(self.shell_stream, msg)
 
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():
