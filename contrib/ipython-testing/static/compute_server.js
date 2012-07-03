@@ -70,12 +70,18 @@ sagecell.Session = function (outputDiv, hide) {
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
-    $([IPython.events]).on({
-        "status_busy.Kernel": function () {
+    $([IPython.events]).on("status_busy.Kernel", function (e, kernel_id) {
+        if (kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
-        }, "status_idle.Kernel": function () {
+        }
+    });
+    $([IPython.events]).on("status_idle.Kernel", function (e, kernel_id) {
+        if (kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "none";
-        }, "status_dead.Kernel": function () {
+        }
+    });
+    $([IPython.events]).on("status_dead.Kernel", function (e, kernel_id) {
+        if (kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
@@ -94,7 +100,7 @@ sagecell.Session = function (outputDiv, hide) {
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
         var callbacks = {"output": $.proxy(this.handle_output, this)};
-        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false}));
+        this.set_last_request(null, this.kernel.execute(code, callbacks));
     } else {
         this.deferred_code.push(code);
     }
@@ -860,7 +866,8 @@ sagecell.InteractData.control_types = {
 
 /* This function is copied from IPython's kernel.js
  * (https://github.com/ipython/ipython/blob/master/IPython/frontend/html/notebook/static/js/kernel.js)
- * and modified to allow messages of type 'extension'.
+ * and modified to allow messages of type 'extension' and pass the kernel_id
+ * to the event handlers
  */
 IPython.Kernel.prototype._handle_iopub_reply = function (e) {
     var reply = $.parseJSON(e.data);
@@ -881,12 +888,12 @@ IPython.Kernel.prototype._handle_iopub_reply = function (e) {
         }
     } else if (msg_type === 'status') {
         if (content.execution_state === 'busy') {
-            $([IPython.events]).trigger('status_busy.Kernel');
+            $([IPython.events]).trigger('status_busy.Kernel', this.kernel_id);
         } else if (content.execution_state === 'idle') {
-            $([IPython.events]).trigger('status_idle.Kernel');
+            $([IPython.events]).trigger('status_idle.Kernel', this.kernel_id);
         } else if (content.execution_state === 'dead') {
             this.stop_channels();
-            $([IPython.events]).trigger('status_dead.Kernel');
+            $([IPython.events]).trigger('status_dead.Kernel', this.kernel_id);
         };
     } else if (msg_type === 'clear_output') {
         var cb = callbacks['clear_output'];
