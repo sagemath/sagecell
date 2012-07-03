@@ -2,11 +2,23 @@ from untrusted_kernel_manager import UntrustedMultiKernelManager
 import zmq
 from zmq import ssh
 import sys
+from sage.misc.interpreter import SageInputSplitter
+from IPython.core.inputsplitter import IPythonInputSplitter
+import interact
+
+
+class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
+    """
+    This class merely exists so that the IPKernelApp.kernel.shell class does not complain.  It requires
+    a subclass of IPythonInputSplitter, but SageInputSplitter is a subclass of InputSplitter instead.
+    """
+    pass
 
 class Receiver:
     def __init__(self, filename):
+        self.setup_sage()
         self.context = zmq.Context()
-        self.km = UntrustedMultiKernelManager(filename)
+        self.km = UntrustedMultiKernelManager(filename, update_function = self.update_dict_with_sage)
         self.rep = self.context.socket(zmq.REP)
         self.port = self.rep.bind_to_random_port("tcp://127.0.0.1")
         self.filename = filename
@@ -39,6 +51,52 @@ class Receiver:
         return {"content": content,
                 "type": "error" if error else "success"}
 
+    def setup_sage(self):
+        try:
+            logging.debug('initializing sage')
+            import StringIO
+            import sage
+            import sage.all
+            # The first plot takes about 2 seconds to generate (presumably
+            # because lots of things, like matplotlib, are imported).  We plot
+            # something here so that worker processes don't have this overhead
+            logging.debug('plotting')
+            try:
+                sage.all.plot(lambda x: x, (0,1)).save(StringIO.StringIO())
+            except Exception as e:
+                logging.debug('plotting exception: %s'%e)
+            self.sage_dict = {'sage': sage}
+            sage_code = """
+from sage.all import *
+from sage.calculus.predefined import x
+from sage.misc.html import html
+from sage.server.support import help
+from sagenb.misc.support import automatic_names
+"""
+            exec sage_code in self.sage_dict
+
+            logging.debug('set up sage')
+        except ImportError as e:
+            self.sage_dict = {}
+
+    def update_dict_with_sage(self, user_ns, input_splitter, session, iopub_socket):
+        input_splitter = SageIPythonInputSplitter()
+        user_ns.update(self.sage_dict)
+        user_ns.update(interact.classes)
+        user_ns.update({"__kernel_timeout__": 0.0})
+        sage_code = """
+sage.misc.session.init()
+
+# Ensure unique random state after forking
+set_random_seed()
+"""
+        exec sage_code in user_ns
+        if "sys" in user_ns:
+            user_ns["sys"]._interacts = interact.interacts
+        else:
+            sys._interacts = interact.interacts
+            user_ns["sys"] = sys
+        user_ns["interact"] = interact.interact_func(session, iopub_socket)
 
     """
     Message Handlers

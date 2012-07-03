@@ -1,10 +1,6 @@
 import uuid
-import zmq
 import os
 import signal
-import tempfile
-import json
-import random
 import sys
 import interact
 import resource
@@ -12,48 +8,20 @@ from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
 import logging
-import sage
-import sage.all
-from sage.misc.interpreter import SageInputSplitter
-from IPython.core.inputsplitter import IPythonInputSplitter
-
-
-class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
-    """
-    This class merely exists so that the IPKernelApp.kernel.shell class does not complain.  It requires
-    a subclass of IPythonInputSplitter, but SageInputSplitter is a subclass of InputSplitter instead.
-    """
-    pass
 
 class ForkingKernelManager(object):
-    def __init__(self, filename):
+    def __init__(self, filename, update_function=None):
         self.kernels = {}
         self.filename = filename
+        self.update_function = update_function
 
-    def fork_kernel(self, sage_dict, config, pipe, resource_limits, logfile):
+    def fork_kernel(self, config, pipe, resource_limits, logfile):
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
         ka = IPKernelApp.instance(config=config)
         ka.initialize([])
-        # this should really be handled in the config, not set separately.
-        ka.kernel.shell.input_splitter = SageIPythonInputSplitter()
-        user_ns = ka.kernel.shell.user_ns
-        user_ns.update(sage_dict)
-        user_ns.update(interact.classes)
-        user_ns.update({"__kernel_timeout__": 0.0})
-        sage_code = """
-sage.misc.session.init()
-
-# Ensure unique random state after forking
-set_random_seed()
-"""
-        exec sage_code in user_ns
-        if "sys" in user_ns:
-            user_ns["sys"]._interacts = interact.interacts
-        else:
-            sys._interacts = interact.interacts
-            user_ns["sys"] = sys
-        user_ns["interact"] = interact.interact_func(ka.session, ka.iopub_socket)
+        if self.update_function is not None:
+            self.update_function(ka.kernel.shell.user_ns, ka.kernel.shell.input_splitter, ka.session, ka.iopub_socket)
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
@@ -61,9 +29,7 @@ set_random_seed()
         pipe.close()
         ka.start()
 
-    def start_kernel(self, sage_dict=None, kernel_id=None, config=None, resource_limits=None, logfile = None):
-        if sage_dict is None:
-            sage_dict = {}
+    def start_kernel(self, kernel_id=None, config=None, resource_limits=None, logfile = None):
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
@@ -71,7 +37,7 @@ set_random_seed()
         if resource_limits is None:
             resource_limits = {}
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(sage_dict, config, q, resource_limits, logfile))
+        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
         proc.start()
         connection = p.recv()
         p.close()
@@ -111,15 +77,17 @@ set_random_seed()
 
         return success
 
-    def restart_kernel(self, sage_dict, kernel_id):
+    def restart_kernel(self, kernel_id):
         ports = self.kernels[kernel_id][1]
         self.kill_kernel(kernel_id)
-        return self.start_kernel(sage_dict, kernel_id, Config({"IPKernelApp": ports}))
+        return self.start_kernel(kernel_id, Config({"IPKernelApp": ports}))
 
 if __name__ == "__main__":
-    a = ForkingKernelManager()
-    x=a.start_kernel()
-    y=a.start_kernel()
+    def f(a,b,c,d):
+        return 1
+    a = ForkingKernelManager("/dev/null", f)
+    x = a.start_kernel()
+    y = a.start_kernel()
     import time
     time.sleep(5)
     a.kill_kernel(x["kernel_id"])
