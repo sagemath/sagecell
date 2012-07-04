@@ -7,33 +7,32 @@ class Receiver:
     def __init__(self, filename):
         self.context = zmq.Context()
         self.km = UntrustedMultiKernelManager(filename)
-        self.rep = self.context.socket(zmq.REP)
-        self.port = self.rep.bind_to_random_port("tcp://127.0.0.1")
+        self.dealer = self.context.socket(zmq.DEALER)
+        self.port = self.dealer.bind_to_random_port("tcp://127.0.0.1")
         self.filename = filename
         sys.stdout.write(str(self.port))
         sys.stdout.flush()
 
     def start(self):
-        handshake = self.rep.recv()
-        self.rep.send(handshake)
-        
         self.listen = True
         while self.listen:
-            msg = self.rep.recv_pyobj()
-            msg_type = msg["type"]
+            source = self.dealer.recv()
+            msg = self.dealer.recv_pyobj()
 
-            print msg
+            msg_type = "invalid_message"
+            if msg.get("type") is not None:
+                msgtype = msg["type"]
+                if hasattr(self, msgtype):
+                    msg_type = msgtype
 
             if msg.get("content") is None:
                 msg["content"] = {}
 
-            if not hasattr(self, msg_type):
-                msg_type = "invalid_message"
-
             handler = getattr(self, msg_type)
             response = handler(msg["content"])
 
-            self.rep.send_pyobj(response)
+            self.dealer.send(source, zmq.SNDMORE)
+            self.dealer.send_pyobj(response)
 
     def _form_message(self, content, error=False):
         return {"content": content,
