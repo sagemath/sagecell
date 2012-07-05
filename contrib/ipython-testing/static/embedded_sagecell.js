@@ -15,11 +15,20 @@ if (jQuery === undefined) {
 sagecell.jQuery = $;
 
 sagecell.URLs = {};
-// Read root url from the script tag loading this file
-sagecell.URLs.root = $("script").last().attr("src").match(/^(\w+:\/\/[^\/]*)?/)[0] + "/";
-if (sagecell.URLs.root === "/") {
-    sagecell.URLs.root = location.protocol + "//" + location.host + "/";
-}
+
+(function () {
+    // Read root url from the script tag loading this file
+    var r = $("script").last().attr("src").match(/^.*(?=embedded_sagecell.js)/)[0];
+    var s = "static/";
+    if (r.substring(r.length - s.length) === s) {
+        r = r.substring(0, r.length - s.length);
+    }
+    if (r === "" || r === "/") {
+        r = window.location.protocol + "//" + window.location.host + "/";
+    }
+    sagecell.URLs.root = r;
+}());
+
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/jqueryui/css/sage/images/jquery-achtung-wait.gif";
@@ -375,7 +384,7 @@ sagecell.sendRequest = function (method, url, data, callback, files, accept) {
         }
     }
     var xhr = new XMLHttpRequest();
-    var isXDomain = sagecell.URLs.root !== location.protocol + "//" + location.host + "/";
+    var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
     var fd = undefined;
     if (method === "GET") {
         data.rand = Math.random().toString();
