@@ -1,4 +1,4 @@
-import time
+import time, string, urllib, zlib, base64, uuid
 
 import tornado.web
 import tornado.websocket
@@ -8,7 +8,237 @@ from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
 
-class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
+class RootHandler(tornado.web.RequestHandler):
+    """
+    Root URL request handler.
+    
+    This renders templates/root.html, which optionally inserts
+    specified preloaded code during the rendering process.
+    
+    There are three ways currently supported to specify
+    preloading code:
+    
+    ``<root_url>?c=<code>`` loads 'plaintext' code
+    ``<root_url>?z=<base64>`` loads base64-compressed code
+    ```<root_url>?q=<uuid>`` loads code from a database based
+    upon a unique identifying permalink (uuid4-based)
+    """
+    def get(self):
+        valid_query_chars = set(string.letters+string.digits+"-")
+        db = self.application.db
+        options = {}
+
+        args = self.request.arguments
+
+        if "c" in args:
+            # If the code is explicitly specified
+            options["code"] = "".join(args["c"])
+
+        elif "z" in args:
+            # If the code is base64-compressed
+            try:
+                z = "".join(args["z"])
+                # We allow the user to strip off the ``=`` padding at the end
+                # so that the URL doesn't have to have any escaping.
+                # Here we add back the ``=`` padding if we need it.
+                z += "=" * ((4 - (len(z) % 4)) % 4)
+                print z
+                options["code"] = zlib.decompress(base64.urlsafe_b64decode(z))
+            except Exception as e:
+                options["code"] = "# Error decompressing code %s"%e
+
+        elif "q" in args:
+            # if the code is referenced by a permalink identifier
+            q = "".join(args["q"])
+            if set(q).issubset(valid_query_chars):
+                options["code"] = db.get_exec_msg(q)
+
+        if "code" in options:
+            if isinstance(options["code"], unicode):
+                options["code"] = options["code"].encode("utf8")
+            options["code"] = urllib.quote(options["code"])
+            options["autoeval"] = False if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else True
+        else:
+            options["code"] = None
+
+        self.render("root.html", **options)
+
+class KernelHandler(tornado.web.RequestHandler):
+    """
+    Kernel startup request handler.
+    
+    This starts up an iPython kernel on an untrusted account
+    and returns the associated kernel id and a url to request
+    websocket connections for a websocket-ZMQ bridge back to
+    the kernel in a JSON-compatible message.
+    
+    The returned websocket url is not entirely complete, in
+    that it is the base url to be used for two different
+    websocket connections (corresponding to the shell and
+    iopub streams) of the iPython kernel. It is the
+    responsiblity of the client to request the correct URLs
+    for these websockets based on the following pattern:
+    
+    ``<ws_url>/iopub`` is the expected iopub stream url
+    ``<ws_url>/shell`` is the expected shell stream url
+    """
+    def post(self):
+        proto = self.request.protocol.replace("http", "ws", 1)
+        host = self.request.host
+        ws_url = "%s://%s/" % (proto, host)
+        km = self.application.km
+        kernel_id = km.new_session()
+        print "kernel started with id ::: %s"%kernel_id
+        data = {"ws_url": ws_url, "kernel_id": kernel_id}
+        if self.request.headers["Accept"] == "application/json":
+            self.set_header("Access-Control-Allow-Origin", "*");
+        else:
+            data = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(data),)
+            self.set_header("Content-Type", "text/html")
+        self.write(data)
+        self.finish()
+
+class EmbeddedHandler(tornado.web.RequestHandler):
+    """Handler to redirect ``/embedded_sagecell.js`` to ``/static/embedded_sagecell.js``"""
+    def get(self):
+        self.redirect("/static/embedded_sagecell.js", True);
+
+class SageCellHandler(tornado.web.RequestHandler):
+    """Handler for ``/sagecell.html``"""
+
+    with open("templates/sagecell.html") as f:
+        import json
+        sagecell_html = f.read()
+        sagecell_json = json.dumps(sagecell_html)
+
+    def get(self):
+        if len(self.get_arguments("callback")) == 0:
+            self.write(self.sagecell_html);
+            self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header("Content-Type", "text/html")
+        else:
+            self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
+            self.set_header("Content-Type", "application/javascript")
+
+class PermalinkHandler(tornado.web.RequestHandler):
+    """
+    Permalink generation request handler.
+
+    This accepts the string version of an iPython
+    execute_request message, and stores the code associated
+    with that request in a database linked to a unique id,
+    which is returned to the requester in a JSON-compatible
+    form.
+
+    The specified id can be used to generate permalinks
+    with the format ``<root_url>?q=<id>``.
+    """
+    def post(self):
+        """
+        """
+
+        args = self.request.arguments
+
+        retval = {"permalink": None}
+        if "message" in args:
+            db = self.application.db
+            try:
+                message = jsonapi.loads("".join(args["message"]))
+                if message["header"]["msg_type"] == "execute_request":
+                    retval["permalink"] = db.new_exec_msg(message)
+            except:
+                pass
+        self.write(retval)
+        self.finish()
+
+class StaticHandler(tornado.web.StaticFileHandler):
+    """Handler for static requests"""
+    def set_extra_headers(self, path):
+        self.set_header("Access-Control-Allow-Origin", "*")
+
+class ServiceHandler(tornado.web.RequestHandler):
+    """
+    Implements a blocking web service to execute a single
+    computation the server.
+
+    The code to be executed can be specified using the
+    URL format ``<root_url>/service?code=<code>``.
+
+    This handler is currently not production-ready.
+    """
+    def post(self):
+        retval = {"success": False,
+                  "output": ""}
+        args = self.request.arguments
+
+        if "code" in args:
+            code = "".join(args["code"])
+
+            default_timeout = 30 # seconds
+            poll_interval = 0.1 # seconds
+
+            km = self.application.km
+            kernel_id = km.new_session()
+
+            shell_messages = []
+            iopub_messages = []
+
+            shell_handler = ShellServiceHandler(self.application)
+            iopub_handler = IOPubServiceHandler(self.application)
+            
+            shell_handler.open(kernel_id, shell_messages)
+            iopub_handler.open(kernel_id, iopub_messages)
+            
+            msg_id = str(uuid.uuid4())
+            
+            exec_message = {"parent_header": {},
+                            "header": {"msg_id": msg_id,
+                                       "username": "",
+                                       "session": kernel_id,
+                                       "msg_type": "execute_request",
+                                       },
+                            "content": {"code": code,
+                                        "silent": False,
+                                        "user_variables": [],
+                                        "user_expressions": {},
+                                        "allow_stdin": False,
+                                        },
+                            }
+            
+            shell_handler.on_message(jsonapi.dumps(exec_message))
+            
+            end_time = time.time()+default_timeout
+
+            done = False
+            while not done and time.time() < end_time:
+                shell_handler.shell_stream.flush()
+                iopub_handler.iopub_stream.flush()
+                
+                for msg_string in shell_messages:
+                    msg = jsonapi.loads(msg_string)
+                    msg_type = msg.get("msg_type")
+                    content = msg["content"]
+                    if msg_type == "execute_reply":
+                        if content["status"] == "ok":
+                            retval["success"] = True
+                        done = True
+                        break
+
+                time.sleep(poll_interval)
+
+            for msg_string in iopub_messages:
+                msg = jsonapi.loads(msg_string)
+                msg_type = msg.get("msg_type")
+                content = msg["content"]
+                
+                if msg_type == "stream" and content["name"] == "stdout":
+                    retval["output"] += content["data"]
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.write(retval)
+        self.finish()
+
+
+class ZMQStreamHandler(object):
     """
     Base class for a websocket-ZMQ bridge using ZMQStream.
 
@@ -68,9 +298,12 @@ class ZMQStreamHandler(tornado.websocket.WebSocketHandler):
     def _on_zmq_reply(self, msg_list):
         try:
             message = self._reserialize_reply(msg_list)
-            self.write_message(message)
+            self._output_message(message)
         except:
             pass
+    
+    def _output_message(self, message):
+        raise NotImplementedError
 
 class ShellHandler(ZMQStreamHandler):
     """
@@ -205,7 +438,7 @@ class IOPubHandler(ZMQStreamHandler):
             self.application.km.end_session(self.kernel_id)
         except:
             pass
-        self.write_message(
+        self._output_message(
             {'header': {'msg_type': 'status'},
              'parent_header': {},
              'content': {'execution_state':'dead'}
@@ -213,5 +446,32 @@ class IOPubHandler(ZMQStreamHandler):
         )
         self.on_close()
 
+class ShellServiceHandler(ShellHandler):
+    def __init__(self, application):
+        self.application = application
 
+    def open(self, kernel_id, output_list):
+        super(ShellServiceHandler, self).open(kernel_id)
+        self.output_list = output_list
 
+    def _output_message(self, message):
+        self.output_list.append(message)
+
+class IOPubServiceHandler(IOPubHandler):
+    def __init__(self, application):
+        self.application = application
+
+    def open(self, kernel_id, output_list):
+        super(IOPubServiceHandler, self).open(kernel_id)
+        self.output_list = output_list
+
+    def _output_message(self, message):
+        self.output_list.append(message)
+
+class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
+    def _output_message(self, message):
+        self.write_message(message)
+
+class IOPubWebHandler(IOPubHandler, tornado.websocket.WebSocketHandler):
+    def _output_message(self, message):
+        self.write_message(message)

@@ -1,1 +1,24 @@
-../../../templates/root.html
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel="icon" href="{{ static_url('favicon.ico') }}">
+    <link rel="stylesheet" href="{{ static_url('root.css') }}">
+    <title>Sage Cell Server</title>
+    <script src="{{ static_url('jquery.min.js') }}"></script>
+    <script src="{{ static_url('embedded_sagecell.js') }}"></script>
+    <script>
+$(function () {
+    sagecell.makeSagecell({inputLocation: '#sagecell'
+            {% if code %}, code: decodeURIComponent('{{ code }}'),
+                           autoeval: {{autoeval}} {% end %} });
+});
+    </script>
+  </head>
+  <body>
+    <h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
+    Type some Sage code below and press Evaluate.
+    <div id="sagecell"></div>
+  </body>
+</html>

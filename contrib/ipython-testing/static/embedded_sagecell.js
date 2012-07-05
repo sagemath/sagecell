@@ -14,6 +14,25 @@ if (jQuery === undefined) {
 }
 sagecell.jQuery = $;
 
+sagecell.URLs = {};
+
+(function () {
+    // Read root url from the script tag loading this file
+    var r = $("script").last().attr("src").match(/^.*(?=embedded_sagecell.js)/)[0];
+    var s = "static/";
+    if (r.substring(r.length - s.length) === s) {
+        r = r.substring(0, r.length - s.length);
+    }
+    if (r === "" || r === "/") {
+        r = window.location.protocol + "//" + window.location.host + "/";
+    }
+    sagecell.URLs.root = r;
+}());
+
+sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
+sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
+sagecell.URLs.spinner = sagecell.URLs.root + "static/jqueryui/css/sage/images/jquery-achtung-wait.gif";
+
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
         return;
@@ -41,9 +60,9 @@ sagecell.init = function (callback) {
     sagecell.last_session = {};
 
     // many stylesheets that have been smashed together into all.min.css
-    var stylesheets = [{{url_for(".static", filename="all.min.css", _external=True)|tojson|safe}},
-                       {{url_for(".static", filename="jqueryui/css/sage/jquery-ui-1.8.17.custom.css", _external=True)|tojson|safe}},
-                       {{url_for(".static", filename="colorpicker/css/colorpicker.css", _external=True)|tojson|safe}}];
+    var stylesheets = [sagecell.URLs.root + "static/all.min.css",
+                       sagecell.URLs.root + "static/jqueryui/css/sage/jquery-ui-1.8.17.custom.css",
+                       sagecell.URLs.root + "static/colorpicker/css/colorpicker.css"]
     for (var i = 0; i < stylesheets.length; i++) {
         document.head.appendChild(sagecell.util.createElement("link",
                 {"rel": "stylesheet", "href": stylesheets[i]}));
@@ -66,10 +85,15 @@ sagecell.init = function (callback) {
           //  });\n\
           //}', 
           'type': 'text/x-mathjax-config'});
-    load({'src': "{{- url_for('.static',filename='mathjax/MathJax.js', _external=True, config='TeX-AMS-MML_HTMLorMML') -}}"});
-
+    load({"src": sagecell.URLs.root + "static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
     // many prerequisites that have been smashed together into all.min.js
-    load({'src': "{{- url_for('.static', filename='all.min.js', _external=True) -}}"});
+    sagecell.sendRequest("GET", sagecell.URLs.root + "sagecell.html", {},
+        function (data) {
+            $(function () {
+                sagecell.body = data;
+                load({"src": sagecell.URLs.root + "static/all.min.js"})
+            });
+        }, undefined, "text/html");
 };
 
 sagecell.sagecell_dependencies_callback = function () {
@@ -137,8 +161,7 @@ sagecell.makeSagecell = function (args) {
             setTimeout(waitForLoad, 100);
             return false;
         }
-        var body = {% filter tojson %}{% include "sagecell.html" %}{% endfilter %};
-        $(function() {
+        $(function () {
             var hide = settings.hide;
             var inputLocation = $(settings.inputLocation);
             var outputLocation = $(settings.outputLocation);
@@ -147,7 +170,7 @@ sagecell.makeSagecell = function (args) {
             if (inputLocation.is("textarea")) {
                 var ta = inputLocation;
                 inputLocation = $(document.createElement("div")).insertBefore(inputLocation);
-                inputLocation.html(body);
+                inputLocation.html(sagecell.body);
                 ta.addClass("sagecell_commands");
                 ta.attr({"autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
                 inputLocation.find(".sagecell_commands").replaceWith(ta);
@@ -158,7 +181,7 @@ sagecell.makeSagecell = function (args) {
                 }
                 settings.inputLocation = "#" + id;
             } else {
-                inputLocation.html(body);
+                inputLocation.html(sagecell.body);
             }
             inputLocation.addClass("sagecell");
             outputLocation.addClass("sagecell");
@@ -348,7 +371,7 @@ sagecell.initCell = (function(sagecellInfo) {
     return sagecellInfo;
 });
 
-sagecell.sendRequest = function (method, url, data, callback, files) {
+sagecell.sendRequest = function (method, url, data, callback, files, accept) {
     method = method.toUpperCase();
     var hasFiles = false;
     if (files === undefined) {
@@ -361,7 +384,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         }
     }
     var xhr = new XMLHttpRequest();
-    var isXDomain = sagecell.$URL.root !== location.protocol + "//" + location.host + "/";
+    var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
     var fd = undefined;
     if (method === "GET") {
         data.rand = Math.random().toString();
@@ -395,6 +418,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     if (window.FormData || !(isXDomain || hasFiles)) {
         // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
+        xhr.setRequestHeader("Accept", accept || "application/json");
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 /* DONE */) {
                 callback(xhr.responseText);
@@ -435,7 +459,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         document.body.appendChild(form);
         listen = function (evt) {
             if (evt.source === iframe.contentWindow &&
-                evt.origin + "/" === sagecell.$URL.root) {
+                evt.origin + "/" === sagecell.URLs.root) {
                 if (window.removeEventListener) {
                     removeEventListener("message", listen);
                 } else {
@@ -571,12 +595,6 @@ sagecell.util = {
         return node;
     }
 };
-
-// Make the script root available to jquery
-sagecell.$URL = {'root': {{request.url_root|tojson|safe}},
-        'kernel': {{url_for('main_kernel', _external=True)|tojson|safe}},
-        'powered_by_img': {{url_for('.static', filename='sagelogo.png', _external=True)|tojson|safe}},
-        'spinner_img': {{url_for('.static', filename='spinner.gif', _external=True)|tojson|safe}}}
 
 // Purely for backwards compability
 window.singlecell = window.sagecell;

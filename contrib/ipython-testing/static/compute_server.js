@@ -38,11 +38,10 @@ sagecell.Session = function (outputDiv, hide) {
     this.opened = false;
     this.deferred_code = [];
     this.interacts = [];
-    this.kernel = new IPython.Kernel(sagecell.$URL.kernel);
+    this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
     var that = this;
     this.kernel._kernel_started = function (json) {
-        // Strip the hostname from the beginning of the base_url
-        this.base_url = this.base_url.replace(/^\w+:\/\/.*?\//, "");
+        this.base_url = this.base_url.substr(sagecell.URLs.root.length);
         this._kernel_started = IPython.Kernel.prototype._kernel_started;
         this._kernel_started(json);
         this.shell_channel.onopen = function () {
@@ -59,13 +58,13 @@ sagecell.Session = function (outputDiv, hide) {
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
-                this.spinner = ce("img", {"src": sagecell.$URL.spinner_img,
+                this.spinner = ce("img", {"src": sagecell.URLs.spinner,
                         "alt": "Loading", "class": "sagecell_spinner"})
             ]),
             ce("div", {"class": "sagecell_poweredBy"}, [
                 document.createTextNode("Powered by "),
                 ce("a", {"href": "http://www.sagemath.org"}, [
-                    ce("img", {"src": sagecell.$URL.powered_by_img, "alt": "Sage"})
+                    ce("img", {"src": sagecell.URLs.sage_logo, "alt": "Sage"})
                 ]),
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
@@ -905,7 +904,7 @@ IPython.Kernel.prototype._handle_iopub_reply = function (e) {
 
 // Initialize jmol
 // TODO: move to a better place
-jmolInitialize(sagecell.$URL.root + '/static/jmol');
-jmolSetCallback("menuFile", sagecell.$URL.root + "/static/jmol/appletweb/SageMenu.mnu");
+jmolInitialize(sagecell.URLs.root + 'static/jmol');
+jmolSetCallback("menuFile", sagecell.URLs.root + "static/jmol/appletweb/SageMenu.mnu");
 
 })(sagecell.jQuery);
