@@ -1,0 +1,9 @@
+*.pyc
+doc/_build/*
+static/jmol
+config.py
+
+# generated web files
+static/all*
+static/jquery.min.js
+static/wrap.js

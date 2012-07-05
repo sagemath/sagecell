@@ -23,7 +23,7 @@ class RootHandler(tornado.web.RequestHandler):
     ```<root_url>?q=<uuid>`` loads code from a database based
     upon a unique identifying permalink (uuid4-based)
     """
-    def _root_url(self):
+    def get(self):
         valid_query_chars = set(string.letters+string.digits+"-")
         db = self.application.db
         options = {}
@@ -63,9 +63,6 @@ class RootHandler(tornado.web.RequestHandler):
 
         self.render("root.html", **options)
 
-    def get(self):
-        return self._root_url()
-
 class KernelHandler(tornado.web.RequestHandler):
     """
     Kernel startup request handler.
@@ -85,29 +82,43 @@ class KernelHandler(tornado.web.RequestHandler):
     ``<ws_url>/iopub`` is the expected iopub stream url
     ``<ws_url>/shell`` is the expected shell stream url
     """
-    def _start_kernel(self):
-        print "%s BEGIN MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
-
-        proto = self.request.protocol.replace("http", "ws")
+    def post(self):
+        proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
-
         ws_url = "%s://%s/" % (proto, host)
-
         km = self.application.km
-        
         kernel_id = km.new_session()
-        
         print "kernel started with id ::: %s"%kernel_id
-        
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
-
-        print "%s END MAIN KERNEL HANDLER %s"%("*"*10, "*"*10)
-
+        if self.request.headers["Accept"] == "application/json":
+            self.set_header("Access-Control-Allow-Origin", "*");
+        else:
+            data = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(data),)
+            self.set_header("Content-Type", "text/html")
         self.write(data)
         self.finish()
 
-    def post(self):
-        return self._start_kernel()
+class EmbeddedHandler(tornado.web.RequestHandler):
+    """Handler to redirect ``/embedded_sagecell.js`` to ``/static/embedded_sagecell.js``"""
+    def get(self):
+        self.redirect("/static/embedded_sagecell.js", True);
+
+class SageCellHandler(tornado.web.RequestHandler):
+    """Handler for ``/sagecell.html``"""
+
+    with open("templates/sagecell.html") as f:
+        import json
+        sagecell_html = f.read()
+        sagecell_json = json.dumps(sagecell_html)
+
+    def get(self):
+        if len(self.get_arguments("callback")) == 0:
+            self.write(self.sagecell_html);
+            self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header("Content-Type", "text/html")
+        else:
+            self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
+            self.set_header("Content-Type", "application/javascript")
 
 class PermalinkHandler(tornado.web.RequestHandler):
     """
@@ -122,7 +133,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
     The specified id can be used to generate permalinks
     with the format ``<root_url>?q=<id>``.
     """
-    def _get_permalink(self):
+    def post(self):
         """
         """
 
@@ -140,10 +151,10 @@ class PermalinkHandler(tornado.web.RequestHandler):
         self.write(retval)
         self.finish()
 
-    def get(self):
-        return self._get_permalink()
-    def post(self):
-        return self._get_permalink()
+class StaticHandler(tornado.web.StaticFileHandler):
+    """Handler for static requests"""
+    def set_extra_headers(self, path):
+        self.set_header("Access-Control-Allow-Origin", "*")
 
 class ServiceHandler(tornado.web.RequestHandler):
     """
@@ -153,7 +164,7 @@ class ServiceHandler(tornado.web.RequestHandler):
     The code to be executed can be specified using the
     URL format ``<root_url>/service?code=<code>``.
     """
-    def _service(self):
+    def post(self):
         retval = {"success": False,
                   "output": ""}
         args = self.request.arguments
@@ -220,14 +231,9 @@ class ServiceHandler(tornado.web.RequestHandler):
                 
                 if msg_type == "stream" and content["name"] == "stdout":
                     retval["output"] += content["data"]
-
+        self.set_header("Access-Control-Allow-Origin", "*")
         self.write(retval)
         self.finish()
-
-    def get(self):
-        return self._service()
-    def post(self):
-        return self._service()
 
 
 class ZMQStreamHandler(object):
@@ -269,7 +275,7 @@ class ZMQStreamHandler(object):
         retval = jsonapi.dumps(msg)
 
         if "execute_reply" == msg["msg_type"]:
-            timeout = msg["content"]["user_variables"].get("__kernel_timeout__")
+            timeout = msg["content"]["user_expressions"].get("timeout")
 
             try:
                 timeout = float(timeout) # in case user manually puts in a string
@@ -279,7 +285,6 @@ class ZMQStreamHandler(object):
 
             if timeout > self.kernel_timeout:
                 timeout = self.kernel_timeout
-
             if timeout <= 0.0: # kill the kernel before the heartbeat is able to
                 self.km.end_session(self.kernel_id)
             else:
@@ -291,10 +296,9 @@ class ZMQStreamHandler(object):
     def _on_zmq_reply(self, msg_list):
         try:
             message = self._reserialize_reply(msg_list)
+            self._output_message(message)
         except:
             pass
-        else:
-            self._output_message(message)
     
     def _output_message(self, message):
         raise NotImplementedError
@@ -312,12 +316,12 @@ class ShellHandler(ZMQStreamHandler):
         print "*"*10, " END SHELL HANDLER ", "*"*10
 
     def on_message(self, message):
-        msg = jsonapi.loads(message)
-        if "execute_request" == msg["header"]["msg_type"]:
-            msg["content"]["user_variables"] = ['__kernel_timeout__']
-            self.km._kernels[self.kernel_id]["executing"] = True
-            
-        self.session.send(self.shell_stream, msg)
+        if self.km._kernels.get(self.kernel_id) is not None:
+            msg = jsonapi.loads(message)
+            if "execute_request" == msg["header"]["msg_type"]:
+                msg["content"]["user_expressions"] = {"timeout": "sys._sage_.kernel_timeout"}
+                self.km._kernels[self.kernel_id]["executing"] = True
+                self.session.send(self.shell_stream, msg)
 
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():

@@ -1,36 +1,24 @@
-<!doctype html>
+<!DOCTYPE HTML>
 <html>
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="{{static_url('colors.css')}}" />
-    <link rel="stylesheet" href="{{static_url('jquery-ui.css')}}" />
-    <title>IPython Sage Cell Demo</title>
-  </head>
-  <body>
-    <label>
-      <b>Code to Execute:</b>
-      <textarea style="width:100%;tab-size:4;-moz-tab-size:4;height:15em;" id="codebox" spellcheck="false">{% if code %}{{code}}{% end %}</textarea>
-    </label>
-    <button id="evalbutton">Evaluate</button>
-    <div id="completion" style="display:none;border:1px solid black;background:yellow;overflow-x:auto;"></div>
-    <pre id="output" style="border:2px solid black;padding:10px"></pre>
-    <div id="message_output"></div>
-    <script type="text/javascript" src="{{static_url('jquery.min.js')}}"></script>
-    <script type="text/javascript" src="{{static_url('jquery-ui.min.js')}}"></script>
-    <script type="text/javascript" src="{{static_url('namespace.js')}}"></script>
-    <script type="text/javascript" src="{{static_url('utils.js')}}"></script>
-    <script type="text/javascript" src="{{static_url('kernel.js')}}"></script>
-    <script type="text/javascript" src="{{static_url('interaction.js')}}"></script>
-
-    <script type="text/javascript">
-// This is currently a hack to allow root_url?c=code requests to work
-// since script tags are not allowed in text areas. Once a more robust
-// JS embedding / loading system is in place, that can take care of
-// decoding preloaded code.
-$(function() {
-    var codebox = $("#codebox");
-    codebox.val(decodeURIComponent(codebox.val()));
+    <meta name="viewport" content="width=device-width">
+    <link rel="icon" href="{{ static_url('favicon.ico') }}">
+    <link rel="stylesheet" href="{{ static_url('root.css') }}">
+    <title>Sage Cell Server</title>
+    <script src="{{ static_url('jquery.min.js') }}"></script>
+    <script src="{{ static_url('embedded_sagecell.js') }}"></script>
+    <script>
+$(function () {
+    sagecell.makeSagecell({inputLocation: '#sagecell'
+            {% if code %}, code: decodeURIComponent('{{ code }}'),
+                           autoeval: {{autoeval}} {% end %} });
 });
     </script>
+  </head>
+  <body>
+    <h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
+    Type some Sage code below and press Evaluate.
+    <div id="sagecell"></div>
   </body>
 </html>
