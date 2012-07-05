@@ -163,6 +163,8 @@ class ServiceHandler(tornado.web.RequestHandler):
 
     The code to be executed can be specified using the
     URL format ``<root_url>/service?code=<code>``.
+
+    This handler is currently not production-ready.
     """
     def post(self):
         retval = {"success": False,
