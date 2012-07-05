@@ -58,18 +58,7 @@ class TrustedMultiKernelManager(object):
         comp = self._comps[comp_id]
         return (comp["beat_interval"], comp["first_beat"])
 
-    def add_computer(self, config):
-        """ Adds a tracked computer. 
-
-        :arg dict config: configuration dictionary of the computer to be added
-        :returns: computer id assigned to added computer
-        :rtype: string
-        """
-        defaults = self.default_computer_config
-        comp_id = str(uuid.uuid4())
-        cfg = dict(defaults.items() + config.items())
-        cfg["kernels"] = {}
-        client = self._setup_ssh_connection(cfg["host"], cfg["username"])
+    def _ssh_untrusted(self, cfg, client):
         logfile = cfg.get("log_file")
         if logfile is None:
             logfile = os.devnull
@@ -89,6 +78,31 @@ class TrustedMultiKernelManager(object):
                 failure = False
                 break;
             sleep(2)
+        if failure:
+            return None
+        else:
+            return port
+
+    def add_computer(self, config):
+        """ Adds a tracked computer.
+
+        :arg dict config: configuration dictionary of the computer to be added
+        :returns: computer id assigned to added computer
+        :rtype: string
+        """
+        defaults = self.default_computer_config
+        comp_id = str(uuid.uuid4())
+        cfg = dict(defaults.items() + config.items())
+        cfg["kernels"] = {}
+        req = self.context.socket(zmq.REQ)
+
+        client = self._setup_ssh_connection(cfg["host"], cfg["username"])
+
+        port = self._ssh_untrusted(cfg, client)
+        if port is None:
+            failure = True
+        else:
+            failure = False
             
         retval = None
         if failure:
@@ -146,6 +160,7 @@ class TrustedMultiKernelManager(object):
             del self._kernels[i]
         ssh_client.close()
         del self._comps[comp_id]
+        del self._clients[comp_id]
 
     def restart_kernel(self, kernel_id):
         """ Restarts a given kernel.
