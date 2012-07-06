@@ -1,5 +1,5 @@
 import trusted_kernel_manager
-from nose.tools import assert_equal, assert_raises
+from nose.tools import *
 import random
 import os
 import sys
@@ -9,31 +9,75 @@ from IPython.zmq.session import Session
 from contextlib import contextmanager
 import time
 import misc
+import re
+import config as conf
+sage = conf.sage
 configg = misc.Config()
 d = configg.get_default_config("_default_config")
 
-testlog = "sagecelltests.log"
+from IPython.testing.decorators import skip
 
+# from the attest python package - license is modified BSD
+from StringIO import StringIO
 @contextmanager
-def stdout_redirected(new_stdout):
-    save_stdout = sys.stdout
-    sys.stdout = new_stdout
-    try:
-        yield None
-    finally:
-        sys.stdout = save_stdout
+def capture_output(split=False):
+    """Captures standard output and error during the context. Returns a
+    tuple of the two streams as lists of lines, added after the context has
+    executed.
 
-@contextmanager
-def opened(filename, mode="r"):
-    f = open(filename, mode)
-    try:
-        yield f
-    finally:
-        f.close()
+    .. testsetup::
 
-class TestTrustedMultiKernelManager:
+        from attest import capture_output
+
+    >>> with capture_output() as (out, err):
+    ...    print 'Captured'
+    ...
+    >>> out
+    ['Captured']
+
+    """
+    stdout, stderr = sys.stdout, sys.stderr
+    sys.stdout, sys.stderr = StringIO(), StringIO()
+    out, err = [], []
+    try:
+        yield out, err
+    finally:
+        if split:
+            out.extend(sys.stdout.getvalue().splitlines())
+            err.extend(sys.stderr.getvalue().splitlines())
+        else:
+            out.append(sys.stdout.getvalue())
+            err.append(sys.stderr.getvalue())
+        sys.stdout, sys.stderr = stdout, stderr
+        
+        
+@skip('good')  
+def test_init():
+    tmkm = trusted_kernel_manager.TrustedMultiKernelManager()
+    assert_equal(len(tmkm._kernels.keys()), 0)
+    assert_equal(len(tmkm._comps.keys()), 0)
+    assert_equal(len(tmkm._clients.keys()),0)
+    assert_true(hasattr(tmkm, "context"))
+
+@skip('good')  
+def test_init_parameters():
+    tmkm = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = {"a": "b"}, kernel_timeout = 3.14)
+    assert_equal(tmkm.default_computer_config, {"a": "b"})
+    assert_equal(tmkm.kernel_timeout, 3.14)
+
+    
+class TestTrustedMultiKernelManager(object):
+    executing_re = re.compile(r'executing .* -python .*receiver\.py.*/dev/null')
+    default_comp_config = {"host": "localhost",
+                          "username": None,
+                          "python": sage + " -python",
+                          "log_file": None,
+                          "max": 15}
+
     def setUp(self): #called automatically before each test is run
         self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
+
+    def _populate_comps_kernels(self):
         self.a._comps["testcomp1"] = {"host": "localhost",
                                  "port": random.randrange(50000,60000),
                                  "kernels": {"kone": None, "ktwo": None},
@@ -52,26 +96,18 @@ class TestTrustedMultiKernelManager:
 
     def tearDown(self):
         for i in list(self.a._comps):
-            if len(i) > 10:
-                try:
-                    self.a.remove_computer(i)
-                except:
-                    pass
-            
-
-    def test_init(self):
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager()
-        assert_equal(len(self.a._kernels.keys()), 0)
-        assert_equal(len(self.a._comps.keys()), 0)
-        assert_equal(len(self.a._clients.keys()),0)
-        assert_equal(hasattr(self.a, "context"), True)
-
-    def test_init_parameters(self):
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = {"a": "b"}, kernel_timeout = 3.14)
-        assert_equal(self.a.default_computer_config, {"a": "b"})
-        assert_equal(self.a.kernel_timeout, 3.14)
-
+            try:
+                self.a.remove_computer(i)
+            except:
+                print >> sys.__stdout__, "Removing computer failed"
+                pass
+        import time
+        print >> sys.__stdout__, "Sleeping between tests"
+        time.sleep(1)
+        
+    @skip('good')
     def test_get_kernel_ids_success(self):
+        self._populate_comps_kernels()
         x = self.a.get_kernel_ids("testcomp1")
         y = self.a.get_kernel_ids("testcomp2")
         assert_equal(len(x), 2)
@@ -81,16 +117,22 @@ class TestTrustedMultiKernelManager:
         assert_equal("kthree" in x, False)
         assert_equal("kthree" in y, True)
 
+    @skip('good')  
     def test_get_kernel_ids_invalid_comp(self):
+        self._populate_comps_kernels()
         x = self.a.get_kernel_ids("testcomp3")
         assert_equal(len(x), 0)
         
+    @skip('good')  
     def test_get_kernel_ids_no_args(self):
+        self._populate_comps_kernels()
         self.a._kernels = {"a": None, "b": None, "c": None}
         x = self.a.get_kernel_ids()
         assert_equal(len(x), 3)
 
+    @skip('good')  
     def test_get_hb_info_success(self):
+        self._populate_comps_kernels()
         (b, c) = self.a.get_hb_info("kone")
         assert_equal(b, 3.0)
         assert_equal(c, 5.0)
@@ -98,218 +140,112 @@ class TestTrustedMultiKernelManager:
         assert_equal(b, 2.0)
         assert_equal(c, 4.0)
         
+    @skip('good')  
     def test_get_hb_info_invalid_kernel_id(self):
+        self._populate_comps_kernels()
         assert_raises(KeyError, self.a.get_hb_info, "blah")
 
+    @skip('good')
     def test_ssh_untrusted(self):
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                  "username": None,
-                  "python": sage + " -python",
-                  "log_file": None,
-                  "max": 15}
-        client = self.a._setup_ssh_connection(config["host"], config["username"])
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                x = self.a._ssh_untrusted(config, client)
-
+        client = self.a._setup_ssh_connection(self.default_comp_config["host"], self.default_comp_config["username"])
+        with capture_output() as (out, err):
+            x = self.a._ssh_untrusted(self.default_comp_config, client)
+        out = out[0]
         assert_equal(x == None, False)
         assert_equal(len(x), 5)
+        assert_is_not_none(self.executing_re.match(out))
 
-        f = open(testlog, "r")
-        y = f.readline()
-        assert_equal("executing " in y, True)
-        assert_equal("-python " in y, True)
-        assert_equal("receiver.py" in y, True)
-        assert_equal("/dev/null" in y, True)
-        y = f.readline()
-        assert_equal(y, "")
-
+    @skip
     def test_add_computer_success(self): # depends on _setup_ssh_connection, _ssh_untrusted
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                  "username": None,
-                  "python": sage + " -python",
-                  "log_file": None,
-                  "max": 15}
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                x = self.a.add_computer(config)
+        new_config = self.default_comp_config.copy()
+        new_config.update({'beat_interval': 1, 'first_beat': 5, 'kernels': {}})
+
+        with capture_output() as (out,err):
+            x = self.a.add_computer(self.default_comp_config)
+        out = out[0]
 
         assert_equal(len(str(x)), 36)
-        assert_equal(x in self.a._comps, True)
-        assert_equal(self.a._comps[x]["host"], "localhost")
-        assert_equal(self.a._comps[x]["username"], None)
-        assert_equal(self.a._comps[x]["python"], sage + " -python")
-        assert_equal(self.a._comps[x]["log_file"], None)
-        assert_equal(self.a._comps[x]["max"], 15)
-        assert_equal(self.a._comps[x]["beat_interval"], 1)
-        assert_equal(self.a._comps[x]["first_beat"], 5)
-        assert_equal(self.a._comps[x]["kernels"], {})
-        assert_equal("socket" in self.a._clients[x], True)
+        assert_in(x, self.a._comps)
+        for k in new_config:
+            assert_equal(self.a._comps[x][k], new_config[k])
+
+        assert_in("socket", self.a._clients[x])
         assert_equal(self.a._clients[x]["socket"].socket_type, 3)
-        assert_equal("ssh" in self.a._clients[x], True)
+        assert_in("ssh", self.a._clients[x])
 
-        f = open(testlog, "r")
-        y = f.readline()
-        assert_equal("executing " in y, True)
-        assert_equal("-python " in y, True)
-        assert_equal("receiver.py" in y, True)
-        assert_equal("/dev/null" in y, True)
-        y = f.readline()
-        assert_equal("ZMQ Connection with computer " in y, True)
-        assert_equal(" at port " in y, True)
-        assert_equal(" established." in y, True)
-        y = f.readline()
-        assert_equal(y, "")
+        assert_is_not_none(self.executing_re.match(out[0]))
+        zmq_re = re.compile(r'ZMQ Connection with computer \w+ at port \d+ established')
+        assert_is_not_none(zmq_re.match(out))
 
+    @skip('good')  
     def test_setup_ssh_connection_success(self):
         x = self.a._setup_ssh_connection("localhost", username=None)
         assert_equal("AutoAddPolicy" in str(x._policy), True)
         assert_equal(len(x.get_host_keys()), 1)
-
+    
+    def _check_all_kernels_killed_out(self, out):
+        expected_out = {'content': {'status': 'All kernels killed!'}, 'type': 'success'}
+        outdict = ast.literal_eval(out)
+        assert_equal(outdict, expected_out)
+        
+    @skip('good')  
     def test_purge_kernels_no_kernels(self): # depends on add_computer
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
+        x = self.a.add_computer(self.default_comp_config)
 
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                  "username": None,
-                  "python": sage + " -python",
-                  "log_file": None,
-                  "max": 15}
-        x = self.a.add_computer(config)
+        with capture_output() as (out, err):
+            self.a.purge_kernels(x)
+        out = out[0]
 
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                self.a.purge_kernels(x)
-
-        f = open(testlog, "r")
-        y = f.readline()
-        y = ast.literal_eval(y)
-        assert_equal("content" in y, True)
-        assert_equal("type" in y, True)
-        assert_equal(len(y), 2)
-        assert_equal("status" in y["content"], True)
-        assert_equal(y["content"]["status"], "All kernels killed!")
-        assert_equal(len(y["content"]), 1)
-        assert_equal(y["type"], "success")
-        y = f.readline()
-        assert_equal(y, "")
+        self._check_all_kernels_killed_out(out)
         assert_equal(self.a._comps[x]["kernels"], {})
         assert_equal(self.a._kernels, {})
 
     def test_purge_kernels_success(self): # depends on add_computer, new_session
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
-
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                  "username": None,
-                  "python": sage + " -python",
-                  "log_file": None,
-                  "max": 15}
-        x = self.a.add_computer(config)
+        x = self.a.add_computer(self.default_comp_config)
         y = self.a.new_session()
         z = self.a.new_session()
 
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                self.a.purge_kernels(x)
-
-        f = open(testlog, "r")
-        y = f.readline()
-        y = ast.literal_eval(y)
-        assert_equal("content" in y, True)
-        assert_equal("type" in y, True)
-        assert_equal(len(y), 2)
-        assert_equal("status" in y["content"], True)
-        assert_equal(y["content"]["status"], "All kernels killed!")
-        assert_equal(len(y["content"]), 1)
-        assert_equal(y["type"], "success")
-        y = f.readline()
-        assert_equal(y, "")
+        with capture_output() as (out, err):
+            self.a.purge_kernels(x)
+        out = out[0]
+        self._check_all_kernels_killed_out(out)
         assert_equal(self.a._comps[x]["kernels"], {})
         assert_equal(self.a._kernels, {})
 
+    @skip
     def test_remove_computer_success(self): # depends on add_computer, new_session
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
-
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                  "username": None,
-                  "python": sage + " -python",
-                  "log_file": None,
-                  "max": 15}
-        x = self.a.add_computer(config)
+        x = self.a.add_computer(self.default_comp_config)
         kern1 = self.a.new_session()
         kern2 = self.a.new_session()
-        b = self.a.add_computer(config)
+        b = self.a.add_computer(self.default_comp_config)
         
         # remove computer with active kernels
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
+        with capture_output() as (out, err):
                 self.a.remove_computer(x)
-
-        f = open(testlog, "r")
-        y = f.readline()
-        y = ast.literal_eval(y)
-        assert_equal("content" in y, True)
-        assert_equal("type" in y, True)
-        assert_equal(len(y), 2)
-        assert_equal("status" in y["content"], True)
-        assert_equal(y["content"]["status"], "All kernels killed!")
-        assert_equal(len(y["content"]), 1)
-        assert_equal(y["type"], "success")
-        y = f.readline()
-        assert_equal(y, "")
-        assert_equal(kern1 in self.a._kernels, False)
-        assert_equal(kern2 in self.a._kernels, False)
-        assert_equal(x in self.a._comps, False)
+        out = out[0]
+        self._check_all_kernels_killed_out(out)
+        assert_not_in(kern1, self.a._kernels)
+        assert_not_in(kern2, self.a._kernels)
+        assert_not_in(x, self.a._comps)
 
         # remove computer with no kernels
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
+        with capture_output() as (out, err):
                 self.a.remove_computer(b)
+        out = out[0]
+        self._check_all_kernels_killed_out(out)
+        assert_not_in(b, self.a._comps)
 
-        f = open(testlog, "r")
-        y = f.readline()
-        y = ast.literal_eval(y)
-        assert_equal("content" in y, True)
-        assert_equal("type" in y, True)
-        assert_equal(len(y), 2)
-        assert_equal("status" in y["content"], True)
-        assert_equal(y["content"]["status"], "All kernels killed!")
-        assert_equal(len(y["content"]), 1)
-        assert_equal(y["type"], "success")
-        y = f.readline()
-        assert_equal(y, "")
-        assert_equal(b in self.a._comps, False)
-
+    @skip
     def test_restart_kernel_success(self): # depends on add_computer, new_session
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
-
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                  "username": None,
-                  "python": sage + " -python",
-                  "log_file": None,
-                  "max": 15}
-        x = self.a.add_computer(config)
+        x = self.a.add_computer(self.default_comp_config)
         kern1 = self.a.new_session()
         kern2 = self.a.new_session()
 
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                self.a.restart_kernel(kern2)
+        with capture_output() as (out, err):
+            self.a.restart_kernel(kern2)
+        out = out[0]
 
-        f = open(testlog, "r")
-        y = f.readline()
-        y = ast.literal_eval(y)
+        y = ast.literal_eval(out)
         assert_equal("content" in y, True)
         assert_equal(len(y["content"]), 2)
         assert_equal("type" in y, True)
@@ -330,46 +266,27 @@ class TestTrustedMultiKernelManager:
         assert_equal(y["content"]["connection"]["ip"], "127.0.0.1")
         assert_equal("key" in y["content"]["connection"], True)
         assert_equal(len(y["content"]["connection"]["key"]), 36)
-        y = f.readline()
-        assert_equal(y, "")
         
     def test_interrupt_kernel_success(self): # depends on add_computer, new_session
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
-
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                          "username": None,
-                          "python": sage + " -python",
-                          "log_file": None,
-                          "max": 15}
-        x = self.a.add_computer(config)
+        x = self.a.add_computer(self.default_comp_config)
         kern1 = self.a.new_session()
 
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                self.a.interrupt_kernel(kern1)
+        with capture_output() as (out, err):
+            self.a.interrupt_kernel(kern1)
+        out = out[0]
 
-        f = open(testlog, "r")
-        y = f.readline()
-        assert_equal(" interrupted." in y, True)
-        assert_equal("not" in y, False)
-        
+        print >> sys.__stdout__, out
+        assert_in('interrupted', out)
+        assert_not_in('not', out)
+        #TODO: there should be a way of detecting if the kernel was interrupted without relying on stdout
+
+    @skip
     def test_new_session_success(self): # depends on add_computer
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
+        x = self.a.add_computer(self.default_comp_config)
 
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                          "username": None,
-                          "python": sage + " -python",
-                          "log_file": None,
-                          "max": 15}
-        x = self.a.add_computer(config)
-
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                kern1 = self.a.new_session()
+        with capture_output() as (out, err):
+            kern1 = self.a.new_session()
+        out = out[0]
 
         assert_equal(kern1 in self.a._kernels, True)
         assert_equal("comp_id" in self.a._kernels[kern1], True)
@@ -383,64 +300,40 @@ class TestTrustedMultiKernelManager:
         assert_equal(kern1 in self.a._comps[x]["kernels"], True)
         assert_equal(type(self.a._sessions[kern1]), type(Session()))
 
-        f = open(testlog, "r")
-        y = f.readline()
-        assert_equal("CONNECTION FILE ::: " in y, True)
-        y = f.readline()
-        assert_equal(y, "")
+        assert_equal("CONNECTION FILE ::: " in out, True)
 
+    @skip
     def test_end_session_success(self): # depends on add_computer, new_session
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
-
-        import config as conf
-        sage = conf.sage
-        config = {"host": "localhost",
-                          "username": None,
-                          "python": sage + " -python",
-                          "log_file": None,
-                          "max": 15}
-        x = self.a.add_computer(config)
+        x = self.a.add_computer(self.default_comp_config)
         kern1 = self.a.new_session()
         kern2 = self.a.new_session()
-
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                self.a.end_session(kern1)
+        with capture_output(split=True) as (out,err):
+            self.a.end_session(kern1)
 
         assert_equal(kern1 not in self.a._kernels.keys(), True)
         for i in self.a._comps.keys():
             assert_equal(kern1 not in self.a._comps[i]["kernels"].keys(), True)
 
-        f = open(testlog, "r")
-        y = f.readline()
-        assert_equal("Killing Kernel ::: %s at " %kern1 in y, True)
-        y = f.readline()
-        assert_equal("Kernel %s successfully killed."% kern1 in y, True)
-        y = f.readline()
-        assert_equal(y, "")
-
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                self.a.end_session(kern2)
+        assert_equal("Killing Kernel ::: %s at " %kern1 in out[0], True)
+        assert_equal("Kernel %s successfully killed."% kern1 in out[1], True)
+        assert_equal(out[2], "")
+        with capture_output(split=True) as (out,err):
+            self.a.end_session(kern2)
 
         assert_equal(kern2 not in self.a._kernels.keys(), True)
         for i in self.a._comps.keys():
             assert_equal(kern2 not in self.a._comps[i]["kernels"].keys(), True)
 
-        f = open(testlog, "r")
-        y = f.readline()
-        assert_equal("Killing Kernel ::: %s at " %kern2 in y, True)
-        y = f.readline()
-        assert_equal("Kernel %s successfully killed."% kern2 in y, True)
-        y = f.readline()
-        assert_equal(y, "")
+        assert_in("Killing Kernel ::: %s at " %kern2, out[0])
+        assert_in("Kernel %s successfully killed."% kern2, out[1])
+        assert_equal(out[2], "")
 
+    @skip
     def test_find_open_computer_success(self):
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = d)
         self.a._comps["testcomp1"] = {"max_kernels": 3, "kernels": {}}
         self.a._comps["testcomp2"] = {"max_kernels": 5, "kernels": {}}
 
-        for i in xrange(8):
+        for i in range(8):
             y = self.a._find_open_computer()
             assert_equal(y == "testcomp1" or y == "testcomp2", True)
             self.a._comps[y]["max_kernels"] -= 1
@@ -450,24 +343,20 @@ class TestTrustedMultiKernelManager:
         except IOError as e:
             assert_equal("Could not find open computer. There are 2 computers available.", e.message)
 
+    @skip
     def test_create_connected_stream(self):
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager()
         cfg = {"host": "localhost"}
         port = 51337
         socket_type = zmq.SUB
 
-        with opened(testlog, "w") as f:
-            with stdout_redirected(f):
-                ret = self.a._create_connected_stream(cfg, port, socket_type)
+        with capture_output() as (out, err):
+            ret = self.a._create_connected_stream(cfg, port, socket_type)
+        out = out[0]
 
         assert_equal(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.SUB)
 
-        f = open(testlog, "r")
-        y = f.readline()
-        assert_equal(y, "Connecting to: tcp://%s:%i\n" % (cfg["host"], port))
-        y = f.readline()
-        assert_equal(y, "")
+        assert_equal(out, "Connecting to: tcp://%s:%i\n" % (cfg["host"], port))
 
         cfg = {"host": "localhost"}
         port = 51337
@@ -487,8 +376,8 @@ class TestTrustedMultiKernelManager:
         assert_equal(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.DEALER)
 
+    @skip
     def test_create_iopub_stream(self): # depends on create_connected_stream
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager()
         kernel_id = "kern1"
         comp_id = "testcomp1"
         self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"iopub_port": 50101}}
@@ -499,8 +388,8 @@ class TestTrustedMultiKernelManager:
         assert_equal(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.SUB)
 
+    @skip
     def test_create_shell_stream(self): # depends on create_connected_stream
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager()
         kernel_id = "kern1"
         comp_id = "testcomp1"
         self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"shell_port": 50101}}
@@ -511,8 +400,8 @@ class TestTrustedMultiKernelManager:
         assert_equal(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.DEALER)
 
+    @skip
     def test_create_hb_stream(self): # depends on create_connected_stream
-        self.a = trusted_kernel_manager.TrustedMultiKernelManager()
         kernel_id = "kern1"
         comp_id = "testcomp1"
         self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"hb_port": 50101}}
