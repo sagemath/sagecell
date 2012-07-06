@@ -38,12 +38,14 @@ sagecell.Session = function (outputDiv, hide) {
     this.opened = false;
     this.deferred_code = [];
     this.interacts = [];
-    // Prevent Esc key from closing WebSockets and XMLHttpRequests in Firefox
-    window.addEventListener("keydown", function (event) {
-        if (event.keyCode === 27) {
-            event.preventDefault();
-        }
-    });
+    if (window.addEventListener) {
+        // Prevent Esc key from closing WebSockets and XMLHttpRequests in Firefox
+        window.addEventListener("keydown", function (event) {
+            if (event.keyCode === 27) {
+                event.preventDefault();
+            }
+        });
+    }
     var old_ws = window.WebSocket || window.MozWebSocket;
     if (!old_ws) {
         window.WebSocket = sagecell.MultiSockJS;
@@ -76,7 +78,7 @@ sagecell.Session = function (outputDiv, hide) {
                 document.createTextNode("Powered by "),
                 ce("a", {"href": "http://www.sagemath.org"}, [
                     ce("img", {"src": sagecell.URLs.sage_logo, "alt": "Sage"})
-                ]),
+                ])
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
@@ -399,7 +401,7 @@ sagecell.InteractData.Checkbox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Checkbox.prototype.rendered = function () {
     this.input = sagecell.util.createElement("input", {"type": "checkbox"});
-    this.input.checked = this.control.default;
+    this.input.checked = this.control["default"];
     return this.input;
 }
 
@@ -419,16 +421,16 @@ sagecell.InteractData.ColorSelector = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.ColorSelector.prototype.rendered = function () {
     var selector = sagecell.util.createElement("span", {"class": "sagecell_colorSelector"});
-    var text = document.createTextNode(this.control.default);
+    var text = document.createTextNode(this.control["default"]);
     this.span = sagecell.util.createElement("span", {}, [selector]);
     if (!this.control.hide_input) {
         selector.style.marginRight = "10px";
         this.span.appendChild(text);
     }
-    selector.style.backgroundColor = this.control.default;
+    selector.style.backgroundColor = this.control["default"];
     var that = this;
     $(selector).ColorPicker({
-        "color": this.control.default,
+        "color": this.control["default"],
         "onChange": function (hsb, hex, rgb, el) {
             text.nodeValue = that.color = selector.style.backgroundColor = "#" + hex;
         },
@@ -481,7 +483,7 @@ sagecell.InteractData.InputBox.prototype.rendered = function () {
         this.textbox = sagecell.util.createElement("input",
             {"size": this.control.width});
     }
-    this.textbox.value = this.control.default;
+    this.textbox.value = this.control["default"];
     return this.textbox;
 }
 
@@ -506,7 +508,7 @@ sagecell.InteractData.InputGrid.prototype.rendered = function () {
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
-            var textbox = ce("input", {"value": this.control.default[row][col],
+            var textbox = ce("input", {"value": this.control["default"][row][col],
                                        "size": this.control.width});
             this.textboxes = this.textboxes.add(textbox);
             tr.appendChild(ce("td", {}, [textbox]));
@@ -543,7 +545,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
     var div = ce("div");
     this.sliders = $();
     this.value_boxes = $();
-    this.values = this.control.default.slice();
+    this.values = this.control["default"].slice();
     for (var i = 0; i < this.control.sliders; i++) {
         var column = ce("div");
         column.style.width = "50px";
@@ -600,7 +602,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
             };
         }(i));
         $(slider).slider({"orientation": "vertical",
-                          "value": this.control.default[i],
+                          "value": this.control["default"][i],
                           "min": this.control.range[i][0],
                           "max": this.control.range[i][1],
                           "step": this.control.step[i],
@@ -636,7 +638,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
                 document.createTextNode(this.control.value_labels[i])
             ]));
         }
-        this.value = select.selectedIndex = this.control.default;
+        this.value = select.selectedIndex = this.control["default"];
         $(select).change(function (event) {
             that.value = event.target.selectedIndex;
             $(event.target).trigger("changedone");
@@ -653,7 +655,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
             for (var col = 0; col < this.control.ncols; col++) {
                 var id = control_id + "_" + (++i);
                 var option = ce("input", {"type": "radio", "name": control_id, "id": id});
-                if (i === this.control.default) {
+                if (i === this.control["default"]) {
                     option.checked = true;
                     this.value = i;
                 }
@@ -713,7 +715,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
     var that = this;
     if (this.continuous) {
         if (this.range) {
-            this.values = this.control.default.slice();
+            this.values = this.control["default"].slice();
             $(this.slider).slider({"min": this.control.range[0],
                                    "max": this.control.range[1],
                                    "step": this.control.step,
@@ -777,7 +779,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
             span.style.fontFamily = "monospace";
             container.appendChild(span);
         } else {
-            this.value = this.control.default;
+            this.value = this.control["default"];
             $(this.slider).slider({"min": this.control.range[0],
                                    "max": this.control.range[1],
                                    "step": this.control.step,
@@ -807,7 +809,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
             this.value_boxes = $(textbox);
         }
     } else if (this.range) {
-        this.values = this.control.default.slice();
+        this.values = this.control["default"].slice();
         $(this.slider).slider({"min": this.control.range[0],
                                "max": this.control.range[1],
                                "step": this.control.step,
@@ -826,7 +828,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
         });
         container.appendChild(span);
     } else {
-        this.value = this.control.default;
+        this.value = this.control["default"];
         $(this.slider).slider({"min": this.control.range[0],
                                "max": this.control.range[1],
                                "step": this.control.step,
@@ -947,7 +949,7 @@ IPython.Kernel.prototype._handle_iopub_reply = function (e) {
         return;
     }
     var output_types = ['stream','display_data','pyout','pyerr','extension'];
-    if (output_types.indexOf(msg_type) >= 0) {
+    if ($.inArray(msg_type, output_types) >= 0) {
         var cb = callbacks['output'];
         if (cb !== undefined) {
             cb(msg_type, content, header);
