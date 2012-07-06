@@ -38,7 +38,18 @@ sagecell.Session = function (outputDiv, hide) {
     this.opened = false;
     this.deferred_code = [];
     this.interacts = [];
+    // Prevent Esc key from closing WebSockets and XMLHttpRequests in Firefox
+    window.addEventListener("keydown", function (event) {
+        if (event.keyCode === 27) {
+            event.preventDefault();
+        }
+    });
+    var old_ws = window.WebSocket || window.MozWebSocket;
+    if (!old_ws) {
+        window.WebSocket = sagecell.MultiSockJS;
+    }
     this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
+    window.WebSocket = old_ws;
     var that = this;
     this.kernel._kernel_started = function (json) {
         this.base_url = this.base_url.substr(sagecell.URLs.root.length);
@@ -49,9 +60,9 @@ sagecell.Session = function (outputDiv, hide) {
             while (that.deferred_code.length > 0) {
                 that.execute(that.deferred_code.shift());
             }
-        };
+        }
         this.iopub_channel.onopen = undefined;
-    };
+    }
     this.kernel.start(IPython.utils.uuid());
     this.output_blocks = {};
     var ce = sagecell.util.createElement;
@@ -862,6 +873,62 @@ sagecell.InteractData.control_types = {
     "selector": sagecell.InteractData.Selector,
     "slider": sagecell.InteractData.Slider
 };
+
+sagecell.MultiSockJS = function (url) {
+    if (!sagecell.MultiSockJS.channels) {
+        sagecell.MultiSockJS.channels = {};
+        sagecell.MultiSockJS.opened = false;
+        sagecell.MultiSockJS.to_init = [];
+        sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs);
+        sagecell.MultiSockJS.sockjs.onopen = function (e) {
+            sagecell.MultiSockJS.opened = true;
+            while (sagecell.MultiSockJS.to_init.length > 0) {
+                sagecell.MultiSockJS.to_init.shift().init_socket(e);
+            }
+        }
+        sagecell.MultiSockJS.sockjs.onmessage = function (e) {
+            var i = e.data.indexOf(",");
+            var prefix = e.data.substring(0, i);
+            e.data = e.data.substring(i + 1);
+            if (sagecell.MultiSockJS.channels[prefix].onmessage) {
+                sagecell.MultiSockJS.channels[prefix].onmessage(e);
+            }
+        }
+        sagecell.MultiSockJS.sockjs.onclose = function (e) {
+            for (var prefix in sagecell.MultiSockJS.channels) {
+                if (sagecell.MultiSockJS.channels[prefix].onclose) {
+                    sagecell.MultiSockJS.channels[prefix].onclose(e);
+                }
+            }
+        }
+    }
+    this.prefix = url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1];
+    sagecell.MultiSockJS.channels[this.prefix] = this;
+    this.init_socket();
+}
+
+sagecell.MultiSockJS.prototype.init_socket = function (e) {
+    if (sagecell.MultiSockJS.opened) {
+        var that = this;
+        // Run the onopen function after the current thread has finished,
+        // so that onopen has a chance to be set.
+        setTimeout(function () {
+            if (that.onopen) {
+                that.onopen(e);
+            }
+        }, 0);
+    } else {
+        sagecell.MultiSockJS.to_init.push(this);
+    }
+}
+
+sagecell.MultiSockJS.prototype.send = function (msg) {
+    sagecell.MultiSockJS.sockjs.send(this.prefix + "," + msg);
+}
+
+sagecell.MultiSockJS.prototype.close = function () {
+    delete sagecell.MultiSockJS.channels[this.prefix];
+}
 
 /* This function is copied from IPython's kernel.js
  * (https://github.com/ipython/ipython/blob/master/IPython/frontend/html/notebook/static/js/kernel.js)

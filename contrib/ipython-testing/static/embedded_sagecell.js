@@ -30,6 +30,7 @@ sagecell.URLs = {};
 }());
 
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
+sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/jqueryui/css/sage/images/jquery-achtung-wait.gif";
 
