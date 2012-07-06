@@ -51,7 +51,7 @@ def capture_output(split=False):
         sys.stdout, sys.stderr = stdout, stderr
         
         
-@skip('good')  
+  
 def test_init():
     tmkm = trusted_kernel_manager.TrustedMultiKernelManager()
     assert_equal(len(tmkm._kernels.keys()), 0)
@@ -59,7 +59,7 @@ def test_init():
     assert_equal(len(tmkm._clients.keys()),0)
     assert_true(hasattr(tmkm, "context"))
 
-@skip('good')  
+  
 def test_init_parameters():
     tmkm = trusted_kernel_manager.TrustedMultiKernelManager(default_computer_config = {"a": "b"}, kernel_timeout = 3.14)
     assert_equal(tmkm.default_computer_config, {"a": "b"})
@@ -99,13 +99,9 @@ class TestTrustedMultiKernelManager(object):
             try:
                 self.a.remove_computer(i)
             except:
-                print >> sys.__stdout__, "Removing computer failed"
                 pass
-        import time
-        print >> sys.__stdout__, "Sleeping between tests"
-        time.sleep(1)
         
-    @skip('good')
+    
     def test_get_kernel_ids_success(self):
         self._populate_comps_kernels()
         x = self.a.get_kernel_ids("testcomp1")
@@ -117,20 +113,20 @@ class TestTrustedMultiKernelManager(object):
         assert_equal("kthree" in x, False)
         assert_equal("kthree" in y, True)
 
-    @skip('good')  
+      
     def test_get_kernel_ids_invalid_comp(self):
         self._populate_comps_kernels()
         x = self.a.get_kernel_ids("testcomp3")
         assert_equal(len(x), 0)
         
-    @skip('good')  
+      
     def test_get_kernel_ids_no_args(self):
         self._populate_comps_kernels()
         self.a._kernels = {"a": None, "b": None, "c": None}
         x = self.a.get_kernel_ids()
         assert_equal(len(x), 3)
 
-    @skip('good')  
+      
     def test_get_hb_info_success(self):
         self._populate_comps_kernels()
         (b, c) = self.a.get_hb_info("kone")
@@ -140,12 +136,12 @@ class TestTrustedMultiKernelManager(object):
         assert_equal(b, 2.0)
         assert_equal(c, 4.0)
         
-    @skip('good')  
+      
     def test_get_hb_info_invalid_kernel_id(self):
         self._populate_comps_kernels()
         assert_raises(KeyError, self.a.get_hb_info, "blah")
 
-    @skip('good')
+    
     def test_ssh_untrusted(self):
         client = self.a._setup_ssh_connection(self.default_comp_config["host"], self.default_comp_config["username"])
         with capture_output() as (out, err):
@@ -155,7 +151,6 @@ class TestTrustedMultiKernelManager(object):
         assert_equal(len(x), 5)
         assert_is_not_none(self.executing_re.match(out))
 
-    @skip
     def test_add_computer_success(self): # depends on _setup_ssh_connection, _ssh_untrusted
         new_config = self.default_comp_config.copy()
         new_config.update({'beat_interval': 1, 'first_beat': 5, 'kernels': {}})
@@ -177,7 +172,6 @@ class TestTrustedMultiKernelManager(object):
         zmq_re = re.compile(r'ZMQ Connection with computer \w+ at port \d+ established')
         assert_is_not_none(zmq_re.match(out))
 
-    @skip('good')  
     def test_setup_ssh_connection_success(self):
         x = self.a._setup_ssh_connection("localhost", username=None)
         assert_equal("AutoAddPolicy" in str(x._policy), True)
@@ -188,7 +182,6 @@ class TestTrustedMultiKernelManager(object):
         outdict = ast.literal_eval(out)
         assert_equal(outdict, expected_out)
         
-    @skip('good')  
     def test_purge_kernels_no_kernels(self): # depends on add_computer
         x = self.a.add_computer(self.default_comp_config)
 
@@ -212,7 +205,6 @@ class TestTrustedMultiKernelManager(object):
         assert_equal(self.a._comps[x]["kernels"], {})
         assert_equal(self.a._kernels, {})
 
-    @skip
     def test_remove_computer_success(self): # depends on add_computer, new_session
         x = self.a.add_computer(self.default_comp_config)
         kern1 = self.a.new_session()
@@ -235,7 +227,6 @@ class TestTrustedMultiKernelManager(object):
         self._check_all_kernels_killed_out(out)
         assert_not_in(b, self.a._comps)
 
-    @skip
     def test_restart_kernel_success(self): # depends on add_computer, new_session
         x = self.a.add_computer(self.default_comp_config)
         kern1 = self.a.new_session()
@@ -275,12 +266,10 @@ class TestTrustedMultiKernelManager(object):
             self.a.interrupt_kernel(kern1)
         out = out[0]
 
-        print >> sys.__stdout__, out
         assert_in('interrupted', out)
         assert_not_in('not', out)
         #TODO: there should be a way of detecting if the kernel was interrupted without relying on stdout
 
-    @skip
     def test_new_session_success(self): # depends on add_computer
         x = self.a.add_computer(self.default_comp_config)
 
@@ -302,7 +291,6 @@ class TestTrustedMultiKernelManager(object):
 
         assert_equal("CONNECTION FILE ::: " in out, True)
 
-    @skip
     def test_end_session_success(self): # depends on add_computer, new_session
         x = self.a.add_computer(self.default_comp_config)
         kern1 = self.a.new_session()
@@ -328,7 +316,6 @@ class TestTrustedMultiKernelManager(object):
         assert_in("Kernel %s successfully killed."% kern2, out[1])
         assert_equal(out[2], "")
 
-    @skip
     def test_find_open_computer_success(self):
         self.a._comps["testcomp1"] = {"max_kernels": 3, "kernels": {}}
         self.a._comps["testcomp2"] = {"max_kernels": 5, "kernels": {}}
@@ -343,7 +330,6 @@ class TestTrustedMultiKernelManager(object):
         except IOError as e:
             assert_equal("Could not find open computer. There are 2 computers available.", e.message)
 
-    @skip
     def test_create_connected_stream(self):
         cfg = {"host": "localhost"}
         port = 51337
@@ -376,7 +362,6 @@ class TestTrustedMultiKernelManager(object):
         assert_equal(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.DEALER)
 
-    @skip
     def test_create_iopub_stream(self): # depends on create_connected_stream
         kernel_id = "kern1"
         comp_id = "testcomp1"
@@ -388,7 +373,7 @@ class TestTrustedMultiKernelManager(object):
         assert_equal(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.SUB)
 
-    @skip
+    
     def test_create_shell_stream(self): # depends on create_connected_stream
         kernel_id = "kern1"
         comp_id = "testcomp1"
@@ -400,7 +385,7 @@ class TestTrustedMultiKernelManager(object):
         assert_equal(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.DEALER)
 
-    @skip
+    
     def test_create_hb_stream(self): # depends on create_connected_stream
         kernel_id = "kern1"
         comp_id = "testcomp1"
