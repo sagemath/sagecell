@@ -83,7 +83,7 @@ class TrustedMultiKernelManager(object):
         # side and have the untrusted side connect to that and send the port
         failure = True
         from time import sleep
-        for i in xrange(10):
+        for i in xrange(30):
             if stdout_channel.recv_ready():
                 port = stdout_channel.recv(1024)
                 failure = False

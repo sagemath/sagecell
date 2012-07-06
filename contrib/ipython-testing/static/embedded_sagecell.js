@@ -44,8 +44,6 @@ sagecell.init = function (callback) {
         var script = document.createElement("script");
         if (config.type !== undefined) {
             script.type = config.type;
-        } else {
-            script.type= "application/javascript";
         }
         if (config.src !== undefined) {
             script.src = config.src;
