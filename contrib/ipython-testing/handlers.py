@@ -1,8 +1,8 @@
-import time, string, urllib, zlib, base64, uuid
+import time, string, urllib, zlib, base64, uuid, json
 
 import tornado.web
 import tornado.websocket
-
+import sockjs.tornado
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 
@@ -67,7 +67,7 @@ class KernelHandler(tornado.web.RequestHandler):
     """
     Kernel startup request handler.
     
-    This starts up an iPython kernel on an untrusted account
+    This starts up an IPython kernel on an untrusted account
     and returns the associated kernel id and a url to request
     websocket connections for a websocket-ZMQ bridge back to
     the kernel in a JSON-compatible message.
@@ -75,7 +75,7 @@ class KernelHandler(tornado.web.RequestHandler):
     The returned websocket url is not entirely complete, in
     that it is the base url to be used for two different
     websocket connections (corresponding to the shell and
-    iopub streams) of the iPython kernel. It is the
+    iopub streams) of the IPython kernel. It is the
     responsiblity of the client to request the correct URLs
     for these websockets based on the following pattern:
     
@@ -98,6 +98,27 @@ class KernelHandler(tornado.web.RequestHandler):
         self.write(data)
         self.finish()
 
+class KernelConnection(sockjs.tornado.SockJSConnection):
+    def __init__(self, session):
+        self.session = session
+        super(KernelConnection, self).__init__(session)
+    def on_open(self, request):
+        self.channels = {}
+
+    def on_message(self, message):
+        prefix, message = message.split(",", 1)
+        kernel, channel = prefix.split("/")
+        if kernel not in self.channels:
+            application = self.session.handler.application
+            self.channels[kernel] = \
+                {"shell": ShellSockJSHandler(kernel, self.send, application),
+                 "iopub": IOPubSockJSHandler(kernel, self.send, application)}
+            self.channels[kernel]["shell"].open(kernel)
+            self.channels[kernel]["iopub"].open(kernel)
+        self.channels[kernel][channel].on_message(message)
+
+KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
+
 class EmbeddedHandler(tornado.web.RequestHandler):
     """Handler to redirect ``/embedded_sagecell.js`` to ``/static/embedded_sagecell.js``"""
     def get(self):
@@ -107,7 +128,6 @@ class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 
     with open("templates/sagecell.html") as f:
-        import json
         sagecell_html = f.read()
         sagecell_json = json.dumps(sagecell_html)
 
@@ -124,7 +144,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
     """
     Permalink generation request handler.
 
-    This accepts the string version of an iPython
+    This accepts the string version of an IPython
     execute_request message, and stores the code associated
     with that request in a database linked to a unique id,
     which is returned to the requester in a JSON-compatible
@@ -308,7 +328,7 @@ class ZMQStreamHandler(object):
 class ShellHandler(ZMQStreamHandler):
     """
     This handles the websocket-ZMQ bridge for the shell
-    stream of an iPython kernel.
+    stream of an IPython kernel.
     """
     def open(self, kernel_id):
         print "*"*10, " BEGIN SHELL HANDLER ", "*"*10
@@ -332,7 +352,7 @@ class ShellHandler(ZMQStreamHandler):
 class IOPubHandler(ZMQStreamHandler):
     """
     This handles the websocket-ZMQ bridge for the iopub
-    stream of an iPython kernel. It also handles the
+    stream of an IPython kernel. It also handles the
     heartbeat (hb) stream that same kernel, but there is no
     associated websocket connection. The iopub websocket is
     instead used to notify the client if the heartbeat
@@ -370,7 +390,7 @@ class IOPubHandler(ZMQStreamHandler):
         """
         Starts a series of delayed callbacks to send and
         receive small messages from the heartbeat stream of
-        an iPython kernel. The specific delay paramaters for
+        an IPython kernel. The specific delay paramaters for
         the callbacks are set by configuration values in a
         kernel manager associated with the web application.
         """
@@ -438,12 +458,12 @@ class IOPubHandler(ZMQStreamHandler):
             self.application.km.end_session(self.kernel_id)
         except:
             pass
-        self._output_message(
+        self._output_message(json.dumps(
             {'header': {'msg_type': 'status'},
              'parent_header': {},
              'content': {'execution_state':'dead'}
             }
-        )
+        ))
         self.on_close()
 
 class ShellServiceHandler(ShellHandler):
@@ -475,3 +495,21 @@ class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
 class IOPubWebHandler(IOPubHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
         self.write_message(message)
+
+class ShellSockJSHandler(ShellHandler):
+    def __init__(self, kernel_id, callback, application):
+        self.kernel_id = kernel_id
+        self.callback = callback
+        self.application = application
+
+    def _output_message(self, message):
+        self.callback("%s/shell,%s" % (self.kernel_id, message))
+
+class IOPubSockJSHandler(IOPubHandler):
+    def __init__(self, kernel_id, callback, application):
+        self.kernel_id = kernel_id
+        self.callback = callback
+        self.application = application
+
+    def _output_message(self, message):
+        self.callback("%s/iopub,%s" % (self.kernel_id, message))
