@@ -170,8 +170,8 @@ class TestTrustedMultiKernelManager(object):
             assert_equal(self.a._comps[x][k], new_config[k], "config value %s (%s) does not agree (should be %s)"%(k,self.a._comps[x][k], new_config[k]))
 
         #TODO: the following two asserts don't pass...
-        #assert_in("socket", self.a._clients[x])
-        #assert_equal(self.a._clients[x]["socket"].socket_type, 3)
+        assert_in("socket", self.a._clients[x])
+        assert_equal(self.a._clients[x]["socket"].socket_type, 3)
 
         assert_in("ssh", self.a._clients[x])
 
@@ -243,7 +243,8 @@ class TestTrustedMultiKernelManager(object):
         out = out[0]
 
         y = ast.literal_eval(out)
-        assert_equal("content" in y, True)
+        assert_is_instance(y, dict)
+        assert_in("content", y)
         assert_len(y["content"], 2)
         assert_in("type", y)
         assert_equal(y["type"], "success")
