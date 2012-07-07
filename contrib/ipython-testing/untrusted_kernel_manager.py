@@ -2,42 +2,13 @@ from forking_kernel_manager import ForkingKernelManager
 import logging
 
 class UntrustedMultiKernelManager(object):
-    def __init__(self, filename):
+    def __init__(self, filename, update_function=None):
         self.filename = filename
-        self.fkm = ForkingKernelManager(self.filename)
+        self.fkm = ForkingKernelManager(self.filename, update_function)
         self._kernels = set()
-        self.setup_sage()
-
-    def setup_sage(self):
-        try:
-            logging.debug('initializing sage')
-            import StringIO
-            import sage
-            import sage.all
-            # The first plot takes about 2 seconds to generate (presumably
-            # because lots of things, like matplotlib, are imported).  We plot
-            # something here so that worker processes don't have this overhead
-            logging.debug('plotting')
-            try:
-                sage.all.plot(lambda x: x, (0,1)).save(StringIO.StringIO())
-            except Exception as e:
-                logging.debug('plotting exception: %s'%e)
-            self.sage_dict = {'sage': sage}
-            sage_code = """
-from sage.all import *
-from sage.calculus.predefined import x
-from sage.misc.html import html
-from sage.server.support import help
-from sagenb.misc.support import automatic_names
-"""
-            exec sage_code in self.sage_dict
-            
-            logging.debug('set up sage') 
-        except ImportError as e:
-            self.sage_dict = {}
     
     def start_kernel(self, resource_limits=None):
-        x = self.fkm.start_kernel(sage_dict=self.sage_dict, resource_limits=resource_limits)
+        x = self.fkm.start_kernel(resource_limits=resource_limits)
         self._kernels.add(x["kernel_id"])
         return x
 
@@ -51,7 +22,7 @@ from sagenb.misc.support import automatic_names
         return self.fkm.interrupt_kernel(kernel_id)
 
     def restart_kernel(self, kernel_id, *args, **kwargs):
-        return self.fkm.restart_kernel(self.sage_dict, kernel_id)
+        return self.fkm.restart_kernel(kernel_id)
 
     def purge_kernels(self):        
         failures = []
@@ -64,9 +35,9 @@ from sagenb.misc.support import automatic_names
         return failures
 
 if __name__ == "__main__":
-    import os
-    filename = os.devnull
-    x = UntrustedMultiKernelManager(filename)
+    def f(a,b,c,d):
+        return 1
+    x = UntrustedMultiKernelManager("/dev/null", f)
     y = x.start_kernel()
     print y
     from time import sleep 
