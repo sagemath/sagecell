@@ -179,7 +179,7 @@ class TrustedMultiKernelManager(object):
         :arg str kernel_id: the id of the kernel you want interrupted
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        reply = self._sender.send_msg({"type": "interrupt_kerenl",
+        reply = self._sender.send_msg({"type": "interrupt_kernel",
                                        "content": {"kernel_id": kernel_id}},
                                       comp_id)
 
@@ -187,6 +187,7 @@ class TrustedMultiKernelManager(object):
             print "Kernel %s interrupted."%kernel_id
         else:
             print "Kernel %s not interrupted!"%kernel_id
+        return reply
 
     def new_session(self):
         """ Starts a new kernel on an open computer. 
