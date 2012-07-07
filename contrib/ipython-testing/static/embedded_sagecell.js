@@ -32,7 +32,7 @@ sagecell.URLs = {};
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
 sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
-sagecell.URLs.spinner = sagecell.URLs.root + "static/jqueryui/css/sage/images/jquery-achtung-wait.gif";
+sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
@@ -60,7 +60,7 @@ sagecell.init = function (callback) {
 
     // many stylesheets that have been smashed together into all.min.css
     var stylesheets = [sagecell.URLs.root + "static/all.min.css",
-                       sagecell.URLs.root + "static/jqueryui/css/sage/jquery-ui-1.8.17.custom.css",
+                       sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.8.21.custom.css",
                        sagecell.URLs.root + "static/colorpicker/css/colorpicker.css"]
     for (var i = 0; i < stylesheets.length; i++) {
         document.head.appendChild(sagecell.util.createElement("link",
