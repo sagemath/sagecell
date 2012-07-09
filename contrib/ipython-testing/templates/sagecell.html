@@ -1,1 +1,38 @@
-../../../templates/sagecell.html
+<div class="sagecell_editor">
+  <textarea class="sagecell_commands" autocapitalize="off" autocorrect="off" autocomplete="off"></textarea>
+  <span class="sagecell_editorToggle">
+    <input type="checkbox" checked>
+    <label>Syntax Highlighting</label>
+  </span>
+</div>
+<button class="sagecell_evalButton">Evaluate</button>
+<div class="sagecell_advancedFrame">
+  <div class="sagecell_advancedTitle">Advanced</div>
+    <div style="display:none" class="sagecell_advancedFields">
+      <fieldset class="sagecell_files">
+      <legend>Upload files</legend>
+      <button class="sagecell_addFile">Add file</button>
+      <button class="sagecell_clearFiles">Clear files</button>
+      <ul class="sagecell_fileList"></ul>
+    </fieldset>
+    <span class="sagecell_sageMode">
+      <label accesskey="S">
+        <input type="checkbox" checked class="sagecell_sageModeCheck" name="sage_mode">
+        Execute as Sage code
+      </label>
+    </span>
+  </div>
+</div>
+<div class="sagecell_output_elements">
+  <div class="sagecell_permalinks">
+    <a class="sagecell_zipurl">Permalink</a>
+    <a class="sagecell_queryurl">Shortened temporary link</a>
+  </div>
+  <div class="sagecell_output"></div>
+  <div class="sagecell_computationID">Computation ID: <span></span></div>
+  <div class="sagecell_messages">
+    <hr>
+    <span style="font-size:large;font-weight:bold">Messages</span>
+    <br><br>
+  </div>
+</div>

@@ -59,9 +59,9 @@ sagecell.init = function (callback) {
     sagecell.last_session = {};
 
     // many stylesheets that have been smashed together into all.min.css
-    var stylesheets = [sagecell.URLs.root + "static/all.min.css",
-                       sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.8.21.custom.css",
-                       sagecell.URLs.root + "static/colorpicker/css/colorpicker.css"]
+    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.8.21.custom.css",
+                       sagecell.URLs.root + "static/colorpicker/css/colorpicker.css",
+                       sagecell.URLs.root + "static/all.min.css"]
     for (var i = 0; i < stylesheets.length; i++) {
         document.head.appendChild(sagecell.util.createElement("link",
                 {"rel": "stylesheet", "href": stylesheets[i]}));
@@ -85,11 +85,11 @@ sagecell.init = function (callback) {
           //}', 
           'type': 'text/x-mathjax-config'});
     load({"src": sagecell.URLs.root + "static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
-    // many prerequisites that have been smashed together into all.min.js
     sagecell.sendRequest("GET", sagecell.URLs.root + "sagecell.html", {},
         function (data) {
             $(function () {
                 sagecell.body = data;
+                // many prerequisites that have been smashed together into all.min.js
                 load({"src": sagecell.URLs.root + "static/all.min.js"})
             });
         }, undefined, "text/html");
@@ -182,6 +182,9 @@ sagecell.makeSagecell = function (args) {
             } else {
                 inputLocation.html(sagecell.body);
             }
+            var id = IPython.utils.uuid();
+            inputLocation.find(".sagecell_editorToggle label").attr("for", id);
+            inputLocation.find(".sagecell_editorToggle input").attr("id", id).button();
             inputLocation.addClass("sagecell");
             outputLocation.addClass("sagecell");
             inputLocation.find(".sagecell_commands").val(settings.code);
@@ -241,6 +244,7 @@ sagecell.initCell = (function(sagecellInfo) {
     var outputLocation = $(sagecellInfo.outputLocation);
     var editor = sagecellInfo.editor;
     var replaceOutput = sagecellInfo.replaceOutput;
+    var collapse = sagecellInfo.collapse;
     var sageMode = inputLocation.find(".sagecell_sageModeCheck");
     var textArea = inputLocation.find(".sagecell_commands");
     var files = [];
@@ -248,8 +252,7 @@ sagecell.initCell = (function(sagecellInfo) {
     if (! sagecellInfo.sageMode) {
         sageMode.attr("checked", false);
     }
-
-    temp = this.renderEditor(editor, inputLocation);
+    temp = this.renderEditor(editor, inputLocation, collapse);
     editor = temp[0];
     editorData = temp[1];
     inputLocation.find(".sagecell_editorToggle").click(function () {
@@ -360,7 +363,8 @@ sagecell.initCell = (function(sagecellInfo) {
         outputLocation.find(".sagecell_output_elements").show();
     };
 
-    inputLocation.find(".sagecell_evalButton").click(sagecellInfo.submit);
+
+    inputLocation.find(".sagecell_evalButton").click(sagecellInfo.submit).button();
     if (sagecellInfo.code && sagecellInfo.autoeval) {
         sagecellInfo.submit();
     }
@@ -496,14 +500,29 @@ sagecell.restoreInputForm = function (sagecellInfo) {
     moved.remove();
 };
 
-sagecell.renderEditor = function (editor, inputLocation) {
+sagecell.renderEditor = function (editor, inputLocation, collapse) {
+    var commands = inputLocation.find(".sagecell_commands");
     var editorData;
-
+    if (collapse !== undefined) {
+        var header, code;
+        var accordion = sagecell.util.createElement("div", {}, [
+            header = sagecell.util.createElement("h3", {}, [
+                document.createTextNode("Code")
+            ]),
+            code = document.createElement("div")
+        ]);
+        header.style.paddingLeft = "2.2em";
+        $(accordion).insertBefore(commands);
+        $(code).append(commands, inputLocation.find(".sagecell_editorToggle"));
+        $(accordion).accordion({"active": (collapse ? false : header),
+                                "collapsible": true,
+                                "header": header});
+    }
     if (editor === "textarea") {
         editorData = editor;
     } else if (editor === "textarea-readonly") {
         editorData = editor;
-        inputLocation.find(".sagecell_commands").attr("readonly", "readonly");
+        commands.attr("readonly", "readonly");
     } else {
         var readOnly = false;
         if (editor == "codemirror-readonly") {
@@ -512,7 +531,7 @@ sagecell.renderEditor = function (editor, inputLocation) {
             editor = "codemirror";
         }
         editorData = CodeMirror.fromTextArea(
-            inputLocation.find(".sagecell_commands").get(0),
+            commands.get(0),
             {mode: "python",
              indentUnit: 4,
              tabMode: "shift",
@@ -525,15 +544,10 @@ sagecell.renderEditor = function (editor, inputLocation) {
              }},
              onKeyEvent: function (editor, event) {
                  editor.save();
-                /* Saving state and restoring it seems more confusing for new users, so we're commenting it out for now.
-                try {
-                    sessionStorage.removeItem(inputLocationName+"_editorValue");
-                    sessionStorage.setItem(inputLocationName+"_editorValue", inputLocation.find(".sagecell_commands").val());
-                } catch (e) {
-                    // if we can't store, don't do anything, e.g. if cookies are blocked
-                }
-                */
             }});
+        $(accordion).on("accordionchange", function () {
+            editorData.refresh();
+        });
     }
     return [editor, editorData];
 };

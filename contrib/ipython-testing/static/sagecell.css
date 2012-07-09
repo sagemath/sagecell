@@ -93,6 +93,7 @@
 .sagecell_poweredBy img {
     vertical-align: -5px;
     border-style: none;
+    text-decoration: none;
 }
 
 .sagecell_spinner {
@@ -138,7 +139,7 @@
     border-left-color: red;
 }
 
-.sagecell_commands {
+.sagecell_commands, .sagecell .ui-widget .sagecell_commands {
     width: 100%;
     height: 200px;
     border: 1px solid;
@@ -154,7 +155,10 @@
 .sagecell_editorToggle {
     float: right;
     margin: 2px;
-    font-size: 80%;
+}
+
+.sagecell_editorToggle .ui-button-text {
+    font-size: 60%;
 }
 
 .sagecell_advancedFrame {
@@ -213,10 +217,10 @@
     content: "\2716";
 }
 
-.ansibold {font-weight: bold;}
-.ansiblack {color: black;}
-.ansired {color: red;}
-.ansiyellow {color: gold;}
-.ansiblue {color: blue;}
-.ansicyan {color: cyan;}
-.ansigrey {color: gray;}
+.sagecell .ansibold {font-weight: bold;}
+.sagecell .ansiblack {color: black;}
+.sagecell .ansired {color: red;}
+.sagecell .ansiyellow {color: gold;}
+.sagecell .ansiblue {color: blue;}
+.sagecell .ansicyan {color: cyan;}
+.sagecell .ansigrey {color: gray;}
