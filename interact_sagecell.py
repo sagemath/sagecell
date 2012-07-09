@@ -246,7 +246,26 @@ def interact_func(session, pub_socket):
         return f
     return interact
 
-class InteractControl:
+def safe_sage_eval(code, globs):
+    """
+    Evaluate an expression using sage_eval,
+    returning an ``Exception`` object if an exception occurs
+
+    :arg str code: the expression to evaluate
+    :arg dict globs: the global dictionary in which to evaluate the expression
+    :returns: the value of the expression. If an exception occurs, the
+    ``Exception`` object is returned instead.
+    """
+    try:
+        try:
+            from sage.all import sage_eval
+            return sage_eval(code, globs)
+        except ImportError:
+            return eval(code, globs)
+    except Exception as e:
+        return e
+
+class InteractControl(object):
     """
     Base class for all interact controls.
     """
@@ -326,35 +345,19 @@ class InputBox(InteractControl):
         an input box form element will be rendered.
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
-    :arg adapter: a callable which will be passed the input before
-        sending it into the function.  This might ensure that the
-        input to the function is of a specific type, for example.  The
-        function should take as input the value of the control and
-        should return something that is then passed into the interact
-        function as the value of the control.
-    :arg bool evaluate: If ``True`` (default), the user's string will first be evaluated
-        using ``sage_eval``, and then passed to the adapter function.
+    :arg bool keypress: update the value of the interact when the user presses
+        any key, rather than when the user presses Enter or unfocuses the textbox
     """
-    def __init__(self, default=u"", label=None, width=0, height=1, adapter=None, evaluate=True):
+    def __init__(self, default=u"", label=None, width=0, height=1, keypress=True):
         if not isinstance(default, basestring):
             default = repr(default)
         self.default=default
         self.width=int(width)
         self.height=int(height)
-        self.raw=False
+        self.keypress = keypress
         self.label=label
-        if evaluate:
-            from sage.all import sage_eval
-            if adapter is not None:
-                self.adapter = lambda x,globs: adapter(sage_eval(x,globs), globs)
-            else:
-                self.adapter = lambda x,globs: sage_eval(x,globs)
-        elif adapter is not None:
-            self.adapter = lambda x,globs: adapter(x,globs)
-
         if self.height > 1:
             self.subtype = "textarea"
-            self.raw = True
         else:
             self.subtype = "input"
 
@@ -371,8 +374,51 @@ class InputBox(InteractControl):
                 'default':self.default,
                 'width':self.width,
                 'height':self.height,
-                'raw':self.raw,
+                'evaluate': False,
+                'keypress': self.keypress,
                 'label':self.label}
+
+class ExpressionBox(InputBox):
+    """
+    An ``InputBox`` whose value is the result of evaluating its contents with Sage
+    :arg default: default value of the input box.  If this is not a string, repr is
+        called on it to get a string, which is then the default input.
+    :arg int width: character width of the input box.
+    :arg int height: character height of the input box. If this is greater than
+        one, an HTML textarea will be rendered, while if it is less than one,
+        an input box form element will be rendered.
+    :arg str label: the label of the control, ``""`` for no label, and
+        a default value (None) of the control's variable.
+    :arg adapter: a callable which will be passed the input before
+        sending it into the function.  This might ensure that the
+        input to the function is of a specific type, for example.  The
+        function should take as input the value of the control and
+        should return something that is then passed into the interact
+        function as the value of the control.
+    """
+    def __init__(self, default=u"", label=None, width=0, height=1, adapter=None):
+        super(ExpressionBox, self).__init__(default, label, width, height)
+        if adapter is not None:
+            self.adapter = lambda x, globs: adapter(safe_sage_eval(x, globs), globs)
+        else:
+            self.adapter = lambda x, globs: safe_sage_eval(x, globs)
+
+    def message(self):
+        """
+        Get an input box control configuration message for an
+        ``interact_prepare`` message
+
+        :returns: configuration message
+        :rtype: dict
+        """
+        return {"control_type": "input_box",
+                "subtype": self.subtype,
+                "default": self.default,
+                "width": self.width,
+                "height": self.height,
+                "evaluate": True,
+                "keypress": False,
+                "label": self.label}
 
 class InputGrid(InteractControl):
     """
@@ -403,12 +449,12 @@ class InputGrid(InteractControl):
         self.ncols = int(ncols)
         self.width = int(width)
         self.label = label
-        if evaluate:
-            from sage.all import sage_eval
+        self.evaluate = evaluate
+        if self.evaluate:
             if element_adapter is not None:
-                self.element_adapter = lambda x,globs: element_adapter(sage_eval(x,globs), globs)
+                self.element_adapter = lambda x,globs: element_adapter(safe_sage_eval(x,globs), globs)
             else:
-                self.element_adapter = lambda x,globs: sage_eval(x,globs)
+                self.element_adapter = lambda x,globs: safe_sage_eval(x,globs)
         else:
             if element_adapter is not None:
                 self.element_adapter = lambda x,globs: element_adapter(x,globs)
@@ -449,6 +495,7 @@ class InputGrid(InteractControl):
                 'default': self.default,
                 'width':self.width,
                 'raw': True,
+                'evaluate': self.evaluate,
                 'label': self.label}
 
 class Selector(InteractControl):
@@ -1109,7 +1156,6 @@ def automatic_control(control, var=None):
             values=list(control)
             C = DiscreteSlider(default = default_value, values = values, label = label)
     else:
-        from sage.all import sage_eval
         C = InputBox(default = control, label=label, evaluate=True)
         try:
             from sagenb.misc.misc import Color
@@ -1183,7 +1229,8 @@ def default_to_index(values, default):
         index = i
     return index
 
-imports = {"Checkbox": Checkbox, "InputBox": InputBox, "InputGrid": InputGrid,
+imports = {"Checkbox": Checkbox, "InputBox": InputBox,
+           "ExpressionBox": ExpressionBox, "InputGrid": InputGrid,
            "Selector": Selector, "DiscreteSlider": DiscreteSlider,
            "ContinuousSlider": ContinuousSlider, "MultiSlider": MultiSlider,
            "ColorSelector": ColorSelector, "Selector": Selector,

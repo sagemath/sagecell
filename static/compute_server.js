@@ -560,11 +560,17 @@ sagecell.InteractData.InputBox.prototype.rendered = function () {
             {"size": this.control.width});
     }
     this.textbox.value = this.control["default"];
+    if (this.control.evaluate) {
+        this.textbox.style.fontFamily = "monospace";
+    }
+    this.event = this.control.keypress ? "keyup" : "change";
     return this.textbox;
 }
 
 sagecell.InteractData.InputBox.prototype.changeHandlers = function() {
-    return {"change": this.textbox};
+    var h = {};
+    h[this.event] = this.textbox;
+    return h;
 }
 
 sagecell.InteractData.InputBox.prototype.py_value = function () {
@@ -586,6 +592,9 @@ sagecell.InteractData.InputGrid.prototype.rendered = function () {
         for (var col = 0; col < this.control.ncols; col++) {
             var textbox = ce("input", {"value": this.control["default"][row][col],
                                        "size": this.control.width});
+            if (this.control.evaluate) {
+                textbox.style.fontFamily = "monospace";
+            }
             this.textboxes = this.textboxes.add(textbox);
             tr.appendChild(ce("td", {}, [textbox]));
         }
