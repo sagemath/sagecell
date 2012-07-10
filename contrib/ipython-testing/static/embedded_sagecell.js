@@ -347,26 +347,21 @@ sagecell.initCell = (function(sagecellInfo) {
         inputLocation.find(".sagecell_fileList").empty();
         return false;
     });
-    sagecellInfo.submit = function(evt) {
-        var id = $(evt.target).data("id");
-        if (!id) {
-            $(evt.target).data("id", id = IPython.utils.uuid());
-        }
-        if (replaceOutput && sagecell.last_session[id]) {
-            $(sagecell.last_session[id].session_container).remove();
+    sagecellInfo.submit = function (evt) {
+        if (replaceOutput && sagecell.last_session[evt.data.id]) {
+            $(sagecell.last_session[evt.data.id].session_container).remove();
         }
         var session = new sagecell.Session(outputLocation, false);
         session.execute(textArea.val());
-        sagecell.last_session[id] = session;
+        sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
         outputLocation.find(".sagecell_output_elements").show();
     };
-
-
-    inputLocation.find(".sagecell_evalButton").click(sagecellInfo.submit).button();
+    var button = inputLocation.find(".sagecell_evalButton").button();
+    button.click({"id": IPython.utils.uuid()}, sagecellInfo.submit);
     if (sagecellInfo.code && sagecellInfo.autoeval) {
-        sagecellInfo.submit();
+        button.click();
     }
     if (sagecellInfo.callback) {
         sagecellInfo.callback();
@@ -525,7 +520,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         commands.attr("readonly", "readonly");
     } else {
         var readOnly = false;
-        if (editor == "codemirror-readonly") {
+        if (editor === "codemirror-readonly") {
             readOnly = true;
         } else {
             editor = "codemirror";
