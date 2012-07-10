@@ -86,6 +86,9 @@ sagecell.init = function (callback) {
           //}', 
           'type': 'text/x-mathjax-config'});
     load({"src": sagecell.URLs.root + "static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
+    // Preload images
+    new Image().src = sagecell.URLs.sage_logo;
+    new Image().src = sagecell.URLs.spinner;
     sagecell.sendRequest("GET", sagecell.URLs.root + "sagecell.html", {},
         function (data) {
             $(function () {
