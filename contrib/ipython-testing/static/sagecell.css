@@ -89,14 +89,13 @@
 }
 
 .sagecell_poweredBy {
-    position: absolute;
-    right: 5px;
+    float: right;
+    padding-right: 5px;
     padding-top: 3px;
-    display:block;
     width: 18%;
     text-align: right;
     overflow: visible;
-    font-size: 12px;
+    font-size: 80%;
 }
 
 .sagecell_poweredBy img {

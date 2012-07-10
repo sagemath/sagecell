@@ -119,7 +119,7 @@ sagecell.Session.prototype.execute = function (code) {
         var that = this;
         sagecell.sendRequest("POST", sagecell.URLs.permalink,
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
-                                        "content": {"code": "print 2+2"}})},
+                                        "content": {"code": code}})},
             function (data) {
                 var link = that.outputDiv.find("a.sagecell_permalink");
                 link.attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).permalink);
