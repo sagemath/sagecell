@@ -58,6 +58,15 @@
     height: 200px;
 }
 
+.sagecell_output_elements {
+    margin-top: 0.5em;
+}
+
+.sagecell_permalink {
+    font-size: 80%;
+    display: none;
+}
+
 .sagecell_sessionContainer {
     position: relative;
 }

@@ -24,7 +24,7 @@
 * 
 **************************************************************/
 
-sagecell.Session = function (outputDiv, hide) {
+sagecell.Session = function (outputDiv) {
     this.outputDiv = outputDiv;
     this.last_requests = {};
     this.sessionContinue = true;
@@ -35,6 +35,7 @@ sagecell.Session = function (outputDiv, hide) {
             callback(JSON.parse(data));
         });
     }
+    this.executed = false;
     this.opened = false;
     this.deferred_code = [];
     this.interacts = [];
@@ -100,9 +101,6 @@ sagecell.Session = function (outputDiv, hide) {
             $(that.output_blocks[null]).removeClass("sagecell_active");
         }
     });
-    if (hide) {
-        $(this.session_container).hide();
-    }
     this.replace_output = {};
     this.lock_output = false;
     this.files = {};
@@ -115,6 +113,18 @@ sagecell.Session.prototype.execute = function (code) {
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false}));
     } else {
         this.deferred_code.push(code);
+    }
+    if (!this.executed) {
+        this.executed = true;
+        var that = this;
+        sagecell.sendRequest("POST", sagecell.URLs.permalink,
+            {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
+                                        "content": {"code": "print 2+2"}})},
+            function (data) {
+                var link = that.outputDiv.find("a.sagecell_permalink");
+                link.attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).permalink);
+                link.css("display", "inline");
+            });
     }
 };
 

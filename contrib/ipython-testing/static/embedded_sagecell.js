@@ -31,6 +31,7 @@ sagecell.URLs = {};
 
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
 sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
+sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 
@@ -192,7 +193,7 @@ sagecell.makeSagecell = function (args) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
             }
             outputLocation.find(".sagecell_output_elements").hide();
-            hide.push("files", "sageMode", "permalinks"); // TODO: Delete this line when these features are implemented.
+            hide.push("files", "sageMode"); // TODO: Delete this line when these features are implemented.
             if (settings.mode === "debug") {
                 console.warn("Running the Sage Cell in debug mode!");
             } else {
@@ -201,7 +202,7 @@ sagecell.makeSagecell = function (args) {
                                        "editorToggle": true,  "files": true,
                                        "evalButton": true,    "sageMode": true},
                                 "out": {"output": true,       "messages": true,
-                                        "sessionFiles": true, "permalinks": true}};
+                                        "sessionFiles": true, "permalink": true}};
                 var hidden_out = [];
                 for (var i = 0, i_max = hide.length; i < i_max; i++) {
                     if (hide[i] in hideable["in"]) {
@@ -350,7 +351,7 @@ sagecell.initCell = (function(sagecellInfo) {
         if (replaceOutput && sagecell.last_session[evt.data.id]) {
             $(sagecell.last_session[evt.data.id].session_container).remove();
         }
-        var session = new sagecell.Session(outputLocation, false);
+        var session = new sagecell.Session(outputLocation);
         session.execute(textArea.val());
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
@@ -577,11 +578,11 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
 sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
         "editor": "textarea-readonly",
-        "hide": ["editor", "editorToggle", "files", "permalinks"],
+        "hide": ["editor", "editorToggle", "files", "permalink"],
     },
     "restricted": { // to display/evaluate code that can't be edited.
         "editor": "codemirror-readonly",
-        "hide": ["editorToggle", "files", "permalinks"],
+        "hide": ["editorToggle", "files", "permalink"],
     }
 };
 

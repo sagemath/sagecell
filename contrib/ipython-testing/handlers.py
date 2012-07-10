@@ -57,7 +57,7 @@ class RootHandler(tornado.web.RequestHandler):
             if isinstance(options["code"], unicode):
                 options["code"] = options["code"].encode("utf8")
             options["code"] = urllib.quote(options["code"])
-            options["autoeval"] = False if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else True
+            options["autoeval"] = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
         else:
             options["code"] = None
 
@@ -154,9 +154,6 @@ class PermalinkHandler(tornado.web.RequestHandler):
     with the format ``<root_url>?q=<id>``.
     """
     def post(self):
-        """
-        """
-
         args = self.request.arguments
 
         retval = {"permalink": None}
@@ -168,6 +165,11 @@ class PermalinkHandler(tornado.web.RequestHandler):
                     retval["permalink"] = db.new_exec_msg(message)
             except:
                 pass
+        if self.request.headers["Accept"] == "application/json":
+            self.set_header("Access-Control-Allow-Origin", "*");
+        else:
+            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
+            self.set_header("Content-Type", "text/html")
         self.write(retval)
         self.finish()
 
