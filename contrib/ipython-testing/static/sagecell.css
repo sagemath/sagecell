@@ -130,7 +130,6 @@
     border-color: gray;
 }
 
-/** Ported from changes to version 1: may not be needed?
 .sagecell_interactControls {
     width: auto;
 }
@@ -142,7 +141,6 @@
     padding-bottom: 0.6ex !important;
 
 }
-** end of changes to version 1 */
 
 .sagecell_interactControls > tr > td:first-child {
     border-left: 2px solid transparent;
