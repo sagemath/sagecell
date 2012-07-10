@@ -162,6 +162,11 @@
     vertical-align: middle;
 }
 
+.sagecell_editor div.ui-accordion-content.ui-helper-reset {
+    padding: 1em 0.5em;
+    font-size: 90.9%;
+}
+
 .sagecell_advancedFrame {
     border-radius: 5px;
     background-color: #ddf;
