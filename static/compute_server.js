@@ -473,7 +473,7 @@ sagecell.InteractCell.prototype.renderCanvas = (function() {
         var html_code = "";
 
         if (labeltext) {
-            html_code += "<td><label ";
+            html_code += "<td class='labelcell'><label ";
             if (id) {
                 html_code += "for='"+id+"' ";
             }
@@ -892,7 +892,7 @@ sagecell.InteractData.InputGrid.prototype.changes = function() {
 sagecell.InteractData.InputGrid.prototype.html = function() {
     var default_values = this.control["default"],
     width = this.control["width"],
-    html_code = "<span class='sagecell_var_"+this.name+"'><table><tbody>";
+    html_code = "<span class='sagecell_var_"+this.name+"'><table style='width: auto;'><tbody>";
 
     for (var r = 0, r_max = this.control["nrows"]; r < r_max; r ++) {
         html_code += "<tr>";
