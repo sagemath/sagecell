@@ -284,7 +284,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                     this.controls[this.layout[loc][i]].rendered(id)
                 ]);
                 if (this.controls[this.layout[loc][i]].control.label !== "") {
-                    var left = ce("td", {}, [
+                    var left = ce("td", {"class": "sagecell_labelcell"}, [
                         ce("label", {"for": id, "title": this.layout[loc][i]}, [
                             document.createTextNode(this.controls[
                                     this.layout[loc][i]].control.label ||
