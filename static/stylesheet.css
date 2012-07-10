@@ -100,6 +100,17 @@
     padding-bottom: 1.0em;
 }
 
+.sagecell_interactControls {
+    width: auto;
+}
+
+.sagecell_interactControls td.labelcell {
+    text-align: right !important;
+    padding-right: 0.5ex !important;
+    padding-top: 0.6ex !important;
+    padding-bottom: 0.6ex !important;
+}
+
 .sagecell_interactContainer {
     padding: 15px 5px 5px 5px;
 }

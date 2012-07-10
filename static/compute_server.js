@@ -473,7 +473,7 @@ sagecell.InteractCell.prototype.renderCanvas = (function() {
         var html_code = "";
 
         if (labeltext) {
-            html_code += "<td><label ";
+            html_code += "<td class='labelcell'><label ";
             if (id) {
                 html_code += "for='"+id+"' ";
             }
