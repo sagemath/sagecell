@@ -184,7 +184,7 @@ sagecell.makeSagecell = function (args) {
             }
             var id = IPython.utils.uuid();
             inputLocation.find(".sagecell_editorToggle label").attr("for", id);
-            inputLocation.find(".sagecell_editorToggle input").attr("id", id).button();
+            inputLocation.find(".sagecell_editorToggle input").attr("id", id);
             inputLocation.addClass("sagecell");
             outputLocation.addClass("sagecell");
             inputLocation.find(".sagecell_commands").val(settings.code);
@@ -255,11 +255,10 @@ sagecell.initCell = (function(sagecellInfo) {
     temp = this.renderEditor(editor, inputLocation, collapse);
     editor = temp[0];
     editorData = temp[1];
-    inputLocation.find(".sagecell_editorToggle").click(function () {
+    inputLocation.find(".sagecell_editorToggle input").change(function () {
         temp = sagecell.toggleEditor(editor, editorData, inputLocation);
         editor = temp[0];
         editorData = temp[1];
-        return false;
     });
     inputLocation.find(".sagecell_advancedTitle").click(function () {
         inputLocation.find(".sagecell_advancedFields").slideToggle();

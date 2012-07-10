@@ -155,10 +155,11 @@
 .sagecell_editorToggle {
     float: right;
     margin: 2px;
+    font-size: 80%;
 }
 
-.sagecell_editorToggle .ui-button-text {
-    font-size: 60%;
+.sagecell_editorToggle input {
+    vertical-align: middle;
 }
 
 .sagecell_advancedFrame {
