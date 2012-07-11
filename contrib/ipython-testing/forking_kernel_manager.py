@@ -9,12 +9,19 @@ from multiprocessing import Process, Pipe
 import logging
 
 class ForkingKernelManager(object):
+    """ A class for managing multiple kernels and forking on the untrusted side. """
     def __init__(self, filename, update_function=None):
         self.kernels = {}
         self.filename = filename
         self.update_function = update_function
 
-    def fork_kernel(self, config, pipe, resource_limits, logfile):
+    def fork_kernel(self, config, pipe, resource_limits):
+        """ A function to be set as the target for the new kernel processes forked in ForkingKernelManager.start_kernel. This method forks and initializes a new kernel, uses the update_function to update the kernel's namespace, sets resource limits for the kernel, and sends kernel connection information through the Pipe object.
+
+        :arg IPython.config.loader config: kernel configuration
+        :arg multiprocessing.Pipe pipe: a multiprocessing connection object which will send kernel ip, session, and port information to the other side
+        :arg dict resource_limits: a dict with keys resource.RLIMIT_* (see config_default documentation for explanation of valid options) and values of the limit for the given resource to be set in the kernel process
+        """
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
         ka = IPKernelApp.instance(config=config)
@@ -28,7 +35,15 @@ class ForkingKernelManager(object):
         pipe.close()
         ka.start()
 
-    def start_kernel(self, kernel_id=None, config=None, resource_limits=None, logfile = None):
+    def start_kernel(self, kernel_id=None, config=None, resource_limits=None):
+        """ A function for starting new kernels by forking.
+
+        :arg str kernel_id: the id of the kernel to be started. if no id is passed, a uuid will be generated
+        :arg Ipython.config.loader config: kernel configuration
+        :arg dict resource_limits: a dict with keys resource.RLIMIT_* (see config_default documentation for explanation of valid options) and values of the limit for the given resource to be set in the kernel process
+        :returns: kernel id and connection information which includes the kernel's ip, session key, and shell, heartbeat, stdin, and iopub port numbers
+        :rtype: dict
+        """
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
@@ -36,7 +51,7 @@ class ForkingKernelManager(object):
         if resource_limits is None:
             resource_limits = {}
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
+        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits))
         proc.start()
         connection = p.recv()
         p.close()
@@ -44,7 +59,12 @@ class ForkingKernelManager(object):
         return {"kernel_id": kernel_id, "connection": connection}
 
     def kill_kernel(self, kernel_id):
-        """Kill a running kernel."""
+        """ A function for ending running kernel processes.
+
+        :arg str kernel_id: the id of the kernel to be killed
+        :returns: whether or not the kernel process was successfully killed
+        :rtype: bool
+        """
         success = False
 
         if kernel_id in self.kernels:
@@ -64,7 +84,12 @@ class ForkingKernelManager(object):
         return success
 
     def interrupt_kernel(self, kernel_id):
-        """Interrupt a running kernel."""
+        """ A function for interrupting running kernel processes.
+
+        :arg str kernel_id: the id of the kernel to be interrupted
+        :returns: whether or not the kernel process was successfully interrupted
+        :rtype: bool
+        """
         success = False
 
         if kernel_id in self.kernels:
@@ -77,17 +102,23 @@ class ForkingKernelManager(object):
         return success
 
     def restart_kernel(self, kernel_id):
+        """ A function for restarting running kernel processes.
+
+        :arg str kernel_id: the id of the kernel to be restarted
+        :returns: kernel id and connection information which includes the kernel's ip, session key, and shell, heartbeat, stdin, and iopub port numbers for the restarted kernel
+        :rtype: dict
+        """
         ports = self.kernels[kernel_id][1]
         self.kill_kernel(kernel_id)
         return self.start_kernel(kernel_id, Config({"IPKernelApp": ports}))
 
 if __name__ == "__main__":
-    def f(a,b,c,d):
+    def f(x):
         return 1
     a = ForkingKernelManager("/dev/null", f)
     x = a.start_kernel()
     y = a.start_kernel()
     import time
-    time.sleep(5)
+    time.sleep(3)
     a.kill_kernel(x["kernel_id"])
     a.kill_kernel(y["kernel_id"])

@@ -35,7 +35,7 @@ class UntrustedMultiKernelManager(object):
         return failures
 
 if __name__ == "__main__":
-    def f(a,b,c,d):
+    def f(x):
         return 1
     x = UntrustedMultiKernelManager("/dev/null", f)
     y = x.start_kernel()
