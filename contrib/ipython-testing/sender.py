@@ -112,13 +112,11 @@ class AsyncSender(object):
         sock = context.socket(zmq.DEALER)
         sock.setsockopt(zmq.IDENTITY, _id)
         sock.connect("ipc://routing.ipc")
-
         sock.send(comp_id, zmq.SNDMORE)
         sock.send_pyobj(msg)
 
         source = sock.recv()
         reply = sock.recv_pyobj()
-
         retval = None
         if source == comp_id:
             retval = reply

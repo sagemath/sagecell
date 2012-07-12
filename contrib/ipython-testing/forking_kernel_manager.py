@@ -9,15 +9,16 @@ from multiprocessing import Process, Pipe
 import logging
 
 class ForkingKernelManager(object):
-    def __init__(self, filename, update_function=None):
+    def __init__(self, filename, ip, update_function=None):
         self.kernels = {}
+        self.ip = ip
         self.filename = filename
         self.update_function = update_function
 
     def fork_kernel(self, config, pipe, resource_limits, logfile):
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
-        ka = IPKernelApp.instance(config=config)
+        ka = IPKernelApp.instance(config=config, ip=config["ip"])
         ka.initialize([])
         if self.update_function is not None:
             self.update_function(ka)
@@ -32,7 +33,7 @@ class ForkingKernelManager(object):
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
-            config = Config()
+            config = Config({"ip": self.ip})
         if resource_limits is None:
             resource_limits = {}
         p, q = Pipe()

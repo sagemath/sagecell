@@ -14,12 +14,12 @@ class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
     pass
 
 class Receiver:
-    def __init__(self, filename):
+    def __init__(self, filename, ip):
         self.setup_sage()
         self.context = zmq.Context()
-        self.km = UntrustedMultiKernelManager(filename, update_function = self.update_dict_with_sage)
+        self.km = UntrustedMultiKernelManager(filename, ip, update_function=self.update_dict_with_sage)
         self.dealer = self.context.socket(zmq.DEALER)
-        self.port = self.dealer.bind_to_random_port("tcp://127.0.0.1")
+        self.port = self.dealer.bind_to_random_port("tcp://%s" % ip)
         self.filename = filename
         sys.stdout.write(str(self.port))
         sys.stdout.flush()
@@ -160,11 +160,12 @@ set_random_seed()
 
 
 if __name__ == '__main__':
-    filename = sys.argv[1]
+    ip = sys.argv[1]
+    filename = sys.argv[2]
     import logging
     import uuid
     logging.basicConfig(filename=filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
     logging.debug('started')
-    receiver = Receiver(filename)
+    receiver = Receiver(filename, ip)
     receiver.start()
     logging.debug('ended')

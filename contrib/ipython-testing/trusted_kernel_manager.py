@@ -59,11 +59,8 @@ class TrustedMultiKernelManager(object):
         return (comp["beat_interval"], comp["first_beat"])
 
     def _ssh_untrusted(self, cfg, client):
-        logfile = cfg.get("log_file")
-        if logfile is None:
-            logfile = os.devnull
-        code = "%s '%s/receiver.py' '%s'"%(cfg['python'], os.getcwd(), logfile)
-        print "executing %s"%code
+        logfile = cfg.get("log_file", os.devnull)
+        code = "%s '%s/receiver.py' '%s' '%s'"%(cfg["python"], cfg["location"], cfg["host"], logfile)
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
@@ -207,7 +204,6 @@ class TrustedMultiKernelManager(object):
                                         "executing": False,
                                         "timeout": time.time()+self.kernel_timeout}
             self._comps[comp_id]["kernels"][kernel_id] = None
-            print "CONNECTION FILE ::: ", kernel_connection
             self._sessions[kernel_id] = Session(key=kernel_connection["key"], debug=True)
             return kernel_id
         else:
@@ -219,16 +215,14 @@ class TrustedMultiKernelManager(object):
         :arg str kernel_id: the id of the kernel you want to kill
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        print "Killing Kernel ::: %s at %s"%(kernel_id, (comp_id))
         reply = self._sender.send_msg({"type":"kill_kernel",
                                        "content": {"kernel_id": kernel_id}},
                                       comp_id)
         if (reply["type"] == "error"):
-            print "Error ending kernel!"
+            print "Error ending kernel %s!" % (kernel_id,)
         else:
             del self._kernels[kernel_id]
             del self._comps[comp_id]["kernels"][kernel_id]
-            print "Kernel %s successfully killed."%(kernel_id)
         
     def _find_open_computer(self):
         """ Randomly searches through computers in _comps to find one that can start a new kernel.
@@ -254,22 +248,18 @@ class TrustedMultiKernelManager(object):
         else:
             raise IOError("Could not find open computer. There are %d computers available."%len(ids))
 
-    def _create_connected_stream(self, cfg, port, socket_type):
+    def _create_connected_stream(self, host, port, socket_type):
         sock = self.context.socket(socket_type)
-        addr = "tcp://%s:%i" % (cfg["host"], port)
-        print "Connecting to: %s" % addr
+        addr = "tcp://%s:%i" % (host, port)
         sock.connect(addr)
         return ZMQStream(sock)
     
     def create_iopub_stream(self, kernel_id):
-        """ Create iopub 0MQ stream between given kernel and the server.
-
-        
-        """
+        """ Create iopub 0MQ stream between given kernel and the server."""
         comp_id = self._kernels[kernel_id]["comp_id"]
         cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
-        iopub_stream = self._create_connected_stream(cfg, connection["iopub_port"], zmq.SUB)
+        iopub_stream = self._create_connected_stream(connection["ip"], connection["iopub_port"], zmq.SUB)
         iopub_stream.socket.setsockopt(zmq.SUBSCRIBE, b"")
         return iopub_stream
 
@@ -281,7 +271,7 @@ class TrustedMultiKernelManager(object):
         comp_id = self._kernels[kernel_id]["comp_id"]
         cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
-        shell_stream = self._create_connected_stream(cfg, connection["shell_port"], zmq.DEALER)
+        shell_stream = self._create_connected_stream(connection["ip"], connection["shell_port"], zmq.DEALER)
         return shell_stream
 
     def create_hb_stream(self, kernel_id):
@@ -292,7 +282,7 @@ class TrustedMultiKernelManager(object):
         comp_id = self._kernels[kernel_id]["comp_id"]
         cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
-        hb_stream = self._create_connected_stream(cfg, connection["hb_port"], zmq.REQ)
+        hb_stream = self._create_connected_stream(connection["ip"], connection["hb_port"], zmq.REQ)
         return hb_stream
 
 
