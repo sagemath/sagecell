@@ -13,7 +13,7 @@ try:
         """
         pass
 except ImportError:
-    SageIPythonInputSplitter = IPythonInputSplitter
+    SageIPythonInputSplitter = None
 
 class Receiver:
     def __init__(self, filename, ip):
@@ -22,11 +22,11 @@ class Receiver:
         self.port = self.dealer.bind_to_random_port("tcp://%s" % ip)
         print self.port
         sys.stdout.flush()
-        sage_mode = self.setup_sage()
-        print sage_mode
+        self.sage_mode = self.setup_sage()
+        print self.sage_mode
         sys.stdout.flush()
         self.km = UntrustedMultiKernelManager(filename, ip,
-                update_function=self.update_dict_with_sage if sage_mode else None)
+                update_function=self.update_dict_with_sage if self.sage_mode else None)
         self.filename = filename
 
     def start(self):
@@ -96,22 +96,24 @@ from sagenb.misc.support import automatic_names
             self.sage_dict = {}
             return False
 
-
     def update_dict_with_sage(self, ka):
-        import interact_sagecell
-        ka.kernel.shell.input_splitter = SageIPythonInputSplitter()
         user_ns = ka.kernel.shell.user_ns
-        user_ns.update(self.sage_dict)
-        #user_ns.update(interact_sagecell.classes)
-        sage_code = """
+        sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
+        if self.sage_mode:
+            ka.kernel.shell.input_splitter = SageIPythonInputSplitter()
+            user_ns.update(self.sage_dict)
+            #user_ns.update(interact_sagecell.classes)
+            sage_code = """
 sage.misc.session.init()
 
 # Ensure unique random state after forking
 set_random_seed()
 """
-        exec sage_code in user_ns
+            exec sage_code in user_ns
+        import interact_sagecell
         # overwrite Sage's interact command with our own
         user_ns["interact"] = interact_sagecell.interact_func(ka.session, ka.iopub_socket)
+
     """
     Message Handlers
     """

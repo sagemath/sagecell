@@ -1,7 +1,6 @@
 import uuid
 import os
 import signal
-import sys
 import resource
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config

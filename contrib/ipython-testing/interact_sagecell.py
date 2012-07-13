@@ -244,7 +244,8 @@ def interact_func(session, pub_socket):
                                "new_interact_id": interact_id,
                                "layout": layout,
                                "update": update}}
-        sys._sage_.kernel_timeout = float("inf")
+        if hasattr(sys, "_sage_"):
+            sys._sage_.kernel_timeout = float("inf")
         # we need a better way of getting the parent header...
         session.send(pub_socket, 'extension', content=content, parent=sys.stdout.parent_header)
         def adapted_f(control_vals):
