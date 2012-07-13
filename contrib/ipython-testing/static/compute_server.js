@@ -284,7 +284,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                     this.controls[this.layout[loc][i]].rendered(id)
                 ]);
                 if (this.controls[this.layout[loc][i]].control.label !== "") {
-                    var left = ce("td", {}, [
+                    var left = ce("td", {"class": "sagecell_labelcell"}, [
                         ce("label", {"for": id, "title": this.layout[loc][i]}, [
                             document.createTextNode(this.controls[
                                     this.layout[loc][i]].control.label ||
@@ -504,7 +504,7 @@ sagecell.InteractData.InputGrid = sagecell.InteractData.InteractControl();
 sagecell.InteractData.InputGrid.prototype.rendered = function () {
     this.textboxes = $();
     var ce = sagecell.util.createElement;
-    var table = ce("table");
+    var table = ce("table", {"style": "width: auto;"});
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
