@@ -1,5 +1,6 @@
 import uuid, random
 import zmq
+import socket
 from zmq.eventloop.zmqstream import ZMQStream
 from IPython.zmq.session import Session
 from zmq import ssh
@@ -60,7 +61,8 @@ class TrustedMultiKernelManager(object):
 
     def _ssh_untrusted(self, cfg, client):
         logfile = cfg.get("log_file", os.devnull)
-        code = "%s '%s/receiver.py' '%s' '%s'"%(cfg["python"], cfg["location"], cfg["host"], logfile)
+        ip = socket.gethostbyname(cfg["host"])
+        code = "%s '%s/receiver.py' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile)
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
