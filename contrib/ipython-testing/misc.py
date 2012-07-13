@@ -219,14 +219,14 @@ def display_message(data):
     content = {'data': data, 'source': 'sagecell'}
     session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header)
 
-"""
-Unit Testing Misc Functions
-"""
+##########################################
+## Unit Testing Misc Functions
+##########################################
 def assert_len(obj,l):
     return assert_equal(len(obj), l, "Object %s should have length %s, but has length %s"%(obj,l,len(obj)))
 
+uuid_re = re.compile('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}')
 def assert_uuid(s):
-    uuid_re = re.compile('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}')
     return assert_regexp_matches(s, uuid_re)
 
 # from the attest python package - license is modified BSD
