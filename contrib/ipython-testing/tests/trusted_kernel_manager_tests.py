@@ -1,5 +1,5 @@
 import trusted_kernel_manager
-from nose.tools import *
+from misc import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater, assert_len, assert_uuid, capture_output, Config
 import random
 import os
 import sys
@@ -8,57 +8,14 @@ import zmq
 from IPython.zmq.session import Session
 from contextlib import contextmanager
 import time
-import misc
 import re
-import config as conf
+import config_default as conf
 sage = conf.sage
-configg = misc.Config()
+configg = Config()
 d = configg.get_default_config("_default_config")
 
 from IPython.testing.decorators import skip
 
-def assert_len(obj,l):
-    return assert_equal(len(obj), l, "Object %s should have length %s, but has length %s"%(obj,l,len(obj)))
-
-uuid_re = re.compile('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}')
-def assert_uuid(s):
-    return assert_regexp_matches(s, uuid_re)
-
-# from the attest python package - license is modified BSD
-from StringIO import StringIO
-@contextmanager
-def capture_output(split=False):
-    """Captures standard output and error during the context. Returns a
-    tuple of the two streams as lists of lines, added after the context has
-    executed.
-
-    .. testsetup::
-
-        from attest import capture_output
-
-    >>> with capture_output() as (out, err):
-    ...    print 'Captured'
-    ...
-    >>> out
-    ['Captured']
-
-    """
-    stdout, stderr = sys.stdout, sys.stderr
-    sys.stdout, sys.stderr = StringIO(), StringIO()
-    out, err = [], []
-    try:
-        yield out, err
-    finally:
-        if split:
-            out.extend(sys.stdout.getvalue().splitlines())
-            err.extend(sys.stderr.getvalue().splitlines())
-        else:
-            out.append(sys.stdout.getvalue())
-            err.append(sys.stderr.getvalue())
-        sys.stdout, sys.stderr = stdout, stderr
-        
-        
-  
 def test_init():
     tmkm = trusted_kernel_manager.TrustedMultiKernelManager()
     assert_len(tmkm._kernels.keys(), 0)
