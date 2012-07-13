@@ -204,7 +204,7 @@ class TrustedMultiKernelManager(object):
                                         "executing": False,
                                         "timeout": time.time()+self.kernel_timeout}
             self._comps[comp_id]["kernels"][kernel_id] = None
-            self._sessions[kernel_id] = Session(key=kernel_connection["key"], debug=True)
+            self._sessions[kernel_id] = Session(key=kernel_connection["key"])
             return kernel_id
         else:
             return False
