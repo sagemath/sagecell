@@ -81,7 +81,7 @@ class AsyncSender(object):
 
         context = zmq.Context()
         sock = context.socket(zmq.DEALER)
-        sock.connect("tcp://%s:%s"%(host,port))
+        sock.connect("tcp://%s:%d"%(host,port))
 
         self._dealers[comp_id] = sock
 

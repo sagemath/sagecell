@@ -2,27 +2,32 @@ from untrusted_kernel_manager import UntrustedMultiKernelManager
 import zmq
 from zmq import ssh
 import sys
-from sage.misc.interpreter import SageInputSplitter
 from IPython.core.inputsplitter import IPythonInputSplitter
 
-
-class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
-    """
-    This class merely exists so that the IPKernelApp.kernel.shell class does not complain.  It requires
-    a subclass of IPythonInputSplitter, but SageInputSplitter is a subclass of InputSplitter instead.
-    """
-    pass
+try:
+    from sage.misc.interpreter import SageInputSplitter
+    class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
+        """
+        This class merely exists so that the IPKernelApp.kernel.shell class does not complain.  It requires
+        a subclass of IPythonInputSplitter, but SageInputSplitter is a subclass of InputSplitter instead.
+        """
+        pass
+except ImportError:
+    SageIPythonInputSplitter = IPythonInputSplitter
 
 class Receiver:
     def __init__(self, filename, ip):
-        self.setup_sage()
         self.context = zmq.Context()
-        self.km = UntrustedMultiKernelManager(filename, ip, update_function=self.update_dict_with_sage)
         self.dealer = self.context.socket(zmq.DEALER)
         self.port = self.dealer.bind_to_random_port("tcp://%s" % ip)
-        self.filename = filename
-        sys.stdout.write(str(self.port))
+        print self.port
         sys.stdout.flush()
+        sage_mode = self.setup_sage()
+        print sage_mode
+        sys.stdout.flush()
+        self.km = UntrustedMultiKernelManager(filename, ip,
+                update_function=self.update_dict_with_sage if sage_mode else None)
+        self.filename = filename
 
     def start(self):
         self.listen = True
@@ -86,8 +91,10 @@ from sagenb.misc.support import automatic_names
             _sage_.update_interact = interact_sagecell.update_interact
             _sage_.kernel_timeout = 0.0
             sys._sage_ = _sage_
+            return True
         except ImportError as e:
             self.sage_dict = {}
+            return False
 
 
     def update_dict_with_sage(self, ka):

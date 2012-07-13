@@ -69,18 +69,14 @@ class TrustedMultiKernelManager(object):
         # Wait for untrusted side to respond with the bound port using paramiko channels
         # Another option would be to have a short-lived ZMQ socket bound on the trusted
         # side and have the untrusted side connect to that and send the port
-        failure = True
-        from time import sleep
-        for i in xrange(30):
+        output = ""
+        start = time.time()
+        while output.count("\n") < 2:
             if stdout_channel.recv_ready():
-                port = stdout_channel.recv(1024)
-                failure = False
-                break;
-            sleep(2)
-        if failure:
-            return None
-        else:
-            return port
+                output += stdout_channel.recv(1024)
+                if output.count("\n") == 0 and time.time() - start > 10.0:
+                    return None
+        return int(output.split("\n")[0])
 
     def add_computer(self, config):
         """ Adds a tracked computer.
@@ -112,7 +108,7 @@ class TrustedMultiKernelManager(object):
 
             self._clients[comp_id] = {"ssh": client}
             self._comps[comp_id] = cfg
-            print "ZMQ Connection with computer %s at port %s established." %(comp_id, port)
+            print "ZMQ Connection with computer %s at port %d established." %(comp_id, port)
             retval = comp_id
 
         return retval
