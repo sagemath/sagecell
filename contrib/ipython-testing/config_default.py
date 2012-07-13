@@ -1,4 +1,3 @@
-import sys
 import os.path
 
 # location of a sage executable
@@ -17,7 +16,7 @@ computers = []
 _default_config = {"host": "localhost",
                   "username": None,
                   "python": sage + " -python",
-                  "location": os.path.dirname(os.path.abspath(sys.argv[0])),
+                  "location": os.path.dirname(os.path.abspath(__file__)),
 # The keys to resource_limits can be any available resources
 # for the resource module. See http://docs.python.org/library/resource.html
 # for more information (section 35.13.1)

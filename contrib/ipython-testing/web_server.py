@@ -37,11 +37,10 @@ class SageCellServer(tornado.web.Application):
             # (r"/service", handlers.ServiceHandler),
             ] + handlers.KernelRouter.urls
         settings = dict(
-            template_path = os.path.join(os.path.dirname(__file__), "templates"),
-            static_path = os.path.join(os.path.dirname(__file__), "static"),
+            template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),
+            static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
             static_handler_class = handlers.StaticHandler
             )
-
         self.config = misc.Config()
 
         initial_comps = self.config.get_config("computers")

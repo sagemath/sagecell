@@ -1,4 +1,4 @@
-import time, string, urllib, zlib, base64, uuid, json
+import time, string, urllib, zlib, base64, uuid, json, os.path
 
 import tornado.web
 import tornado.websocket
@@ -125,7 +125,7 @@ class EmbeddedHandler(tornado.web.RequestHandler):
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 
-    with open("templates/sagecell.html") as f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "sagecell.html")) as f:
         sagecell_html = f.read()
         sagecell_json = json.dumps(sagecell_html)
 
