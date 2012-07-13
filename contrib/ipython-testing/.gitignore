@@ -1,4 +1,5 @@
 *.pyc
+*~
 doc/_build/*
 static/jmol
 config.py
