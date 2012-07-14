@@ -26,7 +26,7 @@ class Receiver:
         print self.sage_mode
         sys.stdout.flush()
         self.km = UntrustedMultiKernelManager(filename, ip,
-                update_function=self.update_dict_with_sage if self.sage_mode else None)
+                update_function=self.update_dict_with_sage)
         self.filename = filename
 
     def start(self):
@@ -56,12 +56,10 @@ class Receiver:
 
     def setup_sage(self):
         try:
-            import StringIO
             import sage
             import sage.all
             sage.misc.misc.EMBEDDED_MODE = {'frontend': 'sagecell'}
-            import misc
-
+            import StringIO
             # The first plot takes about 2 seconds to generate (presumably
             # because lots of things, like matplotlib, are imported).  We plot
             # something here so that worker processes don't have this overhead
@@ -78,31 +76,24 @@ from sage.server.support import help
 from sagenb.misc.support import automatic_names
 """
             exec sage_code in self.sage_dict
-            
-            import interact_sagecell
-            self.sage_dict.update(interact_sagecell.imports)
-            import interact_compatibility
-            self.sage_dict.update(interact_compatibility.imports)
-
-            class TempClass(object):
-                pass
-            _sage_ = TempClass()
-            _sage_.display_message = misc.display_message
-            _sage_.update_interact = interact_sagecell.update_interact
-            _sage_.kernel_timeout = 0.0
-            sys._sage_ = _sage_
             return True
         except ImportError as e:
             self.sage_dict = {}
             return False
 
     def update_dict_with_sage(self, ka):
+        import misc
+        class TempClass(object):
+            pass
+        _sage_ = TempClass()
+        _sage_.display_message = misc.display_message
+        _sage_.kernel_timeout = 0.0
+        sys._sage_ = _sage_
         user_ns = ka.kernel.shell.user_ns
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
         if self.sage_mode:
             ka.kernel.shell.input_splitter = SageIPythonInputSplitter()
             user_ns.update(self.sage_dict)
-            #user_ns.update(interact_sagecell.classes)
             sage_code = """
 sage.misc.session.init()
 
@@ -111,8 +102,13 @@ set_random_seed()
 """
             exec sage_code in user_ns
         import interact_sagecell
+        import interact_compatibility
         # overwrite Sage's interact command with our own
         user_ns["interact"] = interact_sagecell.interact_func(ka.session, ka.iopub_socket)
+        user_ns.update(interact_sagecell.imports)
+        user_ns.update(interact_compatibility.imports)
+        sys._sage_.update_interact = interact_sagecell.update_interact
+        user_ns["sys"] = sys
 
     """
     Message Handlers
