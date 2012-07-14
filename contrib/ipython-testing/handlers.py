@@ -1,4 +1,4 @@
-import time, string, urllib, zlib, base64, uuid, json
+import time, string, urllib, zlib, base64, uuid, json, os.path
 
 import tornado.web
 import tornado.websocket
@@ -42,7 +42,6 @@ class RootHandler(tornado.web.RequestHandler):
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
                 z += "=" * ((4 - (len(z) % 4)) % 4)
-                print z
                 options["code"] = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
                 options["code"] = "# Error decompressing code %s"%e
@@ -57,7 +56,7 @@ class RootHandler(tornado.web.RequestHandler):
             if isinstance(options["code"], unicode):
                 options["code"] = options["code"].encode("utf8")
             options["code"] = urllib.quote(options["code"])
-            options["autoeval"] = False if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else True
+            options["autoeval"] = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
         else:
             options["code"] = None
 
@@ -88,7 +87,6 @@ class KernelHandler(tornado.web.RequestHandler):
         ws_url = "%s://%s/" % (proto, host)
         km = self.application.km
         kernel_id = km.new_session()
-        print "kernel started with id ::: %s"%kernel_id
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
@@ -127,7 +125,7 @@ class EmbeddedHandler(tornado.web.RequestHandler):
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 
-    with open("templates/sagecell.html") as f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "sagecell.html")) as f:
         sagecell_html = f.read()
         sagecell_json = json.dumps(sagecell_html)
 
@@ -154,9 +152,6 @@ class PermalinkHandler(tornado.web.RequestHandler):
     with the format ``<root_url>?q=<id>``.
     """
     def post(self):
-        """
-        """
-
         args = self.request.arguments
 
         retval = {"permalink": None}
@@ -168,6 +163,11 @@ class PermalinkHandler(tornado.web.RequestHandler):
                     retval["permalink"] = db.new_exec_msg(message)
             except:
                 pass
+        if self.request.headers["Accept"] == "application/json":
+            self.set_header("Access-Control-Allow-Origin", "*");
+        else:
+            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
+            self.set_header("Content-Type", "text/html")
         self.write(retval)
         self.finish()
 
@@ -331,11 +331,9 @@ class ShellHandler(ZMQStreamHandler):
     stream of an IPython kernel.
     """
     def open(self, kernel_id):
-        print "*"*10, " BEGIN SHELL HANDLER ", "*"*10
         super(ShellHandler, self).open(kernel_id)
         self.shell_stream = self.km.create_shell_stream(self.kernel_id)
         self.shell_stream.on_recv(self._on_zmq_reply)
-        print "*"*10, " END SHELL HANDLER ", "*"*10
 
     def on_message(self, message):
         if self.km._kernels.get(self.kernel_id) is not None:
@@ -359,8 +357,6 @@ class IOPubHandler(ZMQStreamHandler):
     stream fails.
     """
     def open(self, kernel_id):
-        print "*"*10, " BEGIN IOPUB HANDLER ", "*"*10
-
         super(IOPubHandler, self).open(kernel_id)
 
         self._kernel_alive = True
@@ -373,8 +369,6 @@ class IOPubHandler(ZMQStreamHandler):
 
         self.hb_stream = self.km.create_hb_stream(self.kernel_id)
         self.start_hb(self.kernel_died)
-
-        print "*"*10, " END IOPUB HANDLER ", "*"*10
 
     def on_message(self, msg):
         pass
@@ -404,7 +398,6 @@ class IOPubHandler(ZMQStreamHandler):
                         timeout = self.km._kernels[self.kernel_id]["timeout"]
 
                         if time.time() > timeout:
-                            print "Kernel %s timeout reached." %(self.kernel_id)
                             self._kernel_alive = False
                 except:
                     self._kernel_alive = False
