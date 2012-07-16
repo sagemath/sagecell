@@ -37,18 +37,17 @@ class SageCellServer(tornado.web.Application):
             # (r"/service", handlers.ServiceHandler),
             ] + handlers.KernelRouter.urls
         settings = dict(
-            template_path = os.path.join(os.path.dirname(__file__), "templates"),
-            static_path = os.path.join(os.path.dirname(__file__), "static"),
+            template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),
+            static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
             static_handler_class = handlers.StaticHandler
             )
-
         self.config = misc.Config()
 
         initial_comps = self.config.get_config("computers")
         default_comp = self.config.get_default_config("_default_config")
         kernel_timeout = self.config.get_config("max_kernel_timeout")
 
-        self.km = TMKM(computers = initial_comps, default_computer_config = default_comp, kernel_timeout = kernel_timeout)
+        self.km = TMKM(computers=initial_comps, default_computer_config=default_comp, kernel_timeout=kernel_timeout)
         self.db = DB(misc.get_db_file(self.config))
         self.ioloop = ioloop.IOLoop.instance()
 
