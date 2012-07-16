@@ -1,5 +1,4 @@
 # HG changeset patch
-# User Jason Grout <jason.grout@drake.edu>
 # Parent 9e8f484ff55f54e28200e8cb6d692b97d4d81562
 Changes for Sage Cell Server 2.0
 
@@ -60,20 +59,37 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1517,7 +1517,7 @@
+@@ -1509,15 +1509,15 @@
+             import sys
+             if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
+                 import json #TODO: be smart about which json
+-                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
+-                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
++                #sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
++                #sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+ 
+             if linkmode:
+                 return "<img src='cell://%s'>"%filename
              else:
                  if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
-                     msg={'text/filename': filename}
+-                    msg={'text/filename': filename}
 -                    sys._sage_messages.message_queue.display(msg)
++                    msg={'text/image-filename': filename}
 +                    sys._sage_.display_message(msg)
                  else:
                      html("<img src='cell://%s'>"%filename)
          else:
-@@ -2648,7 +2648,7 @@
-                 sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
-                 sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
-                 msg={'text/filename': filename}
+@@ -2645,10 +2645,10 @@
+             if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
+                 import json #TODO: be smart about which json
+                 import sys
+-                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
+-                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+-                msg={'text/filename': filename}
 -                sys._sage_messages.message_queue.display(msg)
++                #sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
++                #sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
++                msg={'text/image-filename': filename}
 +                sys._sage_.display_message(msg)
              return
          self._render(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)

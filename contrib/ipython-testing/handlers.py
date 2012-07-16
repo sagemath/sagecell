@@ -501,3 +501,12 @@ class IOPubSockJSHandler(IOPubHandler):
 
     def _output_message(self, message):
         self.callback("%s/iopub,%s" % (self.kernel_id, message))
+
+class FileHandler(tornado.web.StaticFileHandler):
+    """
+    Files handler
+    
+    This takes in a filename and returns the file
+    """
+    def get(self, kernel_id, file_path):
+        super(FileHandler, self).get('%s/%s'%(kernel_id, file_path))

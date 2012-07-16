@@ -178,6 +178,10 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
     } else if (msg_type === "display_data") {
         if (content.data["text/html"]) {
             this.output("<div></div>", block_id).html(content.data["text/html"]);
+        } else if (content.data["text/image-filename"]) {
+        	this.output("<img src='/"+this.kernel.kernel_url+"/files/"+content.data["text/image-filename"]+"'/>", block_id);
+        } else if (content.data["image/png"]) {
+        	this.output("<img src='data:image/png;base64,"+content.data["image/png"]+"'/>", block_id);
         } else if (content.data["text/plain"]) {
             this.output("<pre></pre>", block_id).text(content.data["text/plain"]);
         }
