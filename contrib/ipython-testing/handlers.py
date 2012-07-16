@@ -117,11 +117,6 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
 
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
-class EmbeddedHandler(tornado.web.RequestHandler):
-    """Handler to redirect ``/embedded_sagecell.js`` to ``/static/embedded_sagecell.js``"""
-    def get(self):
-        self.redirect("/static/embedded_sagecell.js", True);
-
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 

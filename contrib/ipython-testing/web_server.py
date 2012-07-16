@@ -29,7 +29,7 @@ class SageCellServer(tornado.web.Application):
         handlers_list = [
             (r"/", handlers.RootHandler),
             (r"/kernel", handlers.KernelHandler),
-            (r"/embedded_sagecell.js", handlers.EmbeddedHandler),
+            (r"/embedded_sagecell.js", tornado.web.RedirectHandler, {"url":"/static/embedded_sagecell.js"}),
             (r"/sagecell.html", handlers.SageCellHandler),
             (r"/kernel/%s/iopub" % _kernel_id_regex, handlers.IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
