@@ -108,7 +108,6 @@ set_random_seed()
         user_ns.update(interact_sagecell.imports)
         user_ns.update(interact_compatibility.imports)
         sys._sage_.update_interact = interact_sagecell.update_interact
-        user_ns["sys"] = sys
 
     """
     Message Handlers
