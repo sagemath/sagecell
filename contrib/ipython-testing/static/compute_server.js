@@ -370,7 +370,7 @@ sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.ButtonBar.prototype.rendered = function () {
     var ce = sagecell.util.createElement;
-    var table = ce("table");
+    var table = ce("table", {"style": "width: auto;"});
     var i = -1;
     this.buttons = $();
     var that = this;
@@ -662,7 +662,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
         return select;
     } else if (this.control.subtype === "radio" || this.control.subtype === "button") {
         this.changing = $();
-        var table = ce("table");
+        var table = ce("table", {"style": "width: auto;"});
         var i = -1;
         for (var row = 0; row < this.control.nrows; row++) {
             var tr = ce("tr");
