@@ -34,7 +34,7 @@ class TestTrustedMultiKernelManager(object):
     default_comp_config = {"host": "localhost",
                           "username": None,
                           "python": sage + " -python",
-                          "log_file": None,
+                          "log_file": 'test.log',
                           "max": 15}
 
     def setUp(self): #called automatically before each test is run
