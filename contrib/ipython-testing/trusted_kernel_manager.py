@@ -58,6 +58,18 @@ class TrustedMultiKernelManager(object):
         comp = self._comps[comp_id]
         return (comp["beat_interval"], comp["first_beat"])
 
+    def _setup_ssh_connection(self, host, username):
+        """ Returns a paramiko SSH client connected to the given host. 
+
+        :arg str host: host to SSH to
+        :arg str username: username to SSH to
+        :returns: a paramiko SSH client connected to the host and username given
+        """
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(host, username=username)
+        return ssh_client
+
     def _ssh_untrusted(self, cfg, client):
         logfile = cfg.get("log_file")
         if logfile is None:
@@ -65,20 +77,23 @@ class TrustedMultiKernelManager(object):
         code = "%s '%s/receiver.py' '%s'"%(cfg['python'], os.getcwd(), logfile)
         print "executing %s"%code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
+        #client.recv_exit_status
         stdout_channel = ssh_stdout.channel
 
         # Wait for untrusted side to respond with the bound port using paramiko channels
         # Another option would be to have a short-lived ZMQ socket bound on the trusted
         # side and have the untrusted side connect to that and send the port
-        failure = True
-        from time import sleep
-        for i in xrange(30):
-            if stdout_channel.recv_ready():
-                port = stdout_channel.recv(1024)
-                failure = False
+        port = stdout_channel.recv(1024)
+        print "Initial port: %r"%port
+        stdout_channel.settimeout(None)
+        while not port:
+            port = stdout_channel.recv(1024)
+            print "Got port: %r"%port
+            if port == '':
                 break;
-            sleep(2)
-        if failure:
+            import time
+            time.sleep(1)
+        if port == '':
             return None
         else:
             return port
@@ -99,36 +114,17 @@ class TrustedMultiKernelManager(object):
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
 
         port = self._ssh_untrusted(cfg, client)
-        if port is None:
-            failure = True
-        else:
-            failure = False
-            
         retval = None
-        if failure:
+        if port is None:
             print "Computer %s did not respond, connecting failed!"%comp_id
-
         else:
             comp_id = self._sender.register_computer(cfg["host"], port)
-
             self._clients[comp_id] = {"ssh": client}
             self._comps[comp_id] = cfg
             print "ZMQ Connection with computer %s at port %s established." %(comp_id, port)
             retval = comp_id
 
         return retval
-
-    def _setup_ssh_connection(self, host, username):
-        """ Returns a paramiko SSH client connected to the given host. 
-
-        :arg str host: host to SSH to
-        :arg str username: username to SSH to
-        :returns: a paramiko SSH client connected to the host and username given
-        """
-        ssh_client = paramiko.SSHClient()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(host, username=username)
-        return ssh_client
 
 
     def purge_kernels(self, comp_id):
