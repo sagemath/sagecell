@@ -166,30 +166,46 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
 		block_id = header.metadata.interact_id;
 	}
 	// Handle each stream type.  This should probably be separated out into different functions.
-    if (msg_type === "stream") {
+	switch(msg_type) {
+		case "stream":
         var new_pre = !$(this.output_blocks[block_id]).children().last().hasClass("sagecell_" + content.name);
         var out = this.output("<pre class='sagecell_" + content.name + "'></pre>", block_id, new_pre);
         out.text(out.text() + content.data);
-    } else if (msg_type === "pyout") {
+        break;
+        
+		case "pyout":
         this.output('<pre class="sagecell_pyout"></pre>', block_id).text(content.data["text/plain"]);
-    } else if (msg_type === "pyerr") {
+		break;
+		
+		case "pyerr":
         this.output('<pre class="sagecell_pyerr"></pre>', block_id)
             .html(IPython.utils.fixConsole(content.traceback.join("\n")));
-    } else if (msg_type === "display_data") {
+		break;
+		
+		case "display_data":
+		var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
         if (content.data["text/html"]) {
             this.output("<div></div>", block_id).html(content.data["text/html"]);
+        } else if (content.data["text/image-filename"]) {
+        	this.output("<img src='"+filepath+content.data["text/image-filename"]+"'/>", block_id);
+        } else if (content.data["image/png"]) {
+        	this.output("<img src='data:image/png;base64,"+content.data["image/png"]+"'/>", block_id);
+        } else if(content.data['application/x-jmol']) {
+            console.log('making jmol applet');
+            jmolSetDocument(false);
+            this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+content.data['application/x-jmol']+'";\n script SCRIPT;\n'),block_id);            
         } else if (content.data["text/plain"]) {
             this.output("<pre></pre>", block_id).text(content.data["text/plain"]);
         }
-    } else if (msg_type === "extension") {
+		break;
+
+		case "extension":
         if (content.msg_type === "interact_prepare") {
             this.interacts.push(new sagecell.InteractCell(this, content.content, block_id));
         }
     }
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
-    // TODO: this is really too much, as it typesets *all* of the session outputs
-    // TODO: the session object really should have it's own output DOM element
     var output = this.outputDiv.find(".sagecell_output").get(0);
     MathJax.Hub.Queue(["Typeset",MathJax.Hub, output]);
     MathJax.Hub.Queue([function () {$(output).find(".math").removeClass('math');}]);
@@ -366,7 +382,7 @@ sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.ButtonBar.prototype.rendered = function () {
     var ce = sagecell.util.createElement;
-    var table = ce("table");
+    var table = ce("table", {"style": "width: auto;"});
     var i = -1;
     this.buttons = $();
     var that = this;
@@ -658,7 +674,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
         return select;
     } else if (this.control.subtype === "radio" || this.control.subtype === "button") {
         this.changing = $();
-        var table = ce("table");
+        var table = ce("table", {"style": "width: auto;"});
         var i = -1;
         for (var row = 0; row < this.control.nrows; row++) {
             var tr = ce("tr");
