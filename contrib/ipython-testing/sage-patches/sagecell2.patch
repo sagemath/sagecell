@@ -1,5 +1,4 @@
 # HG changeset patch
-# User Jason Grout <jason.grout@drake.edu>
 # Parent 9e8f484ff55f54e28200e8cb6d692b97d4d81562
 Changes for Sage Cell Server 2.0
 
@@ -48,11 +47,17 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 --- a/sage/plot/animate.py
 +++ b/sage/plot/animate.py
-@@ -395,7 +395,7 @@
-                     sys._sage_upload_file_pipe.send_bytes(json.dumps([savefile]))
-                     sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
-                     msg={'text/filename': os.path.basename(savefile)}
+@@ -390,12 +390,9 @@
+                 check_call(cmd, shell=True)
+                 import sage.misc.misc as misc
+                 if misc.EMBEDDED_MODE and misc.EMBEDDED_MODE['frontend']=='sagecell':
+-                    import json #TODO: be smart about which json
+                     import sys
+-                    sys._sage_upload_file_pipe.send_bytes(json.dumps([savefile]))
+-                    sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+-                    msg={'text/filename': os.path.basename(savefile)}
 -                    sys._sage_messages.message_queue.display(msg)
++                    msg={'text/image-filename': os.path.basename(savefile)}
 +                    sys._sage_.display_message(msg)
  
                  if show_path:
@@ -60,20 +65,37 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1517,7 +1517,7 @@
+@@ -1509,15 +1509,15 @@
+             import sys
+             if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
+                 import json #TODO: be smart about which json
+-                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
+-                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
++                #sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
++                #sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+ 
+             if linkmode:
+                 return "<img src='cell://%s'>"%filename
              else:
                  if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
-                     msg={'text/filename': filename}
+-                    msg={'text/filename': filename}
 -                    sys._sage_messages.message_queue.display(msg)
++                    msg={'text/image-filename': filename}
 +                    sys._sage_.display_message(msg)
                  else:
                      html("<img src='cell://%s'>"%filename)
          else:
-@@ -2648,7 +2648,7 @@
-                 sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
-                 sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
-                 msg={'text/filename': filename}
+@@ -2645,10 +2645,10 @@
+             if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
+                 import json #TODO: be smart about which json
+                 import sys
+-                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
+-                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+-                msg={'text/filename': filename}
 -                sys._sage_messages.message_queue.display(msg)
++                #sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
++                #sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
++                msg={'text/image-filename': filename}
 +                sys._sage_.display_message(msg)
              return
          self._render(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
@@ -81,32 +103,60 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 --- a/sage/plot/plot3d/base.pyx
 +++ b/sage/plot/plot3d/base.pyx
-@@ -1101,7 +1101,7 @@
-                 sys._sage_upload_file_pipe.send_bytes(json.dumps([filename_full]))
-                 sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
-                 msg['text/filename']=filename_full
+@@ -1096,12 +1096,8 @@
+             T = self._prepare_for_tachyon(frame, axes, frame_aspect_ratio, aspect_ratio, zoom)
+             tachyon_rt(T.tachyon(), filename_full, verbosity, True, opts)
+             if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='sagecell':
+-                msg={}
+-                import json #TODO: be smart about which json
+-                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename_full]))
+-                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+-                msg['text/filename']=filename_full
 -                sys._sage_messages.message_queue.display(msg)
++                msg={'text/image-filename': filename_full}
 +                sys._sage_.display_message(msg)
  
              import sage.misc.viewer
              viewer_app = sage.misc.viewer.browser()
-@@ -1144,7 +1144,7 @@
-                 sys._sage_upload_file_pipe.send_bytes(json.dumps([archive_name]))
-                 sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
-                 msg['application/x-jmol']=archive_name
--                sys._sage_messages.message_queue.display(msg)
-+                sys._sage_.display_message(msg)
+@@ -1139,13 +1135,8 @@
+             viewer_app = os.path.join(sage.misc.misc.SAGE_LOCAL, "bin/jmol")
  
+             if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='sagecell':
+-                msg={}
+-                import json #TODO: be smart about which json
+-                sys._sage_upload_file_pipe.send_bytes(json.dumps([archive_name]))
+-                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+-                msg['application/x-jmol']=archive_name
+-                sys._sage_messages.message_queue.display(msg)
+-
++                msg={'application/x-jmol': archive_name}
++                sys._sage_.display_message(msg)
              else:
                  # We need a script to load the file
+                 if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='notebook':
+@@ -1161,7 +1152,7 @@
+             # If the server has a Java installation we can make better static images with Jmol
+             # Test for Java then make image with Jmol or Tachyon if no JavaVM
+             # TODO: Support sage cell server
+-            if EMBEDDED_MODE:
++            if EMBEDDED_MODE and EMBEDDED_MODE['frontend'] == 'notebook':
+                 #name image file
+                 head,tail = os.path.split(archive_name)
+                 png_path = os.path.join(head,'.jmol_images')
 diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 --- a/sage/plot/plot3d/tachyon.py
 +++ b/sage/plot/plot3d/tachyon.py
-@@ -324,7 +324,7 @@
-                 sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
-                 sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
-                 msg={'text/filename': filename}
+@@ -319,12 +319,9 @@
+             filename = sage.misc.misc.graphics_filename()
+             self.save(filename, verbose=verbose, extra_opts=extra_opts)
+             if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
+-                import json #TODO: be smart about which json
+                 import sys
+-                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
+-                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
+-                msg={'text/filename': filename}
 -                sys._sage_messages.message_queue.display(msg)
++                msg={'text/image-filename': filename}
 +                sys._sage_.display_message(msg)
              return
          filename = sage.misc.misc.tmp_filename() + '.png'

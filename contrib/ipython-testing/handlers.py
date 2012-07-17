@@ -117,11 +117,6 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
 
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
-class EmbeddedHandler(tornado.web.RequestHandler):
-    """Handler to redirect ``/embedded_sagecell.js`` to ``/static/embedded_sagecell.js``"""
-    def get(self):
-        self.redirect("/static/embedded_sagecell.js", True);
-
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 
@@ -506,3 +501,12 @@ class IOPubSockJSHandler(IOPubHandler):
 
     def _output_message(self, message):
         self.callback("%s/iopub,%s" % (self.kernel_id, message))
+
+class FileHandler(tornado.web.StaticFileHandler):
+    """
+    Files handler
+    
+    This takes in a filename and returns the file
+    """
+    def get(self, kernel_id, file_path):
+        super(FileHandler, self).get('%s/%s'%(kernel_id, file_path))

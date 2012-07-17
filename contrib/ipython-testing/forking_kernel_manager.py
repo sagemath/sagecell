@@ -7,6 +7,15 @@ from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
 import logging
 
+def makedirs(path):
+    import errno
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
+    
 class ForkingKernelManager(object):
     def __init__(self, filename, ip, update_function=None):
         self.kernels = {}
@@ -14,6 +23,8 @@ class ForkingKernelManager(object):
         self.filename = filename
         self.update_function = update_function
 
+        self.dir = '/tmp/sagecell'
+        makedirs(self.dir)
     def fork_kernel(self, config, pipe, resource_limits, logfile):
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
@@ -35,9 +46,15 @@ class ForkingKernelManager(object):
             config = Config({"ip": self.ip})
         if resource_limits is None:
             resource_limits = {}
+        dir = os.path.join(self.dir, kernel_id)
+        os.mkdir(dir)
+        currdir = os.getcwd()
+        os.chdir(dir)
+
         p, q = Pipe()
         proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
         proc.start()
+        os.chdir(currdir)
         connection = p.recv()
         p.close()
         self.kernels[kernel_id] = (proc, connection)
