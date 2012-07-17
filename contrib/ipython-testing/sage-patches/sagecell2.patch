@@ -1,5 +1,5 @@
 # HG changeset patch
-# Parent 9e8f484ff55f54e28200e8cb6d692b97d4d81562
+# Parent c77eefe4070c95d76e1e44bc7f758dda8567bc11
 Changes for Sage Cell Server 2.0
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
@@ -33,7 +33,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 -                sys._sage_messages.message_queue.display({'text/html':mathexpr})
 +                sys._sage_.display_message({'text/plain': 'math', 'text/html': mathexpr})
              else:
-                 print mathjax_expr  # put comma at end of line?
+                 print mathjax_expr
          else:
 @@ -2031,7 +2031,7 @@
                  sys._sage_upload_file_pipe.send_bytes(json.dumps([png_file]))
@@ -65,7 +65,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1509,15 +1509,15 @@
+@@ -1715,15 +1715,15 @@
              import sys
              if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
                  import json #TODO: be smart about which json
@@ -85,7 +85,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
                  else:
                      html("<img src='cell://%s'>"%filename)
          else:
-@@ -2645,10 +2645,10 @@
+@@ -2951,10 +2951,10 @@
              if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
                  import json #TODO: be smart about which json
                  import sys
