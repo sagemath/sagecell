@@ -292,7 +292,7 @@ class ZMQStreamHandler(object):
         retval = jsonapi.dumps(msg)
 
         if "execute_reply" == msg["msg_type"]:
-            timeout = msg["content"]["user_expressions"].get("timeout")
+            timeout = msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0)
 
             try:
                 timeout = float(timeout) # in case user manually puts in a string
@@ -334,7 +334,7 @@ class ShellHandler(ZMQStreamHandler):
         if self.km._kernels.get(self.kernel_id) is not None:
             msg = jsonapi.loads(message)
             if "execute_request" == msg["header"]["msg_type"]:
-                msg["content"]["user_expressions"] = {"timeout": "sys._sage_.kernel_timeout"}
+                msg["content"]["user_expressions"].update(_sagecell_timeout="sys._sage_.kernel_timeout")
                 self.km._kernels[self.kernel_id]["executing"] = True
                 self.session.send(self.shell_stream, msg)
 
