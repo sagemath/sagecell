@@ -71,6 +71,7 @@ sagecell.Session = function (outputDiv) {
     var ce = sagecell.util.createElement;
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
+        	ce("div", {"class": "sagecell_permalink"}, [ce("a", {}, [document.createTextNode("Permalink")])]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
                         "alt": "Loading", "class": "sagecell_spinner"})
@@ -122,7 +123,7 @@ sagecell.Session.prototype.execute = function (code) {
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
                                         "content": {"code": code}})},
             function (data) {
-                var link = that.outputDiv.find("a.sagecell_permalink");
+                var link = that.outputDiv.find("div.sagecell_permalink a");
                 link.attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).permalink);
                 link.css("display", "inline");
             });
