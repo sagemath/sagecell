@@ -111,7 +111,7 @@ sagecell.Session = function (outputDiv) {
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
         var callbacks = {"output": $.proxy(this.handle_output, this), "execute_reply": $.proxy(this.handle_execute_reply, this)};
-        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false, 
+        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false, "store_history": false,
         	"user_expressions": {"_sagecell_files":"sys._sage_.new_files()"}}));
     } else {
         this.deferred_code.push(code);
