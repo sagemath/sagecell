@@ -63,8 +63,8 @@
 }
 
 .sagecell_permalink {
-    font-size: 80%;
-    display: none;
+    padding-right: 5px;
+    text-align: right;
 }
 
 .sagecell_sessionContainer {
