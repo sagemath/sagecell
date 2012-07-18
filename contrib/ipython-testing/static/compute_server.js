@@ -109,8 +109,9 @@ sagecell.Session = function (outputDiv) {
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
-        var callbacks = {"output": $.proxy(this.handle_output, this)};
-        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false}));
+        var callbacks = {"output": $.proxy(this.handle_output, this), "execute_reply": $.proxy(this.handle_execute_reply, this)};
+        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false, 
+        	"user_expressions": {"_sagecell_files":"sys._sage_.new_files()"}}));
     } else {
         this.deferred_code.push(code);
     }
@@ -159,6 +160,35 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
     }
     return out;
 };
+
+sagecell.Session.prototype.handle_execute_reply = function(msg) {
+	console.log(msg);
+    if(msg.status==="error") {
+	    this.output('<pre class="sagecell_pyerr"></pre>',null)
+	    	.html(IPython.utils.fixConsole(msg.traceback.join("\n")));
+/*	        .html(sagecell.functions.colorizeTB(msg.content.traceback
+	                                            .replace(/&/g,"&amp;")
+	                                            .replace(/</g,"&lt;")));
+	                                            */
+	}
+	var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
+    var files = msg.payload[0].new_files;
+    var html="<div>\n";
+    for(var j = 0, j_max = files.length; j < j_max; j++) {
+        if (this.files[files[j]] !== undefined) {
+            this.files[files[j]]++;
+        } else {
+            this.files[files[j]] = 0;
+        }
+    }
+    var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
+    for (j in this.files) {
+        //TODO: escape filenames and id
+        html+='<a href="'+filepath+j+'?q='+this.files[j]+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
+    }
+    html+="</div>";
+    output_block.html(html).effect("pulsate", {times:1}, 500);
+}
 
 sagecell.Session.prototype.handle_output = function (msg_type, content, header) {
 	var block_id = null;
