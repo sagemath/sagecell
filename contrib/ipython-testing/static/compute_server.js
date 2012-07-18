@@ -171,9 +171,11 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
 	                                            .replace(/&/g,"&amp;")
 	                                            .replace(/</g,"&lt;")));
 	                                            */
-	}
+} 
+var payload = msg.payload[0];
+if (payload && payload.new_files){
+    var files = payload.new_files;
 	var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
-    var files = msg.payload[0].new_files;
     var html="<div>\n";
     for(var j = 0, j_max = files.length; j < j_max; j++) {
         if (this.files[files[j]] !== undefined) {
@@ -189,6 +191,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     }
     html+="</div>";
     output_block.html(html).effect("pulsate", {times:1}, 500);
+    }
 }
 
 sagecell.Session.prototype.handle_output = function (msg_type, content, header) {
