@@ -15,7 +15,7 @@ try:
 except ImportError:
     SageIPythonInputSplitter = None
 
-class Receiver:
+class Receiver(object):
     def __init__(self, filename, ip):
         self.context = zmq.Context()
         self.dealer = self.context.socket(zmq.DEALER)
@@ -88,8 +88,27 @@ from sagenb.misc.support import automatic_names
         _sage_ = TempClass()
         _sage_.display_message = misc.display_message
         _sage_.kernel_timeout = 0.0
+        _sage_.sent_files = {}
+        def new_files(root='./'):
+            import os
+            import sys
+            new_files = []
+            for top,dirs,files in os.walk(root):
+                for nm in files:
+                    path = os.path.join(top,nm)
+                    if path.startswith('./'):
+                        path = path[2:]
+                    mtime = os.stat(path).st_mtime
+                    if path not in sys._sage_.sent_files or sys._sage_.sent_files[path] < mtime:
+                        new_files.append(path)
+                        sys._sage_.sent_files[path] = mtime
+            ip = user_ns['get_ipython']()
+            ip.payload_manager.write_payload({"new_files": new_files})
+            return ''
+        _sage_.new_files = new_files
         sys._sage_ = _sage_
         user_ns = ka.kernel.shell.user_ns
+        # TODO: maybe we don't want to cut down the flush interval?
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
         if self.sage_mode:
             ka.kernel.shell.input_splitter = SageIPythonInputSplitter()

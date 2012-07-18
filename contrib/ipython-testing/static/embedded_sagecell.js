@@ -196,7 +196,7 @@ sagecell.makeSagecell = function (args) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
             }
             outputLocation.find(".sagecell_output_elements").hide();
-            hide.push("files", "sageMode", "sessionFiles"); // TODO: Delete this line when these features are implemented.
+            hide.push("files", "sageMode"); // TODO: Delete this line when these features are implemented.
             if (settings.mode === "debug") {
                 console.warn("Running the Sage Cell in debug mode!");
             } else {
