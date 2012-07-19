@@ -47,12 +47,29 @@ sagecell.Session = function (outputDiv) {
             }
         });
     }
+    /* Always use sockjs, until we can get websockets working reliably.
+     * Right now, if we have a very short computation (like 1+1), there is some sort of 
+     * race condition where the iopub handler does not get established before 
+     * the kernel is closed down.  This only manifests itself on a remote server, since presumably
+     * if you are running on a local server, the connection is established too quickly.
+     *
+     * Also, there are some bugs in, for example, Firefox and other issues that we don't want to have
+     * to work around, that sockjs already worked around.
+     */
+    /* 
+    // When we restore the websocket, things are messed up if window.WebSocket was undefined and window.MozWebSocket was.
     var old_ws = window.WebSocket || window.MozWebSocket;
     if (!old_ws) {
         window.WebSocket = sagecell.MultiSockJS;
     }
     this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
     window.WebSocket = old_ws;
+    */
+    var old_ws = window.WebSocket;
+    window.WebSocket = sagecell.MultiSockJS;
+    this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
+    window.WebSocket = old_ws;
+
     var that = this;
     this.kernel._kernel_started = function (json) {
         this.base_url = this.base_url.substr(sagecell.URLs.root.length);
