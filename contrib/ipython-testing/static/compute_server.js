@@ -236,7 +236,8 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, header) 
 		case "display_data":
 		var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
         if (content.data["text/html"]) {
-            this.output("<div></div>", block_id).html(content.data["text/html"]);
+            var html = content.data['text/html'].replace(/cell:\/\//gi, filepath);
+            this.output("<div></div>", block_id).html(html);
         } else if (content.data["text/image-filename"]) {
         	this.output("<img src='"+filepath+content.data["text/image-filename"]+"'/>", block_id);
         } else if (content.data["image/png"]) {
