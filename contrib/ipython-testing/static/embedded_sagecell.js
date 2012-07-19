@@ -360,6 +360,8 @@ sagecell.initCell = (function(sagecellInfo) {
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
         outputLocation.find(".sagecell_output_elements").show();
+        // return false to make *sure* any containing form doesn't submit
+        return false;
     };
     var button = inputLocation.find(".sagecell_evalButton").button();
     button.click({"id": IPython.utils.uuid()}, sagecellInfo.submit);
