@@ -535,7 +535,6 @@ sagecell.InteractData.ColorSelector.prototype.disable = function () {
 sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.HtmlBox.prototype.rendered = function () {
-    // TODO: replace "cell:" URIs in HTML with URLs for uploaded files
     this.div = document.createElement("div");
     $(this.div).html(this.control.value);
     return this.div;
