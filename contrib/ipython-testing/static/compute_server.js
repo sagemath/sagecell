@@ -88,7 +88,11 @@ sagecell.Session = function (outputDiv) {
     var ce = sagecell.util.createElement;
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
-        	ce("div", {"class": "sagecell_permalink"}, [ce("a", {}, [document.createTextNode("Permalink")])]),
+        	ce("div", {"class": "sagecell_permalink"}, [
+        		ce("a", {"class": "sagecell_permalink_zip"}, [document.createTextNode("Permalink")]),
+        		document.createTextNode(", "),
+        		ce("a", {"class": "sagecell_permalink_query"}, [document.createTextNode("Shortened Temporary Link")])
+        		]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
                         "alt": "Loading", "class": "sagecell_spinner"})
@@ -140,9 +144,10 @@ sagecell.Session.prototype.execute = function (code) {
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
                                         "content": {"code": code}})},
             function (data) {
-                var link = that.outputDiv.find("div.sagecell_permalink a");
-                link.attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).permalink);
-                link.css("display", "inline");
+                that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
+                    .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
+                that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
+                    .attr("href", sagecell.URLs.root + "?z=" + JSON.parse(data).zip);
             });
     }
 };
@@ -180,7 +185,6 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
 };
 
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
-	console.log(msg);
     if(msg.status==="error") {
 	    this.output('<pre class="sagecell_pyerr"></pre>',null)
 	    	.html(IPython.utils.fixConsole(msg.traceback.join("\n")));

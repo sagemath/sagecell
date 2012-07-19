@@ -148,14 +148,15 @@ class PermalinkHandler(tornado.web.RequestHandler):
     """
     def post(self):
         args = self.request.arguments
-
-        retval = {"permalink": None}
+        retval = {"zip": None, "query": None}
         if "message" in args:
-            db = self.application.db
             try:
                 message = jsonapi.loads("".join(args["message"]))
                 if message["header"]["msg_type"] == "execute_request":
-                    retval["permalink"] = db.new_exec_msg(message)
+                    import zlib, base64
+                    retval["zip"] = base64.urlsafe_b64encode(zlib.compress(message["content"]["code"].encode('utf8')))
+                    db = self.application.db
+                    retval["query"] = db.new_exec_msg(message)
             except:
                 pass
         if self.request.headers["Accept"] == "application/json":
