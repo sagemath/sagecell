@@ -503,4 +503,4 @@ def text_control(value=""):
 imports = {"slider": slider, "range_slider": range_slider,
            "input_box": input_box, "color_selector": color_selector,
            "selector": selector, "input_grid": input_grid,
-           "text_control": text_control}
+           "text_control": text_control, "checkbox": checkbox}
