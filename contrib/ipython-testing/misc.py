@@ -173,43 +173,22 @@ def decorator_defaults(func):
     return my_wrap
 
 @contextmanager
-def stream_metadata(metadata):
-    streams = {'stdout': sys.stdout, 'stderr': sys.stderr}
-    old_metadata={}
-    for k,stream in streams.items():
-        # flush out messages that need old metadata before we update the 
-        # metadata dictionary (since update actually modifies the dictionary)
-        stream.flush()
-        new_metadata = stream.metadata
-        old_metadata[k] = new_metadata.copy()
-        new_metadata.update(metadata)
-    try:
-        yield None
-    finally:
-        for k,stream in streams.items():
-            # set_metadata does the flush for us
-            stream.set_metadata(old_metadata[k])
-
-@contextmanager
 def session_metadata(metadata):
     # flush any messages waiting in buffers
     sys.stdout.flush()
     sys.stderr.flush()
     
     session = sys.stdout.session
-    old_metadata = session.subheader.get('metadata',None)
-    new_metadata = old_metadata.copy() if old_metadata is not None else {}
+    old_metadata = session.metadata
+    new_metadata = old_metadata.copy()
     new_metadata.update(metadata)
-    session.subheader['metadata'] = new_metadata
+    session.metadata = new_metadata
     try:
         yield None
     finally:
         sys.stdout.flush()
         sys.stderr.flush()
-        if old_metadata is None:
-            del session.subheader['metadata']
-        else:
-            session.subheader['metadata'] = old_metadata
+        session.metadata = old_metadata
 
 def display_message(data):
     session = sys.stdout.session
