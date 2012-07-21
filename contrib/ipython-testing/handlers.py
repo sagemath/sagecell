@@ -276,28 +276,18 @@ class ZMQStreamHandler(object):
         idents, msg_list = self.session.feed_identities(msg_list)
         msg = self.session.unserialize(msg_list)
 
-        try:
-            msg["header"].pop("date")
-        except KeyError:
-            pass
-        try:
-            msg["parent_header"].pop("date")
-        except KeyError:
-            pass
-        try:
-            msg["header"].pop("started")
-        except KeyError:
-            pass
+        # Have to pop dates since they are not serializable
+        # could instead use something like http://stackoverflow.com/questions/455580/json-datetime-between-python-and-javascript
+        msg["header"].pop("date", None)
+        msg["parent_header"].pop("date", None)
+        msg["metadata"].pop("started", None)
         msg.pop("buffers")
 
         retval = jsonapi.dumps(msg)
 
         if "execute_reply" == msg["msg_type"]:
-            timeout = msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0)
-
             try:
-                timeout = float(timeout) # in case user manually puts in a string
-            # also handles the case where a KeyError is raised if no timeout is specified
+                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0))
             except:
                 timeout = 0.0
 
