@@ -105,18 +105,18 @@ sagecell.Session = function (outputDiv) {
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
-    $([IPython.events]).on("status_busy.Kernel", function (e, kernel_id) {
-        if (kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_busy.Kernel", function (e) {
+        if (e.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
         }
     });
-    $([IPython.events]).on("status_idle.Kernel", function (e, kernel_id) {
-        if (kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_idle.Kernel", function (e) {
+        if (e.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "none";
         }
     });
-    $([IPython.events]).on("status_dead.Kernel", function (e, kernel_id) {
-        if (kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_dead.Kernel", function (e) {
+        if (e.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
@@ -142,6 +142,7 @@ sagecell.Session.prototype.execute = function (code) {
         var that = this;
         sagecell.sendRequest("POST", sagecell.URLs.permalink,
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
+            							"metadata": {},
                                         "content": {"code": code}})},
             function (data) {
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
@@ -215,11 +216,8 @@ if (payload && payload.new_files){
     }
 }
 
-sagecell.Session.prototype.handle_output = function (msg_type, content, header) {
-	var block_id = null;
-	if (header.metadata !== undefined && header.metadata.interact_id !== undefined) {
-		block_id = header.metadata.interact_id;
-	}
+sagecell.Session.prototype.handle_output = function (msg_type, content, metadata) {
+	var block_id = metadata.interact_id || null;
 	// Handle each stream type.  This should probably be separated out into different functions.
 	switch(msg_type) {
 		case "stream":
@@ -1015,42 +1013,43 @@ sagecell.MultiSockJS.prototype.close = function () {
 
 /* This function is copied from IPython's kernel.js
  * (https://github.com/ipython/ipython/blob/master/IPython/frontend/html/notebook/static/js/kernel.js)
- * and modified to allow messages of type 'extension' and pass the kernel_id
- * to the event handlers
+ * and modified to allow output messages of type 'extension' and pass the kernel_id
+ * to the status event handlers
  */
 IPython.Kernel.prototype._handle_iopub_reply = function (e) {
     var reply = $.parseJSON(e.data);
     var content = reply.content;
     var msg_type = reply.header.msg_type;
-    var header = reply.header;
+    var metadata = reply.metadata;
     var callbacks = this.get_callbacks_for_msg(reply.parent_header.msg_id);
     if (msg_type !== 'status' && callbacks === undefined) {
         // Message not from one of this notebook's cells and there are no
         // callbacks to handle it.
         return;
     }
-    var output_types = ['stream','display_data','pyout','pyerr','extension'];
-    if ($.inArray(msg_type, output_types) >= 0) {
+    var output_types = ['stream','display_data','pyout','pyerr', 'extension'];
+    if (output_types.indexOf(msg_type) >= 0) {
         var cb = callbacks['output'];
         if (cb !== undefined) {
-            cb(msg_type, content, header);
+            cb(msg_type, content, metadata);
         }
     } else if (msg_type === 'status') {
         if (content.execution_state === 'busy') {
-            $([IPython.events]).trigger('status_busy.Kernel', this.kernel_id);
+            $([IPython.events]).trigger({type: 'status_busy.Kernel', kernel: this});
         } else if (content.execution_state === 'idle') {
-            $([IPython.events]).trigger('status_idle.Kernel', this.kernel_id);
+            $([IPython.events]).trigger({type: 'status_idle.Kernel', kernel: this});
         } else if (content.execution_state === 'dead') {
             this.stop_channels();
-            $([IPython.events]).trigger('status_dead.Kernel', this.kernel_id);
+            $([IPython.events]).trigger({type: 'status_dead.Kernel', kernel: this});
         };
     } else if (msg_type === 'clear_output') {
         var cb = callbacks['clear_output'];
         if (cb !== undefined) {
-            cb(content, header);
+            cb(content, metadata);
         }
     };
 };
+
 
 // Initialize jmol
 // TODO: move to a better place
