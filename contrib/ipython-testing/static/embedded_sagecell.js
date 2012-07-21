@@ -354,7 +354,11 @@ sagecell.initCell = (function(sagecellInfo) {
         if (replaceOutput && sagecell.last_session[evt.data.id]) {
             $(sagecell.last_session[evt.data.id].session_container).remove();
         }
+        if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
+		        editorData.save();
+	    }
         var session = new sagecell.Session(outputLocation);
+
         session.execute(textArea.val());
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
