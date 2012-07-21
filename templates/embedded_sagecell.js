@@ -538,7 +538,9 @@ sagecell.renderEditor = function (editor, inputLocation) {
              extraKeys: {'Shift-Enter': function (editor) {
                  editor.save();
                  inputLocation.find(".sagecell_evalButton").click();
-             }},
+                 },
+                 "Tab": "indentMore", 
+                 "Shift-Tab": "indentLess"},
              onKeyEvent: function (editor, event) {
                  editor.save();
                 /* Saving state and restoring it seems more confusing for new users, so we're commenting it out for now.

@@ -545,7 +545,9 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              extraKeys: {'Shift-Enter': function (editor) {
                  editor.save();
                  inputLocation.find(".sagecell_evalButton").click();
-             }},
+	             },
+    	      	"Tab": "indentMore", 
+        	  	"Shift-Tab": "indentLess"},
              onKeyEvent: function (editor, event) {
                  editor.save();
             }});
