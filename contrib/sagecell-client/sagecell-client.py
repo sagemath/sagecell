@@ -1,19 +1,26 @@
+"""
+A small client illustrating how to interact with the Sage Cell Server, version 2
+
+Requires the websocket-client package: http://pypi.python.org/pypi/websocket-client
+"""
+
 import websocket
 import threading
 import json
+import urllib2
 
 class SageCell(object):
     def __init__(self, url):
-        import requests
         if not url.endswith('/'):
             url+='/'
         # POST or GET <url>/kernel
-        r = requests.get(url+'kernel',headers={'Accept': 'application/json'})
+        req = urllib2.Request(url=url+'kernel', headers={'Accept': 'application/json'})
+        response = json.loads(urllib2.urlopen(req).read())
 
         # RESPONSE: {"kernel_id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
         # construct the iopub and shell websocket channel urls from that
 
-        self.kernel_url = r.json['ws_url']+'kernel/'+r.json['kernel_id']+'/'
+        self.kernel_url = response['ws_url']+'kernel/'+response['kernel_id']+'/'
         self._shell = websocket.create_connection(self.kernel_url+'shell')
         self._iopub = websocket.create_connection(self.kernel_url+'iopub')
 
@@ -77,6 +84,6 @@ class SageCell(object):
         self._iopub.close()
 
 if __name__ == "__main__":
-    a=SageCell('http://localhost:8888')
+    a=SageCell('http://aleph2.sagemath.org')
     import pprint
     pprint.pprint(a.execute_request('factorial(2012)'))
