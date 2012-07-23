@@ -95,6 +95,7 @@ class KernelHandler(tornado.web.RequestHandler):
             self.set_header("Content-Type", "text/html")
         self.write(data)
         self.finish()
+    get = post
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
