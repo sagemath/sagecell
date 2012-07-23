@@ -278,7 +278,7 @@ class ZMQStreamHandler(object):
         idents, msg_list = self.session.feed_identities(msg_list)
         return self.session.unserialize(msg_list)
 
-    def _serialize_reply(self, msg):
+    def _json_msg(self, msg):
         """
         Converts a single message into a JSON string
         """
@@ -295,8 +295,7 @@ class ZMQStreamHandler(object):
             msg = self._unserialize_reply(msg_list)
             for f in self.msg_from_kernel_callbacks:
                 f(msg)
-            msg_str = self._serialize_reply(msg)
-            self._output_message(msg_str)
+            self._output_message(msg)
         except:
             pass
     
@@ -450,43 +449,43 @@ class IOPubHandler(ZMQStreamHandler):
             self.application.km.end_session(self.kernel_id)
         except:
             pass
-        self._output_message(json.dumps(
-            {'header': {'msg_type': 'status'},
-             'parent_header': {},
-             'content': {'execution_state':'dead'}
-            }
-        ))
+        msg = {'header': {'msg_type': 'status'},
+               'parent_header': {},
+               'metadata': {},
+               'content': {'execution_state':'dead'}}
+        self._output_message(msg)
         self.on_close()
 
 class ShellServiceHandler(ShellHandler):
     def __init__(self, application):
         self.application = application
 
-    def open(self, kernel_id, output_list):
+    def open(self, kernel_id):
         super(ShellServiceHandler, self).open(kernel_id)
-        self.output_list = output_list
 
     def _output_message(self, message):
-        self.output_list.append(message)
+        pass
 
 class IOPubServiceHandler(IOPubHandler):
     def __init__(self, application):
         self.application = application
 
-    def open(self, kernel_id, output_list):
+    def open(self, kernel_id):
         super(IOPubServiceHandler, self).open(kernel_id)
-        self.output_list = output_list
+        from collections import defaultdict
+        self.streams = defaultdict(unicode)
 
-    def _output_message(self, message):
-        self.output_list.append(message)
+    def _output_message(self, msg):
+        if msg["msg_type"] == "stream":
+             self.streams[msg["content"]["name"]] = msg["content"]["data"]
 
 class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
-        self.write_message(message)
+        self.write_message(self._json_msg(message))
 
 class IOPubWebHandler(IOPubHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
-        self.write_message(message)
+        self.write_message(self._json_msg(message))
 
 class ShellSockJSHandler(ShellHandler):
     def __init__(self, kernel_id, callback, application):
@@ -495,7 +494,7 @@ class ShellSockJSHandler(ShellHandler):
         self.application = application
 
     def _output_message(self, message):
-        self.callback("%s/shell,%s" % (self.kernel_id, message))
+        self.callback("%s/shell,%s" % (self.kernel_id, self._json_msg(message)))
 
 class IOPubSockJSHandler(IOPubHandler):
     def __init__(self, kernel_id, callback, application):
@@ -504,7 +503,7 @@ class IOPubSockJSHandler(IOPubHandler):
         self.application = application
 
     def _output_message(self, message):
-        self.callback("%s/iopub,%s" % (self.kernel_id, message))
+        self.callback("%s/iopub,%s" % (self.kernel_id, self._json_msg(message)))
 
 class FileHandler(tornado.web.StaticFileHandler):
     """
