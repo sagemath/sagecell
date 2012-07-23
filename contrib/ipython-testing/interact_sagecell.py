@@ -239,14 +239,13 @@ def interact_func(session, pub_socket):
             layout["top_center"] = [n for n in names]
 
         interact_id=str(uuid.uuid4())
-        content = {"msg_type": "interact_prepare",
-                   "content": {"controls": dict(zip(names, (control.message() for control in controls))),
-                               "new_interact_id": interact_id,
-                               "layout": layout,
-                               "update": update}}
+        msg = {"application/sage-interact": {"new_interact_id": interact_id,
+                                             "controls": dict(zip(names, (control.message() for control in controls))),
+                                             "layout": layout,
+                                             "update": update},
+               "text/plain": "Sage Interact"}
+        sys._sage_.display_message(msg)
         sys._sage_.kernel_timeout = float("inf")
-        # we need a better way of getting the parent header...
-        session.send(pub_socket, 'extension', content=content, parent=sys.stdout.parent_header)
         def adapted_f(control_vals):
             with session_metadata({'interact_id': interact_id}):
                 for c in listed_controls:

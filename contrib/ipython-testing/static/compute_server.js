@@ -237,7 +237,9 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
 		
 		case "display_data":
 		var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
-        if (content.data["text/html"]) {
+		if (content.data["application/sage-interact"]) {
+			this.interacts.push(new sagecell.InteractCell(this, content.data["application/sage-interact"], block_id));
+		} else if (content.data["text/html"]) {
             var html = content.data['text/html'].replace(/cell:\/\//gi, filepath);
             this.output("<div></div>", block_id).html(html);
         } else if (content.data["text/image-filename"]) {
@@ -252,11 +254,6 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
             this.output("<pre></pre>", block_id).text(content.data["text/plain"]);
         }
 		break;
-
-		case "extension":
-        if (content.msg_type === "interact_prepare") {
-            this.interacts.push(new sagecell.InteractCell(this, content.content, block_id));
-        }
     }
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
@@ -1010,46 +1007,6 @@ sagecell.MultiSockJS.prototype.send = function (msg) {
 sagecell.MultiSockJS.prototype.close = function () {
     delete sagecell.MultiSockJS.channels[this.prefix];
 }
-
-/* This function is copied from IPython's kernel.js
- * (https://github.com/ipython/ipython/blob/master/IPython/frontend/html/notebook/static/js/kernel.js)
- * and modified to allow output messages of type 'extension' and pass the kernel_id
- * to the status event handlers
- */
-IPython.Kernel.prototype._handle_iopub_reply = function (e) {
-    var reply = $.parseJSON(e.data);
-    var content = reply.content;
-    var msg_type = reply.header.msg_type;
-    var metadata = reply.metadata;
-    var callbacks = this.get_callbacks_for_msg(reply.parent_header.msg_id);
-    if (msg_type !== 'status' && callbacks === undefined) {
-        // Message not from one of this notebook's cells and there are no
-        // callbacks to handle it.
-        return;
-    }
-    var output_types = ['stream','display_data','pyout','pyerr', 'extension'];
-    if (output_types.indexOf(msg_type) >= 0) {
-        var cb = callbacks['output'];
-        if (cb !== undefined) {
-            cb(msg_type, content, metadata);
-        }
-    } else if (msg_type === 'status') {
-        if (content.execution_state === 'busy') {
-            $([IPython.events]).trigger({type: 'status_busy.Kernel', kernel: this});
-        } else if (content.execution_state === 'idle') {
-            $([IPython.events]).trigger({type: 'status_idle.Kernel', kernel: this});
-        } else if (content.execution_state === 'dead') {
-            this.stop_channels();
-            $([IPython.events]).trigger({type: 'status_dead.Kernel', kernel: this});
-        };
-    } else if (msg_type === 'clear_output') {
-        var cb = callbacks['clear_output'];
-        if (cb !== undefined) {
-            cb(content, metadata);
-        }
-    };
-};
-
 
 // Initialize jmol
 // TODO: move to a better place
