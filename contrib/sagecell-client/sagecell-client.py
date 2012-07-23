@@ -1,7 +1,3 @@
-
-# Now open two websocket connections with the "ws_url"/kernel/<kernel_id>/iopub for the iopub channel, and <ws_url>/kernel/<kernel_id>/shell for the shell channel.
-
-import time
 import websocket
 import threading
 import json
@@ -44,7 +40,7 @@ class SageCell(object):
         for t in threads:
             t.join()
 
-        return [self.shell_messages, self.iopub_messages]
+        return {'shell': self.shell_messages, 'iopub': self.iopub_messages}
 
     def _get_shell_messages(self):
         while True:
@@ -80,99 +76,7 @@ class SageCell(object):
         self._shell.close()
         self._iopub.close()
 
-
-
-
-# Send an execute_request message down the shell channel
-
-
-# import requests
-# r = requests.get('http://localhost:8888/kernel',headers={'Accept': 'application/json'})
-# kernel_url = r.json['ws_url']+'kernel/'+r.json['kernel_id']+'/'
-
-# import websocket
-# import threading
-# import json
-
-############# Using run_forever
-
-# shell_messages = []
-# def shell_on_message(ws, message):
-#     msg = json.loads(message)
-#     if msg['header']['msg_type'] == 'execute_reply':
-#         ws.keep_running = False
-#     shell_messages.append(msg)
-# shell = websocket.WebSocketApp(kernel_url+'shell', on_message = shell_on_message)
-
-
-# iopub_messages = []
-# def iopub_on_message(ws, message):
-#     msg = json.loads(message)
-#     if msg['header']['msg_type'] == 'status' and msg['content']['execution_state'] == 'idle':
-#         ws.keep_running = False
-#     iopub_messages.append(msg)
-# iopub = websocket.WebSocketApp(kernel_url+'iopub', on_message = iopub_on_message)
-
-# threads=[threading.Thread(target=iopub.run_forever), threading.Thread(target=shell.run_forever)]
-# for t in threads:
-#     t.start()
-
-# # send message
-
-# for t in threads:
-#     t.join()
-
-##################### Using my own looping code
-# websocket.enableTrace(True)
-# shell_messages = []
-# shell = websocket.create_connection(kernel_url+'shell')
-# def get_shell_messages():
-#     global shell_messages
-#     shell_messages = []
-#     while True:
-#         msg = json.loads(shell.recv())
-#         shell_messages.append(msg)
-#         if msg['header']['msg_type'] == 'execute_reply':
-#             break
-
-# iopub_messages = []
-# iopub = websocket.create_connection(kernel_url+'iopub')
-# def get_iopub_messages():
-#     global iopub_messages
-#     iopub_messages = []
-#     while True:
-#         msg = json.loads(iopub.recv())
-#         iopub_messages.append(msg)
-#         if msg['header']['msg_type'] == 'status' and msg['content']['execution_state'] == 'idle':
-#             break
-
-# threads = [threading.Thread(target=get_iopub_messages), threading.Thread(target=get_shell_messages)]
-# for t in threads:
-#     t.start()
-
-
-# code="""1+1"""
-
-# def make_execute_request(code):
-#     from uuid import uuid4
-#     import json
-#     session = str(uuid4())
-
-
-#     execute_request = {'header': {'msg_type': 'execute_request', 'msg_id': str(uuid4()), 'username': '', 'session': session},
-#                         'parent_header':{},
-#                         'metadata': {},
-#                         'content': {'code': code, 'silent': False, 'user_variables': [], 'user_expressions': {'_sagecell_files': 'sys._sage_.new_files()'}, 'allow_stdin': False}}
-
-#     return json.dumps(execute_request)
-
-# # Send an execute_request message down the shell channel
-
-# shell.send(make_execute_request(code))
-
-# for t in threads:
-#     t.join()
-
-
-
-# When the kernel dies, you get a special "status" message in the iopub channel
+if __name__ == "__main__":
+    a=SageCell('http://localhost:8888')
+    import pprint
+    pprint.pprint(a.execute_request('factorial(2012)'))
