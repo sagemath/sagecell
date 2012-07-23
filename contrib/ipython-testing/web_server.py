@@ -35,7 +35,7 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
             (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": "/tmp/sagecell/"}),
             (r"/permalink", handlers.PermalinkHandler),
-            # (r"/service", handlers.ServiceHandler),
+            (r"/service", handlers.ServiceHandler),
             ] + handlers.KernelRouter.urls
         settings = dict(
             template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),

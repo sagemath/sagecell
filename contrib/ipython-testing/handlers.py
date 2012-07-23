@@ -174,43 +174,42 @@ class StaticHandler(tornado.web.StaticFileHandler):
 
 class ServiceHandler(tornado.web.RequestHandler):
     """
-    Implements a blocking web service to execute a single
-    computation the server.
+    Implements a blocking (to the client) web service to execute a single
+    computation the server.  This should be non-blocking to Tornado.
 
-    The code to be executed can be specified using the
-    URL format ``<root_url>/service?code=<code>``.
+    The code to be executed is given in the code request parameter.
 
     This handler is currently not production-ready.
     """
+    @tornado.web.asynchronous
     def post(self):
-        retval = {"success": False,
-                  "output": ""}
-        args = self.request.arguments
-
-        if "code" in args:
-            code = "".join(args["code"])
-
-            default_timeout = 30 # seconds
-            poll_interval = 0.1 # seconds
-
+        default_timeout = 30 # seconds
+        code = "".join(self.get_arguments('code', strip=False))
+        if code:
             km = self.application.km
-            kernel_id = km.new_session()
+            self.kernel_id = km.new_session()
 
-            shell_messages = []
-            iopub_messages = []
+            self.shell_handler = ShellServiceHandler(self.application)
+            self.iopub_handler = IOPubServiceHandler(self.application)
+            
+            self.shell_handler.open(self.kernel_id)
+            self.iopub_handler.open(self.kernel_id)
 
-            shell_handler = ShellServiceHandler(self.application)
-            iopub_handler = IOPubServiceHandler(self.application)
-            
-            shell_handler.open(kernel_id, shell_messages)
-            iopub_handler.open(kernel_id, iopub_messages)
-            
-            msg_id = str(uuid.uuid4())
+            loop = ioloop.IOLoop.instance()
+
+            self.success = False
+            def done(msg):
+                if msg["msg_type"] == "execute_reply":
+                    self.success = msg["content"]["status"] == "ok"
+                    loop.remove_timeout(self.timeout_request)
+                    loop.add_callback(self.finish_request)
+            self.shell_handler.msg_from_kernel_callbacks.append(done)
+            self.timeout_request = loop.add_timeout(time.time()+default_timeout, self.finish_request)
             
             exec_message = {"parent_header": {},
-                            "header": {"msg_id": msg_id,
+                            "header": {"msg_id": str(uuid.uuid4()),
                                        "username": "",
-                                       "session": kernel_id,
+                                       "session": self.kernel_id,
                                        "msg_type": "execute_request",
                                        },
                             "content": {"code": code,
@@ -219,40 +218,27 @@ class ServiceHandler(tornado.web.RequestHandler):
                                         "user_expressions": {},
                                         "allow_stdin": False,
                                         },
+                            "metadata": {}
                             }
             
-            shell_handler.on_message(jsonapi.dumps(exec_message))
-            
-            end_time = time.time()+default_timeout
+            self.shell_handler.on_message(jsonapi.dumps(exec_message))
+        
+    def finish_request(self):
+        self.shell_handler.shell_stream.flush()
+        self.iopub_handler.iopub_stream.flush()
+        try: # in case kernel has already been killed
+            self.application.km.end_session(self.kernel_id)
+        except:
+            pass
 
-            done = False
-            while not done and time.time() < end_time:
-                shell_handler.shell_stream.flush()
-                iopub_handler.iopub_stream.flush()
-                
-                for msg_string in shell_messages:
-                    msg = jsonapi.loads(msg_string)
-                    msg_type = msg.get("msg_type")
-                    content = msg["content"]
-                    if msg_type == "execute_reply":
-                        if content["status"] == "ok":
-                            retval["success"] = True
-                        done = True
-                        break
-
-                time.sleep(poll_interval)
-
-            for msg_string in iopub_messages:
-                msg = jsonapi.loads(msg_string)
-                msg_type = msg.get("msg_type")
-                content = msg["content"]
-                
-                if msg_type == "stream" and content["name"] == "stdout":
-                    retval["output"] += content["data"]
+        retval = self.iopub_handler.streams
+        retval.update(success=self.success)
         self.set_header("Access-Control-Allow-Origin", "*")
         self.write(retval)
         self.finish()
-
+        
+    get = post
+    
 
 class ZMQStreamHandler(object):
     """
