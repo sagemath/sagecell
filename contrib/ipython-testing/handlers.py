@@ -267,44 +267,36 @@ class ZMQStreamHandler(object):
         self.kernel_id = kernel_id
         self.session = self.km._sessions[self.kernel_id]
         self.kernel_timeout = self.km.kernel_timeout
+        self.msg_from_kernel_callbacks = []
+        self.msg_to_kernel_callbacks = []
 
-    def _reserialize_reply(self, msg_list):
+    def _unserialize_reply(self, msg_list):
         """
         Converts a multipart list of received messages into
         one coherent JSON message.
         """
         idents, msg_list = self.session.feed_identities(msg_list)
-        msg = self.session.unserialize(msg_list)
+        return self.session.unserialize(msg_list)
 
+    def _serialize_reply(self, msg):
+        """
+        Converts a single message into a JSON string
+        """
         # Have to pop dates since they are not serializable
         # could instead use something like http://stackoverflow.com/questions/455580/json-datetime-between-python-and-javascript
         msg["header"].pop("date", None)
         msg["parent_header"].pop("date", None)
         msg["metadata"].pop("started", None)
         msg.pop("buffers")
-
-        retval = jsonapi.dumps(msg)
-
-        if "execute_reply" == msg["msg_type"]:
-            try:
-                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0))
-            except:
-                timeout = 0.0
-
-            if timeout > self.kernel_timeout:
-                timeout = self.kernel_timeout
-            if timeout <= 0.0: # kill the kernel before the heartbeat is able to
-                self.km.end_session(self.kernel_id)
-            else:
-                self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
-                self.km._kernels[self.kernel_id]["executing"] = False
-
-        return retval
+        return jsonapi.dumps(msg)
 
     def _on_zmq_reply(self, msg_list):
         try:
-            message = self._reserialize_reply(msg_list)
-            self._output_message(message)
+            msg = self._unserialize_reply(msg_list)
+            for f in self.msg_from_kernel_callbacks:
+                f(msg)
+            msg_str = self._serialize_reply(msg)
+            self._output_message(msg_str)
         except:
             pass
     
@@ -320,14 +312,35 @@ class ShellHandler(ZMQStreamHandler):
         super(ShellHandler, self).open(kernel_id)
         self.shell_stream = self.km.create_shell_stream(self.kernel_id)
         self.shell_stream.on_recv(self._on_zmq_reply)
+        self.msg_to_kernel_callbacks.append(self._request_timeout)
+        self.msg_from_kernel_callbacks.append(self._reset_timeout)
 
+    def _request_timeout(self, msg):
+        if msg["header"]["msg_type"] == "execute_request":
+            msg["content"]["user_expressions"].update(_sagecell_timeout="sys._sage_.kernel_timeout")
+
+    def _reset_timeout(self, msg):
+        if msg["msg_type"] == "execute_reply":
+            try:
+                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0))
+            except:
+                timeout = 0.0
+
+            if timeout > self.kernel_timeout:
+                timeout = self.kernel_timeout
+            if timeout <= 0.0: # kill the kernel before the heartbeat is able to
+                self.km.end_session(self.kernel_id)
+            else:
+                self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
+                self.km._kernels[self.kernel_id]["executing"] = False
+        
     def on_message(self, message):
         if self.km._kernels.get(self.kernel_id) is not None:
             msg = jsonapi.loads(message)
-            if "execute_request" == msg["header"]["msg_type"]:
-                msg["content"]["user_expressions"].update(_sagecell_timeout="sys._sage_.kernel_timeout")
-                self.km._kernels[self.kernel_id]["executing"] = True
-                self.session.send(self.shell_stream, msg)
+            for f in self.msg_to_kernel_callbacks:
+                f(msg)
+            self.km._kernels[self.kernel_id]["executing"] = True
+            self.session.send(self.shell_stream, msg)
 
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():
