@@ -7,6 +7,7 @@ from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
+from misc import json_default
 
 class RootHandler(tornado.web.RequestHandler):
     """
@@ -269,13 +270,10 @@ class ZMQStreamHandler(object):
         """
         Converts a single message into a JSON string
         """
-        # Have to pop dates since they are not serializable
-        # could instead use something like http://stackoverflow.com/questions/455580/json-datetime-between-python-and-javascript
-        msg["header"].pop("date", None)
-        msg["parent_header"].pop("date", None)
-        msg["metadata"].pop("started", None)
-        msg.pop("buffers")
-        return jsonapi.dumps(msg)
+        # can't encode buffers, so let's get rid of them if they exist
+        msg.pop("buffers", None)
+        # json_default handles things like encoding dates
+        return jsonapi.dumps(msg, default=json_default)
 
     def _on_zmq_reply(self, msg_list):
         try:

@@ -4,7 +4,7 @@ Misc functions / classes
 from functools import wraps
 from contextlib import contextmanager
 import sys
-
+from datetime import datetime
 class Config(object):
     """
     Config file wrapper / handler class
@@ -194,3 +194,9 @@ def display_message(data):
     session = sys.stdout.session
     content = {'data': data, 'source': 'sagecell'}
     session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header)
+
+def json_default(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    else:
+        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
