@@ -467,10 +467,24 @@ class IOPubServiceHandler(IOPubHandler):
 class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
         self.write_message(self._json_msg(message))
+    def allow_draft76(self):
+        """Allow draft 76, until browsers such as Safari update to RFC 6455.
+        
+        This has been disabled by default in tornado in release 2.2.0, and
+        support will be removed in later versions.
+        """
+        return True
 
 class IOPubWebHandler(IOPubHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
         self.write_message(self._json_msg(message))
+    def allow_draft76(self):
+        """Allow draft 76, until browsers such as Safari update to RFC 6455.
+        
+        This has been disabled by default in tornado in release 2.2.0, and
+        support will be removed in later versions.
+        """
+        return True
 
 class ShellSockJSHandler(ShellHandler):
     def __init__(self, kernel_id, callback, application):
