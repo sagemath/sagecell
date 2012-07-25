@@ -13,7 +13,6 @@ try:
 
     assert reply['success'] is True
     assert a+b == answer
-    assert 1==0
 except Exception as e:
     import traceback
     traceback.print_exc()
