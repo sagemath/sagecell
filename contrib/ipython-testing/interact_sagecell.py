@@ -777,7 +777,6 @@ class MultiSlider(InteractControl):
                           'subtype':self.slider_type,
                           'display_values':self.display_values,
                           'sliders':self.sliders,
-                          'label':self.label,
                           'range':self.interval,
                           'step':self.stepsize,
                           'raw':True,
@@ -1072,18 +1071,20 @@ def automatic_control(control, var=None):
     if var=="auto_update" and control is False:
         return UpdateButton()
     
-    # Checks for interact controls that are verbosely defined
-    if isinstance(control, InteractControl):
-        return control
-    
     # Checks for labels and control values
     for _ in range(2):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
             label, control = control
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
+            # TODO: default_value isn't used effectively below in all instances 
             default_value, control = control
 
-    if isinstance(control, basestring):
+    # Checks for interact controls that are verbosely defined
+    if isinstance(control, InteractControl):
+        C = control
+        if label:
+            C.label = label
+    elif isinstance(control, basestring):
         C = InputBox(default = control, label = label, evaluate=False)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
