@@ -356,25 +356,29 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             var table2 = ce("table", {"class": "sagecell_interactControls"});
             for (var i = 0; i < this.layout[loc].length; i++) {
                 var tr = ce("tr");
-                var id = this.interact_id + "_" + this.layout[loc][i];
-                var right = ce("td", {}, [
-                    this.controls[this.layout[loc][i]].rendered(id)
-                ]);
-                if (this.controls[this.layout[loc][i]].control.label !== "") {
-                    var left = ce("td", {"class": "sagecell_labelcell"}, [
-                        ce("label", {"for": id, "title": this.layout[loc][i]}, [
-                            document.createTextNode(this.controls[
-                                    this.layout[loc][i]].control.label ||
-                                    this.layout[loc][i])
-                        ])
-                    ]);
-                    tr.appendChild(left);
-                } else {
-                    right.setAttribute("colspan", "2");
-                }
-                tr.appendChild(right);
+                var row = this.layout[loc][i];
+				for (var j = 0; j < row.length; j++) {
+					var varname = this.layout[loc][i][j];
+					var varcontrol = this.controls[varname];
+	                var id = this.interact_id + "_" + varname;
+	                var right = ce("td", {"class": "sagecell_interactcontrolcell"}, [
+	                    varcontrol.rendered(id)
+	                ]);
+	                if (varcontrol.control.label !== "") {
+	                    var left = ce("td", {"class": "sagecell_interactcontrollabelcell"}, [
+	                        ce("label", {"for": id, "title": varname}, [
+	                            document.createTextNode(varcontrol.control.label || varname)
+	                        ])
+	                    ]);
+	                    tr.appendChild(left);
+	                    this.rows[varname] = [left, right];	                	
+	                } else {
+						right.setAttribute("colspan", "2");
+						this.rows[varname] = [right];
+	                }
+	                tr.appendChild(right);
+	            }
                 table2.appendChild(tr);
-                this.rows[this.layout[loc][i]] = tr;
             }
             cells[loc].appendChild(table2);
         }

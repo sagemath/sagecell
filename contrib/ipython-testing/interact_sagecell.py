@@ -206,37 +206,24 @@ def interact_func(session, pub_socket):
                             raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
                 else:
                     raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
-                if isinstance(value[0], list):
-                    if ["*"] in value:
-                        value = [[n] for n in names]
-                    elif set(flatten(value))-nameset:
-                        raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
-                    for varlist in value:
-                        for var in varlist:
-                            if var in previous_vars:
-                                error_vars.append(var);
-                        if error_vars:
-                            raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
-                        previous_vars.extend(varlist)
-                    sanitized_layout[key] = value
-
-                else:
-                    if "*" in value:
-                        value = [n for n in names]
-                    elif set(value)-nameset:
-                        raise ValueError("Layout variables %s are not interact variables."%repr(list(set(value)-nameset)))
-                    for var in value:
+                if not isinstance(value[0], (list, tuple)):
+                    value = [value]
+            
+                if ["*"] in value:
+                    value = [[n] for n in names]
+                elif set(flatten(value))-nameset:
+                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
+                for varlist in value:
+                    for var in varlist:
                         if var in previous_vars:
                             error_vars.append(var);
-                
                     if error_vars:
                         raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
-                    previous_vars.extend(value)
-                    sanitized_layout[key] = value
-
+                    previous_vars.extend(varlist)
+                sanitized_layout[key] = value
                 layout = sanitized_layout
         else:
-            layout["top_center"] = [n for n in names]
+            layout["top_center"] = [[n] for n in names]
 
         interact_id=str(uuid.uuid4())
         msg = {"application/sage-interact": {"new_interact_id": interact_id,
