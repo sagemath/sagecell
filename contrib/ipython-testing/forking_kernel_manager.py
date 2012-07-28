@@ -6,6 +6,7 @@ from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
 import logging
+import tempfile
 
 def makedirs(path):
     import errno
@@ -23,7 +24,7 @@ class ForkingKernelManager(object):
         self.filename = filename
         self.update_function = update_function
 
-        self.dir = '/tmp/sagecell'
+        self.dir = tempfile.gettempdir() + '/sagecell'
         makedirs(self.dir)
     def fork_kernel(self, config, pipe, resource_limits, logfile):
         os.setpgrp()
@@ -49,10 +50,10 @@ class ForkingKernelManager(object):
         # TODO: the hist_file setting should be pushed up to receiver.py
         config.HistoryManager.hist_file = ':memory:'
 
-        dir = os.path.join(self.dir, kernel_id)
-        os.mkdir(dir)
+        tmpdir = os.path.join(self.dir, kernel_id)
+        os.mkdir(tmpdir)
         currdir = os.getcwd()
-        os.chdir(dir)
+        os.chdir(tmpdir)
 
         p, q = Pipe()
         proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
