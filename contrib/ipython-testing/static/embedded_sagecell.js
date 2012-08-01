@@ -354,9 +354,9 @@ sagecell.initCell = (function(sagecellInfo) {
         if (replaceOutput && sagecell.last_session[evt.data.id]) {
             $(sagecell.last_session[evt.data.id].session_container).remove();
         }
-        if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
-		        editorData.save();
-	    }
+        if (editor.substr(0, 10) === "codemirror") {
+            editorData.save();
+        }
         var session = new sagecell.Session(outputLocation);
 
         session.execute(textArea.val());
@@ -542,12 +542,14 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              lineNumbers: true,
              matchBrackets: true,
              readOnly: readOnly,
-             extraKeys: {'Shift-Enter': function (editor) {
-                 editor.save();
-                 inputLocation.find(".sagecell_evalButton").click();
-	             },
-    	      	"Tab": "indentMore", 
-        	  	"Shift-Tab": "indentLess"},
+             extraKeys: {
+                 "Shift-Enter": function (editor) {
+                     editor.save();
+                     inputLocation.find(".sagecell_evalButton").click();
+                 },
+                 "Tab": "indentMore", 
+                 "Shift-Tab": "indentLess"
+             },
              onKeyEvent: function (editor, event) {
                  editor.save();
             }});
