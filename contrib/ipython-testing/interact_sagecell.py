@@ -125,7 +125,7 @@ def interact_func(session, pub_socket):
         The two ways can also be combined::
 
             @interact([name1, (name2, control2)])
-            def f(name3, name4=control4, name5=control5):
+            def f(name3, name4=control4, name5=control5, **kwargs):
                 ...
 
         In each example, ``name1``, with no associated control,
@@ -146,17 +146,17 @@ def interact_func(session, pub_socket):
                 if isinstance(name, str):
                     controls[i]=(name, None)
                 elif not isinstance(name[0], str):
-                    raise ValueError("interact control must have a string name, but %s isn't a string"%(name[0],))
-        listed_controls = [c[0] for c in controls]
+                    raise ValueError("interact control must have a string name, but %r isn't a string"%(name[0],))
+        names = {c[0] for c in controls}
 
         import inspect
         (args, varargs, varkw, defaults) = inspect.getargspec(f)
+        if len(names) != len(controls) or any(a in names for a in args):
+            raise ValueError("duplicate argument in interact definition")
         if defaults is None:
             defaults=[]
         n=len(args)-len(defaults)
-
-        controls=zip(args,[None]*n+list(defaults))+controls
-
+        controls = zip(args, [None] * n + list(defaults)) + controls
         names=[n for n,_ in controls]
         controls=[automatic_control(c, var=n) for n,c in controls]
         nameset = set(names)
@@ -235,10 +235,6 @@ def interact_func(session, pub_socket):
         sys._sage_.kernel_timeout = float("inf")
         def adapted_f(control_vals):
             with session_metadata({'interact_id': interact_id}):
-                for c in listed_controls:
-                    if c in control_vals:
-                        f.func_globals[c] = control_vals[c]
-                        del control_vals[c]
                 returned=f(**control_vals)
             return returned
         # update global __interacts
