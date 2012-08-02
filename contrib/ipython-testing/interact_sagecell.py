@@ -114,8 +114,7 @@ def interact_func(session, pub_socket):
         The decorator can be used in several ways::
 
             @interact([name1, (name2, control2), (name3, control3)])
-            def f(name1, **kwargs):
-                print name1, kwargs["name2"], kwargs["name3"]
+            def f(**kwargs):
                 ...
 
             @interact
@@ -147,19 +146,17 @@ def interact_func(session, pub_socket):
                 if isinstance(name, str):
                     controls[i]=(name, None)
                 elif not isinstance(name[0], str):
-                    raise ValueError("interact control must have a string name, but %s isn't a string"%(name[0],))
+                    raise ValueError("interact control must have a string name, but %r isn't a string"%(name[0],))
         names = {c[0] for c in controls}
 
         import inspect
         (args, varargs, varkw, defaults) = inspect.getargspec(f)
+        if len(names) != len(controls) or any(a in names for a in args):
+            raise ValueError("duplicate argument in interact definition")
         if defaults is None:
             defaults=[]
         n=len(args)-len(defaults)
-
-        arg_controls = zip(args, [None] * n + list(defaults))
-        arg_controls = [(k, v) for k, v in arg_controls if k not in names]
-        controls += arg_controls
-
+        controls = zip(args, [None] * n + list(defaults)) + controls
         names=[n for n,_ in controls]
         controls=[automatic_control(c, var=n) for n,c in controls]
         nameset = set(names)
