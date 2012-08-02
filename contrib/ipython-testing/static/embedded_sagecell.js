@@ -115,6 +115,16 @@ sagecell.makeSagecell = function (args) {
     if (args.inputLocation === undefined) {
         throw "Must specify an inputLocation!";
     }
+    var input = $(args.inputLocation);
+    if (input.length > 1 && args.outputLocation === undefined) {
+        var r = [];
+        for (var i = 0; i < input.length; i++) {
+            var a = $.extend({}, args);
+            a.inputLocation = input[i];
+            r.push(sagecell.makeSagecell(a));
+        }
+        return r;
+    }
     if (args.outputLocation === undefined) {
         args.outputLocation = args.inputLocation;
     }
@@ -207,6 +217,8 @@ sagecell.makeSagecell = function (args) {
                                 "out": {"output": true,       "messages": true,
                                         "sessionFiles": true, "permalink": true}};
                 var hidden_out = [];
+                var out_class = "output_" + IPython.utils.uuid();
+                outputLocation.addClass(out_class);
                 for (var i = 0, i_max = hide.length; i < i_max; i++) {
                     if (hide[i] in hideable["in"]) {
                         inputLocation.find(".sagecell_"+hide[i]).css("display", "none");
@@ -216,7 +228,7 @@ sagecell.makeSagecell = function (args) {
                             hideAdvanced[hide[i]] = true;
                         }
                     } else if (hide[i] in hideable["out"]) {
-                        hidden_out.push(settings.outputLocation + " .sagecell_" + hide[i]);
+                        hidden_out.push("." + out_class + " .sagecell_" + hide[i]);
                     }
                 }
                 if (hideAdvanced.files && hideAdvanced.sageMode) {
