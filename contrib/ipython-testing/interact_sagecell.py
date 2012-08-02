@@ -114,7 +114,8 @@ def interact_func(session, pub_socket):
         The decorator can be used in several ways::
 
             @interact([name1, (name2, control2), (name3, control3)])
-            def f(**kwargs):
+            def f(name1, **kwargs):
+                print name1, kwargs["name2"], kwargs["name3"]
                 ...
 
             @interact
@@ -125,7 +126,7 @@ def interact_func(session, pub_socket):
         The two ways can also be combined::
 
             @interact([name1, (name2, control2)])
-            def f(name3, name4=control4, name5=control5):
+            def f(name3, name4=control4, name5=control5, **kwargs):
                 ...
 
         In each example, ``name1``, with no associated control,
@@ -147,7 +148,7 @@ def interact_func(session, pub_socket):
                     controls[i]=(name, None)
                 elif not isinstance(name[0], str):
                     raise ValueError("interact control must have a string name, but %s isn't a string"%(name[0],))
-        listed_controls = [c[0] for c in controls]
+        names = {c[0] for c in controls}
 
         import inspect
         (args, varargs, varkw, defaults) = inspect.getargspec(f)
@@ -155,7 +156,9 @@ def interact_func(session, pub_socket):
             defaults=[]
         n=len(args)-len(defaults)
 
-        controls=zip(args,[None]*n+list(defaults))+controls
+        arg_controls = zip(args, [None] * n + list(defaults))
+        arg_controls = [(k, v) for k, v in arg_controls if k not in names]
+        controls += arg_controls
 
         names=[n for n,_ in controls]
         controls=[automatic_control(c, var=n) for n,c in controls]
@@ -235,10 +238,6 @@ def interact_func(session, pub_socket):
         sys._sage_.kernel_timeout = float("inf")
         def adapted_f(control_vals):
             with session_metadata({'interact_id': interact_id}):
-                for c in listed_controls:
-                    if c in control_vals:
-                        f.func_globals[c] = control_vals[c]
-                        del control_vals[c]
                 returned=f(**control_vals)
             return returned
         # update global __interacts
