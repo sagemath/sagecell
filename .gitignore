@@ -1,6 +1,7 @@
 *.pyc
 *~
 doc/_build/*
+tests/multimechanize/results/
 static/jmol
 config.py
 
