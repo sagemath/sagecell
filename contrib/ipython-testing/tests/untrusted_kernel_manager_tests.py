@@ -3,14 +3,14 @@ import untrusted_kernel_manager
 from misc import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater, assert_len, assert_uuid, capture_output, Config
 
 def test_init():
-    umkm = untrusted_kernel_manager.UntrustedMultiKernelManager("testing.log", update_function=test_init)
+    umkm = untrusted_kernel_manager.UntrustedMultiKernelManager("testing.log", '127.0.0.1', update_function=test_init)
     assert_len(umkm._kernels, 0)
     assert_equal(umkm.filename, "testing.log")
     assert_is(hasattr(umkm, "fkm"), True)
 
 class TestUntrustedMultiKernelManager(object):
     def setup(self):
-        self.a = untrusted_kernel_manager.UntrustedMultiKernelManager("/dev/null")
+        self.a = untrusted_kernel_manager.UntrustedMultiKernelManager("/dev/null", '127.0.0.1')
     def teardown(self):
         for i in list(self.a._kernels):
             self.a.kill_kernel(i)
