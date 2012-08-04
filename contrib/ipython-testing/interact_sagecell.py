@@ -125,7 +125,7 @@ def interact_func(session, pub_socket):
         The two ways can also be combined::
 
             @interact([name1, (name2, control2)])
-            def f(name3, name4=control4, name5=control5):
+            def f(name3, name4=control4, name5=control5, **kwargs):
                 ...
 
         In each example, ``name1``, with no associated control,
@@ -146,17 +146,17 @@ def interact_func(session, pub_socket):
                 if isinstance(name, str):
                     controls[i]=(name, None)
                 elif not isinstance(name[0], str):
-                    raise ValueError("interact control must have a string name, but %s isn't a string"%(name[0],))
-        listed_controls = [c[0] for c in controls]
+                    raise ValueError("interact control must have a string name, but %r isn't a string"%(name[0],))
+        names = {c[0] for c in controls}
 
         import inspect
         (args, varargs, varkw, defaults) = inspect.getargspec(f)
+        if len(names) != len(controls) or any(a in names for a in args):
+            raise ValueError("duplicate argument in interact definition")
         if defaults is None:
             defaults=[]
         n=len(args)-len(defaults)
-
-        controls=zip(args,[None]*n+list(defaults))+controls
-
+        controls = zip(args, [None] * n + list(defaults)) + controls
         names=[n for n,_ in controls]
         controls=[automatic_control(c, var=n) for n,c in controls]
         nameset = set(names)
@@ -206,53 +206,35 @@ def interact_func(session, pub_socket):
                             raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
                 else:
                     raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
-                if isinstance(value[0], list):
-                    if ["*"] in value:
-                        value = [[n] for n in names]
-                    elif set(flatten(value))-nameset:
-                        raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
-                    for varlist in value:
-                        for var in varlist:
-                            if var in previous_vars:
-                                error_vars.append(var);
-                        if error_vars:
-                            raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
-                        previous_vars.extend(varlist)
-                    sanitized_layout[key] = value
-
-                else:
-                    if "*" in value:
-                        value = [n for n in names]
-                    elif set(value)-nameset:
-                        raise ValueError("Layout variables %s are not interact variables."%repr(list(set(value)-nameset)))
-                    for var in value:
+                if not isinstance(value[0], (list, tuple)):
+                    value = [value]
+            
+                if ["*"] in value:
+                    value = [[n] for n in names]
+                elif set(flatten(value))-nameset:
+                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
+                for varlist in value:
+                    for var in varlist:
                         if var in previous_vars:
                             error_vars.append(var);
-                
                     if error_vars:
                         raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
-                    previous_vars.extend(value)
-                    sanitized_layout[key] = value
-
+                    previous_vars.extend(varlist)
+                sanitized_layout[key] = value
                 layout = sanitized_layout
         else:
-            layout["top_center"] = [n for n in names]
+            layout["top_center"] = [[n] for n in names]
 
         interact_id=str(uuid.uuid4())
-        content = {"msg_type": "interact_prepare",
-                   "content": {"controls": dict(zip(names, (control.message() for control in controls))),
-                               "new_interact_id": interact_id,
-                               "layout": layout,
-                               "update": update}}
+        msg = {"application/sage-interact": {"new_interact_id": interact_id,
+                                             "controls": dict(zip(names, (control.message() for control in controls))),
+                                             "layout": layout,
+                                             "update": update},
+               "text/plain": "Sage Interact"}
+        sys._sage_.display_message(msg)
         sys._sage_.kernel_timeout = float("inf")
-        # we need a better way of getting the parent header...
-        session.send(pub_socket, 'extension', content=content, parent=sys.stdout.parent_header)
         def adapted_f(control_vals):
             with session_metadata({'interact_id': interact_id}):
-                for c in listed_controls:
-                    if c in control_vals:
-                        f.func_globals[c] = control_vals[c]
-                        del control_vals[c]
                 returned=f(**control_vals)
             return returned
         # update global __interacts
@@ -791,7 +773,6 @@ class MultiSlider(InteractControl):
                           'subtype':self.slider_type,
                           'display_values':self.display_values,
                           'sliders':self.sliders,
-                          'label':self.label,
                           'range':self.interval,
                           'step':self.stepsize,
                           'raw':True,
@@ -1086,18 +1067,20 @@ def automatic_control(control, var=None):
     if var=="auto_update" and control is False:
         return UpdateButton()
     
-    # Checks for interact controls that are verbosely defined
-    if isinstance(control, InteractControl):
-        return control
-    
     # Checks for labels and control values
     for _ in range(2):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
             label, control = control
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
+            # TODO: default_value isn't used effectively below in all instances 
             default_value, control = control
 
-    if isinstance(control, basestring):
+    # Checks for interact controls that are verbosely defined
+    if isinstance(control, InteractControl):
+        C = control
+        if label:
+            C.label = label
+    elif isinstance(control, basestring):
         C = InputBox(default = control, label = label, evaluate=False)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)

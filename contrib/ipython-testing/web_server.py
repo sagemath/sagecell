@@ -29,26 +29,26 @@ class SageCellServer(tornado.web.Application):
         handlers_list = [
             (r"/", handlers.RootHandler),
             (r"/kernel", handlers.KernelHandler),
-            (r"/embedded_sagecell.js", handlers.EmbeddedHandler),
+            (r"/embedded_sagecell.js", tornado.web.RedirectHandler, {"url":"/static/embedded_sagecell.js"}),
             (r"/sagecell.html", handlers.SageCellHandler),
             (r"/kernel/%s/iopub" % _kernel_id_regex, handlers.IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
+            (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": "/tmp/sagecell/"}),
             (r"/permalink", handlers.PermalinkHandler),
-            # (r"/service", handlers.ServiceHandler),
+            (r"/service", handlers.ServiceHandler),
             ] + handlers.KernelRouter.urls
         settings = dict(
-            template_path = os.path.join(os.path.dirname(__file__), "templates"),
-            static_path = os.path.join(os.path.dirname(__file__), "static"),
+            template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),
+            static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
             static_handler_class = handlers.StaticHandler
             )
-
         self.config = misc.Config()
 
         initial_comps = self.config.get_config("computers")
         default_comp = self.config.get_default_config("_default_config")
         kernel_timeout = self.config.get_config("max_kernel_timeout")
 
-        self.km = TMKM(computers = initial_comps, default_computer_config = default_comp, kernel_timeout = kernel_timeout)
+        self.km = TMKM(computers=initial_comps, default_computer_config=default_comp, kernel_timeout=kernel_timeout)
         self.db = DB(misc.get_db_file(self.config))
         self.ioloop = ioloop.IOLoop.instance()
 

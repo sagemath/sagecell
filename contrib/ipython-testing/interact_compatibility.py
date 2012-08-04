@@ -39,7 +39,7 @@ def __old_make_values_list(vmin, vmax, step_size):
 
         #Compute list of values
         num_steps = int(math.ceil((vmax-vmin)/float(step_size)))
-        if num_steps <= 2:
+        if num_steps <= 1:
             vals = [vmin, vmax]
         else:
             vals = srange(vmin, vmax, step_size, include_endpoint=True)
@@ -503,4 +503,4 @@ def text_control(value=""):
 imports = {"slider": slider, "range_slider": range_slider,
            "input_box": input_box, "color_selector": color_selector,
            "selector": selector, "input_grid": input_grid,
-           "text_control": text_control}
+           "text_control": text_control, "checkbox": checkbox}

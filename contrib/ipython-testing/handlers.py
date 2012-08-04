@@ -1,4 +1,4 @@
-import time, string, urllib, zlib, base64, uuid, json
+import time, string, urllib, zlib, base64, uuid, json, os.path
 
 import tornado.web
 import tornado.websocket
@@ -7,6 +7,7 @@ from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
+from misc import json_default
 
 class RootHandler(tornado.web.RequestHandler):
     """
@@ -42,7 +43,6 @@ class RootHandler(tornado.web.RequestHandler):
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
                 z += "=" * ((4 - (len(z) % 4)) % 4)
-                print z
                 options["code"] = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
                 options["code"] = "# Error decompressing code %s"%e
@@ -57,7 +57,7 @@ class RootHandler(tornado.web.RequestHandler):
             if isinstance(options["code"], unicode):
                 options["code"] = options["code"].encode("utf8")
             options["code"] = urllib.quote(options["code"])
-            options["autoeval"] = False if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else True
+            options["autoeval"] = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
         else:
             options["code"] = None
 
@@ -88,7 +88,6 @@ class KernelHandler(tornado.web.RequestHandler):
         ws_url = "%s://%s/" % (proto, host)
         km = self.application.km
         kernel_id = km.new_session()
-        print "kernel started with id ::: %s"%kernel_id
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
@@ -97,6 +96,7 @@ class KernelHandler(tornado.web.RequestHandler):
             self.set_header("Content-Type", "text/html")
         self.write(data)
         self.finish()
+    get = post
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
@@ -119,15 +119,10 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
 
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
-class EmbeddedHandler(tornado.web.RequestHandler):
-    """Handler to redirect ``/embedded_sagecell.js`` to ``/static/embedded_sagecell.js``"""
-    def get(self):
-        self.redirect("/static/embedded_sagecell.js", True);
-
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 
-    with open("templates/sagecell.html") as f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "sagecell.html")) as f:
         sagecell_html = f.read()
         sagecell_json = json.dumps(sagecell_html)
 
@@ -154,20 +149,23 @@ class PermalinkHandler(tornado.web.RequestHandler):
     with the format ``<root_url>?q=<id>``.
     """
     def post(self):
-        """
-        """
-
         args = self.request.arguments
-
-        retval = {"permalink": None}
+        retval = {"zip": None, "query": None}
         if "message" in args:
-            db = self.application.db
             try:
                 message = jsonapi.loads("".join(args["message"]))
                 if message["header"]["msg_type"] == "execute_request":
-                    retval["permalink"] = db.new_exec_msg(message)
+                    import zlib, base64
+                    retval["zip"] = base64.urlsafe_b64encode(zlib.compress(message["content"]["code"].encode('utf8')))
+                    db = self.application.db
+                    retval["query"] = db.new_exec_msg(message)
             except:
                 pass
+        if self.request.headers["Accept"] == "application/json":
+            self.set_header("Access-Control-Allow-Origin", "*");
+        else:
+            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
+            self.set_header("Content-Type", "text/html")
         self.write(retval)
         self.finish()
 
@@ -178,43 +176,42 @@ class StaticHandler(tornado.web.StaticFileHandler):
 
 class ServiceHandler(tornado.web.RequestHandler):
     """
-    Implements a blocking web service to execute a single
-    computation the server.
+    Implements a blocking (to the client) web service to execute a single
+    computation the server.  This should be non-blocking to Tornado.
 
-    The code to be executed can be specified using the
-    URL format ``<root_url>/service?code=<code>``.
+    The code to be executed is given in the code request parameter.
 
     This handler is currently not production-ready.
     """
+    @tornado.web.asynchronous
     def post(self):
-        retval = {"success": False,
-                  "output": ""}
-        args = self.request.arguments
-
-        if "code" in args:
-            code = "".join(args["code"])
-
-            default_timeout = 30 # seconds
-            poll_interval = 0.1 # seconds
-
+        default_timeout = 30 # seconds
+        code = "".join(self.get_arguments('code', strip=False))
+        if code:
             km = self.application.km
-            kernel_id = km.new_session()
+            self.kernel_id = km.new_session()
 
-            shell_messages = []
-            iopub_messages = []
+            self.shell_handler = ShellServiceHandler(self.application)
+            self.iopub_handler = IOPubServiceHandler(self.application)
+            
+            self.shell_handler.open(self.kernel_id)
+            self.iopub_handler.open(self.kernel_id)
 
-            shell_handler = ShellServiceHandler(self.application)
-            iopub_handler = IOPubServiceHandler(self.application)
-            
-            shell_handler.open(kernel_id, shell_messages)
-            iopub_handler.open(kernel_id, iopub_messages)
-            
-            msg_id = str(uuid.uuid4())
+            loop = ioloop.IOLoop.instance()
+
+            self.success = False
+            def done(msg):
+                if msg["msg_type"] == "execute_reply":
+                    self.success = msg["content"]["status"] == "ok"
+                    loop.remove_timeout(self.timeout_request)
+                    loop.add_callback(self.finish_request)
+            self.shell_handler.msg_from_kernel_callbacks.append(done)
+            self.timeout_request = loop.add_timeout(time.time()+default_timeout, self.finish_request)
             
             exec_message = {"parent_header": {},
-                            "header": {"msg_id": msg_id,
+                            "header": {"msg_id": str(uuid.uuid4()),
                                        "username": "",
-                                       "session": kernel_id,
+                                       "session": self.kernel_id,
                                        "msg_type": "execute_request",
                                        },
                             "content": {"code": code,
@@ -223,40 +220,27 @@ class ServiceHandler(tornado.web.RequestHandler):
                                         "user_expressions": {},
                                         "allow_stdin": False,
                                         },
+                            "metadata": {}
                             }
             
-            shell_handler.on_message(jsonapi.dumps(exec_message))
-            
-            end_time = time.time()+default_timeout
+            self.shell_handler.on_message(jsonapi.dumps(exec_message))
+        
+    def finish_request(self):
+        self.shell_handler.shell_stream.flush()
+        self.iopub_handler.iopub_stream.flush()
+        try: # in case kernel has already been killed
+            self.application.km.end_session(self.kernel_id)
+        except:
+            pass
 
-            done = False
-            while not done and time.time() < end_time:
-                shell_handler.shell_stream.flush()
-                iopub_handler.iopub_stream.flush()
-                
-                for msg_string in shell_messages:
-                    msg = jsonapi.loads(msg_string)
-                    msg_type = msg.get("msg_type")
-                    content = msg["content"]
-                    if msg_type == "execute_reply":
-                        if content["status"] == "ok":
-                            retval["success"] = True
-                        done = True
-                        break
-
-                time.sleep(poll_interval)
-
-            for msg_string in iopub_messages:
-                msg = jsonapi.loads(msg_string)
-                msg_type = msg.get("msg_type")
-                content = msg["content"]
-                
-                if msg_type == "stream" and content["name"] == "stdout":
-                    retval["output"] += content["data"]
+        retval = self.iopub_handler.streams
+        retval.update(success=self.success)
         self.set_header("Access-Control-Allow-Origin", "*")
         self.write(retval)
         self.finish()
-
+        
+    get = post
+    
 
 class ZMQStreamHandler(object):
     """
@@ -271,54 +255,32 @@ class ZMQStreamHandler(object):
         self.kernel_id = kernel_id
         self.session = self.km._sessions[self.kernel_id]
         self.kernel_timeout = self.km.kernel_timeout
+        self.msg_from_kernel_callbacks = []
+        self.msg_to_kernel_callbacks = []
 
-    def _reserialize_reply(self, msg_list):
+    def _unserialize_reply(self, msg_list):
         """
         Converts a multipart list of received messages into
         one coherent JSON message.
         """
         idents, msg_list = self.session.feed_identities(msg_list)
-        msg = self.session.unserialize(msg_list)
+        return self.session.unserialize(msg_list)
 
-        try:
-            msg["header"].pop("date")
-        except KeyError:
-            pass
-        try:
-            msg["parent_header"].pop("date")
-        except KeyError:
-            pass
-        try:
-            msg["header"].pop("started")
-        except KeyError:
-            pass
-        msg.pop("buffers")
-
-        retval = jsonapi.dumps(msg)
-
-        if "execute_reply" == msg["msg_type"]:
-            timeout = msg["content"]["user_expressions"].get("timeout")
-
-            try:
-                timeout = float(timeout) # in case user manually puts in a string
-            # also handles the case where a KeyError is raised if no timeout is specified
-            except:
-                timeout = 0.0
-
-            if timeout > self.kernel_timeout:
-                timeout = self.kernel_timeout
-            if timeout <= 0.0: # kill the kernel before the heartbeat is able to
-                self.km.end_session(self.kernel_id)
-            else:
-                self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
-                self.km._kernels[self.kernel_id]["executing"] = False
-
-        return retval
+    def _json_msg(self, msg):
+        """
+        Converts a single message into a JSON string
+        """
+        # can't encode buffers, so let's get rid of them if they exist
+        msg.pop("buffers", None)
+        # json_default handles things like encoding dates
+        return jsonapi.dumps(msg, default=json_default)
 
     def _on_zmq_reply(self, msg_list):
         try:
-            message = self._reserialize_reply(msg_list)
-            self._output_message(message)
+            msg = self._unserialize_reply(msg_list)
+            for f in self.msg_from_kernel_callbacks:
+                f(msg)
+            self._output_message(msg)
         except:
             pass
     
@@ -331,19 +293,38 @@ class ShellHandler(ZMQStreamHandler):
     stream of an IPython kernel.
     """
     def open(self, kernel_id):
-        print "*"*10, " BEGIN SHELL HANDLER ", "*"*10
         super(ShellHandler, self).open(kernel_id)
         self.shell_stream = self.km.create_shell_stream(self.kernel_id)
         self.shell_stream.on_recv(self._on_zmq_reply)
-        print "*"*10, " END SHELL HANDLER ", "*"*10
+        self.msg_to_kernel_callbacks.append(self._request_timeout)
+        self.msg_from_kernel_callbacks.append(self._reset_timeout)
 
+    def _request_timeout(self, msg):
+        if msg["header"]["msg_type"] == "execute_request":
+            msg["content"]["user_expressions"].update(_sagecell_timeout="sys._sage_.kernel_timeout")
+
+    def _reset_timeout(self, msg):
+        if msg["msg_type"] == "execute_reply":
+            try:
+                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0))
+            except:
+                timeout = 0.0
+
+            if timeout > self.kernel_timeout:
+                timeout = self.kernel_timeout
+            if timeout <= 0.0: # kill the kernel before the heartbeat is able to
+                self.km.end_session(self.kernel_id)
+            else:
+                self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
+                self.km._kernels[self.kernel_id]["executing"] = False
+        
     def on_message(self, message):
         if self.km._kernels.get(self.kernel_id) is not None:
             msg = jsonapi.loads(message)
-            if "execute_request" == msg["header"]["msg_type"]:
-                msg["content"]["user_expressions"] = {"timeout": "sys._sage_.kernel_timeout"}
-                self.km._kernels[self.kernel_id]["executing"] = True
-                self.session.send(self.shell_stream, msg)
+            for f in self.msg_to_kernel_callbacks:
+                f(msg)
+            self.km._kernels[self.kernel_id]["executing"] = True
+            self.session.send(self.shell_stream, msg)
 
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():
@@ -359,8 +340,6 @@ class IOPubHandler(ZMQStreamHandler):
     stream fails.
     """
     def open(self, kernel_id):
-        print "*"*10, " BEGIN IOPUB HANDLER ", "*"*10
-
         super(IOPubHandler, self).open(kernel_id)
 
         self._kernel_alive = True
@@ -373,8 +352,6 @@ class IOPubHandler(ZMQStreamHandler):
 
         self.hb_stream = self.km.create_hb_stream(self.kernel_id)
         self.start_hb(self.kernel_died)
-
-        print "*"*10, " END IOPUB HANDLER ", "*"*10
 
     def on_message(self, msg):
         pass
@@ -404,7 +381,6 @@ class IOPubHandler(ZMQStreamHandler):
                         timeout = self.km._kernels[self.kernel_id]["timeout"]
 
                         if time.time() > timeout:
-                            print "Kernel %s timeout reached." %(self.kernel_id)
                             self._kernel_alive = False
                 except:
                     self._kernel_alive = False
@@ -458,43 +434,57 @@ class IOPubHandler(ZMQStreamHandler):
             self.application.km.end_session(self.kernel_id)
         except:
             pass
-        self._output_message(json.dumps(
-            {'header': {'msg_type': 'status'},
-             'parent_header': {},
-             'content': {'execution_state':'dead'}
-            }
-        ))
+        msg = {'header': {'msg_type': 'status'},
+               'parent_header': {},
+               'metadata': {},
+               'content': {'execution_state':'dead'}}
+        self._output_message(msg)
         self.on_close()
 
 class ShellServiceHandler(ShellHandler):
     def __init__(self, application):
         self.application = application
 
-    def open(self, kernel_id, output_list):
+    def open(self, kernel_id):
         super(ShellServiceHandler, self).open(kernel_id)
-        self.output_list = output_list
 
     def _output_message(self, message):
-        self.output_list.append(message)
+        pass
 
 class IOPubServiceHandler(IOPubHandler):
     def __init__(self, application):
         self.application = application
 
-    def open(self, kernel_id, output_list):
+    def open(self, kernel_id):
         super(IOPubServiceHandler, self).open(kernel_id)
-        self.output_list = output_list
+        from collections import defaultdict
+        self.streams = defaultdict(unicode)
 
-    def _output_message(self, message):
-        self.output_list.append(message)
+    def _output_message(self, msg):
+        if msg["msg_type"] == "stream":
+             self.streams[msg["content"]["name"]] = msg["content"]["data"]
 
 class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
-        self.write_message(message)
+        self.write_message(self._json_msg(message))
+    def allow_draft76(self):
+        """Allow draft 76, until browsers such as Safari update to RFC 6455.
+        
+        This has been disabled by default in tornado in release 2.2.0, and
+        support will be removed in later versions.
+        """
+        return True
 
 class IOPubWebHandler(IOPubHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
-        self.write_message(message)
+        self.write_message(self._json_msg(message))
+    def allow_draft76(self):
+        """Allow draft 76, until browsers such as Safari update to RFC 6455.
+        
+        This has been disabled by default in tornado in release 2.2.0, and
+        support will be removed in later versions.
+        """
+        return True
 
 class ShellSockJSHandler(ShellHandler):
     def __init__(self, kernel_id, callback, application):
@@ -503,7 +493,7 @@ class ShellSockJSHandler(ShellHandler):
         self.application = application
 
     def _output_message(self, message):
-        self.callback("%s/shell,%s" % (self.kernel_id, message))
+        self.callback("%s/shell,%s" % (self.kernel_id, self._json_msg(message)))
 
 class IOPubSockJSHandler(IOPubHandler):
     def __init__(self, kernel_id, callback, application):
@@ -512,4 +502,13 @@ class IOPubSockJSHandler(IOPubHandler):
         self.application = application
 
     def _output_message(self, message):
-        self.callback("%s/iopub,%s" % (self.kernel_id, message))
+        self.callback("%s/iopub,%s" % (self.kernel_id, self._json_msg(message)))
+
+class FileHandler(tornado.web.StaticFileHandler):
+    """
+    Files handler
+    
+    This takes in a filename and returns the file
+    """
+    def get(self, kernel_id, file_path):
+        super(FileHandler, self).get('%s/%s'%(kernel_id, file_path))

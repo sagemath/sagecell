@@ -1,21 +1,32 @@
 import uuid
 import os
 import signal
-import sys
 import resource
 from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
 import logging
 
+def makedirs(path):
+    import errno
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST:
+            pass
+        else: raise
+    
 class ForkingKernelManager(object):
     """ A class for managing multiple kernels and forking on the untrusted side. """
-    def __init__(self, filename, update_function=None):
+    def __init__(self, filename, ip, update_function=None):
         self.kernels = {}
+        self.ip = ip
         self.filename = filename
         self.update_function = update_function
 
-    def fork_kernel(self, config, pipe, resource_limits):
+        self.dir = '/tmp/sagecell'
+        makedirs(self.dir)
+    def fork_kernel(self, config, pipe, resource_limits, logfile):
         """ A function to be set as the target for the new kernel processes forked in ForkingKernelManager.start_kernel. This method forks and initializes a new kernel, uses the update_function to update the kernel's namespace, sets resource limits for the kernel, and sends kernel connection information through the Pipe object.
 
         :arg IPython.config.loader config: kernel configuration
@@ -24,7 +35,7 @@ class ForkingKernelManager(object):
         """
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
-        ka = IPKernelApp.instance(config=config)
+        ka = IPKernelApp.instance(config=config, ip=config["ip"])
         ka.initialize([])
         if self.update_function is not None:
             self.update_function(ka)
@@ -35,7 +46,7 @@ class ForkingKernelManager(object):
         pipe.close()
         ka.start()
 
-    def start_kernel(self, kernel_id=None, config=None, resource_limits=None):
+    def start_kernel(self, kernel_id=None, config=None, resource_limits=None, logfile = None):
         """ A function for starting new kernels by forking.
 
         :arg str kernel_id: the id of the kernel to be started. if no id is passed, a uuid will be generated
@@ -47,12 +58,21 @@ class ForkingKernelManager(object):
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
-            config = Config()
+            config = Config({"ip": self.ip})
         if resource_limits is None:
             resource_limits = {}
+        # TODO: the hist_file setting should be pushed up to receiver.py
+        config.HistoryManager.hist_file = ':memory:'
+
+        dir = os.path.join(self.dir, kernel_id)
+        os.mkdir(dir)
+        currdir = os.getcwd()
+        os.chdir(dir)
+
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits))
+        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
         proc.start()
+        os.chdir(currdir)
         connection = p.recv()
         p.close()
         self.kernels[kernel_id] = (proc, connection)
@@ -113,12 +133,12 @@ class ForkingKernelManager(object):
         return self.start_kernel(kernel_id, Config({"IPKernelApp": ports}))
 
 if __name__ == "__main__":
-    def f(x):
+    def f(a,b,c,d):
         return 1
     a = ForkingKernelManager("/dev/null", f)
     x = a.start_kernel()
     y = a.start_kernel()
     import time
-    time.sleep(3)
+    time.sleep(5)
     a.kill_kernel(x["kernel_id"])
     a.kill_kernel(y["kernel_id"])

@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1311809242 25200
 # Node ID f67d7039d959b56d5b611b5979375b95dbe69398
-# Parent 0124c1514017f9b6627fda6d3589295bfbfe1182
+# Parent 84146309e57d6297885074d05abe866e06fc1e36
 [mq]: show.patch
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
@@ -103,15 +103,15 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 @@ -2011,14 +2012,28 @@
              if not MathJax_okay:
                  break
-         if MathJax_okay:
--            print MathJax().eval(objects, mode=mode)  # put comma at end of line?
-+            mathjax_expr = str(MathJax().eval(objects, mode=mode))
+         if MathJax_okay:  # put comma at end of line below?
+-            print MathJax().eval(objects, mode=mode, combine_all=combine_all)
++            mathjax_expr = str(MathJax().eval(objects, mode=mode, combine_all=combine_all))
 +            if misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                mathexpr=mathjax_expr.replace('<html>','').replace('</html>','')
 +                import sys
 +                sys._sage_messages.message_queue.display({'text/html':mathexpr})
 +            else:
-+                print mathjax_expr  # put comma at end of line?
++                print mathjax_expr
          else:
              base_dir = os.path.abspath("")
              png_file = graphics_filename(ext='png')
@@ -153,7 +153,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1499,17 +1499,27 @@
+@@ -1705,17 +1705,27 @@
  
          # This option should not be passed on to save().
          linkmode = kwds.pop('linkmode', False)
@@ -186,7 +186,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
          else:
              kwds.setdefault('filename', sage.misc.misc.tmp_filename() + '.png')
              self.save(**kwds)
-@@ -2230,42 +2240,46 @@
+@@ -2534,42 +2544,47 @@
          options.update(kwds)
          dpi = options.pop('dpi')
          transparent = options.pop('transparent')
@@ -232,11 +232,13 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +
 +        if fig_tight is True:
 +            figure.savefig(filename, dpi=dpi, bbox_inches='tight',
-+                bbox_extra_artists=self.__bbox_extra_artists,
++                bbox_extra_artists=self._bbox_extra_artists,
 +                transparent=transparent, format=format)
++
          else:
 -            figure = self.matplotlib(**options)
--            # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension.
+-            # You can output in PNG, PS, EPS, PDF, or SVG format, depending
+-            # on the file extension.
 -            # matplotlib looks at the file extension to see what the renderer should be.
 -            # The default is FigureCanvasAgg for PNG's because this is by far the most
 -            # common type of files rendered, like in the notebook, for example.
@@ -251,18 +253,17 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 -
 -            if fig_tight is True:
 -                figure.savefig(filename, dpi=dpi, bbox_inches='tight',
--                    bbox_extra_artists=self.__bbox_extra_artists,
+-                    bbox_extra_artists=self._bbox_extra_artists,
 -                    transparent=transparent)
 -            else:
 -                figure.savefig(filename, dpi=dpi,
 -                           transparent=transparent)
--
 +            figure.savefig(filename, dpi=dpi,
 +                       transparent=transparent, format=format)
  
+ 
  class GraphicsArray(SageObject):
-     """
-@@ -2624,11 +2638,18 @@
+@@ -2929,11 +2944,18 @@
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
              return
@@ -287,7 +288,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -333,7 +333,6 @@
+@@ -343,7 +343,6 @@
  ## going to be used.
  
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)

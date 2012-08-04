@@ -58,6 +58,15 @@
     height: 200px;
 }
 
+.sagecell_output_elements {
+    margin-top: 0.5em;
+}
+
+.sagecell_permalink {
+    padding-right: 5px;
+    text-align: right;
+}
+
 .sagecell_sessionContainer {
     position: relative;
 }
@@ -80,19 +89,19 @@
 }
 
 .sagecell_poweredBy {
-    position: absolute;
-    right: 5px;
+    float: right;
+    padding-right: 5px;
     padding-top: 3px;
-    display:block;
     width: 18%;
     text-align: right;
     overflow: visible;
-    font-size: 12px;
+    font-size: 80%;
 }
 
 .sagecell_poweredBy img {
     vertical-align: -5px;
     border-style: none;
+    text-decoration: none;
 }
 
 .sagecell_spinner {
@@ -131,26 +140,31 @@
 }
 
 .sagecell_interactControls {
+	border-spacing: 0px 2px;
     width: auto;
 }
 
-.sagecell_interactControls .sagecell_labelcell {
+.sagecell_interactControls .sagecell_interactcontrollabelcell {
     text-align: right !important;
     padding-right: 0.5ex !important;
     padding-top: 0.6ex !important;
     padding-bottom: 0.6ex !important;
-
+    border-width: thin 0px thin thin;
+	border-style: solid;
+	border-color: transparent;
 }
 
-.sagecell_interactControls > tr > td:first-child {
-    border-left: 2px solid transparent;
+.sagecell_interactControls .sagecell_interactcontrolcell {
+    border-width: thin thin thin 0px;
+	border-style: solid;
+	border-color: transparent;
 }
 
-.sagecell_interactControls > tr.sagecell_dirtyControl > td:first-child {
-    border-left-color: red;
+.sagecell_interactControls > tr > td.sagecell_dirtyControl {
+    border-color: red;
 }
 
-.sagecell_commands {
+.sagecell_commands, .sagecell .ui-widget .sagecell_commands {
     width: 100%;
     height: 200px;
     border: 1px solid;
@@ -167,6 +181,15 @@
     float: right;
     margin: 2px;
     font-size: 80%;
+}
+
+.sagecell_editorToggle input {
+    vertical-align: middle;
+}
+
+.sagecell_editor div.ui-accordion-content.ui-helper-reset {
+    padding: 1em 0.5em;
+    font-size: 90.9%;
 }
 
 .sagecell_advancedFrame {
@@ -225,10 +248,10 @@
     content: "\2716";
 }
 
-.ansibold {font-weight: bold;}
-.ansiblack {color: black;}
-.ansired {color: red;}
-.ansiyellow {color: gold;}
-.ansiblue {color: blue;}
-.ansicyan {color: cyan;}
-.ansigrey {color: gray;}
+.sagecell .ansibold {font-weight: bold;}
+.sagecell .ansiblack {color: black;}
+.sagecell .ansired {color: red;}
+.sagecell .ansiyellow {color: gold;}
+.sagecell .ansiblue {color: blue;}
+.sagecell .ansicyan {color: cyan;}
+.sagecell .ansigrey {color: gray;}

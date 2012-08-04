@@ -24,7 +24,7 @@
 * 
 **************************************************************/
 
-sagecell.Session = function (outputDiv, hide) {
+sagecell.Session = function (outputDiv) {
     this.outputDiv = outputDiv;
     this.last_requests = {};
     this.sessionContinue = true;
@@ -35,6 +35,7 @@ sagecell.Session = function (outputDiv, hide) {
             callback(JSON.parse(data));
         });
     }
+    this.executed = false;
     this.opened = false;
     this.deferred_code = [];
     this.interacts = [];
@@ -46,12 +47,29 @@ sagecell.Session = function (outputDiv, hide) {
             }
         });
     }
+    /* Always use sockjs, until we can get websockets working reliably.
+     * Right now, if we have a very short computation (like 1+1), there is some sort of 
+     * race condition where the iopub handler does not get established before 
+     * the kernel is closed down.  This only manifests itself on a remote server, since presumably
+     * if you are running on a local server, the connection is established too quickly.
+     *
+     * Also, there are some bugs in, for example, Firefox and other issues that we don't want to have
+     * to work around, that sockjs already worked around.
+     */
+    /* 
+    // When we restore the websocket, things are messed up if window.WebSocket was undefined and window.MozWebSocket was.
     var old_ws = window.WebSocket || window.MozWebSocket;
     if (!old_ws) {
         window.WebSocket = sagecell.MultiSockJS;
     }
     this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
     window.WebSocket = old_ws;
+    */
+    var old_ws = window.WebSocket;
+    window.WebSocket = sagecell.MultiSockJS;
+    this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
+    window.WebSocket = old_ws;
+
     var that = this;
     this.kernel._kernel_started = function (json) {
         this.base_url = this.base_url.substr(sagecell.URLs.root.length);
@@ -70,6 +88,11 @@ sagecell.Session = function (outputDiv, hide) {
     var ce = sagecell.util.createElement;
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
+        	ce("div", {"class": "sagecell_permalink"}, [
+        		ce("a", {"class": "sagecell_permalink_zip"}, [document.createTextNode("Permalink")]),
+        		document.createTextNode(", "),
+        		ce("a", {"class": "sagecell_permalink_query"}, [document.createTextNode("Shortened Temporary Link")])
+        		]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
                         "alt": "Loading", "class": "sagecell_spinner"})
@@ -82,27 +105,24 @@ sagecell.Session = function (outputDiv, hide) {
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
-    $([IPython.events]).on("status_busy.Kernel", function (e, kernel_id) {
-        if (kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_busy.Kernel", function (e) {
+        if (e.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
         }
     });
-    $([IPython.events]).on("status_idle.Kernel", function (e, kernel_id) {
-        if (kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_idle.Kernel", function (e) {
+        if (e.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "none";
         }
     });
-    $([IPython.events]).on("status_dead.Kernel", function (e, kernel_id) {
-        if (kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_dead.Kernel", function (e) {
+        if (e.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
             $(that.output_blocks[null]).removeClass("sagecell_active");
         }
     });
-    if (hide) {
-        $(this.session_container).hide();
-    }
     this.replace_output = {};
     this.lock_output = false;
     this.files = {};
@@ -111,10 +131,25 @@ sagecell.Session = function (outputDiv, hide) {
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
-        var callbacks = {"output": $.proxy(this.handle_output, this)};
-        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false}));
+        var callbacks = {"output": $.proxy(this.handle_output, this), "execute_reply": $.proxy(this.handle_execute_reply, this)};
+        this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false,
+        	"user_expressions": {"_sagecell_files":"sys._sage_.new_files()"}}));
     } else {
         this.deferred_code.push(code);
+    }
+    if (!this.executed) {
+        this.executed = true;
+        var that = this;
+        sagecell.sendRequest("POST", sagecell.URLs.permalink,
+            {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
+            							"metadata": {},
+                                        "content": {"code": code}})},
+            function (data) {
+                that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
+                    .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
+                that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
+                    .attr("href", sagecell.URLs.root + "?z=" + JSON.parse(data).zip);
+            });
     }
 };
 
@@ -150,36 +185,78 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
     return out;
 };
 
-sagecell.Session.prototype.handle_output = function (msg_type, content, header) {
-	var block_id = null;
-	if (header.metadata !== undefined && header.metadata.interact_id !== undefined) {
-		block_id = header.metadata.interact_id;
-	}
+sagecell.Session.prototype.handle_execute_reply = function(msg) {
+    if(msg.status==="error") {
+	    this.output('<pre class="sagecell_pyerr"></pre>',null)
+	    	.html(IPython.utils.fixConsole(msg.traceback.join("\n")));
+/*	        .html(sagecell.functions.colorizeTB(msg.content.traceback
+	                                            .replace(/&/g,"&amp;")
+	                                            .replace(/</g,"&lt;")));
+	                                            */
+} 
+var payload = msg.payload[0];
+if (payload && payload.new_files){
+    var files = payload.new_files;
+	var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
+    var html="<div>\n";
+    for(var j = 0, j_max = files.length; j < j_max; j++) {
+        if (this.files[files[j]] !== undefined) {
+            this.files[files[j]]++;
+        } else {
+            this.files[files[j]] = 0;
+        }
+    }
+    var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
+    for (j in this.files) {
+        //TODO: escape filenames and id
+        html+='<a href="'+filepath+j+'?q='+this.files[j]+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
+    }
+    html+="</div>";
+    output_block.html(html).effect("pulsate", {times:1}, 500);
+    }
+}
+
+sagecell.Session.prototype.handle_output = function (msg_type, content, metadata) {
+	var block_id = metadata.interact_id || null;
 	// Handle each stream type.  This should probably be separated out into different functions.
-    if (msg_type === "stream") {
+	switch(msg_type) {
+		case "stream":
         var new_pre = !$(this.output_blocks[block_id]).children().last().hasClass("sagecell_" + content.name);
         var out = this.output("<pre class='sagecell_" + content.name + "'></pre>", block_id, new_pre);
         out.text(out.text() + content.data);
-    } else if (msg_type === "pyout") {
+        break;
+        
+		case "pyout":
         this.output('<pre class="sagecell_pyout"></pre>', block_id).text(content.data["text/plain"]);
-    } else if (msg_type === "pyerr") {
+		break;
+		
+		case "pyerr":
         this.output('<pre class="sagecell_pyerr"></pre>', block_id)
             .html(IPython.utils.fixConsole(content.traceback.join("\n")));
-    } else if (msg_type === "display_data") {
-        if (content.data["text/html"]) {
-            this.output("<div></div>", block_id).html(content.data["text/html"]);
+		break;
+		
+		case "display_data":
+		var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
+		if (content.data["application/sage-interact"]) {
+			this.interacts.push(new sagecell.InteractCell(this, content.data["application/sage-interact"], block_id));
+		} else if (content.data["text/html"]) {
+            var html = content.data['text/html'].replace(/cell:\/\//gi, filepath);
+            this.output("<div></div>", block_id).html(html);
+        } else if (content.data["text/image-filename"]) {
+        	this.output("<img src='"+filepath+content.data["text/image-filename"]+"'/>", block_id);
+        } else if (content.data["image/png"]) {
+        	this.output("<img src='data:image/png;base64,"+content.data["image/png"]+"'/>", block_id);
+        } else if(content.data['application/x-jmol']) {
+            console.log('making jmol applet');
+            jmolSetDocument(false);
+            this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+content.data['application/x-jmol']+'";\n script SCRIPT;\n'),block_id);            
         } else if (content.data["text/plain"]) {
             this.output("<pre></pre>", block_id).text(content.data["text/plain"]);
         }
-    } else if (msg_type === "extension") {
-        if (content.msg_type === "interact_prepare") {
-            this.interacts.push(new sagecell.InteractCell(this, content.content, block_id));
-        }
+		break;
     }
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
-    // TODO: this is really too much, as it typesets *all* of the session outputs
-    // TODO: the session object really should have it's own output DOM element
     var output = this.outputDiv.find(".sagecell_output").get(0);
     MathJax.Hub.Queue(["Typeset",MathJax.Hub, output]);
     MathJax.Hub.Queue([function () {$(output).find(".math").removeClass('math');}]);
@@ -279,25 +356,29 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             var table2 = ce("table", {"class": "sagecell_interactControls"});
             for (var i = 0; i < this.layout[loc].length; i++) {
                 var tr = ce("tr");
-                var id = this.interact_id + "_" + this.layout[loc][i];
-                var right = ce("td", {}, [
-                    this.controls[this.layout[loc][i]].rendered(id)
-                ]);
-                if (this.controls[this.layout[loc][i]].control.label !== "") {
-                    var left = ce("td", {"class": "sagecell_labelcell"}, [
-                        ce("label", {"for": id, "title": this.layout[loc][i]}, [
-                            document.createTextNode(this.controls[
-                                    this.layout[loc][i]].control.label ||
-                                    this.layout[loc][i])
-                        ])
-                    ]);
-                    tr.appendChild(left);
-                } else {
-                    right.setAttribute("colspan", "2");
-                }
-                tr.appendChild(right);
+                var row = this.layout[loc][i];
+				for (var j = 0; j < row.length; j++) {
+					var varname = this.layout[loc][i][j];
+					var varcontrol = this.controls[varname];
+	                var id = this.interact_id + "_" + varname;
+	                var right = ce("td", {"class": "sagecell_interactcontrolcell"}, [
+	                    varcontrol.rendered(id)
+	                ]);
+	                if (varcontrol.control.label !== "") {
+	                    var left = ce("td", {"class": "sagecell_interactcontrollabelcell"}, [
+	                        ce("label", {"for": id, "title": varname}, [
+	                            document.createTextNode(varcontrol.control.label || varname)
+	                        ])
+	                    ]);
+	                    tr.appendChild(left);
+	                    this.rows[varname] = [left, right];	                	
+	                } else {
+						right.setAttribute("colspan", "2");
+						this.rows[varname] = [right];
+	                }
+	                tr.appendChild(right);
+	            }
                 table2.appendChild(tr);
-                this.rows[this.layout[loc][i]] = tr;
             }
             cells[loc].appendChild(table2);
         }
@@ -356,7 +437,7 @@ sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.ButtonBar.prototype.rendered = function () {
     var ce = sagecell.util.createElement;
-    var table = ce("table");
+    var table = ce("table", {"style": "width: auto;"});
     var i = -1;
     this.buttons = $();
     var that = this;
@@ -457,7 +538,6 @@ sagecell.InteractData.ColorSelector.prototype.disable = function () {
 sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.HtmlBox.prototype.rendered = function () {
-    // TODO: replace "cell:" URIs in HTML with URLs for uploaded files
     this.div = document.createElement("div");
     $(this.div).html(this.control.value);
     return this.div;
@@ -648,7 +728,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
         return select;
     } else if (this.control.subtype === "radio" || this.control.subtype === "button") {
         this.changing = $();
-        var table = ce("table");
+        var table = ce("table", {"style": "width: auto;"});
         var i = -1;
         for (var row = 0; row < this.control.nrows; row++) {
             var tr = ce("tr");
@@ -931,45 +1011,6 @@ sagecell.MultiSockJS.prototype.send = function (msg) {
 sagecell.MultiSockJS.prototype.close = function () {
     delete sagecell.MultiSockJS.channels[this.prefix];
 }
-
-/* This function is copied from IPython's kernel.js
- * (https://github.com/ipython/ipython/blob/master/IPython/frontend/html/notebook/static/js/kernel.js)
- * and modified to allow messages of type 'extension' and pass the kernel_id
- * to the event handlers
- */
-IPython.Kernel.prototype._handle_iopub_reply = function (e) {
-    var reply = $.parseJSON(e.data);
-    var content = reply.content;
-    var msg_type = reply.header.msg_type;
-    var header = reply.header;
-    var callbacks = this.get_callbacks_for_msg(reply.parent_header.msg_id);
-    if (msg_type !== 'status' && callbacks === undefined) {
-        // Message not from one of this notebook's cells and there are no
-        // callbacks to handle it.
-        return;
-    }
-    var output_types = ['stream','display_data','pyout','pyerr','extension'];
-    if ($.inArray(msg_type, output_types) >= 0) {
-        var cb = callbacks['output'];
-        if (cb !== undefined) {
-            cb(msg_type, content, header);
-        }
-    } else if (msg_type === 'status') {
-        if (content.execution_state === 'busy') {
-            $([IPython.events]).trigger('status_busy.Kernel', this.kernel_id);
-        } else if (content.execution_state === 'idle') {
-            $([IPython.events]).trigger('status_idle.Kernel', this.kernel_id);
-        } else if (content.execution_state === 'dead') {
-            this.stop_channels();
-            $([IPython.events]).trigger('status_dead.Kernel', this.kernel_id);
-        };
-    } else if (msg_type === 'clear_output') {
-        var cb = callbacks['clear_output'];
-        if (cb !== undefined) {
-            cb(content, header);
-        }
-    };
-};
 
 // Initialize jmol
 // TODO: move to a better place

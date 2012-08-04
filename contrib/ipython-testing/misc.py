@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from nose.tools import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater
 import sys
 import re
-
+from datetime import datetime
 class Config(object):
     """
     Config file wrapper / handler class
@@ -176,49 +176,33 @@ def decorator_defaults(func):
     return my_wrap
 
 @contextmanager
-def stream_metadata(metadata):
-    streams = {'stdout': sys.stdout, 'stderr': sys.stderr}
-    old_metadata={}
-    for k,stream in streams.items():
-        # flush out messages that need old metadata before we update the 
-        # metadata dictionary (since update actually modifies the dictionary)
-        stream.flush()
-        new_metadata = stream.metadata
-        old_metadata[k] = new_metadata.copy()
-        new_metadata.update(metadata)
-    try:
-        yield None
-    finally:
-        for k,stream in streams.items():
-            # set_metadata does the flush for us
-            stream.set_metadata(old_metadata[k])
-
-@contextmanager
 def session_metadata(metadata):
     # flush any messages waiting in buffers
     sys.stdout.flush()
     sys.stderr.flush()
     
     session = sys.stdout.session
-    old_metadata = session.subheader.get('metadata',None)
-    new_metadata = old_metadata.copy() if old_metadata is not None else {}
+    old_metadata = session.metadata
+    new_metadata = old_metadata.copy()
     new_metadata.update(metadata)
-    session.subheader['metadata'] = new_metadata
+    session.metadata = new_metadata
     try:
         yield None
     finally:
         sys.stdout.flush()
         sys.stderr.flush()
-        if old_metadata is None:
-            del session.subheader['metadata']
-        else:
-            session.subheader['metadata'] = old_metadata
+        session.metadata = old_metadata
 
 def display_message(data):
     session = sys.stdout.session
     content = {'data': data, 'source': 'sagecell'}
     session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header)
 
+def json_default(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    else:
+        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
 ##########################################
 ## Unit Testing Misc Functions
 ##########################################
