@@ -65,7 +65,12 @@ class ForkingKernelManager(object):
         config.HistoryManager.hist_file = ':memory:'
 
         dir = os.path.join(self.dir, kernel_id)
-        os.mkdir(dir)
+        try:
+            os.mkdir(dir)
+        except OSError as e:
+            # TODO: take care of race conditions and other problems with us
+            # using an 'unclean' directory
+            pass
         currdir = os.getcwd()
         os.chdir(dir)
 
@@ -130,7 +135,7 @@ class ForkingKernelManager(object):
         """
         ports = self.kernels[kernel_id][1]
         self.kill_kernel(kernel_id)
-        return self.start_kernel(kernel_id, Config({"IPKernelApp": ports}))
+        return self.start_kernel(kernel_id, Config({"IPKernelApp": ports, "ip": self.ip}))
 
 if __name__ == "__main__":
     def f(a,b,c,d):

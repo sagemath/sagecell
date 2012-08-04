@@ -4,19 +4,17 @@ from multiprocessing import Process, Pipe
 from IPython.config.loader import Config
 
 def test_init():
-    fkm = forking_kernel_manager.ForkingKernelManager("testing.log", update_function=test_init)
+    fkm = forking_kernel_manager.ForkingKernelManager("testing.log", '127.0.0.1', update_function=test_init)
     assert_len(fkm.kernels, 0)
     assert_equal(fkm.filename, "testing.log")
     assert_in("function test_init at ", repr(fkm.update_function))
 
 class TestForkingKernelManager(object):
     def setup(self):
-        self.a = forking_kernel_manager.ForkingKernelManager("/dev/null", update_function=None)
-
+        self.a = forking_kernel_manager.ForkingKernelManager("/dev/null", '127.0.0.1', update_function=None)
     def teardown(self):
         for i in self.a.kernels.keys():
             self.a.kernels[i][0].terminate()
-
     def test_start_kernel_success(self):
         y = self.a.start_kernel()
 
