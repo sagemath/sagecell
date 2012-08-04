@@ -82,25 +82,14 @@ class TrustedMultiKernelManager(object):
         # Another option would be to have a short-lived ZMQ socket bound on the trusted
         # side and have the untrusted side connect to that and send the port
         output = ""
-        start = time.time()
-        while output.count("\n") < 2:
-            if stdout_channel.recv_ready():
-                output += stdout_channel.recv(1024)
-                if output.count("\n") == 0 and time.time() - start > 10.0:
-                    return None
+        stdout_channel.settimeout(2)
+        polls = 0
+        while output.count("\n")!=2:
+            output += stdout_channel.recv(1024)
+            polls+= 1
+            if polls>10:
+                return None
         return int(output.split("\n")[0])
-#        stdout_channel.settimeout(None)
-#        while not port:
-#            port = stdout_channel.recv(1024)
-#            print "Got port: %r"%port
-#            if port == '':
-#                break;
-#            import time
-#            time.sleep(1)
-#        if port == '':
-#            return None
-#        else:
-#            return port
 
     def add_computer(self, config):
         """ Adds a tracked computer.

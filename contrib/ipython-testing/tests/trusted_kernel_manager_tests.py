@@ -112,7 +112,7 @@ class TestTrustedMultiKernelManager(object):
         out = out[0]
         assert_is_not_none(x)
         assert_len(x, 5)
-        assert_regexp_matches(out, self.executing_re)
+        #assert_regexp_matches(out, self.executing_re)
 
     def test_add_computer_success(self): # depends on _setup_ssh_connection, _ssh_untrusted
         new_config = self.default_comp_config.copy()
@@ -128,8 +128,8 @@ class TestTrustedMultiKernelManager(object):
 
         assert_in("ssh", self.a._clients[x])
 
-        assert_regexp_matches(out[0], self.executing_re)
-        assert_regexp_matches(out[1], r'ZMQ Connection with computer [a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12} at port \d+ established')
+        #assert_regexp_matches(out[0], self.executing_re)
+        assert_regexp_matches(out[0], r'ZMQ Connection with computer [a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12} at port \d+ established')
 
     def test_setup_ssh_connection_success(self):
         x = self.a._setup_ssh_connection("localhost", username=None)
