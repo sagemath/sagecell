@@ -100,19 +100,19 @@ class KernelHandler(tornado.web.RequestHandler):
         logger.info("Starting session: %s"%timer)
         kernel_id = yield gen.Task(km.new_session_async)
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
-        if self.request.headers["Accept"] == "application/json":
+        if "frame" not in self.request.headers:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
             data = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
         self.write(data)
         self.finish()
-    get = post
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
         self.session = session
         super(KernelConnection, self).__init__(session)
+
     def on_open(self, request):
         self.channels = {}
 
@@ -127,6 +127,11 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
             self.channels[kernel]["shell"].open(kernel)
             self.channels[kernel]["iopub"].open(kernel)
         self.channels[kernel][channel].on_message(message)
+
+    def on_close(self):
+        for channel in self.channels.itervalues():
+            channel["shell"].on_close()
+            channel["iopub"].on_close()
 
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
@@ -172,7 +177,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
                     retval["query"] = db.new_exec_msg(message)
             except:
                 pass
-        if self.request.headers["Accept"] == "application/json":
+        if "frame" not in self.request.headers:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
             retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
@@ -252,9 +257,6 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.write(retval)
         self.finish()
-        
-    get = post
-    
 
 class ZMQStreamHandler(object):
     """
@@ -301,6 +303,9 @@ class ZMQStreamHandler(object):
     def _output_message(self, message):
         raise NotImplementedError
 
+    def on_close(self):
+        self.km.end_session(self.kernel_id)
+
 class ShellHandler(ZMQStreamHandler):
     """
     This handles the websocket-ZMQ bridge for the shell
@@ -344,6 +349,7 @@ class ShellHandler(ZMQStreamHandler):
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():
             self.shell_stream.close()
+        super(ShellHandler, self).on_close()
 
 class IOPubHandler(ZMQStreamHandler):
     """
@@ -377,6 +383,7 @@ class IOPubHandler(ZMQStreamHandler):
             self.iopub_stream.close()
         if self.hb_stream is not None and not self.hb_stream.closed():
             self.stop_hb()
+        super(IOPubHandler, self).on_close()
 
     def start_hb(self, callback):
         """

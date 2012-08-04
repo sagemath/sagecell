@@ -288,6 +288,8 @@ class TrustedMultiKernelManager(object):
 
         :arg str kernel_id: the id of the kernel you want to kill
         """
+        if not kernel_id in self._kernels:
+            return
         comp_id = self._kernels[kernel_id]["comp_id"]
         def cb(reply):
             if (reply["type"] == "error"):
