@@ -34,6 +34,7 @@ class TestTrustedMultiKernelManager(object):
     default_comp_config = {"host": "localhost",
                           "username": None,
                           "python": sage + " -python",
+                          "location": os.getcwd(),
                           "log_file": 'test.log',
                           "max": 15}
 
@@ -111,7 +112,8 @@ class TestTrustedMultiKernelManager(object):
             x = self.a._ssh_untrusted(self.default_comp_config, client)
         out = out[0]
         assert_is_not_none(x)
-        assert_len(x, 5)
+        assert_is_instance(x,int)
+        # TODO: check to make sure the int returned is a valid port
         #assert_regexp_matches(out, self.executing_re)
 
     def test_add_computer_success(self): # depends on _setup_ssh_connection, _ssh_untrusted
@@ -239,7 +241,7 @@ class TestTrustedMultiKernelManager(object):
         x = self.a._kernels[kern1]["comp_id"]
         assert_in(kern1, self.a._comps[x]["kernels"])
         assert_is_instance(self.a._sessions[kern1], Session)
-        assert_in("CONNECTION FILE ::: ", out)
+        #assert_in("CONNECTION FILE ::: ", out)
 
     def test_end_session_success(self): # depends on add_computer, new_session
         x = self.a.add_computer(self.default_comp_config)
