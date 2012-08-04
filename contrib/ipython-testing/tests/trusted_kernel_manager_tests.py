@@ -120,7 +120,7 @@ class TestTrustedMultiKernelManager(object):
 
         with capture_output(split=True) as (out,err):
             x = self.a.add_computer(self.default_comp_config)
-
+        assert_is_not_none(x)
         assert_uuid(x)
         assert_in(x, self.a._comps)
         for k in new_config:

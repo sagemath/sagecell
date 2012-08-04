@@ -82,12 +82,14 @@ class TrustedMultiKernelManager(object):
         # Another option would be to have a short-lived ZMQ socket bound on the trusted
         # side and have the untrusted side connect to that and send the port
         output = ""
-        stdout_channel.settimeout(2)
+        stdout_channel.settimeout(2.0)
         polls = 0
         while output.count("\n")!=2:
-            output += stdout_channel.recv(1024)
-            polls+= 1
-            if polls>10:
+            try:
+                output += stdout_channel.recv(1024)
+            except socket.timeout:
+                polls+= 1
+            if polls>20:
                 return None
         return int(output.split("\n")[0])
 
