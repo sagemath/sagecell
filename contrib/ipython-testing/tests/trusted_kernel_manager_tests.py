@@ -279,33 +279,32 @@ class TestTrustedMultiKernelManager(object):
             assert_equal("Could not find open computer. There are 2 computers available.", e.message)
 
     def test_create_connected_stream(self):
-        cfg = {"host": "localhost"}
+        host="localhost"
         port = 51337
         socket_type = zmq.SUB
 
         with capture_output() as (out, err):
-            ret = self.a._create_connected_stream(cfg, port, socket_type)
+            ret = self.a._create_connected_stream(host, port, socket_type)
         out = out[0]
 
         assert_is(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.SUB)
+        #assert_equal(out, "Connecting to: tcp://%s:%i\n" % (host, port))
 
-        assert_equal(out, "Connecting to: tcp://%s:%i\n" % (cfg["host"], port))
-
-        cfg = {"host": "localhost"}
+        host="localhost"
         port = 51337
         socket_type = zmq.REQ
 
-        ret = self.a._create_connected_stream(cfg, port, socket_type)
+        ret = self.a._create_connected_stream(host, port, socket_type)
 
         assert_is(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.REQ)
 
-        cfg = {"host": "localhost"}
+        host="localhost"
         port = 51337
         socket_type = zmq.DEALER
 
-        ret = self.a._create_connected_stream(cfg, port, socket_type)
+        ret = self.a._create_connected_stream(host, port, socket_type)
 
         assert_is(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.DEALER)
@@ -313,7 +312,7 @@ class TestTrustedMultiKernelManager(object):
     def test_create_iopub_stream(self): # depends on create_connected_stream
         kernel_id = "kern1"
         comp_id = "testcomp1"
-        self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"iopub_port": 50101}}
+        self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"ip": "127.0.0.1", "iopub_port": 50101}}
         self.a._comps[comp_id] = {"host": "localhost"}
 
         ret = self.a.create_iopub_stream(kernel_id)
@@ -325,7 +324,7 @@ class TestTrustedMultiKernelManager(object):
     def test_create_shell_stream(self): # depends on create_connected_stream
         kernel_id = "kern1"
         comp_id = "testcomp1"
-        self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"shell_port": 50101}}
+        self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"ip": "127.0.0.1", "shell_port": 50101}}
         self.a._comps[comp_id] = {"host": "localhost"}
 
         ret = self.a.create_shell_stream(kernel_id)
@@ -337,11 +336,10 @@ class TestTrustedMultiKernelManager(object):
     def test_create_hb_stream(self): # depends on create_connected_stream
         kernel_id = "kern1"
         comp_id = "testcomp1"
-        self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"hb_port": 50101}}
+        self.a._kernels[kernel_id] = {"comp_id": comp_id, "connection": {"ip": "127.0.0.1", "hb_port": 50101}}
         self.a._comps[comp_id] = {"host": "localhost"}
 
         ret = self.a.create_hb_stream(kernel_id)
-
         assert_is(ret.closed(), False)
         assert_equal(ret.socket.socket_type, zmq.REQ)
 
