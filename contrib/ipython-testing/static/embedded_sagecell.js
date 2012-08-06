@@ -253,6 +253,9 @@ sagecell.initCell = (function(sagecellInfo) {
     var textArea = inputLocation.find(".sagecell_commands");
     var files = [];
     var editorData, temp;
+    if (editor === "textarea" || editor === "textarea-readonly") {
+        inputLocation.find(".sagecell_editorToggle input").attr("checked", false);
+    }
     if (! sagecellInfo.sageMode) {
         sageMode.attr("checked", false);
     }
@@ -522,6 +525,16 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                                 "collapsible": true,
                                 "header": header});
     }
+    commands.keypress(function (event) {
+        if (event.which === 13 && event.shiftKey) {
+            event.preventDefault();
+        }
+    });
+    commands.keyup(function (event) {
+        if (event.which === 13 && event.shiftKey) {
+            inputLocation.find(".sagecell_evalButton").click();
+        }
+    });
     if (editor === "textarea") {
         editorData = editor;
     } else if (editor === "textarea-readonly") {
@@ -542,14 +555,18 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              lineNumbers: true,
              matchBrackets: true,
              readOnly: readOnly,
-             extraKeys: {'Shift-Enter': function (editor) {
-                 editor.save();
-                 inputLocation.find(".sagecell_evalButton").click();
-	             },
-    	      	"Tab": "indentMore", 
-        	  	"Shift-Tab": "indentLess"},
+             extraKeys: {
+    	         "Tab": "indentMore", 
+        	     "Shift-Tab": "indentLess",
+        	     "Shift-Enter": function (editor) {
+        	         return CodeMirror.Pass;
+    	         }
+    	  	 },
              onKeyEvent: function (editor, event) {
                  editor.save();
+                 if (event.type === "keyup" && event.which === 13 && event.shiftKey) {
+                    inputLocation.find(".sagecell_evalButton").click();
+                }
             }});
         $(accordion).on("accordionchange", function () {
             editorData.refresh();
@@ -561,7 +578,6 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
 sagecell.toggleEditor = function (editor, editorData, inputLocation) {
     var editable = ["textarea", "codemirror"];
     var temp;
-
     if ($.inArray(editor, editable) !== -1) {
         if (editor === "codemirror") {
             editorData.toTextArea();
