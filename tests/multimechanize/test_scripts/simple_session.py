@@ -28,9 +28,9 @@ class Transaction(object):
             output = ""
             while True:
                 msg = s.iopub_recv()
-                if msg["msg_type"] == "status" and msg["content"]["execution_state"] == "idle":
+                if msg["header"]["msg_type"] == "status" and msg["content"]["execution_state"] == "idle":
                     break
-                elif msg["msg_type"] == "stream" and msg["content"]["name"] == "stdout":
+                elif msg["header"]["msg_type"] == "stream" and msg["content"]["name"] == "stdout":
                     output += msg["content"]["data"]
             assert int(output.strip()) == num1 + num2, "Incorrect output: %r" % (output,)
         self.custom_timers["computation"] = time.time() - t

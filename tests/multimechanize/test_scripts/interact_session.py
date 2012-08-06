@@ -30,11 +30,11 @@ class Transaction(object):
             output = ""
             while True:
                 msg = s.iopub_recv()
-                if msg["msg_type"] == "status" and msg["content"]["execution_state"] == "idle":
+                if msg["header"]["msg_type"] == "status" and msg["content"]["execution_state"] == "idle":
                     break
-                elif msg["msg_type"] == "display_data" and "application/sage-interact" in msg["content"]["data"]:
+                elif msg["header"]["msg_type"] == "display_data" and "application/sage-interact" in msg["content"]["data"]:
                     interact_id = msg["content"]["data"]["application/sage-interact"]["new_interact_id"]
-                elif msg["msg_type"] == "stream" and msg["content"]["name"] == "stdout" and msg["metadata"]["interact_id"] == interact_id:
+                elif msg["header"]["msg_type"] == "stream" and msg["content"]["name"] == "stdout" and msg["metadata"]["interact_id"] == interact_id:
                     output += msg["content"]["data"]
             assert output == "1\n", "Incorrect output: %r" % (output,)
             times = []
@@ -47,9 +47,9 @@ class Transaction(object):
                 output = ""
                 while True:
                     msg = s.iopub_recv()
-                    if msg["msg_type"] == "status" and msg["content"]["execution_state"] == "idle":
+                    if msg["header"]["msg_type"] == "status" and msg["content"]["execution_state"] == "idle":
                         break
-                    elif msg["msg_type"] == "stream" and msg["content"]["name"] == "stdout" and msg["metadata"]["interact_id"] == interact_id:
+                    elif msg["header"]["msg_type"] == "stream" and msg["content"]["name"] == "stdout" and msg["metadata"]["interact_id"] == interact_id:
                         output += msg["content"]["data"]
                 assert int(output.strip()) == num * num, "Incorrect output: %r" % (output,)
                 times.append(time.time() - t)
