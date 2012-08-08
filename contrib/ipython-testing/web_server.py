@@ -55,8 +55,15 @@ class SageCellServer(tornado.web.Application):
         super(SageCellServer, self).__init__(handlers_list, **settings)
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description='Launch a SageCell web server',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-p', '--port', type=int, default=8888,
+                        help='port to launch the server')
+    
+    args = parser.parse_args()
     application = SageCellServer()
-    application.listen(8888)
+    application.listen(args.port)
     try:
         application.ioloop.start()
     except KeyboardInterrupt:
