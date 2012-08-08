@@ -8,12 +8,16 @@ class AsyncSender(object):
     manager with multiple threaded requests and multiple
     untrusted devices.
     """
-    def __init__(self):
+    def __init__(self, filename=None):
         self._dealers = {}
+        if filename is None:
+            from uuid import uuid4
+            filename = 'router-%s.ipc'%uuid4()
+        self.filename = "ipc://"+filename
 
         context = zmq.Context()
         self.router = context.socket(zmq.ROUTER)
-        self.router.bind("ipc://routing.ipc")
+        self.router.bind(self.filename)
 
         self.poll = zmq.Poller()
         self.poll.register(self.router, zmq.POLLIN)
@@ -111,7 +115,7 @@ class AsyncSender(object):
         context = zmq.Context()
         sock = context.socket(zmq.DEALER)
         sock.setsockopt(zmq.IDENTITY, _id)
-        sock.connect("ipc://routing.ipc")
+        sock.connect(self.filename)
         sock.send(comp_id, zmq.SNDMORE)
         sock.send_pyobj(msg)
 
