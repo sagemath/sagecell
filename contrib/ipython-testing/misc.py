@@ -4,7 +4,10 @@ Misc functions / classes
 from functools import wraps
 from contextlib import contextmanager
 # note: ensure sage's version of python has nose installed or starting new sessions may hang!
-from nose.tools import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater
+try:
+    from nose.tools import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater
+except ImportError:    
+    pass
 import sys
 import re
 from datetime import datetime
@@ -207,10 +210,12 @@ def json_default(obj):
 ## Unit Testing Misc Functions
 ##########################################
 def assert_len(obj,l):
+    from nose.tools import assert_equal
     return assert_equal(len(obj), l, "Object %s should have length %s, but has length %s"%(obj,l,len(obj)))
 
 uuid_re = re.compile('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}')
 def assert_uuid(s):
+    from nose.tools import assert_regexp_matches
     return assert_regexp_matches(s, uuid_re)
 
 # from the attest python package - license is modified BSD
