@@ -462,7 +462,7 @@ class IOPubServiceHandler(IOPubHandler):
 
     def _output_message(self, msg):
         if msg["msg_type"] == "stream":
-             self.streams[msg["content"]["name"]] = msg["content"]["data"]
+            self.streams[msg["content"]["name"]] += msg["content"]["data"]
 
 class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
     def _output_message(self, message):
