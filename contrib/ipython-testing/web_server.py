@@ -52,6 +52,10 @@ class SageCellServer(tornado.web.Application):
         self.db = DB(misc.get_db_file(self.config))
         self.ioloop = ioloop.IOLoop.instance()
 
+        # to check for blocking when debugging, uncomment the following
+        # and set the argument to the blocking timeout in seconds 
+        #self.ioloop.set_blocking_log_threshold(.1)
+
         super(SageCellServer, self).__init__(handlers_list, **settings)
 
 if __name__ == "__main__":
