@@ -2,6 +2,7 @@ import time, string, urllib, zlib, base64, uuid, json, os.path
 
 import tornado.web
 import tornado.websocket
+import tornado.gen as gen
 import sockjs.tornado
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
@@ -82,12 +83,15 @@ class KernelHandler(tornado.web.RequestHandler):
     ``<ws_url>/iopub`` is the expected iopub stream url
     ``<ws_url>/shell`` is the expected shell stream url
     """
+    @tornado.web.asynchronous
+    @gen.engine
     def post(self):
         proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
         ws_url = "%s://%s/" % (proto, host)
         km = self.application.km
-        kernel_id = km.new_session()
+        
+        kernel_id = yield gen.Task(km.new_session_async)
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
@@ -184,12 +188,13 @@ class ServiceHandler(tornado.web.RequestHandler):
     This handler is currently not production-ready.
     """
     @tornado.web.asynchronous
+    @gen.engine
     def post(self):
         default_timeout = 30 # seconds
         code = "".join(self.get_arguments('code', strip=False))
         if code:
             km = self.application.km
-            self.kernel_id = km.new_session()
+            self.kernel_id = yield gen.Task(km.new_session_async)
 
             self.shell_handler = ShellServiceHandler(self.application)
             self.iopub_handler = IOPubServiceHandler(self.application)

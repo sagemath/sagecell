@@ -203,6 +203,33 @@ class TrustedMultiKernelManager(object):
         else:
             return False
 
+    def new_session_async(self, callback=None):
+        """ Starts a new kernel on an open computer.
+
+        calls the callback with the kernel id assigned to the newly created kernel
+
+        :returns: kernel id assigned to the newly created kernel
+        :rtype: string
+        """
+        comp_id = self._find_open_computer()
+        resource_limits = self._comps[comp_id].get("resource_limits")
+        def cb(reply):
+            if reply["type"] == "success":
+                reply_content = reply["content"]
+                kernel_id = reply_content["kernel_id"]
+                kernel_connection = reply_content["connection"]
+                self._kernels[kernel_id] = {"comp_id": comp_id,
+                                            "connection": kernel_connection,
+                                            "executing": False,
+                                            "timeout": time.time()+self.kernel_timeout}
+                self._comps[comp_id]["kernels"][kernel_id] = None
+                self._sessions[kernel_id] = Session(key=kernel_connection["key"])
+                callback(kernel_id)
+            else:
+                callback(False)
+            
+        self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
+
     def end_session(self, kernel_id):
         """ Kills an existing kernel on a given computer.
 
