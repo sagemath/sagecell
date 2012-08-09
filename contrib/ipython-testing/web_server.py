@@ -71,5 +71,8 @@ if __name__ == "__main__":
     try:
         application.ioloop.start()
     except KeyboardInterrupt:
-        print "\nEnding processes."
-        application.km.shutdown()
+        print "\nReceived KeyboardInterrupt, so I'm shutting down."
+        try:
+            application.km.shutdown()
+        except KeyboardInterrupt:
+            print "\nReceived another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over."
