@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1311809242 25200
 # Node ID f67d7039d959b56d5b611b5979375b95dbe69398
-# Parent 84146309e57d6297885074d05abe866e06fc1e36
+# Parent 0ea3cdafee8bc6fa65a643899700573b1ea03518
 [mq]: show.patch
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
@@ -90,7 +90,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -2003,7 +2003,8 @@
+@@ -2006,7 +2006,8 @@
      if pdflatex or (viewer == "pdf" and engine == "latex"):
          engine = "pdflatex"
      # notebook
@@ -100,7 +100,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          MathJax_okay = True
          for t in latex.mathjax_avoid_list():
              if s.find(t) != -1:
-@@ -2011,14 +2012,28 @@
+@@ -2014,14 +2015,28 @@
              if not MathJax_okay:
                  break
          if MathJax_okay:  # put comma at end of line below?

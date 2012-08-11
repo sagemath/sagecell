@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent 86f55434bf9b3d9095094b08ad04e0675ae2d5e1
+# Parent ce02e6279fcb0ead000073b2c0dde074f2e5581b
 imported patch embedded.patch
 
 diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
@@ -345,7 +345,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
      """
      if EMBEDDED_MODE:
          return "{\\rm %s}"%x
-@@ -1961,14 +1960,14 @@
+@@ -1964,14 +1963,14 @@
  
      EXAMPLES::
  
@@ -356,13 +356,13 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          sage: view(3, mode='display')
          <html><script type="math/tex; mode=display">\newcommand{\Bold}[1]{\mathbf{#1}}3</script></html>
          sage: view((x,2), combine_all=True) # trac 11775
-         <html><script type="math/tex">\newcommand{\Bold}[1]{\mathbf{#1}}\left(x, 2\right)</script></html>
+         <html><script type="math/tex">\newcommand{\Bold}[1]{\mathbf{#1}}x 2</script></html>
 -        sage: sage.misc.latex.EMBEDDED_MODE = False
 +        sage: sage.misc.latex.EMBEDDED_MODE = {}
  
      TESTS::
  
-@@ -1986,7 +1985,7 @@
+@@ -1989,7 +1988,7 @@
          Traceback (most recent call last):
          ...
          ValueError: Unsupported LaTeX engine.
@@ -371,7 +371,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          sage: view(4, engine="garbage", viewer="pdf")
          Traceback (most recent call last):
          ...
-@@ -2213,14 +2212,14 @@
+@@ -2216,14 +2215,14 @@
  
          sage: sage.misc.latex.print_or_typeset(3)
          3
@@ -391,7 +391,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/misc/misc.py b/sage/misc/misc.py
 --- a/sage/misc/misc.py
 +++ b/sage/misc/misc.py
-@@ -46,6 +46,13 @@
+@@ -47,6 +47,13 @@
  
  LOCAL_IDENTIFIER = '%s.%s'%(HOSTNAME , os.getpid())
  
@@ -405,7 +405,7 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
  def sage_makedirs(dir):
      """
      Python version of ``mkdir -p``: try to create a directory, and also
-@@ -2160,19 +2167,6 @@
+@@ -2161,19 +2168,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -423,8 +423,8 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
 -    """
 -    return sage.server.support.EMBEDDED_MODE
  
- #################################################################
- # Deprecation
+ 
+ #############################################
 diff --git a/sage/misc/pager.py b/sage/misc/pager.py
 --- a/sage/misc/pager.py
 +++ b/sage/misc/pager.py
@@ -454,7 +454,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
  
-@@ -766,7 +766,6 @@
+@@ -816,7 +816,6 @@
      if not interact:
          return results
  
@@ -462,7 +462,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1331,7 +1330,6 @@
+@@ -1381,7 +1380,6 @@
          if testing:
              return (url, path)
  
@@ -581,7 +581,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -333,7 +333,7 @@
+@@ -343,7 +343,7 @@
  ## going to be used.
  
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)
