@@ -34,6 +34,7 @@ sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
+sagecell.loadMathJax = true;
 
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
@@ -68,24 +69,26 @@ sagecell.init = function (callback) {
                 {"rel": "stylesheet", "href": stylesheets[i]}));
     }
 
-    // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
-    load({'text': 'MathJax.Hub.Config({  \n\
-          extensions: ["jsMath2jax.js", "tex2jax.js"],\n\
-          tex2jax: {\n\
-           inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ],\n\
-           displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ],\n\
-           processEscapes: true,\n\
-           processEnvironments: false}\n\
-          });\n\
-          // SVG backend does not work for IE version < 9, so switch if the default is SVG\n\
-          //if (MathJax.Hub.Browser.isMSIE && (document.documentMode||0) < 9) {\n\
-          //  MathJax.Hub.Register.StartupHook("End Config",function () {\n\
-          //    var settings = MathJax.Hub.config.menuSettings;\n\
-          //    if (!settings.renderer) {settings.renderer = "HTML-CSS"}\n\
-          //  });\n\
-          //}', 
-          'type': 'text/x-mathjax-config'});
-    load({"src": sagecell.URLs.root + "static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
+    if(window.MathJax === undefined && sagecell.loadMathJax) {
+        // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
+        load({'text': 'MathJax.Hub.Config({  \n\
+extensions: ["jsMath2jax.js", "tex2jax.js"],\n\
+tex2jax: {\n\
+inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ],\n\
+displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ],\n\
+processEscapes: true,\n\
+processEnvironments: false}\n\
+});\n\
+// SVG backend does not work for IE version < 9, so switch if the default is SVG\n\
+//if (MathJax.Hub.Browser.isMSIE && (document.documentMode||0) < 9) {\n\
+//  MathJax.Hub.Register.StartupHook("End Config",function () {\n\
+//    var settings = MathJax.Hub.config.menuSettings;\n\
+//    if (!settings.renderer) {settings.renderer = "HTML-CSS"}\n\
+//  });\n\
+//}', 
+              'type': 'text/x-mathjax-config'});
+        load({"src": sagecell.URLs.root + "static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
+    }
     // Preload images
     new Image().src = sagecell.URLs.sage_logo;
     new Image().src = sagecell.URLs.spinner;
