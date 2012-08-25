@@ -2,7 +2,7 @@
 "use strict";
 
 // Make a global sagecell namespace for our functions
-window.sagecell = {};
+window.sagecell = window.sagecell || {};
 
 if (!document.head) {
     document.head = document.getElementsByTagName("head")[0];
@@ -17,16 +17,29 @@ sagecell.jQuery = $;
 sagecell.URLs = {};
 
 (function () {
-    // Read root url from the script tag loading this file
-    var r = $("script").last().attr("src").match(/^.*(?=embedded_sagecell.js)/)[0];
-    var s = "static/";
-    if (r.substring(r.length - s.length) === s) {
-        r = r.substring(0, r.length - s.length);
+    /* Read the Sage Cell server's  root url from one of the following locations:
+         1. the variable sagecell.root
+         2. a tag of the form <link property="sagecell-root" href="...">
+         3. the root of the URL of the executing script */
+    var el;
+    if (sagecell.root) {
+        sagecell.URLs.root = sagecell.root;
+    } else if ((el = $("link[property=sagecell-root]")).length > 0) {
+        sagecell.URLs.root = el.last().attr("href");
+    } else {
+        var r = $("script").last().attr("src").match(/^.*(?=embedded_sagecell.js)/)[0];
+        var s = "static/";
+        if (r.substring(r.length - s.length) === s) {
+            r = r.substring(0, r.length - s.length);
+        }
+        if (r === "" || r === "/") {
+            r = window.location.protocol + "//" + window.location.host + "/";
+        }
+        sagecell.URLs.root = r;
     }
-    if (r === "" || r === "/") {
-        r = window.location.protocol + "//" + window.location.host + "/";
+    if (sagecell.URLs.root.substr(-1, 1) !== "/") {
+        sagecell.URLs.root += "/";
     }
-    sagecell.URLs.root = r;
 }());
 
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
@@ -369,9 +382,9 @@ sagecell.initCell = (function(sagecellInfo) {
         if (replaceOutput && sagecell.last_session[evt.data.id]) {
             $(sagecell.last_session[evt.data.id].session_container).remove();
         }
-        if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
-		        editorData.save();
-	    }
+        if (editor.substr(0, 10) === "codemirror") {
+            editorData.save();
+        }
         var session = new sagecell.Session(outputLocation);
 
         session.execute(textArea.val());
@@ -557,12 +570,14 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              lineNumbers: true,
              matchBrackets: true,
              readOnly: readOnly,
-             extraKeys: {'Shift-Enter': function (editor) {
-                 editor.save();
-                 inputLocation.find(".sagecell_evalButton").click();
-	             },
-    	      	"Tab": "indentMore", 
-        	  	"Shift-Tab": "indentLess"},
+             extraKeys: {
+                 "Shift-Enter": function (editor) {
+                     editor.save();
+                     inputLocation.find(".sagecell_evalButton").click();
+                 },
+                 "Tab": "indentMore", 
+                 "Shift-Tab": "indentLess"
+             },
              onKeyEvent: function (editor, event) {
                  editor.save();
             }});

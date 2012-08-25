@@ -141,7 +141,7 @@
 }
 
 .sagecell_interactControls {
-	border-spacing: 0px 2px;
+    border-spacing: 0px 2px;
     width: auto;
 }
 
@@ -151,14 +151,14 @@
     padding-top: 0.6ex !important;
     padding-bottom: 0.6ex !important;
     border-width: thin 0px thin thin;
-	border-style: solid;
-	border-color: transparent;
+    border-style: solid;
+    border-color: transparent;
 }
 
 .sagecell_interactControls .sagecell_interactcontrolcell {
     border-width: thin thin thin 0px;
-	border-style: solid;
-	border-color: transparent;
+    border-style: solid;
+    border-color: transparent;
 }
 
 .sagecell_interactControls > tr > td.sagecell_dirtyControl {
