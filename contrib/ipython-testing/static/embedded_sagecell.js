@@ -118,7 +118,7 @@ sagecell.makeSagecell = function (args) {
     var input = $(args.inputLocation);
     if (input.length > 1 && args.outputLocation === undefined) {
         var r = [];
-        for (var i = 0; i < input.length; i++) {
+        for (var i = 0, i_max = input.length; i < i_max; i++) {
             var a = $.extend({}, args);
             a.inputLocation = input[i];
             r.push(sagecell.makeSagecell(a));
