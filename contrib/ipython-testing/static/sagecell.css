@@ -69,6 +69,7 @@
 
 .sagecell_sessionContainer {
     position: relative;
+    margin-bottom: 10px;
 }
 
 .sagecell_sessionOutput {
