@@ -141,6 +141,7 @@ sagecell.makeSagecell = function (args) {
         } else {
             args.code = $(args.inputLocation).text();
         }
+        args.code = $.trim(args.code);
     }
     defaults = {"editor": "codemirror",
                 "evalButtonText": "Evaluate",
