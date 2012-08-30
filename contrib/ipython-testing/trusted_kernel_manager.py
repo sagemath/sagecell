@@ -91,6 +91,9 @@ class TrustedMultiKernelManager(object):
                 polls+= 1
             if polls>20:
                 return None
+            if len(output)==0:
+                # connection closed earlier than we thought
+                return None
         return int(output.split("\n")[0])
 
     def add_computer(self, config):
