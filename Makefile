@@ -34,7 +34,7 @@ all: submodules $(jquery) $(all-min-js) $(all-min-css)
 
 .PHONY: submodules
 submodules:
-	@cd ../..; if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
+	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
 
 $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
