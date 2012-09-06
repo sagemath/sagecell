@@ -1,6 +1,6 @@
 [submodule "submodules/codemirror2"]
 	path = submodules/codemirror2
-	url = git://github.com/marijnh/CodeMirror2.git
+	url = git://github.com/marijnh/CodeMirror.git
 [submodule "submodules/cssmin"]
 	path = submodules/cssmin
 	url = git://github.com/zacharyvoase/cssmin.git

@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <link rel="icon" href="{{url_for('.static', filename='favicon.ico', _external=True)}}">
-    <link rel="stylesheet" href="{{url_for('.static', filename='root.css', _external=True)}}">
+    <link rel="icon" href="{{ static_url('favicon.ico') }}">
+    <link rel="stylesheet" href="{{ static_url('root.css') }}">
     <title>Sage Cell Server</title>
-    <script src="{{url_for('.static', filename='jquery.min.js', _external=True)}}"></script>
-    <script src="{{url_for('embedded', _external=True)}}"></script>
+    <script src="{{ static_url('jquery.min.js') }}"></script>
+    <script src="{{ static_url('embedded_sagecell.js') }}"></script>
     <script>
 $(function () {
     sagecell.makeSagecell({inputLocation: '#sagecell'
-            {% if code %}, code: decodeURIComponent('{{code}}'),
-                           autoeval: {{autoeval}} {% endif %} });
+            {% if code %}, code: decodeURIComponent('{{ code }}'),
+                           autoeval: {{autoeval}} {% end %} });
 });
     </script>
   </head>
