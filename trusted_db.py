@@ -255,33 +255,32 @@ exit
     print "done"
 
 if __name__=='__main__':
-    # We cannot use argparse until Sage's python is upgraded.
-    from optparse import OptionParser
+    from argparse import ArgumentParser
     try:
         import sagecell_config
     except ImportError:
         import sagecell_config_default as sagecell_config
-    parser=OptionParser(description="Starts a connection between a trusted and an untrusted process.")
-    parser.add_option("--db", choices=["mongo", "sqlalchemy"], help="Database to use on trusted side")
-    parser.add_option("-w", "--workers", type=int, default=1, dest="workers", help="Number of workers to start.")
-    parser.add_option("--print", action="store_true", dest="print_cmd", default=False, 
+    parser=ArgumentParser(description="Starts a connection between a trusted and an untrusted process.")
+    parser.add_argument("--db", choices=["mongo", "sqlalchemy"], help="Database to use on trusted side")
+    parser.add_argument("-w", "--workers", type=int, default=1, help="Number of workers to start.")
+    parser.add_argument("--print", action="store_true", dest="print_cmd", default=False, 
                         help="Print out command to launch workers instead of launching them automatically")
-    parser.add_option("--pidfile", dest="pidfile",
+    parser.add_argument("--pidfile",
                       help="pidfile to write the pid", default="")
-    parser.add_option("--untrusted-account", dest="untrusted_account", 
+    parser.add_argument("--untrusted-account", dest="untrusted_account", 
                       help="untrusted account; should be something you can ssh into without a password", default="")
-    parser.add_option("--untrusted-python", dest="untrusted_python",
+    parser.add_argument("--untrusted-python", dest="untrusted_python",
                       default=sagecell_config.device_config['untrusted-python'], 
                       help="the path to the Python the untrusted user should use")
-    parser.add_option("--untrusted-cpu", dest="untrusted_cpu", type=float,
-                      default=sagecell_config.device_config.get('untrusted-cpu',-1), 
+    parser.add_argument("--untrusted-cpu", dest="untrusted_cpu", type=float,
+                      default=sagecell_config.device_config.get('untrusted-cpu',-1.0), 
                       help="CPU time (seconds) allotted to each session")
-    parser.add_option("--untrusted-mem", dest="untrusted_mem", type=float,
-                      default=sagecell_config.device_config.get('untrusted-mem',-1), 
+    parser.add_argument("--untrusted-mem", dest="untrusted_mem", type=float,
+                      default=sagecell_config.device_config.get('untrusted-mem',-1.0), 
                       help="Memory (MB) allotted to each session")
-    parser.add_option("-q", "--quiet", action="store_true", dest="quiet", help="Turn off most logging")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Turn off most logging")
 
-    (sysargs,args)=parser.parse_args()
+    sysargs=parser.parse_args()
 
     if sysargs.untrusted_account is "":
         print "You must give an untrusted account we can ssh into using --untrusted-account"
@@ -312,14 +311,18 @@ if __name__=='__main__':
     #filename=keyfile.name+"%i"
     import uuid
     filename="/tmp/%s"%uuid.uuid4()
-    options=dict(cwd=cwd, workers=sysargs.workers, db_port=db_loop.port, fs_port=fs_loop.port,
+    options=dict(cwd=cwd, 
+                 workers=sysargs.workers, 
+                 db_port=db_loop.port, 
+                 fs_port=fs_loop.port,
                  quiet='-q' if sysargs.quiet or util.LOGGING is False else '',
                  untrusted_python=sysargs.untrusted_python,
                  untrusted_cpu=sysargs.untrusted_cpu,
                  untrusted_mem=sysargs.untrusted_mem,
                  keyfile=filename+"_copy")
+
     cmd="""cd %(cwd)s
-%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --cpu %(untrusted_cpu)f --mem %(untrusted_mem)f --dbaddress tcp://localhost:%(db_port)i --fsaddress=tcp://localhost:%(fs_port)i --keyfile %(keyfile)s %(quiet)s\n"""%options
+%(untrusted_python)s device_process.py --db zmq --timeout 60 -w %(workers)s --cpu %(untrusted_cpu)f --mem %(untrusted_mem)f --dbaddress tcp://localhost:%(db_port)i --fsaddress tcp://localhost:%(fs_port)i --keyfile %(keyfile)s %(quiet)s\n"""%options
     if sysargs.print_cmd:
         print
         print "echo %s%s%s > %s_copy"%(keys[0],'KEY_SEPARATOR',keys[1],filename)

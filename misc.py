@@ -47,7 +47,7 @@ def select_db(sysargs=None, context=None):
     u"""
     Create connections to the database and filestore given in sysargs.
 
-    :arg sysargs: system arguments, created by OptionParser
+    :arg sysargs: system arguments, created by ArgumentParser
     :arg context: the context for a \xd8MQ connection, if one is needed
     :type context: zmq.Context
     :returns: a tuple of the form ``(db, fs)``

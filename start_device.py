@@ -12,11 +12,15 @@ python=options.pop('python')
 pidfile=''
 command=python+' trusted_db.py '
 for k,v in options.items():
-    if k=='pidfile':
+    if k=='quiet' or k=='print': # quiet and print have no arguments
+        command += ' --%s '%(k,)
+        continue
+    elif k=='pidfile':
         v+=str(uuid.uuid4())+'.pid'
         pidfile=v
-    command+=' --%s %r '%(k,v)
 
+    command+=' --%s %r '%(k,v)
+        
 
 import os
 print 'Executing: ', command
