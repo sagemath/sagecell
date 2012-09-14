@@ -2,18 +2,6 @@ from untrusted_kernel_manager import UntrustedMultiKernelManager
 import zmq
 from zmq import ssh
 import sys
-from IPython.core.inputsplitter import IPythonInputSplitter
-
-try:
-    from sage.misc.interpreter import SageInputSplitter
-    class SageIPythonInputSplitter(SageInputSplitter, IPythonInputSplitter):
-        """
-        This class merely exists so that the IPKernelApp.kernel.shell class does not complain.  It requires
-        a subclass of IPythonInputSplitter, but SageInputSplitter is a subclass of InputSplitter instead.
-        """
-        pass
-except ImportError:
-    SageIPythonInputSplitter = None
 
 class Receiver(object):
     def __init__(self, filename, ip):
@@ -111,11 +99,9 @@ from sagenb.misc.support import automatic_names
         # TODO: maybe we don't want to cut down the flush interval?
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
         if self.sage_mode:
-            ka.kernel.shell.input_splitter = SageIPythonInputSplitter()
+            ka.kernel.shell.extension_manager.load_extension('sage.misc.sage_extension')
             user_ns.update(self.sage_dict)
             sage_code = """
-sage.misc.session.init()
-
 # Ensure unique random state after forking
 set_random_seed()
 """
