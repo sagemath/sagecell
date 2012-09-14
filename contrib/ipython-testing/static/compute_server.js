@@ -88,11 +88,11 @@ sagecell.Session = function (outputDiv) {
     var ce = sagecell.util.createElement;
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
-        	ce("div", {"class": "sagecell_permalink"}, [
-        		ce("a", {"class": "sagecell_permalink_zip"}, [document.createTextNode("Permalink")]),
-        		document.createTextNode(", "),
-        		ce("a", {"class": "sagecell_permalink_query"}, [document.createTextNode("Shortened Temporary Link")])
-        		]),
+                ce("div", {"class": "sagecell_permalink"}, [
+                    ce("a", {"class": "sagecell_permalink_zip"}, [document.createTextNode("Permalink")]),
+                    document.createTextNode(", "),
+                    ce("a", {"class": "sagecell_permalink_query"}, [document.createTextNode("Shortened Temporary Link")])
+                ]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
                         "alt": "Loading", "class": "sagecell_spinner"})
@@ -133,7 +133,7 @@ sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
         var callbacks = {"output": $.proxy(this.handle_output, this), "execute_reply": $.proxy(this.handle_execute_reply, this)};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false,
-        	"user_expressions": {"_sagecell_files":"sys._sage_.new_files()"}}));
+                "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}}));
     } else {
         this.deferred_code.push(code);
     }
@@ -142,7 +142,7 @@ sagecell.Session.prototype.execute = function (code) {
         var that = this;
         sagecell.sendRequest("POST", sagecell.URLs.permalink,
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
-            							"metadata": {},
+                                        "metadata": {},
                                         "content": {"code": code}})},
             function (data) {
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
@@ -187,17 +187,13 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
 
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
     if(msg.status==="error") {
-	    this.output('<pre class="sagecell_pyerr"></pre>',null)
-	    	.html(IPython.utils.fixConsole(msg.traceback.join("\n")));
-/*	        .html(sagecell.functions.colorizeTB(msg.content.traceback
-	                                            .replace(/&/g,"&amp;")
-	                                            .replace(/</g,"&lt;")));
-	                                            */
+            this.output('<pre class="sagecell_pyerr"></pre>',null)
+                .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
 } 
 var payload = msg.payload[0];
 if (payload && payload.new_files){
     var files = payload.new_files;
-	var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
+    var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
     var html="<div>\n";
     for(var j = 0, j_max = files.length; j < j_max; j++) {
         if (this.files[files[j]] !== undefined) {
@@ -217,35 +213,35 @@ if (payload && payload.new_files){
 }
 
 sagecell.Session.prototype.handle_output = function (msg_type, content, metadata) {
-	var block_id = metadata.interact_id || null;
-	// Handle each stream type.  This should probably be separated out into different functions.
-	switch(msg_type) {
-		case "stream":
+    var block_id = metadata.interact_id || null;
+    // Handle each stream type.  This should probably be separated out into different functions.
+    switch (msg_type) {
+    case "stream":
         var new_pre = !$(this.output_blocks[block_id]).children().last().hasClass("sagecell_" + content.name);
         var out = this.output("<pre class='sagecell_" + content.name + "'></pre>", block_id, new_pre);
         out.text(out.text() + content.data);
         break;
-        
-		case "pyout":
+
+    case "pyout":
         this.output('<pre class="sagecell_pyout"></pre>', block_id).text(content.data["text/plain"]);
-		break;
-		
-		case "pyerr":
+         break;
+
+    case "pyerr":
         this.output('<pre class="sagecell_pyerr"></pre>', block_id)
             .html(IPython.utils.fixConsole(content.traceback.join("\n")));
-		break;
-		
-		case "display_data":
-		var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
-		if (content.data["application/sage-interact"]) {
-			this.interacts.push(new sagecell.InteractCell(this, content.data["application/sage-interact"], block_id));
-		} else if (content.data["text/html"]) {
+        break;
+
+    case "display_data":
+        var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
+        if (content.data["application/sage-interact"]) {
+            this.interacts.push(new sagecell.InteractCell(this, content.data["application/sage-interact"], block_id));
+        } else if (content.data["text/html"]) {
             var html = content.data['text/html'].replace(/cell:\/\//gi, filepath);
             this.output("<div></div>", block_id).html(html);
         } else if (content.data["text/image-filename"]) {
-        	this.output("<img src='"+filepath+content.data["text/image-filename"]+"'/>", block_id);
+            this.output("<img src='"+filepath+content.data["text/image-filename"]+"'/>", block_id);
         } else if (content.data["image/png"]) {
-        	this.output("<img src='data:image/png;base64,"+content.data["image/png"]+"'/>", block_id);
+            this.output("<img src='data:image/png;base64,"+content.data["image/png"]+"'/>", block_id);
         } else if(content.data['application/x-jmol']) {
             console.log('making jmol applet');
             jmolSetDocument(false);
@@ -253,7 +249,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         } else if (content.data["text/plain"]) {
             this.output("<pre></pre>", block_id).text(content.data["text/plain"]);
         }
-		break;
+        break;
     }
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
@@ -357,27 +353,27 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             for (var i = 0; i < this.layout[loc].length; i++) {
                 var tr = ce("tr");
                 var row = this.layout[loc][i];
-				for (var j = 0; j < row.length; j++) {
-					var varname = this.layout[loc][i][j];
-					var varcontrol = this.controls[varname];
-	                var id = this.interact_id + "_" + varname;
-	                var right = ce("td", {"class": "sagecell_interactcontrolcell"}, [
-	                    varcontrol.rendered(id)
-	                ]);
-	                if (varcontrol.control.label !== "") {
-	                    var left = ce("td", {"class": "sagecell_interactcontrollabelcell"}, [
-	                        ce("label", {"for": id, "title": varname}, [
-	                            document.createTextNode(varcontrol.control.label || varname)
-	                        ])
-	                    ]);
-	                    tr.appendChild(left);
-	                    this.rows[varname] = [left, right];	                	
-	                } else {
-						right.setAttribute("colspan", "2");
-						this.rows[varname] = [right];
-	                }
-	                tr.appendChild(right);
-	            }
+                for (var j = 0; j < row.length; j++) {
+                     var varname = this.layout[loc][i][j];
+                     var varcontrol = this.controls[varname];
+                    var id = this.interact_id + "_" + varname;
+                    var right = ce("td", {"class": "sagecell_interactcontrolcell"}, [
+                        varcontrol.rendered(id)
+                    ]);
+                    if (varcontrol.control.label !== "") {
+                        var left = ce("td", {"class": "sagecell_interactcontrollabelcell"}, [
+                            ce("label", {"for": id, "title": varname}, [
+                                document.createTextNode(varcontrol.control.label || varname)
+                            ])
+                        ]);
+                        tr.appendChild(left);
+                        this.rows[varname] = [left, right];                                
+                    } else {
+                        right.setAttribute("colspan", "2");
+                        this.rows[varname] = [right];
+                    }
+                    tr.appendChild(right);
+                }
                 table2.appendChild(tr);
             }
             cells[loc].appendChild(table2);
