@@ -15,13 +15,13 @@ Contents:
     embedding
     web_service
     advanced_installation
-    db
     web_server
-    device
     interact_protocol
     timing
     js
     future
+    trusted_kernel_manager
+    forking_kernel_manager
 
 Indices and tables
 ==================

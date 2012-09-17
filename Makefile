@@ -1,47 +1,67 @@
-all: submodules static/jquery.min.js static/all.min.js static/all.min.css
+wrap-jquery    = ./wrap-jquery
+all-css        = static/all.css
+all-js         = static/all.js
+all-min-css    = static/all.min.css
+all-min-js     = static/all.min.js
+colorpicker    = static/colorpicker/js/colorpicker.js
+compute_server = static/compute_server.js
+jmol           = static/jmol
+jmol-js        = $(jmol)/appletweb/Jmol.js
+jquery         = static/jquery.min.js
+jquery-ui      = static/jquery-ui/js/jquery-ui-1.8.21.custom.min.js
+sagecell       = static/sagecell.js
+sagecell-css   = static/sagecell.css
+sockjs-client  = static/sockjs.js
+codemirror-css = submodules/codemirror2/lib/codemirror.css
+codemirror     = submodules/codemirror2/lib/codemirror.js
+codemirror-py  = submodules/codemirror2/mode/python/python.js
+jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
+cssmin         = submodules/cssmin/src/cssmin.py
+jsmin          = submodules/jsmin/jsmin.c
+jsmin-bin      = submodules/jsmin-bin
+wrap-js        = static/wrap.js
+sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
+ip-js          = $(sage-root)/local/lib/python2.7/site-packages/IPython/frontend/html/notebook/static/js
+ip-namespace   = $(ip-js)/namespace.js
+ip-events      = $(ip-js)/events.js
+ip-utils       = $(ip-js)/utils.js
+ip-kernel      = $(ip-js)/kernel.js
+jquery-url     = http://code.jquery.com/jquery-1.7.2.min.js
+sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
+jmol-sage      = $(sage-root)/local/share/jmol
+
+all: submodules $(jquery) $(all-min-js) $(all-min-css)
 
 .PHONY: submodules
 submodules:
-	@if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
+	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
 
-static/jquery.min.js:
-	python -c "import urllib; urllib.urlretrieve('http://code.jquery.com/jquery-1.7.1.min.js','static/jquery.min.js')"
+$(jquery):
+	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
-static/all.min.js: submodules/jsmin-bin static/all.js
-	rm -f static/all.min.js
-	submodules/jsmin-bin < static/all.js > static/all.min.js
+$(all-min-js): $(jsmin-bin) $(all-js)
+	$(jsmin-bin) < $(all-js) > $(all-min-js)
 
-static/jquery-ui-1.8.17.custom.min.wrap.js: wrap-jquery static/jqueryui/js/jquery-ui-1.8.17.custom.min.js
-	./wrap-jquery static/jqueryui/js/jquery-ui-1.8.17.custom.min.js > static/jquery-ui-1.8.17.custom.min.wrap.js
+$(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(codemirror-py) \
+           $(jmol-js) $(sockjs-client) $(compute_server) $(sagecell)
+	cat $(codemirror) $(codemirror-py) $(jmol-js) $(ip-namespace) $(wrap-js) > $(all-js)
+	echo ';' >> $(all-js)
+	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
-static/colorpicker.min.wrap.js: wrap-jquery static/colorpicker/js/colorpicker.min.js
-	./wrap-jquery static/colorpicker/js/colorpicker.min.js > static/colorpicker.min.wrap.js
+$(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
+            $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
+	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
+	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
 
-static/jquery.ui.touch-punch.min.wrap.js: wrap-jquery submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
-	./wrap-jquery submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js > static/jquery.ui.touch-punch.min.wrap.js
+$(all-min-css): $(codemirror-css) $(sagecell-css)
+	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
 
-static/all.js: submodules/codemirror2/lib/codemirror.js submodules/codemirror2/mode/python/python.js static/jmol/appletweb/Jmol.js static/jquery-ui-1.8.17.custom.min.wrap.js static/jquery.ui.touch-punch.min.wrap.js static/colorpicker.min.wrap.js static/compute_server.js static/sagecell.js
-	echo '' > static/all.js
-	cat submodules/codemirror2/lib/codemirror.js submodules/codemirror2/mode/python/python.js >> static/all.js
-	cat static/jmol/appletweb/Jmol.js >> static/all.js
-	cat static/jquery-ui-1.8.17.custom.min.wrap.js >> static/all.js
-	cat static/jquery.ui.touch-punch.min.wrap.js >> static/all.js
-	cat static/colorpicker.min.wrap.js >> static/all.js
-	echo ';' >> static/all.js
-	cat static/compute_server.js >> static/all.js
-	cat static/sagecell.js >> static/all.js
+$(jsmin-bin):  $(jsmin)
+	gcc -o $(jsmin-bin) $(jsmin)
 
-static/all.min.css: submodules/codemirror2/lib/codemirror.css static/stylesheet.css
-	echo '' > static/all.css
-	cat 'submodules/codemirror2/lib/codemirror.css' >> static/all.css
-	# We can't include the following in our file because they have references to their image directories
-	# so instead, we include them as separate CSS links.
-	#cat 'jqueryui/css/sage/jquery-ui-1.8.17.custom.css' >> all.css
-	#cat 'colorpicker/css/colorpicker.css' >> all.css
-	cat 'static/stylesheet.css' >> static/all.css
-	rm -f static/all.min.css
-	python submodules/cssmin/src/cssmin.py < static/all.css > static/all.min.css
+$(jmol-js): $(jmol-sage)
+	rm -f $(jmol)
+	ln -s $(jmol-sage) $(jmol)
 
-submodules/jsmin-bin:  submodules/jsmin/jsmin.c
-	gcc -o submodules/jsmin-bin submodules/jsmin/jsmin.c
-
+$(sockjs-client):
+	python -c "import urllib; urllib.urlretrieve('$(sockjs-url)', '$(sockjs-client)')"

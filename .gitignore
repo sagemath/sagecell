@@ -1,23 +1,11 @@
 *.pyc
-mongo/*
-sqlite.db
-sqlalchemy_sqlite.db
+*~
 doc/_build/*
-.idea
-static/mathjax/*
 static/jmol
-dist/*
-sagecell_config.py
-
-# ignore timing test results
-timing/results
-2011*
-
-# ignore the default directory for the filesystem filestore
-files/*
+config.py
 
 # generated web files
-submodules/jsmin-bin
 static/all*
 static/jquery.min.js
-static/*.wrap.js
+static/sockjs.js
+static/wrap.js

@@ -71,175 +71,144 @@ Recursively nested interact::
         print 'f evaluated %d times'%c
         for i in range(n):
             interact(f)
-
-
 """
 
-import sagecell_exec_config as CONFIG
+import uuid
+import sys
+from misc import session_metadata, decorator_defaults
 
-_INTERACTS={}
+__interacts={}
 
-__sage_cell_timeout__=0
+def update_interact(interact_id, control_vals):
+    interact_info = __interacts[interact_id]
+    kwargs = interact_info["state"].copy()
+    controls = interact_info["controls"]
+    for var,value in control_vals.items():
+        c = controls[var]
+        kwargs[var] = c.adapter(value, interact_info["globals"])
+        if c.preserve_state:
+            interact_info["state"][var]=kwargs[var]
+    __interacts[interact_id]["function"](control_vals=kwargs)
 
-from functools import wraps
 
-def decorator_defaults(func):
+def interact_func(session, pub_socket):
     """
-    This function allows a decorator to have default arguments.
+    Create a function to be used as ``interact`` in the user namespace,
+    with the correct session and socket objects.
 
-    Normally, a decorator can be called with or without arguments.
-    However, the two cases call for different types of return values.
-    If a decorator is called with no parentheses, it should be run
-    directly on the function.  However, if a decorator is called with
-    parentheses (i.e., arguments), then it should return a function
-    that is then in turn called with the defined function as an
-    argument.
-
-    This decorator allows us to have these default arguments without
-    worrying about the return type.
-
-    EXAMPLES::
-    
-        sage: from sage.misc.decorators import decorator_defaults
-        sage: @decorator_defaults
-        ... def my_decorator(f,*args,**kwds):
-        ...     print kwds
-        ...     print args
-        ...     print f.__name__
-        ...       
-        sage: @my_decorator
-        ... def my_fun(a,b):
-        ...     return a,b
-        ...  
-        {}
-        ()
-        my_fun
-        sage: @my_decorator(3,4,c=1,d=2)
-        ... def my_fun(a,b):
-        ...     return a,b
-        ...   
-        {'c': 1, 'd': 2}
-        (3, 4)
-        my_fun
-    """
-    from inspect import isfunction
-    @wraps(func)
-    def my_wrap(*args,**kwargs):
-        if len(kwargs)==0 and len(args)==1 and isfunction(args[0]):
-            # call without parentheses
-            return func(*args)
-        else:
-            def _(f):
-                return func(f, *args, **kwargs)
-            return _
-    return my_wrap
-
-@decorator_defaults
-def interact(f, controls=[], update=None, layout=None):
-    """
-    A decorator that creates an interact.
-
-    Each control can be given as an :class:`.InteractControl` object
-    or a value, defined in :func:`.automatic_control`, that will be
-    interpreted as the parameters for some control.
-
-    The decorator can be used in several ways::
-
-        @interact([name1, (name2, control2), (name3, control3)])
-        def f(**kwargs):
-            ...
-
-        @interact
-        def f(name1, name2=control2, name3=control3):
-            ...
-
-
-    The two ways can also be combined::
-
-        @interact([name1, (name2, control2)])
-        def f(name3, name4=control4, name5=control5):
-            ...
-
-    In each example, ``name1``, with no associated control,
-    will default to a text box.
-
-    :arg function f: the function to make into an interact
-    :arg list controls: a list of tuples of the form ``("name",control)``
-    :returns: the original function
+    :arg IPython.zmq.session.Session session: an IPython session
+    :arg zmq.Socket pub_socket: the \xd8MQ PUB socket used for the IOPUB stream
+    :returns: the ``interact`` function
     :rtype: function
     """
 
-    if update is None: update = {}
-    if layout is None: layout = {}
-    
-    global _INTERACTS
+    @decorator_defaults
+    def interact(f, controls=[], update=None, layout=None):
+        """
+        A decorator that creates an interact.
 
-    if isinstance(controls,(list,tuple)):
-        controls=list(controls)
-        for i,name in enumerate(controls):
-            if isinstance(name, str):
-                controls[i]=(name, None)
-            elif not isinstance(name[0], str):
-                raise ValueError("interact control must have a string name, but %s isn't a string"%(name[0],))
+        Each control can be given as an :class:`.InteractControl` object
+        or a value, defined in :func:`.automatic_control`, that will be
+        interpreted as the parameters for some control.
 
-    import inspect
-    (args, varargs, varkw, defaults) = inspect.getargspec(f)
-    if defaults is None:
-        defaults=[]
-    n=len(args)-len(defaults)
-    
-    controls=zip(args,[None]*n+list(defaults))+controls
+        The decorator can be used in several ways::
 
-    names=[n for n,_ in controls]
-    controls=[automatic_control(c, var=n) for n,c in controls]
-    nameset = set(names)
-    
-    for n,c in zip(names, controls):
-        # Check for update button controls
-        if isinstance(c, UpdateButton):
-            update[n] = c.boundVars()
+            @interact([name1, (name2, control2), (name3, control3)])
+            def f(**kwargs):
+                ...
 
-    if update:
-        # sanitize input
-        for key,value in update.items():
-            # note: we are modifying the dictionary below, so we want
-            # to get all the items first
-            if key not in nameset:
-                # Test if the updating variable is defined
-                raise ValueError("%s is not an interacted variable."%repr(change))
-            # make the values unique, and make sure the control updates itself
-            value = set(value)
-            value.add(key)
-            if "*" in value:
-                # include all controls
-                value = nameset
-            elif value-nameset:
-                raise ValueError("Update variables %s are not interact variables."%repr(list(value-nameset)))
-            update[key]=list(value)
-    else:
-        update = dict((n,[n]) for n in names)
+            @interact
+            def f(name1, name2=control2, name3=control3):
+                ...
 
-    if isinstance(layout, (list, tuple)):
-        layout = {'top_center': layout}
 
-    if layout:
-        # sanitize input
-        layout_values = set(["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center", "top", "bottom"])
-        sanitized_layout = {}
-        previous_vars = []
+        The two ways can also be combined::
 
-        for key,value in layout.items():
-            error_vars = []
+            @interact([name1, (name2, control2)])
+            def f(name3, name4=control4, name5=control5, **kwargs):
+                ...
 
-            if key in layout_values:
-                if key in ("top", "bottom"):
-                    oldkey=key
-                    key+="_center"
-                    if key in layout:
-                        raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
-            else:
-                raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
-            if isinstance(value[0], list):
+        In each example, ``name1``, with no associated control,
+        will default to a text box.
+
+        :arg function f: the function to make into an interact
+        :arg list controls: a list of tuples of the form ``("name",control)``
+        :returns: the original function
+        :rtype: function
+        """
+
+        if update is None: update = {}
+        if layout is None: layout = {}
+
+        if isinstance(controls,(list,tuple)):
+            controls=list(controls)
+            for i,name in enumerate(controls):
+                if isinstance(name, str):
+                    controls[i]=(name, None)
+                elif not isinstance(name[0], str):
+                    raise ValueError("interact control must have a string name, but %r isn't a string"%(name[0],))
+        names = {c[0] for c in controls}
+
+        import inspect
+        (args, varargs, varkw, defaults) = inspect.getargspec(f)
+        if len(names) != len(controls) or any(a in names for a in args):
+            raise ValueError("duplicate argument in interact definition")
+        if defaults is None:
+            defaults=[]
+        n=len(args)-len(defaults)
+        controls = zip(args, [None] * n + list(defaults)) + controls
+        names=[n for n,_ in controls]
+        controls=[automatic_control(c, var=n) for n,c in controls]
+        nameset = set(names)
+
+        for n,c in zip(names, controls):
+            # Check for update button controls
+            if isinstance(c, UpdateButton):
+                update[n] = c.boundVars()
+
+        if update:
+            # sanitize input
+            for key,value in update.items():
+                # note: we are modifying the dictionary below, so we want
+                # to get all the items first
+                if key not in nameset:
+                    # Test if the updating variable is defined
+                    raise ValueError("%s is not an interacted variable."%repr(change))
+                # make the values unique, and make sure the control updates itself
+                value = set(value)
+                value.add(key)
+                if "*" in value:
+                    # include all controls
+                    value = nameset
+                elif value-nameset:
+                    raise ValueError("Update variables %s are not interact variables."%repr(list(value-nameset)))
+                update[key]=list(value)
+        else:
+            update = dict((n,[n]) for n in names)
+
+        if isinstance(layout, (list, tuple)):
+            layout = {'top_center': layout}
+
+        if layout:
+            # sanitize input
+            layout_values = set(["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center", "top", "bottom"])
+            sanitized_layout = {}
+            previous_vars = []
+
+            for key,value in layout.items():
+                error_vars = []
+
+                if key in layout_values:
+                    if key in ("top", "bottom"):
+                        oldkey=key
+                        key+="_center"
+                        if key in layout:
+                            raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
+                else:
+                    raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
+                if not isinstance(value[0], (list, tuple)):
+                    value = [value]
+            
                 if ["*"] in value:
                     value = [[n] for n in names]
                 elif set(flatten(value))-nameset:
@@ -252,60 +221,30 @@ def interact(f, controls=[], update=None, layout=None):
                         raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
                     previous_vars.extend(varlist)
                 sanitized_layout[key] = value
+                layout = sanitized_layout
+        else:
+            layout["top_center"] = [[n] for n in names]
 
-            else:
-                if "*" in value:
-                    value = [n for n in names]
-                elif set(value)-nameset:
-                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(value)-nameset)))
-                for var in value:
-                    if var in previous_vars:
-                        error_vars.append(var);
-            
-                if error_vars:
-                    raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
-                previous_vars.extend(value)
-                sanitized_layout[key] = value
-
-            layout = sanitized_layout
-    else:
-        layout["top_center"] = [n for n in names]
-
-    # _sage_messages is monkey-patched onto sys by prepended user code
-    from sys import maxint, _sage_messages
-    from random import randrange
-
-    # UUID would be better, but we can't use it because of a
-    # bug in Python 2.6 on Mac OS X (http://bugs.python.org/issue8621)
-    function_id=str(randrange(maxint))
-
-    def adapted_f(control_vals):
-        _sage_messages.push_output_id(function_id)
-        returned=f(**control_vals)
-        _sage_messages.pop_output_id()
-        return returned
-
-    globs = f.func_globals
-    _INTERACTS[function_id] = {
-        "state": dict(zip(names,[c.adapter(c.default, globs) for c in controls])),
-        "function": adapted_f,
-        "controls": dict(zip(names, controls)),
-        "globals": globs,
-        }
-
-    _sage_messages.message_queue.message('interact_prepare',
-                                  {'interact_id':function_id,
-                                   'controls':dict(zip(names,[c.message() for c in controls])),
-                                   'update':update,
-                                   'layout':layout})
-    global __sage_cell_timeout__
-    __sage_cell_timeout__=60
-    adapted_f(control_vals=_INTERACTS[function_id]["state"].copy())
-    return f
-
-
-
-
+        interact_id=str(uuid.uuid4())
+        msg = {"application/sage-interact": {"new_interact_id": interact_id,
+                                             "controls": dict(zip(names, (control.message() for control in controls))),
+                                             "layout": layout,
+                                             "update": update},
+               "text/plain": "Sage Interact"}
+        sys._sage_.display_message(msg)
+        sys._sage_.kernel_timeout = float("inf")
+        def adapted_f(control_vals):
+            with session_metadata({'interact_id': interact_id}):
+                returned=f(**control_vals)
+            return returned
+        # update global __interacts
+        __interacts[interact_id] = {"function": adapted_f,
+                                  "controls": dict(zip(names, controls)),
+                                  "state": dict(zip(names,[c.adapter(c.default, f.func_globals) for c in controls])),
+                                  "globals": f.func_globals}
+        adapted_f(__interacts[interact_id]["state"].copy())
+        return f
+    return interact
 
 class InteractControl:
     """
@@ -396,7 +335,7 @@ class InputBox(InteractControl):
     :arg bool evaluate: If ``True`` (default), the user's string will first be evaluated
         using ``sage_eval``, and then passed to the adapter function.
     """
-    def __init__(self, default="", label=None, width=0, height=1, adapter=None, evaluate=True):
+    def __init__(self, default=u"", label=None, width=0, height=1, adapter=None, evaluate=True):
         if not isinstance(default, basestring):
             default = repr(default)
         self.default=default
@@ -458,7 +397,7 @@ class InputGrid(InteractControl):
     :arg evaluate: whether or not the strings returned from the front end
         are first sage_eval'd (default: ``True``).
     """
-    def __init__(self, nrows=1, ncols=1, default='0', adapter=None, width=0, label=None,
+    def __init__(self, nrows=1, ncols=1, default=u'0', adapter=None, width=0, label=None,
                  element_adapter=None, evaluate=True):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
@@ -673,7 +612,7 @@ class DiscreteSlider(InteractControl):
                 'label':self.label}
     def adapter(self,v, globs):
         if self.range_slider:
-            return [self.values[int(i)] for i in v]
+            return tuple(self.values[int(i)] for i in v)
         else:
             return self.values[int(v)]
 
@@ -687,7 +626,7 @@ class ContinuousSlider(InteractControl):
         slider defaults to its minimum
     :arg tuple interval: range of the slider, in the form ``(min, max)``
     :arg int steps: number of steps the slider should have between min and max
-    :arg Number stepsize: size of step for the slider. If both step and stepsized are specified, stepsize takes precedence so long as it is valid.
+    :arg Number stepsize: size of step for the slider. If both step and stepsize are specified, stepsize takes precedence so long as it is valid.
     :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
     :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
     :arg str label: the label of the control, ``""`` for no label, and
@@ -703,7 +642,7 @@ class ContinuousSlider(InteractControl):
         
         if self.range_slider:
             self.subtype = "continuous_range"
-            self.default = default if default is not None and len(default) == 2 else [self.interval[0], self.interval[1]]
+            self.default = default if default is not None and len(default) == 2 else (self.interval[0], self.interval[1])
             for i in range(2):
                 if not (self.interval[0] <= self.default[i] <= self.interval[1]):
                     self.default[i] = self.interval[i]
@@ -729,8 +668,8 @@ class ContinuousSlider(InteractControl):
                 'subtype':self.subtype,
                 'display_value':self.display_value,
                 'default':self.default_return,
-                'range':[float(i) for i in self.interval],
                 'step':self.stepsize,
+                'range':[float(i) for i in self.interval],
                 'raw':True,
                 'label':self.label}
 
@@ -834,7 +773,6 @@ class MultiSlider(InteractControl):
                           'subtype':self.slider_type,
                           'display_values':self.display_values,
                           'sliders':self.sliders,
-                          'label':self.label,
                           'range':self.interval,
                           'step':self.stepsize,
                           'raw':True,
@@ -871,12 +809,13 @@ class ColorSelector(InteractControl):
 
     def __init__(self, default="#000000", hide_input=False, sage_color=True, label=None):
         self.sage_color = sage_color
-
-        self.sage_mode = CONFIG.EMBEDDED_MODE["sage_mode"]
-        self.enable_sage = CONFIG.EMBEDDED_MODE["enable_sage"]
-
-        if self.sage_mode and self.enable_sage and self.sage_color:
-            from sagenb.misc.misc import Color
+        if self.sage_color:
+            try:
+                from sagenb.misc.misc import Color
+                self.sage_mode = True;
+            except:
+                self.sage_mode = False;
+        if self.sage_mode and self.sage_color:
             if isinstance(default, Color):
                 self.default = default
             elif isinstance(default, str):
@@ -902,14 +841,14 @@ class ColorSelector(InteractControl):
                               'raw':False,
                               'label':self.label}
 
-        if self.sage_mode and self.enable_sage and self.sage_color:
+        if self.sage_mode and self.sage_color:
             self.return_value["default"] = self.default.html_color()
         else:
             self.return_value["default"] = self.default
         return self.return_value
 
     def adapter(self, v, globs):
-        if self.sage_mode and self.enable_sage and self.sage_color:
+        if self.sage_mode and self.sage_color:
             from sagenb.misc.misc import Color
             return Color(v)
         else:
@@ -1128,18 +1067,20 @@ def automatic_control(control, var=None):
     if var=="auto_update" and control is False:
         return UpdateButton()
     
-    # Checks for interact controls that are verbosely defined
-    if isinstance(control, InteractControl):
-        return control
-    
     # Checks for labels and control values
     for _ in range(2):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
             label, control = control
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
+            # TODO: default_value isn't used effectively below in all instances 
             default_value, control = control
 
-    if isinstance(control, basestring):
+    # Checks for interact controls that are verbosely defined
+    if isinstance(control, InteractControl):
+        C = control
+        if label:
+            C.label = label
+    elif isinstance(control, basestring):
         C = InputBox(default = control, label = label, evaluate=False)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
@@ -1170,8 +1111,7 @@ def automatic_control(control, var=None):
     else:
         from sage.all import sage_eval
         C = InputBox(default = control, label=label, evaluate=True)
-
-        if CONFIG.EMBEDDED_MODE["sage_mode"] and CONFIG.EMBEDDED_MODE["enable_sage"]:
+        try:
             from sagenb.misc.misc import Color
             from sage.structure.all import is_Vector, is_Matrix
             from sage.all import parent
@@ -1190,6 +1130,8 @@ def automatic_control(control, var=None):
                               default = default_value, adapter=lambda x, globs: parent(control)(x[0]))
             elif isinstance(control, Color):
                 C = ColorSelector(default = control, label = label)
+        except:
+            pass
     
     return C
 
@@ -1241,4 +1183,10 @@ def default_to_index(values, default):
         index = i
     return index
 
+imports = {"Checkbox": Checkbox, "InputBox": InputBox, "InputGrid": InputGrid,
+           "Selector": Selector, "DiscreteSlider": DiscreteSlider,
+           "ContinuousSlider": ContinuousSlider, "MultiSlider": MultiSlider,
+           "ColorSelector": ColorSelector, "Selector": Selector,
+           "Button": Button, "ButtonBar": ButtonBar, "HtmlBox": HtmlBox,
+           "UpdateButton": UpdateButton}
 
