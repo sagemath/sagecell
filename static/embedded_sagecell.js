@@ -387,8 +387,8 @@ sagecell.initCell = (function(sagecellInfo) {
             $(sagecell.last_session[evt.data.id].session_container).remove();
         }
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
-		        editorData.save();
-	    }
+            editorData.save();
+        }
         var session = new sagecell.Session(outputLocation);
 
         session.execute(textArea.val());
@@ -585,12 +585,12 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              matchBrackets: true,
              readOnly: readOnly,
              extraKeys: {
-    	         "Tab": "indentMore", 
-        	     "Shift-Tab": "indentLess",
-        	     "Shift-Enter": function (editor) {
-        	         return CodeMirror.Pass;
-    	         }
-    	  	 },
+                 "Tab": "indentMore", 
+                 "Shift-Tab": "indentLess",
+                 "Shift-Enter": function (editor) {
+                     return CodeMirror.Pass;
+                 }
+             },
              onKeyEvent: function (editor, event) {
                  editor.save();
                  if (event.type === "keyup" && event.which === 13 && event.shiftKey) {
