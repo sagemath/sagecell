@@ -239,15 +239,11 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         hide_box=kwargs.get('hide_box', False)
         return color_selector(default=default, label=label,
                               widget=widget, hide_box=hide_box)
-    adapter = None
-    evaluate = True
     if type is str or height>1:
-        evaluate = False
-    elif type is not None:
-        adapter = lambda x, globs: type(x)
-    return InputBox(default=default, width=width,
-                    label=label, adapter=adapter, evaluate=evaluate,
-                    height=height)
+        return InputBox(default=default, label=label, width=width, height=height)
+    else:
+        return ExpressionBox(default=default, label=label, width=width, height=height,
+            adapter=(lambda x, globs: type(x)) if type is not None else None)
 
 def color_selector(default=(0,0,1), label=None,
                  widget='colorpicker', hide_box=False):
