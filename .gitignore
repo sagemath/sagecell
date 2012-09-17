@@ -2,10 +2,12 @@
 *~
 doc/_build/*
 tests/multimechanize/results/
-static/jmol
+sqlite.db
 config.py
 
 # generated web files
+submodules/jsmin-bin
+static/jmol
 static/all*
 static/jquery.min.js
 static/sockjs.js
