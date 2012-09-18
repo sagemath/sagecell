@@ -144,7 +144,9 @@ sagecell.Session.prototype.execute = function (code, language) {
         if (pre) {
             code = pre + '("""' + code.replace(/"/g, '\\"') + '""")'
         }
-        this.language = language;
+        if (language === "html") {
+            code += "\nNone";
+        }
         var callbacks = {"output": $.proxy(this.handle_output, this),
                          "execute_reply": $.proxy(this.handle_execute_reply, this)};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false,
@@ -240,10 +242,8 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         break;
 
     case "pyout":
-        if (this.language !== "html") {
-            this.output('<pre class="sagecell_pyout"></pre>', block_id)
-                .text(content.data["text/plain"]);
-        }
+        this.output('<pre class="sagecell_pyout"></pre>', block_id)
+            .text(content.data["text/plain"]);
         break;
 
     case "pyerr":
