@@ -17,6 +17,7 @@
 
 (function($) {
 "use strict";
+var undefined;
 
 /**************************************************************
 * 
@@ -78,7 +79,8 @@ sagecell.Session = function (outputDiv) {
         this.shell_channel.onopen = function () {
             that.opened = true;
             while (that.deferred_code.length > 0) {
-                that.execute(that.deferred_code.shift());
+                var code = that.deferred_code.shift();
+                that.execute(code[0], code[1]);
             }
         }
         this.iopub_channel.onopen = undefined;
@@ -129,13 +131,26 @@ sagecell.Session = function (outputDiv) {
     this.eventHandlers = {};
 };
 
-sagecell.Session.prototype.execute = function (code) {
+sagecell.Session.prototype.execute = function (code, language) {
     if (this.opened) {
-        var callbacks = {"output": $.proxy(this.handle_output, this), "execute_reply": $.proxy(this.handle_execute_reply, this)};
+        var pre;
+        if (language === "python") {
+            pre = "exec ";
+        } else if (language === "html") {
+            pre = "html";
+        } else if (language !== "sage") {
+            pre = "print " + language + ".eval";
+        }
+        if (pre) {
+            code = pre + '("""' + code.replace(/"/g, '\\"') + '""")'
+        }
+        this.language = language;
+        var callbacks = {"output": $.proxy(this.handle_output, this),
+                         "execute_reply": $.proxy(this.handle_execute_reply, this)};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false,
                 "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}}));
     } else {
-        this.deferred_code.push(code);
+        this.deferred_code.push([code, language]);
     }
     if (!this.executed) {
         this.executed = true;
@@ -223,12 +238,17 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         break;
 
     case "pyout":
-        this.output('<pre class="sagecell_pyout"></pre>', block_id).text(content.data["text/plain"]);
-         break;
+        if (this.language !== "html") {
+            this.output('<pre class="sagecell_pyout"></pre>', block_id)
+                .text(content.data["text/plain"]);
+        }
+        break;
 
     case "pyerr":
-        this.output('<pre class="sagecell_pyerr"></pre>', block_id)
-            .html(IPython.utils.fixConsole(content.traceback.join("\n")));
+        if (content.traceback.join) {
+            this.output('<pre class="sagecell_pyerr"></pre>', block_id)
+                .html(IPython.utils.fixConsole(content.traceback.join("\n")));
+        }
         break;
 
     case "display_data":

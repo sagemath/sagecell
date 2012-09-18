@@ -1,5 +1,6 @@
 (function() {
 "use strict";
+var undefined;
 
 // Make a global sagecell namespace for our functions
 window.sagecell = window.sagecell || {};
@@ -47,6 +48,8 @@ sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
+sagecell.modes = {"sage": "python", "python": "python",
+                  "html": "htmlmixed", "r": "r"};
 sagecell.loadMathJax = true;
 
 sagecell.init = function (callback) {
@@ -213,9 +216,6 @@ sagecell.makeSagecell = function (args) {
             } else {
                 inputLocation.html(sagecell.body);
             }
-            var id = IPython.utils.uuid();
-            inputLocation.find(".sagecell_editorToggle label").attr("for", id);
-            inputLocation.find(".sagecell_editorToggle input").attr("id", id);
             inputLocation.addClass("sagecell");
             outputLocation.addClass("sagecell");
             inputLocation.find(".sagecell_commands").val(settings.code);
@@ -280,6 +280,7 @@ sagecell.initCell = (function(sagecellInfo) {
     var collapse = sagecellInfo.collapse;
     var sageMode = inputLocation.find(".sagecell_sageModeCheck");
     var textArea = inputLocation.find(".sagecell_commands");
+    var langSelect = inputLocation.find(".sagecell_language select");
     var files = [];
     var editorData, temp;
     if (editor === "textarea" || editor === "textarea-readonly") {
@@ -299,6 +300,10 @@ sagecell.initCell = (function(sagecellInfo) {
     inputLocation.find(".sagecell_advancedTitle").click(function () {
         inputLocation.find(".sagecell_advancedFields").slideToggle();
         return false;
+    });
+    langSelect.change(function () {
+        var mode = langSelect.find("option")[langSelect[0].selectedIndex].value;
+        editorData.setOption("mode", sagecell.modes[mode]);
     });
     function fileRemover(i, li) {
         return function () {
@@ -391,7 +396,7 @@ sagecell.initCell = (function(sagecellInfo) {
         }
         var session = new sagecell.Session(outputLocation);
 
-        session.execute(textArea.val());
+        session.execute(textArea.val(), langSelect.find("option")[langSelect[0].selectedIndex].value);
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
@@ -576,9 +581,11 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         } else {
             editor = "codemirror";
         }
+        var langSelect = inputLocation.find(".sagecell_language select");
+        var mode = langSelect.find("option")[langSelect[0].selectedIndex].value;
         editorData = CodeMirror.fromTextArea(
             commands.get(0),
-            {mode: "python",
+            {mode: sagecell.modes[mode],
              indentUnit: 4,
              tabMode: "shift",
              lineNumbers: true,

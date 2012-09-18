@@ -1,9 +1,3 @@
-.sagecell_completion {
-    height: 36pt;
-    white-space: nowrap;
-    overflow:auto;
-}
-
 .sagecell_messages div {
     margin-bottom: 12pt;
 }
@@ -58,6 +52,11 @@
     height: 200px;
 }
 
+.sagecell_output, .sagecell_input {
+    overflow: hidden;
+    padding-right: 2px;
+}
+
 .sagecell_output_elements {
     margin-top: 0.5em;
 }
@@ -69,7 +68,6 @@
 
 .sagecell_sessionContainer {
     position: relative;
-    margin-bottom: 10px;
 }
 
 .sagecell_sessionOutput {
@@ -91,9 +89,7 @@
 
 .sagecell_poweredBy {
     float: right;
-    padding-right: 5px;
-    padding-top: 3px;
-    width: 18%;
+    padding: 3px 5px 5px 0px;
     text-align: right;
     overflow: visible;
     font-size: 80%;
@@ -175,12 +171,14 @@
 
 .sagecell_editor {
     line-height: 13px;
-    padding-bottom: 1em;
+    margin-bottom: 8px;
 }
 
-.sagecell_editorToggle {
+.sagecell_options {
+    display: inline-block;
+    margin-right: 2px;
     float: right;
-    margin: 2px;
+    text-align: right;
     font-size: 80%;
 }
 
