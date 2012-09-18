@@ -161,9 +161,11 @@ sagecell.Session.prototype.execute = function (code, language) {
                                         "content": {"code": code}})},
             function (data) {
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
-                    .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
+                    .attr("href", sagecell.URLs.root + "?q=" +
+                    JSON.parse(data).query + "&lang=" + language);
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
-                    .attr("href", sagecell.URLs.root + "?z=" + JSON.parse(data).zip);
+                    .attr("href", sagecell.URLs.root + "?z=" +
+                    JSON.parse(data).zip + "&lang=" + language);
             });
     }
 };

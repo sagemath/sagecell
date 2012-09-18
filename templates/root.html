@@ -12,7 +12,8 @@
 $(function () {
     sagecell.makeSagecell({inputLocation: '#sagecell'
             {% if code %}, code: decodeURIComponent('{{ code }}'),
-                           autoeval: {{autoeval}} {% end %} });
+                           autoeval: {{autoeval}} {% end %}
+            {% if lang %}, defaultLanguage: '{{lang}}' {% end %} });
 });
     </script>
   </head>
