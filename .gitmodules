@@ -1,5 +1,5 @@
-[submodule "submodules/codemirror2"]
-	path = submodules/codemirror2
+[submodule "submodules/codemirror"]
+	path = submodules/codemirror
 	url = git://github.com/marijnh/CodeMirror.git
 [submodule "submodules/cssmin"]
 	path = submodules/cssmin
