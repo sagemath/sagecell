@@ -7,7 +7,7 @@ try:
     a,b = randint(-2**31,2**31), randint(-2**31,2**31)
     code = "print %s+%s"%(a,b)
     data = urllib.urlencode(dict(code=code))
-    request = urllib2.urlopen('http://aleph2.sagemath.org/service', data, timeout = 8)
+    request = urllib2.urlopen('http://aleph2.sagemath.org/service', data, timeout = 30)
     reply = json.loads(request.read())
     answer = int(reply['stdout'].strip())
 
