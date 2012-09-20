@@ -24,7 +24,24 @@
 * 
 **************************************************************/
 
+sagecell.simpletimer = function() { var t = (new Date()).getTime();
+                                   //var a = 0;
+                                   //console.log('starting timer from '+t);
+                                   return function(reset) {
+                                       reset = reset || false;
+                                       var old_t = t;
+                                       var new_t = (new Date()).getTime();
+                                       if (reset) {
+                                           t = new_t;
+                                       }
+                                       //a+=1;
+                                       //console.log('time since '+t+': '+(new_t-old_t)+', accessed: '+a);
+                                       return new_t-old_t;
+                                   }};
+
 sagecell.Session = function (outputDiv) {
+    this.timer = sagecell.simpletimer();
+    
     this.outputDiv = outputDiv;
     this.last_requests = {};
     this.sessionContinue = true;
@@ -75,7 +92,9 @@ sagecell.Session = function (outputDiv) {
         this.base_url = this.base_url.substr(sagecell.URLs.root.length);
         this._kernel_started = IPython.Kernel.prototype._kernel_started;
         this._kernel_started(json);
+        console.log('kernel started: '+that.timer()+' ms.');
         this.shell_channel.onopen = function () {
+            console.log('kernel channel opened: '+that.timer()+' ms.');
             that.opened = true;
             while (that.deferred_code.length > 0) {
                 that.execute(that.deferred_code.shift());
@@ -131,6 +150,7 @@ sagecell.Session = function (outputDiv) {
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
+        console.log('opened and executing in kernel: '+this.timer()+' ms');
         var callbacks = {"output": $.proxy(this.handle_output, this), "execute_reply": $.proxy(this.handle_execute_reply, this)};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false,
                 "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}}));
@@ -140,11 +160,13 @@ sagecell.Session.prototype.execute = function (code) {
     if (!this.executed) {
         this.executed = true;
         var that = this;
+        console.log('sending execute_request post: '+that.timer()+' ms.');
         sagecell.sendRequest("POST", sagecell.URLs.permalink,
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
                                         "metadata": {},
                                         "content": {"code": code}})},
             function (data) {
+                console.log('POST request walltime: '+that.timer() + " ms");
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
                     .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
@@ -186,32 +208,34 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
 };
 
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
+    
+    console.log('reply walltime: '+this.timer() + " ms");
     if(msg.status==="error") {
-            this.output('<pre class="sagecell_pyerr"></pre>',null)
-                .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
-} 
-var payload = msg.payload[0];
-if (payload && payload.new_files){
-    var files = payload.new_files;
-    var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
-    var html="<div>\n";
-    for(var j = 0, j_max = files.length; j < j_max; j++) {
-        if (this.files[files[j]] !== undefined) {
-            this.files[files[j]]++;
-        } else {
-            this.files[files[j]] = 0;
+        this.output('<pre class="sagecell_pyerr"></pre>',null)
+            .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
+    } 
+    var payload = msg.payload[0];
+    if (payload && payload.new_files){
+        var files = payload.new_files;
+        var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
+        var html="<div>\n";
+        for(var j = 0, j_max = files.length; j < j_max; j++) {
+            if (this.files[files[j]] !== undefined) {
+                this.files[files[j]]++;
+            } else {
+                this.files[files[j]] = 0;
+            }
         }
-    }
-    var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
-    for (j in this.files) {
-        //TODO: escape filenames and id
-        html+='<a href="'+filepath+j+'?q='+this.files[j]+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
-    }
-    html+="</div>";
-    output_block.html(html).effect("pulsate", {times:1}, 500);
+        var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
+        for (j in this.files) {
+            //TODO: escape filenames and id
+            html+='<a href="'+filepath+j+'?q='+this.files[j]+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
+        }
+        html+="</div>";
+        output_block.html(html).effect("pulsate", {times:1}, 500);
     }
 }
-
+    
 sagecell.Session.prototype.handle_output = function (msg_type, content, metadata) {
     var block_id = metadata.interact_id || null;
     // Handle each stream type.  This should probably be separated out into different functions.
@@ -251,6 +275,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         }
         break;
     }
+    console.log('handled output: '+this.timer()+' ms');
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
     var output = this.outputDiv.find(".sagecell_output").get(0);
