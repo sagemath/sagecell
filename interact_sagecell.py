@@ -1128,7 +1128,7 @@ def automatic_control(control, var=None):
         if label:
             C.label = label
     elif isinstance(control, basestring):
-        C = InputBox(default = control, label = label, evaluate=False)
+        C = InputBox(default = control, label = label)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
     elif isinstance(control, list):
@@ -1156,7 +1156,7 @@ def automatic_control(control, var=None):
             values=list(control)
             C = DiscreteSlider(default = default_value, values = values, label = label)
     else:
-        C = InputBox(default = control, label=label, evaluate=True)
+        C = ExpressionBox(default = control, label=label)
         try:
             from sagenb.misc.misc import Color
             from sage.structure.all import is_Vector, is_Matrix

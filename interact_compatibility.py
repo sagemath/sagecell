@@ -240,7 +240,7 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         return color_selector(default=default, label=label,
                               widget=widget, hide_box=hide_box)
     if type is str or height>1:
-        return InputBox(default=default, label=label, width=width, height=height)
+        return InputBox(default=default, label=label, width=width, height=height, keypress=False)
     else:
         return ExpressionBox(default=default, label=label, width=width, height=height,
             adapter=(lambda x, globs: type(x)) if type is not None else None)
