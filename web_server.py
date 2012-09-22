@@ -48,7 +48,8 @@ class SageCellServer(tornado.web.Application):
         default_comp = self.config.get_default_config("_default_config")
         kernel_timeout = self.config.get_config("max_kernel_timeout")
 
-        self.km = TMKM(computers=initial_comps, default_computer_config=default_comp, kernel_timeout=kernel_timeout)
+        self.km = TMKM(computers=initial_comps, default_computer_config=default_comp,
+                       kernel_timeout=kernel_timeout) #, preforked_kernels = preforked_kernels)
         self.db = DB(misc.get_db_file(self.config))
         self.ioloop = ioloop.IOLoop.instance()
 
