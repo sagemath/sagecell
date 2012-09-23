@@ -195,8 +195,9 @@ class TrustedMultiKernelManager(object):
         """ Starts a new kernel on an open or provided computer.
 
         Starts up a new kernel non-asynchronously. This should only be used
-        when performance is asychronous performance is not an issue (e.g. when
-        initially populating the preforked kernel queue on server startup).
+        when performance is not an issue (e.g. when initially populating
+        the preforked kernel queue on server startup, when asynchronous
+        operations don't matter).
 
         :returns: kernel id assigned to the newly created kernel
         :rtype: string
