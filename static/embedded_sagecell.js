@@ -164,8 +164,7 @@ sagecell.makeSagecell = function (args) {
                 "hide": ["computationID", "messages"],
                 "mode": "normal",
                 "replaceOutput": true,
-                "languages": ["sage", "gap", "gp", "html",
-                              "maxima", "python", "r", "singular"]};
+                "languages": ["sage"]};
 
     // jQuery.extend() has issues with nested objects, so we manually merge
     // hide parameters.
@@ -650,14 +649,14 @@ sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
         "editor": "textarea-readonly",
         "hide": ["editor", "editorToggle", "files", "permalink"],
-        "languages": ["sage"],
     },
     "restricted": { // to display/evaluate code that can't be edited.
         "editor": "codemirror-readonly",
         "hide": ["editorToggle", "files", "permalink"],
-        "languages": ["sage"],
     }
 };
+
+sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "python", "r", "singular"]
 
 // Various utility functions for the Single Cell Server
 sagecell.util = {
