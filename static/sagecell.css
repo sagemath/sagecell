@@ -247,6 +247,19 @@
     content: "\2716";
 }
 
+.sagecell table.table_form tr.row-a {
+    background-color: #f8f8f8;
+}
+
+.sagecell table.table_form tr.row-b {
+    background-color: #efefef;
+}
+
+.sagecell table.table_form td {
+    padding: 5px 15px;
+    color: #00a;
+}
+
 .sagecell .ansibold {font-weight: bold;}
 .sagecell .ansiblack {color: black;}
 .sagecell .ansired {color: red;}
