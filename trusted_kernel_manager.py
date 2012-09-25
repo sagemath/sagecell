@@ -37,11 +37,12 @@ class TrustedMultiKernelManager(object):
                 comp_id = self.add_computer(comp)
                 preforked = comp.get("preforked_kernels", 0)
                 if preforked:
-                    print "Preforking kernels ",
                     for i in range(preforked):
-                        self._kernel_queue.put(self.new_session(comp_id = comp_id))
-                        print i+1,
-                    print " ...  Done preforking kernels for %s"%(comp_id)
+                        def cb(kernel_id, i=i, comp_id=comp_id):
+                            self._kernel_queue.put((kernel_id, comp_id))
+                            print "Started preforked kernel %d, computer %s"%(i, comp_id)
+                        self.new_session_async(callback = cb, comp_id = comp_id)
+                    print "Requested %d preforked kernels"%preforked
 
     def get_kernel_ids(self, comp = None):
         """ A function for obtaining kernel ids of a particular computer.
@@ -226,7 +227,21 @@ class TrustedMultiKernelManager(object):
         else:
             return False
 
-    def new_session_async(self, callback=None):
+    def _setup_kernel(self, reply, comp_id):
+        """
+        Set up the kernel information contained in the untrusted reply message `reply` from computer `comp_id`.
+        """
+        reply_content = reply["content"]
+        kernel_id = reply_content["kernel_id"]
+        kernel_connection = reply_content["connection"]
+        self._kernels[kernel_id] = {"comp_id": comp_id,
+                                    "connection": kernel_connection,
+                                    "executing": False,
+                                    "timeout": time.time()+self.kernel_timeout}
+        self._comps[comp_id]["kernels"][kernel_id] = None
+        self._sessions[kernel_id] = Session(key=kernel_connection["key"])
+
+    def new_session_async(self, callback=None, comp_id=None):
         """ Starts a new kernel on an open computer.
 
         We try to get a kernel off a queue of preforked kernels to minimize
@@ -241,37 +256,31 @@ class TrustedMultiKernelManager(object):
         :returns: kernel id assigned to the newly created kernel
         :rtype: string
         """
-        def setup_kernel(reply):
-            reply_content = reply["content"]
-            kernel_id = reply_content["kernel_id"]
-            kernel_connection = reply_content["connection"]
-            self._kernels[kernel_id] = {"comp_id": comp_id,
-                                        "connection": kernel_connection,
-                                        "executing": False,
-                                        "timeout": time.time()+self.kernel_timeout}
-            self._comps[comp_id]["kernels"][kernel_id] = None
-            self._sessions[kernel_id] = Session(key=kernel_connection["key"])
-
-
-        comp_id = self._find_open_computer()
-        resource_limits = self._comps[comp_id].get("resource_limits")
-
         try:
-            preforked_kernel_id = self._kernel_queue.get_nowait()
+            if comp_id is not None:
+                # if we're demanding a specific computer, then we don't want a random
+                # preforked kernel
+                raise Empty
+            preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
             preforked = True
             def cb(reply):
                 if reply["type"] == "success":
-                    setup_kernel(reply)
-                    self._kernel_queue.put(reply["content"]["kernel_id"])
+                    self._setup_kernel(reply, comp_id)
+                    self._kernel_queue.put((reply["content"]["kernel_id"], comp_id))
+                else:
+                    print "Error restarting preforked kernel"
         except Empty:
+            if comp_id is None:
+                comp_id = self._find_open_computer()
             preforked = False
             def cb(reply):
                 if reply["type"] == "success":
-                    setup_kernel(reply)
+                    self._setup_kernel(reply, comp_id)
                     callback(reply["content"]["kernel_id"])
                 else:
                     callback(False)
 
+        resource_limits = self._comps[comp_id].get("resource_limits")
         self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
         if preforked:
