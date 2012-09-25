@@ -17,7 +17,7 @@ Put this file in ``data/plugin/parser/``.
 You must also something like these lines in your wikiconfig::
 
     html_head = '<script type="text/javascript" src="http://aleph.sagemath.org/static/jquery.min.js"></script>'
-    html_head += '<script type="text/javascript" src="http://aleph.sagemath.org/embedded_sagecell.js"></script>'
+    html_head += '<script type="text/javascript" src="http://aleph.sagemath.org/static/embedded_sagecell.js"></script>'
     html_head += '<style type="text/css">.sagecell_output th, .sagecell_output td {border: none;}</style>'
 
 
