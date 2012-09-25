@@ -25,7 +25,7 @@ extensions = ['sphinx.ext.mathjax', 'sphinx.ext.graphviz', 'sagecellext']
 
 
 USAGE:
- .. sagemath::
+ .. sagecell::
 
     1+1
     print "hello world"
