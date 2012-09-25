@@ -1105,7 +1105,7 @@ def automatic_control(control, var=None):
     from numbers import Number
     from types import GeneratorType
     label = None
-    default_value = 0
+    default_value = None
 
     # For backwards compatibility, we check to see if
     # auto_update=False as passed in. If so, we set up an
@@ -1116,7 +1116,7 @@ def automatic_control(control, var=None):
     
     # Checks for labels and control values
     for _ in range(2):
-        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
+        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], basestring):
             label, control = control
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
             # TODO: default_value isn't used effectively below in all instances 
