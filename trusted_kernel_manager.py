@@ -253,7 +253,6 @@ class TrustedMultiKernelManager(object):
         resource_limits = self._comps[comp_id].get("resource_limits")
 
         try:
-            print "getting preforked kernel"
             preforked_kernel_id = self._kernel_queue.get_nowait()
             preforked = True
             def cb(reply):
@@ -261,7 +260,6 @@ class TrustedMultiKernelManager(object):
                     setup_kernel(reply)
                     self._kernel_queue.put(reply["content"]["kernel_id"])
         except Empty:
-            print "starting new kernel"
             preforked = False
             def cb(reply):
                 if reply["type"] == "success":
