@@ -7,7 +7,7 @@ from zmq import ssh
 import paramiko
 import os
 import time
-from Queue import Queue
+from Queue import Queue, Empty
 
 import sender
 
@@ -35,7 +35,7 @@ class TrustedMultiKernelManager(object):
         if computers is not None:
             for comp in computers:
                 comp_id = self.add_computer(comp)
-                for i in xrange(comp["preforked_kernels"]):
+                for i in range(comp["preforked_kernels"]):
                     self._kernel_queue.put(self.new_session(comp_id = comp_id))
                 print "Done preforking kernels for %s"%(comp_id)
 
@@ -237,49 +237,45 @@ class TrustedMultiKernelManager(object):
         :returns: kernel id assigned to the newly created kernel
         :rtype: string
         """
-        preforked = True
-        try:
-            preforked_kernel_id = self._kernel_queue.get_nowait()
-        except:
-            preforked = False
+        def setup_kernel(reply):
+            reply_content = reply["content"]
+            kernel_id = reply_content["kernel_id"]
+            kernel_connection = reply_content["connection"]
+            self._kernels[kernel_id] = {"comp_id": comp_id,
+                                        "connection": kernel_connection,
+                                        "executing": False,
+                                        "timeout": time.time()+self.kernel_timeout}
+            self._comps[comp_id]["kernels"][kernel_id] = None
+            self._sessions[kernel_id] = Session(key=kernel_connection["key"])
+
 
         comp_id = self._find_open_computer()
         resource_limits = self._comps[comp_id].get("resource_limits")
 
-        def cb_not_preforked(reply):
-            if reply["type"] == "success":
-                reply_content = reply["content"]
-                kernel_id = reply_content["kernel_id"]
-                kernel_connection = reply_content["connection"]
-                self._kernels[kernel_id] = {"comp_id": comp_id,
-                                            "connection": kernel_connection,
-                                            "executing": False,
-                                            "timeout": time.time()+self.kernel_timeout}
-                self._comps[comp_id]["kernels"][kernel_id] = None
-                self._sessions[kernel_id] = Session(key=kernel_connection["key"])
-                callback(kernel_id)
-            else:
-                callback(False)
+        try:
+            print "getting preforked kernel"
+            preforked_kernel_id = self._kernel_queue.get_nowait()
+            preforked = True
+            def cb(reply):
+                if reply["type"] == "success":
+                    setup_kernel(reply)
+                    self._kernel_queue.put(reply["content"]["kernel_id"])
+        except Empty:
+            print "starting new kernel"
+            preforked = False
+            def cb(reply):
+                if reply["type"] == "success":
+                    setup_kernel(reply)
+                    callback(reply["content"]["kernel_id"])
+                else:
+                    callback(False)
 
-        def cb_preforked(reply):
-            if reply["type"] == "success":
-                reply_content = reply["content"]
-                kernel_id = reply_content["kernel_id"]
-                kernel_connection = reply_content["connection"]
-                self._kernels[kernel_id] = {"comp_id": comp_id,
-                                            "connection": kernel_connection,
-                                            "executing": False,
-                                            "timeout": time.time()+self.kernel_timeout}
-                self._comps[comp_id]["kernels"][kernel_id] = None
-                self._sessions[kernel_id] = Session(key=kernel_connection["key"])
-                self._kernel_queue.put(kernel_id)
+        self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
         if preforked:
-            self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb_preforked)
+            # return immediately with preforked kernel
             callback(preforked_kernel_id)
-        else:
-            self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb_not_preforked)
-            
+
     def end_session(self, kernel_id):
         """ Kills an existing kernel on a given computer.
 
