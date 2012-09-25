@@ -7,12 +7,17 @@ from zmq import ssh
 import paramiko
 import os
 import time
+from Queue import Queue
 
 import sender
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
-    def __init__(self, computers = None, default_computer_config = None, kernel_timeout = None):
+    def __init__(self, computers = None, default_computer_config = None,
+                 kernel_timeout = None):
+
+        self._kernel_queue = Queue()
+
         self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
         self._comps = {} #comp_id: {"host:"", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
         self._clients = {} #comp_id: {"ssh": paramiko client}
@@ -29,7 +34,10 @@ class TrustedMultiKernelManager(object):
 
         if computers is not None:
             for comp in computers:
-                self.add_computer(comp)
+                comp_id = self.add_computer(comp)
+                for i in xrange(comp["preforked_kernels"]):
+                    self._kernel_queue.put(self.new_session(comp_id = comp_id))
+                print "Done preforking kernels for %s"%(comp_id)
 
     def get_kernel_ids(self, comp = None):
         """ A function for obtaining kernel ids of a particular computer.
@@ -183,13 +191,21 @@ class TrustedMultiKernelManager(object):
             print "Kernel %s not interrupted!"%kernel_id
         return reply
 
-    def new_session(self):
-        """ Starts a new kernel on an open computer. 
+    def new_session(self, comp_id = None):
+        """ Starts a new kernel on an open or provided computer.
+
+        Starts up a new kernel non-asynchronously. This should only be used
+        when performance is not an issue (e.g. when initially populating
+        the preforked kernel queue on server startup, when asynchronous
+        operations don't matter).
 
         :returns: kernel id assigned to the newly created kernel
         :rtype: string
         """
-        comp_id = self._find_open_computer()
+
+        if comp_id is None:
+            comp_id = self._find_open_computer()
+
         resource_limits = self._comps[comp_id].get("resource_limits")
         reply = self._sender.send_msg({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id)
         if reply["type"] == "success":
@@ -209,14 +225,28 @@ class TrustedMultiKernelManager(object):
     def new_session_async(self, callback=None):
         """ Starts a new kernel on an open computer.
 
-        calls the callback with the kernel id assigned to the newly created kernel
+        We try to get a kernel off a queue of preforked kernels to minimize
+        startup time. If we can, we return the preforked kernel id via a
+        callback and then start up a new kernel on the preforked queue. If
+        the prefork queue is empty (e.g. in the case of a large number of
+        requests), then we start up a kernel asynchronously and return that
+        kernel id via a callback without starting a new kernel on the
+        preforked queue. The preforked queue will repopulate when the number
+        of requests goes down.
 
         :returns: kernel id assigned to the newly created kernel
         :rtype: string
         """
+        preforked = True
+        try:
+            preforked_kernel_id = self._kernel_queue.get_nowait()
+        except:
+            preforked = False
+
         comp_id = self._find_open_computer()
         resource_limits = self._comps[comp_id].get("resource_limits")
-        def cb(reply):
+
+        def cb_not_preforked(reply):
             if reply["type"] == "success":
                 reply_content = reply["content"]
                 kernel_id = reply_content["kernel_id"]
@@ -230,9 +260,26 @@ class TrustedMultiKernelManager(object):
                 callback(kernel_id)
             else:
                 callback(False)
-            
-        self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
+        def cb_preforked(reply):
+            if reply["type"] == "success":
+                reply_content = reply["content"]
+                kernel_id = reply_content["kernel_id"]
+                kernel_connection = reply_content["connection"]
+                self._kernels[kernel_id] = {"comp_id": comp_id,
+                                            "connection": kernel_connection,
+                                            "executing": False,
+                                            "timeout": time.time()+self.kernel_timeout}
+                self._comps[comp_id]["kernels"][kernel_id] = None
+                self._sessions[kernel_id] = Session(key=kernel_connection["key"])
+                self._kernel_queue.put(kernel_id)
+
+        if preforked:
+            self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb_preforked)
+            callback(preforked_kernel_id)
+        else:
+            self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb_not_preforked)
+            
     def end_session(self, kernel_id):
         """ Kills an existing kernel on a given computer.
 
