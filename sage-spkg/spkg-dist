@@ -62,8 +62,11 @@ print "Fetching the required packages"
 pkg_index = PackageIndex()
 tmp_dir = mkdtemp()
 # in order of dependencies
-required_packages = ('pymongo>=2.1.1',
-                     'pyzmq==2.1.11', # should be the same version as zmq
+zeromq_version='2.1.11'
+required_packages = ('paramiko',
+                     'pyzmq=='+zeromq_version,
+                     'tornado',
+                     'sockjs-tornado',
     )
 
 install_python_dependencies=""
@@ -85,7 +88,6 @@ fi
 os.chdir(SPKG_SRC)
 
 # get zeromq and mathjax
-zeromq_version='2.1.11'
 zeromq_url='http://download.zeromq.org/zeromq-%s.tar.gz'%zeromq_version
 os.system("curl -L %s | tar xz"%zeromq_url)
 os.system("ln -s zeromq-%s zeromq"%zeromq_version)
