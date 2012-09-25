@@ -1,7 +1,9 @@
 import os.path
 
 # location of a sage executable
-sage = "sage"
+sage = ""
+if sage == "":
+    sage = os.environ["SAGE_ROOT"]+"/sage"
 
 db = "sqlalchemy"
 db_config = {}
