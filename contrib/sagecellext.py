@@ -8,7 +8,7 @@ Add the following lines to your layout.html file (e.g., in source/_templates)
 
 {%- block extrahead %}
     <script type="text/javascript" src="http://aleph.sagemath.org/static/jquery.min.js"></script>
-    <script type="text/javascript" src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
+    <script type="text/javascript" src="http://aleph.sagemath.org/static/embedded_sagecell.js"></script>
     <style type="text/css">.sagecell_output th, .sagecell_output td {border: none;}</style>
 {% endblock %}
 
