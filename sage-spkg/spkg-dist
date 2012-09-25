@@ -21,7 +21,8 @@ from tempfile import mkdtemp
 from pkg_resources import Requirement
 from setuptools.package_index import PackageIndex
 
-version='2.0'
+import datetime
+version=datetime.date.today().isoformat()
 
 SAGECELL_ROOT=os.getcwd()
 SPKG_ROOT = os.path.join(SAGECELL_ROOT, 'dist', 'sagecell-%s'%version)

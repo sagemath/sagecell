@@ -26,7 +26,7 @@
 
 sagecell.simpletimer = function() { var t = (new Date()).getTime();
                                    //var a = 0;
-                                   //console.log('starting timer from '+t);
+                                   console.log('starting timer from '+t);
                                    return function(reset) {
                                        reset = reset || false;
                                        var old_t = t;
@@ -35,7 +35,7 @@ sagecell.simpletimer = function() { var t = (new Date()).getTime();
                                            t = new_t;
                                        }
                                        //a+=1;
-                                       //console.log('time since '+t+': '+(new_t-old_t)+', accessed: '+a);
+                                       console.log('time: '+new_t);
                                        return new_t-old_t;
                                    }};
 
@@ -89,10 +89,11 @@ sagecell.Session = function (outputDiv) {
 
     var that = this;
     this.kernel._kernel_started = function (json) {
+        console.log('kernel start callback: '+that.timer()+' ms.');
         this.base_url = this.base_url.substr(sagecell.URLs.root.length);
         this._kernel_started = IPython.Kernel.prototype._kernel_started;
         this._kernel_started(json);
-        console.log('kernel started: '+that.timer()+' ms.');
+        console.log('kernel ipython startup: '+that.timer()+' ms.');
         this.shell_channel.onopen = function () {
             console.log('kernel channel opened: '+that.timer()+' ms.');
             that.opened = true;
@@ -160,13 +161,13 @@ sagecell.Session.prototype.execute = function (code) {
     if (!this.executed) {
         this.executed = true;
         var that = this;
-        console.log('sending execute_request post: '+that.timer()+' ms.');
+        console.log('sending permalink request post: '+that.timer()+' ms.');
         sagecell.sendRequest("POST", sagecell.URLs.permalink,
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
                                         "metadata": {},
                                         "content": {"code": code}})},
             function (data) {
-                console.log('POST request walltime: '+that.timer() + " ms");
+                console.log('POST permalink request walltime: '+that.timer() + " ms");
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
                     .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
@@ -987,6 +988,7 @@ sagecell.InteractData.control_types = {
 };
 
 sagecell.MultiSockJS = function (url) {
+    console.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
     if (!sagecell.MultiSockJS.channels) {
         sagecell.MultiSockJS.channels = {};
         sagecell.MultiSockJS.opened = false;

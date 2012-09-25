@@ -40,7 +40,8 @@ $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
 $(all-min-js): $(jsmin-bin) $(all-js)
-	$(jsmin-bin) < $(all-js) > $(all-min-js)
+	cp $(all-js) $(all-min-js)
+	#$(jsmin-bin) < $(all-js) > $(all-min-js)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(codemirror-py) \
            $(jmol-js) $(sockjs-client) $(compute_server) $(sagecell)
