@@ -29,6 +29,11 @@ if hg qseries | grep -q 01-sage-embedded.patch;  then
         echo >&2 "Error: you have an out-of-date 02-sage-show.patch applied to Sage; remove this and reinstall the spkg."
         exit 1
     fi
+    cmp -s .hg/patches/sagecell2.patch $SRC/sagecell/sage-patches/sagecell2.patch
+    if [ $? -ne 0 ]; then
+        echo >&2 "Error: you have an out-of-date sagecell2.patch applied to Sage; remove this and reinstall the spkg."
+        exit 1
+    fi
     echo "Patches are the same as what we would apply."
 else
 echo "Patching Sage"
@@ -50,6 +55,17 @@ fi
 hg qpush
 if [ $? -ne 0 ]; then
     echo >&2 "Error pushing patch 02-sage-show.patch."
+    exit 1
+fi
+
+hg qimport $SRC/sagecell/sage-patches/sagecell2.patch
+if [ $? -ne 0 ]; then
+    echo >&2 "Error importing patch sagecell2.patch."
+    exit 1
+fi
+hg qpush
+if [ $? -ne 0 ]; then
+    echo >&2 "Error pushing patch sagecell2.patch."
     exit 1
 fi
 fi
