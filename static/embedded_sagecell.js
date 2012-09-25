@@ -48,6 +48,7 @@ sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.loadMathJax = true;
+sagecell.log = function (obj) { if (sagecell.debug) {console.log(obj);}}
 
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
