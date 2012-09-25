@@ -37,9 +37,11 @@ class TrustedMultiKernelManager(object):
                 comp_id = self.add_computer(comp)
                 preforked = comp.get("preforked_kernels", 0)
                 if preforked:
+                    print "Preforking kernels ",
                     for i in range(preforked):
                         self._kernel_queue.put(self.new_session(comp_id = comp_id))
-                    print "Done preforking kernels for %s"%(comp_id)
+                        print i+1,
+                    print " ...  Done preforking kernels for %s"%(comp_id)
 
     def get_kernel_ids(self, comp = None):
         """ A function for obtaining kernel ids of a particular computer.
