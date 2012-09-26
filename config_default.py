@@ -2,8 +2,16 @@ import os.path
 
 # location of a sage executable
 sage = ""
+
+# defaults if sage isn't set above
 if sage == "":
-    sage = os.environ["SAGE_ROOT"]+"/sage"
+    if 'SAGE_ROOT' in os.environ:
+        # assume that the untrusted worker should run the same copy of sage
+        # that is used to run the web server
+        sage = os.environ["SAGE_ROOT"]+"/sage"
+    else:
+        # assume both the web server and the untrusted workers have sage in their paths
+        sage = "sage"
 
 db = "sqlalchemy"
 db_config = {}
