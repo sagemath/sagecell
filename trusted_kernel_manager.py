@@ -282,17 +282,22 @@ class TrustedMultiKernelManager(object):
     def end_session(self, kernel_id):
         """ Kills an existing kernel on a given computer.
 
+        This function is asynchronous
+
         :arg str kernel_id: the id of the kernel you want to kill
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        reply = self._sender.send_msg({"type":"kill_kernel",
+        def cb(reply):
+            if (reply["type"] == "error"):
+                print "Error ending kernel %s!" % (kernel_id,)
+            else:
+                print "Killed kernel %s"%kernel_id
+                del self._kernels[kernel_id]
+                del self._comps[comp_id]["kernels"][kernel_id]
+
+        self._sender.send_msg_async({"type":"kill_kernel",
                                        "content": {"kernel_id": kernel_id}},
-                                      comp_id)
-        if (reply["type"] == "error"):
-            print "Error ending kernel %s!" % (kernel_id,)
-        else:
-            del self._kernels[kernel_id]
-            del self._comps[comp_id]["kernels"][kernel_id]
+                                      comp_id, callback=cb)
         
     def _find_open_computer(self):
         """ Randomly searches through computers in _comps to find one that can start a new kernel.
