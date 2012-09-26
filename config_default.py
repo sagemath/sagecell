@@ -8,7 +8,7 @@ if sage == "":
     if 'SAGE_ROOT' in os.environ:
         # assume that the untrusted worker should run the same copy of sage
         # that is used to run the web server
-        sage = os.environ["SAGE_ROOT"]+"/sage"
+        sage = os.path.join(os.environ["SAGE_ROOT"],"sage")
     else:
         # assume both the web server and the untrusted workers have sage in their paths
         sage = "sage"
