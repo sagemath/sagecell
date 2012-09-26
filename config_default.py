@@ -1,7 +1,9 @@
 import os.path
 
 # location of a sage executable
-sage = "sage"
+sage = ""
+if sage == "":
+    sage = os.environ["SAGE_ROOT"]+"/sage"
 
 db = "sqlalchemy"
 db_config = {}
@@ -31,6 +33,7 @@ _default_config = {"host": "localhost",
 # The log file will be in the home directory of the untrusted account
                   "log_file": "sagecell.log",
                   "max_kernels": 10,
+                  "preforked_kernels": 5,
 # These set paramaters for a heartbeat channel checking whether a given kernel is alive.
 # Setting first_beat lower than 1.0 may cause javascript errors.
                   "beat_interval": 0.5,

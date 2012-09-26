@@ -28,7 +28,7 @@ var undefined;
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
    //var a = 0;
-   //console.log('starting timer from '+t);
+   sagecell.log('starting timer from '+t);
    return function(reset) {
        reset = reset || false;
        var old_t = t;
@@ -37,7 +37,7 @@ sagecell.simpletimer = function () {
            t = new_t;
        }
        //a+=1;
-       //console.log('time since '+t+': '+(new_t-old_t)+', accessed: '+a);
+       sagecell.log('time since '+t+': '+(new_t-old_t)+', accessed: '+a);
        return new_t-old_t;
    };
 };
@@ -49,7 +49,7 @@ sagecell.Session = function (outputDiv, language) {
     this.last_requests = {};
     this.sessionContinue = true;
     // Set this object because we aren't loading the full IPython JavaScript library
-    IPython.notification_widget = {"set_message": console.log};
+    IPython.notification_widget = {"set_message": sagecell.log};
     $.post = function (url, callback) {
         sagecell.sendRequest("POST", url, {}, function (data) {
             callback(JSON.parse(data));
@@ -92,12 +92,13 @@ sagecell.Session = function (outputDiv, language) {
 
     var that = this;
     this.kernel._kernel_started = function (json) {
+        sagecell.log('kernel start callback: '+that.timer()+' ms.');
         this.base_url = this.base_url.substr(sagecell.URLs.root.length);
         this._kernel_started = IPython.Kernel.prototype._kernel_started;
         this._kernel_started(json);
-        console.log('kernel started: '+that.timer()+' ms.');
+        sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
         this.shell_channel.onopen = function () {
-            console.log('kernel channel opened: '+that.timer()+' ms.');
+            sagecell.log('kernel channel opened: '+that.timer()+' ms.');
             that.opened = true;
             while (that.deferred_code.length > 0) {
                 that.execute(that.deferred_code.shift());
@@ -153,7 +154,7 @@ sagecell.Session = function (outputDiv, language) {
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
-        console.log('opened and executing in kernel: '+this.timer()+' ms');
+        sagecell.log('opened and executing in kernel: '+this.timer()+' ms');
         var pre;
         if (this.language === "python") {
             pre = "exec ";
@@ -178,13 +179,13 @@ sagecell.Session.prototype.execute = function (code) {
     if (!this.executed) {
         this.executed = true;
         var that = this;
-        console.log('sending execute_request post: '+that.timer()+' ms.');
+        sagecell.log('sending permalink request post: '+that.timer()+' ms.');
         sagecell.sendRequest("POST", sagecell.URLs.permalink,
             {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
                                         "metadata": {},
                                         "content": {"code": code}})},
             function (data) {
-                console.log('POST request walltime: '+that.timer() + " ms");
+                sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
                     .attr("href", sagecell.URLs.root + "?q=" +
                     JSON.parse(data).query + "&lang=" + that.language);
@@ -229,7 +230,7 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
 
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
     
-    console.log('reply walltime: '+this.timer() + " ms");
+    sagecell.log('reply walltime: '+this.timer() + " ms");
     if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
             .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
@@ -290,7 +291,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         } else if (content.data["image/png"]) {
             this.output("<img src='data:image/png;base64,"+content.data["image/png"]+"'/>", block_id);
         } else if(content.data['application/x-jmol']) {
-            console.log('making jmol applet');
+            sagecell.log('making jmol applet');
             jmolSetDocument(false);
             this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+content.data['application/x-jmol']+'";\n script SCRIPT;\n'),block_id);            
         } else if (content.data["text/plain"]) {
@@ -298,7 +299,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         }
         break;
     }
-    console.log('handled output: '+this.timer()+' ms');
+    sagecell.log('handled output: '+this.timer()+' ms');
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
     var output = this.outputDiv.find(".sagecell_output").get(0);
@@ -1010,6 +1011,7 @@ sagecell.InteractData.control_types = {
 };
 
 sagecell.MultiSockJS = function (url) {
+    sagecell.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
     if (!sagecell.MultiSockJS.channels) {
         sagecell.MultiSockJS.channels = {};
         sagecell.MultiSockJS.opened = false;

@@ -26,7 +26,7 @@ jsmin          = submodules/jsmin/jsmin.c
 jsmin-bin      = submodules/jsmin-bin
 wrap-js        = static/wrap.js
 sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
-ip-js          = $(sage-root)/local/lib/python2.7/site-packages/IPython/frontend/html/notebook/static/js
+ip-js          = $(shell python -c "import os,IPython; print '/'+os.path.join(*IPython.__file__.split(os.sep)[:-1]+'frontend/html/notebook/static/js'.split(os.sep))")
 ip-namespace   = $(ip-js)/namespace.js
 ip-events      = $(ip-js)/events.js
 ip-utils       = $(ip-js)/utils.js
@@ -45,7 +45,8 @@ $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
 $(all-min-js): $(jsmin-bin) $(all-js)
-	$(jsmin-bin) < $(all-js) > $(all-min-js)
+	cp $(all-js) $(all-min-js)
+	#$(jsmin-bin) < $(all-js) > $(all-min-js)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(cm-python-mode) \
            $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
