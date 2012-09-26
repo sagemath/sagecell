@@ -250,3 +250,21 @@ def capture_output(split=False):
             out.append(sys.stdout.getvalue())
             err.append(sys.stderr.getvalue())
         sys.stdout, sys.stderr = stdout, stderr
+
+from time import time
+class Timer(object):
+    def __init__(self, name=""):
+        self.start = time()
+        self.name = name
+        
+    def __call__(self, reset=False):
+        old_time = self.start
+        new_time = time()
+        if reset:
+            self.start = new_time
+        return new_time - old_time
+
+    def __repr__(self):
+        return str(self.name)+" %s ms"%(int(self(reset=True)*1000))
+
+globaltimer=Timer("Global timer")
