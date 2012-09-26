@@ -2,6 +2,7 @@ from untrusted_kernel_manager import UntrustedMultiKernelManager
 import zmq
 from zmq import ssh
 import sys
+from misc import Timer
 
 class Receiver(object):
     def __init__(self, filename, ip):
@@ -16,10 +17,12 @@ class Receiver(object):
         self.km = UntrustedMultiKernelManager(filename, ip,
                 update_function=self.update_dict_with_sage)
         self.filename = filename
+        self.timer = Timer("", reset=True)
 
     def start(self):
         self.listen = True
         while self.listen:
+            logging.debug("Polling: %s"%self.timer)
             source = self.dealer.recv()
             msg = self.dealer.recv_pyobj()
 
@@ -32,8 +35,10 @@ class Receiver(object):
             if msg.get("content") is None:
                 msg["content"] = {}
 
+            logging.debug("Start handler %s: %s"%(msg_type, self.timer))
             handler = getattr(self, msg_type)
             response = handler(msg["content"])
+            logging.debug("Finished handler %s: %s"%(msg_type, self.timer))
 
             self.dealer.send(source, zmq.SNDMORE)
             self.dealer.send_pyobj(response)
@@ -175,8 +180,6 @@ if __name__ == '__main__':
     logging.basicConfig(filename=filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
     logging.debug('started')
     ip = sys.argv[1]
-    logging.basicConfig(filename=filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
-    logging.debug('started')
     receiver = Receiver(filename, ip)
     receiver.start()
     logging.debug('ended')
