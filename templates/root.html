@@ -10,9 +10,11 @@
     <script src="{{ static_url('embedded_sagecell.js') }}"></script>
     <script>
 $(function () {
-    sagecell.makeSagecell({inputLocation: '#sagecell'
+    sagecell.makeSagecell({inputLocation: '#sagecell',
+                           languages: sagecell.allLanguages
             {% if code %}, code: decodeURIComponent('{{ code }}'),
-                           autoeval: {{autoeval}} {% end %} });
+                           autoeval: {{autoeval}} {% end %}
+            {% if lang %}, defaultLanguage: '{{lang}}' {% end %} });
 });
     </script>
   </head>

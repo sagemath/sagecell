@@ -14,7 +14,12 @@ sagecell-css   = static/sagecell.css
 sockjs-client  = static/sockjs.js
 codemirror-css = submodules/codemirror/lib/codemirror.css
 codemirror     = submodules/codemirror/lib/codemirror.js
-codemirror-py  = submodules/codemirror/mode/python/python.js
+cm-python-mode = submodules/codemirror/mode/python/python.js
+cm-xml-mode    = submodules/codemirror/mode/xml/xml.js
+cm-html-mode   = submodules/codemirror/mode/htmlmixed/htmlmixed.js
+cm-js-mode     = submodules/codemirror/mode/javascript/javascript.js
+cm-css-mode    = submodules/codemirror/mode/css/css.js
+cm-r-mode      = submodules/codemirror/mode/r/r.js
 jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
 cssmin         = submodules/cssmin/src/cssmin.py
 jsmin          = submodules/jsmin/jsmin.c
@@ -43,9 +48,12 @@ $(all-min-js): $(jsmin-bin) $(all-js)
 	cp $(all-js) $(all-min-js)
 	#$(jsmin-bin) < $(all-js) > $(all-min-js)
 
-$(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(codemirror-py) \
-           $(jmol-js) $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(codemirror) $(codemirror-py) $(jmol-js) $(ip-namespace) $(wrap-js) > $(all-js)
+$(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(cm-python-mode) \
+           $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
+           $(cm-r-mode) $(jmol-js) $(sockjs-client) $(compute_server) $(sagecell)
+	cat $(codemirror) $(cm-python-mode) $(cm-xml-mode) $(cm-html-mode) \
+	    $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) $(jmol-js) $(ip-namespace) \
+	    $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 

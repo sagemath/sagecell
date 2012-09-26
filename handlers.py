@@ -61,7 +61,10 @@ class RootHandler(tornado.web.RequestHandler):
             options["autoeval"] = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
         else:
             options["code"] = None
-
+        if "lang" in args:
+            options["lang"] = args["lang"][0]
+        else:
+            options["lang"] = None
         self.render("root.html", **options)
 
 class KernelHandler(tornado.web.RequestHandler):

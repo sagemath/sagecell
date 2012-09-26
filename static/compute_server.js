@@ -17,6 +17,7 @@
 
 (function($) {
 "use strict";
+var undefined;
 
 /**************************************************************
 * 
@@ -24,25 +25,27 @@
 * 
 **************************************************************/
 
-sagecell.simpletimer = function() { var t = (new Date()).getTime();
-                                   //var a = 0;
-                                    sagecell.log('starting timer from '+t);
-                                   return function(reset) {
-                                       reset = reset || false;
-                                       var old_t = t;
-                                       var new_t = (new Date()).getTime();
-                                       if (reset) {
-                                           t = new_t;
-                                       }
-                                       //a+=1;
-                                       sagecell.log('time: '+new_t);
-                                       return new_t-old_t;
-                                   }};
+sagecell.simpletimer = function () {
+    var t = (new Date()).getTime();
+   //var a = 0;
+   sagecell.log('starting timer from '+t);
+   return function(reset) {
+       reset = reset || false;
+       var old_t = t;
+       var new_t = (new Date()).getTime();
+       if (reset) {
+           t = new_t;
+       }
+       //a+=1;
+       sagecell.log('time since '+t+': '+(new_t-old_t)+', accessed: '+a);
+       return new_t-old_t;
+   };
+};
 
-sagecell.Session = function (outputDiv) {
+sagecell.Session = function (outputDiv, language) {
     this.timer = sagecell.simpletimer();
-    
     this.outputDiv = outputDiv;
+    this.language = language;
     this.last_requests = {};
     this.sessionContinue = true;
     // Set this object because we aren't loading the full IPython JavaScript library
@@ -152,7 +155,22 @@ sagecell.Session = function (outputDiv) {
 sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
         sagecell.log('opened and executing in kernel: '+this.timer()+' ms');
-        var callbacks = {"output": $.proxy(this.handle_output, this), "execute_reply": $.proxy(this.handle_execute_reply, this)};
+        var pre;
+        if (this.language === "python") {
+            pre = "exec ";
+        } else if (this.language === "html") {
+            pre = "html";
+        } else if (this.language !== "sage") {
+            pre = "print " + this.language + ".eval";
+        }
+        if (pre) {
+            code = pre + '("""' + code.replace(/"/g, '\\"') + '""")'
+        }
+        if (this.language === "html") {
+            code += "\nNone";
+        }
+        var callbacks = {"output": $.proxy(this.handle_output, this),
+                         "execute_reply": $.proxy(this.handle_execute_reply, this)};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false,
                 "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}}));
     } else {
@@ -169,9 +187,11 @@ sagecell.Session.prototype.execute = function (code) {
             function (data) {
                 sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
-                    .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
+                    .attr("href", sagecell.URLs.root + "?q=" +
+                    JSON.parse(data).query + "&lang=" + that.language);
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
-                    .attr("href", sagecell.URLs.root + "?z=" + JSON.parse(data).zip);
+                    .attr("href", sagecell.URLs.root + "?z=" +
+                    JSON.parse(data).zip + "&lang=" + that.language);
             });
     }
 };
@@ -248,12 +268,15 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         break;
 
     case "pyout":
-        this.output('<pre class="sagecell_pyout"></pre>', block_id).text(content.data["text/plain"]);
-         break;
+        this.output('<pre class="sagecell_pyout"></pre>', block_id)
+            .text(content.data["text/plain"]);
+        break;
 
     case "pyerr":
-        this.output('<pre class="sagecell_pyerr"></pre>', block_id)
-            .html(IPython.utils.fixConsole(content.traceback.join("\n")));
+        if (content.traceback.join) {
+            this.output('<pre class="sagecell_pyerr"></pre>', block_id)
+                .html(IPython.utils.fixConsole(content.traceback.join("\n")));
+        }
         break;
 
     case "display_data":
