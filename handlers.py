@@ -8,7 +8,7 @@ from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
-from misc import json_default
+from misc import json_default, Timer
 
 class RootHandler(tornado.web.RequestHandler):
     """
@@ -86,12 +86,15 @@ class KernelHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
+        timer = Timer("Kernel handler for %s"%self.get_argument("notebook"))
         proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
         ws_url = "%s://%s/" % (proto, host)
         km = self.application.km
         
+        print "Starting session: %s"%timer
         kernel_id = yield gen.Task(km.new_session_async)
+        print "Assigning kernel %s: %s"%(kernel_id,timer)
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
