@@ -25,25 +25,27 @@ var undefined;
 * 
 **************************************************************/
 
-sagecell.simpletimer = function() { var t = (new Date()).getTime();
-                                   //var a = 0;
-                                   //console.log('starting timer from '+t);
-                                   return function(reset) {
-                                       reset = reset || false;
-                                       var old_t = t;
-                                       var new_t = (new Date()).getTime();
-                                       if (reset) {
-                                           t = new_t;
-                                       }
-                                       //a+=1;
-                                       //console.log('time since '+t+': '+(new_t-old_t)+', accessed: '+a);
-                                       return new_t-old_t;
-                                   }};
+sagecell.simpletimer = function () {
+    var t = (new Date()).getTime();
+   //var a = 0;
+   //console.log('starting timer from '+t);
+   return function(reset) {
+       reset = reset || false;
+       var old_t = t;
+       var new_t = (new Date()).getTime();
+       if (reset) {
+           t = new_t;
+       }
+       //a+=1;
+       //console.log('time since '+t+': '+(new_t-old_t)+', accessed: '+a);
+       return new_t-old_t;
+   };
+};
 
-sagecell.Session = function (outputDiv) {
+sagecell.Session = function (outputDiv, language) {
     this.timer = sagecell.simpletimer();
-    
     this.outputDiv = outputDiv;
+    this.language = language;
     this.last_requests = {};
     this.sessionContinue = true;
     // Set this object because we aren't loading the full IPython JavaScript library
@@ -98,8 +100,7 @@ sagecell.Session = function (outputDiv) {
             console.log('kernel channel opened: '+that.timer()+' ms.');
             that.opened = true;
             while (that.deferred_code.length > 0) {
-                var code = that.deferred_code.shift();
-                that.execute(code[0], code[1]);
+                that.execute(that.deferred_code.shift());
             }
         }
         this.iopub_channel.onopen = undefined;
@@ -150,21 +151,21 @@ sagecell.Session = function (outputDiv) {
     this.eventHandlers = {};
 };
 
-sagecell.Session.prototype.execute = function (code, language) {
+sagecell.Session.prototype.execute = function (code) {
     if (this.opened) {
         console.log('opened and executing in kernel: '+this.timer()+' ms');
         var pre;
-        if (language === "python") {
+        if (this.language === "python") {
             pre = "exec ";
-        } else if (language === "html") {
+        } else if (this.language === "html") {
             pre = "html";
-        } else if (language !== "sage") {
-            pre = "print " + language + ".eval";
+        } else if (this.language !== "sage") {
+            pre = "print " + this.language + ".eval";
         }
         if (pre) {
             code = pre + '("""' + code.replace(/"/g, '\\"') + '""")'
         }
-        if (language === "html") {
+        if (this.language === "html") {
             code += "\nNone";
         }
         var callbacks = {"output": $.proxy(this.handle_output, this),
@@ -172,7 +173,7 @@ sagecell.Session.prototype.execute = function (code, language) {
         this.set_last_request(null, this.kernel.execute(code, callbacks, {"silent": false,
                 "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}}));
     } else {
-        this.deferred_code.push([code, language]);
+        this.deferred_code.push(code);
     }
     if (!this.executed) {
         this.executed = true;
@@ -186,10 +187,10 @@ sagecell.Session.prototype.execute = function (code, language) {
                 console.log('POST request walltime: '+that.timer() + " ms");
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
                     .attr("href", sagecell.URLs.root + "?q=" +
-                    JSON.parse(data).query + "&lang=" + language);
+                    JSON.parse(data).query + "&lang=" + that.language);
                 that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
                     .attr("href", sagecell.URLs.root + "?z=" +
-                    JSON.parse(data).zip + "&lang=" + language);
+                    JSON.parse(data).zip + "&lang=" + that.language);
             });
     }
 };

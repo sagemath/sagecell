@@ -401,9 +401,8 @@ sagecell.initCell = (function(sagecellInfo) {
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
-        var session = new sagecell.Session(outputLocation);
-
-        session.execute(textArea.val(), langSelect.find("option")[langSelect[0].selectedIndex].value);
+        var session = new sagecell.Session(outputLocation, langSelect.find("option")[langSelect[0].selectedIndex].value);
+        session.execute(textArea.val());
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
