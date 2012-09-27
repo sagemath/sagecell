@@ -16,6 +16,12 @@ def makedirs(path):
             pass
         else: raise
     
+class KernelError(Exception):
+    """
+    An error relating to starting up kernels
+    """
+    pass
+
 class ForkingKernelManager(object):
     """ A class for managing multiple kernels and forking on the untrusted side. """
     def __init__(self, filename, ip, update_function=None):
@@ -78,10 +84,30 @@ class ForkingKernelManager(object):
         proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
         proc.start()
         os.chdir(currdir)
-        connection = p.recv()
-        p.close()
-        self.kernels[kernel_id] = (proc, connection)
-        return {"kernel_id": kernel_id, "connection": connection}
+        if p.poll(2):
+            connection = p.recv()
+            p.close()
+            self.kernels[kernel_id] = (proc, connection)
+            return {"kernel_id": kernel_id, "connection": connection}
+        else:
+            p.close()
+            self.kill_process(proc)
+            raise KernelError("Could not start kernel")
+
+    def kill_process(self, proc):
+        try:
+            success = True
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            # we assume the kill will eventually happen.
+            # we don't want to block
+            #proc.join()
+        except Exception as e:
+            # On Unix, we may get an ESRCH error if the process has already
+            # terminated. Ignore it.
+            from errno import ESRCH
+            if e.errno !=  ESRCH:
+                success = False
+        return success
 
     def kill_kernel(self, kernel_id):
         """ A function for ending running kernel processes.
@@ -94,18 +120,9 @@ class ForkingKernelManager(object):
 
         if kernel_id in self.kernels:
             proc = self.kernels[kernel_id][0]
-            try:
-                success = True
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-                proc.join()
-            except Exception as e:
-                # On Unix, we may get an ESRCH error if the process has already
-                # terminated. Ignore it.
-                from errno import ESRCH
-                if e.errno !=  ESRCH:
-                    success = False
-        if success:
-            del self.kernels[kernel_id]
+            success = self.kill_process(proc)
+            if success:
+                del self.kernels[kernel_id]
         return success
 
     def interrupt_kernel(self, kernel_id):

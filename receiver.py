@@ -22,7 +22,6 @@ class Receiver(object):
     def start(self):
         self.listen = True
         while self.listen:
-            logging.debug("Polling: %s"%self.timer)
             source = self.dealer.recv()
             msg = self.dealer.recv_pyobj()
 
@@ -35,7 +34,8 @@ class Receiver(object):
             if msg.get("content") is None:
                 msg["content"] = {}
 
-            logging.debug("Start handler %s: %s"%(msg_type, self.timer))
+            self.timer()
+            logging.debug("Start %s"%(msg_type,))
             handler = getattr(self, msg_type)
             response = handler(msg["content"])
             logging.debug("Finished handler %s: %s"%(msg_type, self.timer))
@@ -129,8 +129,11 @@ set_random_seed()
     def start_kernel(self, msg_content):
         """Handler for start_kernel messages."""
         resource_limits = msg_content.get("resource_limits")
-        reply_content = self.km.start_kernel(resource_limits=resource_limits)
-        return self._form_message(reply_content)
+        try:
+            reply_content = self.km.start_kernel(resource_limits=resource_limits)
+            return self._form_message(reply_content)
+        except Exception as e:
+            return self._form_message({}, error=True)
 
     def kill_kernel(self, msg_content):
         """Handler for kill_kernel messages."""

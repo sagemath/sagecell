@@ -1,4 +1,4 @@
-from forking_kernel_manager import ForkingKernelManager
+from forking_kernel_manager import ForkingKernelManager, KernelError
 import logging
 
 class UntrustedMultiKernelManager(object):
@@ -8,7 +8,17 @@ class UntrustedMultiKernelManager(object):
         self._kernels = set()
     
     def start_kernel(self, resource_limits=None):
-        x = self.fkm.start_kernel(resource_limits=resource_limits)
+        retry=3
+        while retry:
+            try:
+                x = self.fkm.start_kernel(resource_limits=resource_limits)
+                break
+            except KernelError:
+                retry -=1
+                logging.debug("kernel error--trying again %s"%retry)
+                if not retry:
+                    logging.debug("kernel error--giving up %s"%retry)
+                    raise
         self._kernels.add(x["kernel_id"])
         return x
 
