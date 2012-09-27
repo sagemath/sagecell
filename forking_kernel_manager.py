@@ -84,6 +84,7 @@ class ForkingKernelManager(object):
         proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
         proc.start()
         os.chdir(currdir)
+        # todo: yield back to the message processing while we wait
         if p.poll(2):
             connection = p.recv()
             p.close()
@@ -98,9 +99,8 @@ class ForkingKernelManager(object):
         try:
             success = True
             os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            # we assume the kill will eventually happen.
-            # we don't want to block
-            #proc.join()
+            # todo: yield back to message processing loop while we join
+            proc.join()
         except Exception as e:
             # On Unix, we may get an ESRCH error if the process has already
             # terminated. Ignore it.
