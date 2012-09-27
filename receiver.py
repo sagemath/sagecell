@@ -175,9 +175,10 @@ set_random_seed()
 
 if __name__ == '__main__':
     filename = sys.argv[2]
+    comp_id = sys.argv[3]
     import logging
     import uuid
-    logging.basicConfig(filename=filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+    logging.basicConfig(filename=filename,format=comp_id[:4]+': %(asctime)s %(message)s',level=logging.DEBUG)
     logging.debug('started')
     ip = sys.argv[1]
     receiver = Receiver(filename, ip)

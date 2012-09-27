@@ -82,10 +82,10 @@ class TrustedMultiKernelManager(object):
         ssh_client.connect(host, username=username)
         return ssh_client
 
-    def _ssh_untrusted(self, cfg, client):
+    def _ssh_untrusted(self, cfg, client, comp_id):
         logfile = cfg.get("log_file", os.devnull)
         ip = socket.gethostbyname(cfg["host"])
-        code = "%s '%s/receiver.py' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile)
+        code = "%s '%s/receiver.py' '%s' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile, comp_id)
         print code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
@@ -122,13 +122,12 @@ class TrustedMultiKernelManager(object):
         req = self.context.socket(zmq.REQ)
 
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
-
-        port = self._ssh_untrusted(cfg, client)
+        port = self._ssh_untrusted(cfg, client, comp_id)
         retval = None
         if port is None:
             print "Computer %s did not respond, connecting failed!"%comp_id
         else:
-            comp_id = self._sender.register_computer(cfg["host"], port)
+            self._sender.register_computer(cfg["host"], port, comp_id=comp_id)
             self._clients[comp_id] = {"ssh": client}
             self._comps[comp_id] = cfg
             print "ZMQ Connection with computer %s at port %d established." %(comp_id, port)
