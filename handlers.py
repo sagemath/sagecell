@@ -8,7 +8,7 @@ from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 
 from IPython.zmq.session import Session
-from misc import json_default
+from misc import json_default, Timer
 
 class RootHandler(tornado.web.RequestHandler):
     """
@@ -89,12 +89,15 @@ class KernelHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
+        timer = Timer("Kernel handler for %s"%self.get_argument("notebook"))
         proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
         ws_url = "%s://%s/" % (proto, host)
         km = self.application.km
         
+        print "Starting session: %s"%timer
         kernel_id = yield gen.Task(km.new_session_async)
+        print "Assigning kernel %s: %s"%(kernel_id,timer)
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
@@ -237,6 +240,7 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.shell_handler.shell_stream.flush()
         self.iopub_handler.iopub_stream.flush()
         try: # in case kernel has already been killed
+            print "finish_request: Attempting to end kernel %s"%self.kernel_id
             self.application.km.end_session(self.kernel_id)
         except:
             pass
@@ -321,6 +325,7 @@ class ShellHandler(ZMQStreamHandler):
             if timeout > self.kernel_timeout:
                 timeout = self.kernel_timeout
             if timeout <= 0.0: # kill the kernel before the heartbeat is able to
+                print "timeout <=0: Attempting to end kernel %s"%self.kernel_id
                 self.km.end_session(self.kernel_id)
             else:
                 self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
@@ -439,6 +444,7 @@ class IOPubHandler(ZMQStreamHandler):
 
     def kernel_died(self):
         try: # in case kernel has already been killed
+            print "kernel_died: Attempting to end kernel %s"%self.kernel_id
             self.application.km.end_session(self.kernel_id)
         except:
             pass

@@ -253,11 +253,14 @@ def capture_output(split=False):
 
 from time import time
 class Timer(object):
-    def __init__(self, name=""):
+    def __init__(self, name="", reset=False):
         self.start = time()
         self.name = name
+        self.reset = reset
         
-    def __call__(self, reset=False):
+    def __call__(self, reset=None):
+        if reset is None:
+            reset = self.reset
         old_time = self.start
         new_time = time()
         if reset:
