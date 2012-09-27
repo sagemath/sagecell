@@ -195,7 +195,7 @@ class TrustedMultiKernelManager(object):
             print "Kernel %s not interrupted!"%kernel_id
         return reply
 
-    def _setup_session(self, reply, comp_id):
+    def _setup_session(self, reply, comp_id, timeout=None):
         """
         Set up the kernel information contained in the untrusted reply message `reply` from computer `comp_id`.
         """
@@ -205,7 +205,7 @@ class TrustedMultiKernelManager(object):
         self._kernels[kernel_id] = {"comp_id": comp_id,
                                     "connection": kernel_connection,
                                     "executing": False,
-                                    "timeout": time.time()+self.kernel_timeout}
+                                    "timeout": timeout if timeout is not None else time.time()+self.kernel_timeout}
         self._comps[comp_id]["kernels"][kernel_id] = None
         self._sessions[kernel_id] = Session(key=kernel_connection["key"])
 
@@ -240,12 +240,12 @@ class TrustedMultiKernelManager(object):
         def cb(reply):
             if reply["type"] == "success":
                 kernel_id = reply["content"]["kernel_id"]
-                self._setup_session(reply, comp_id)
-                self._kernels[kernel_id]["timeout"] = sys.float_info.max
+                self._setup_session(reply, comp_id, timeout=sys.float_info.max)
                 self._kernel_queue.put((kernel_id, comp_id))
                 print "Started preforked kernel %s, computer %s"%(kernel_id, comp_id)
             else:
                 print "Error starting prefork kernel on computer %s"%comp_id
+        print "Trying to start kernel on %s"%(comp_id[:4],)
         self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
     def new_session_async(self, callback=None):
