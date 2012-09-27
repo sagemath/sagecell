@@ -265,7 +265,7 @@ class TrustedMultiKernelManager(object):
         """
         try:
             preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
-            print "kernel on %s.  Queue: %s kernels on %s computers"%(comp_id, self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue])
+            print "kernel on %s.  Queue: %s kernels on %s computers"%(comp_id[:4], self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue])
             self._kernels[preforked_kernel_id]["timeout"] = time.time()+self.kernel_timeout
             self.new_session_prefork(comp_id)
             callback(preforked_kernel_id)
