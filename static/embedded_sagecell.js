@@ -588,8 +588,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         } else {
             editor = "codemirror";
         }
-        var langSelect = inputLocation.find(".sagecell_language select");
-        var mode = langSelect.find("option")[langSelect[0].selectedIndex].value;
+        var mode = inputLocation.find(".sagecell_language select option:selected").val() || "sage";
         editorData = CodeMirror.fromTextArea(
             commands.get(0),
             {mode: sagecell.modes[mode],
