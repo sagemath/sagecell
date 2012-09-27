@@ -67,6 +67,9 @@ if __name__ == "__main__":
                         help='port to launch the server')
     
     args = parser.parse_args()
+    import logging
+    logging.getLogger().setLevel(logging.INFO)
+    logging.info("starting tornado web server")
     application = SageCellServer()
     application.listen(args.port)
     try:
