@@ -240,7 +240,6 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.shell_handler.shell_stream.flush()
         self.iopub_handler.iopub_stream.flush()
         try: # in case kernel has already been killed
-            print "finish_request: Attempting to end kernel %s"%self.kernel_id
             self.application.km.end_session(self.kernel_id)
         except:
             pass
@@ -325,7 +324,6 @@ class ShellHandler(ZMQStreamHandler):
             if timeout > self.kernel_timeout:
                 timeout = self.kernel_timeout
             if timeout <= 0.0: # kill the kernel before the heartbeat is able to
-                print "timeout <=0: Attempting to end kernel %s"%self.kernel_id
                 self.km.end_session(self.kernel_id)
             else:
                 self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
@@ -444,7 +442,6 @@ class IOPubHandler(ZMQStreamHandler):
 
     def kernel_died(self):
         try: # in case kernel has already been killed
-            print "kernel_died: Attempting to end kernel %s"%self.kernel_id
             self.application.km.end_session(self.kernel_id)
         except:
             pass
