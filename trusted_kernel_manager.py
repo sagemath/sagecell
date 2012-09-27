@@ -86,6 +86,7 @@ class TrustedMultiKernelManager(object):
         logfile = cfg.get("log_file", os.devnull)
         ip = socket.gethostbyname(cfg["host"])
         code = "%s '%s/receiver.py' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile)
+        print code
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
