@@ -1,5 +1,6 @@
 (function() {
 "use strict";
+var undefined;
 
 // Make a global sagecell namespace for our functions
 window.sagecell = window.sagecell || {};
@@ -47,6 +48,8 @@ sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
+sagecell.modes = {"sage": "python", "python": "python",
+                  "html": "htmlmixed", "r": "r"};
 sagecell.loadMathJax = true;
 sagecell.log = function (obj) { if (sagecell.debug) {console.log(obj);}}
 
@@ -159,10 +162,10 @@ sagecell.makeSagecell = function (args) {
     }
     defaults = {"editor": "codemirror",
                 "evalButtonText": "Evaluate",
-                "hide": ["computationID", "messages", "sageMode"],
+                "hide": ["computationID", "messages"],
                 "mode": "normal",
                 "replaceOutput": true,
-                "sageMode": true};
+                "languages": ["sage"]};
 
     // jQuery.extend() has issues with nested objects, so we manually merge
     // hide parameters.
@@ -179,6 +182,12 @@ sagecell.makeSagecell = function (args) {
         }
     } else {
         settings = $.extend({}, defaults, args);
+    }
+    if ($.inArray(settings.defaultLanguage, settings.languages) === -1) {
+        settings.defaultLanguage = settings.languages[0];
+    }
+    if (settings.languages.length === 1) {
+        settings.hide.push("language");
     }
     setTimeout(function waitForLoad() {
         // Wait for CodeMirror to load before using the $ function
@@ -214,9 +223,6 @@ sagecell.makeSagecell = function (args) {
             } else {
                 inputLocation.html(sagecell.body);
             }
-            var id = IPython.utils.uuid();
-            inputLocation.find(".sagecell_editorToggle label").attr("for", id);
-            inputLocation.find(".sagecell_editorToggle input").attr("id", id);
             inputLocation.addClass("sagecell");
             outputLocation.addClass("sagecell");
             inputLocation.find(".sagecell_commands").val(settings.code);
@@ -224,14 +230,14 @@ sagecell.makeSagecell = function (args) {
                 inputLocation.find(".sagecell_output_elements").appendTo(outputLocation);
             }
             outputLocation.find(".sagecell_output_elements").hide();
-            hide.push("files", "sageMode"); // TODO: Delete this line when these features are implemented.
+            hide.push("files"); // TODO: Delete this line when this feature is implemented.
             if (settings.mode === "debug") {
                 console.warn("Running the Sage Cell in debug mode!");
             } else {
                 var hideAdvanced = {};
                 var hideable = {"in": {"computationID": true, "editor": true,
                                        "editorToggle": true,  "files": true,
-                                       "evalButton": true,    "sageMode": true},
+                                       "evalButton": true,    "language": true},
                                 "out": {"output": true,       "messages": true,
                                         "sessionFiles": true, "permalink": true}};
                 var hidden_out = [];
@@ -242,14 +248,19 @@ sagecell.makeSagecell = function (args) {
                         inputLocation.find(".sagecell_"+hide[i]).css("display", "none");
                         // TODO: make the advancedFrame an option to hide, then delete
                         // this hideAdvanced hack
-                        if (hide[i] === 'files' || hide[i] === 'sageMode') {
+                        if (hide[i] === 'files') {
                             hideAdvanced[hide[i]] = true;
                         }
                     } else if (hide[i] in hideable["out"]) {
                         hidden_out.push("." + out_class + " .sagecell_" + hide[i]);
                     }
                 }
-                if (hideAdvanced.files && hideAdvanced.sageMode) {
+                var langOpts = inputLocation.find(".sagecell_language option");
+                langOpts.not(function () {
+                    return $.inArray(this.value, settings.languages) !== -1;
+                }).css("display", "none");
+                langOpts[0].parentNode.selectedIndex = langOpts.index($("[value=" + settings.defaultLanguage + "]"));
+                if (hideAdvanced.files) {
                     inputLocation.find(".sagecell_advancedFrame").css("display", "none");
                 }
                 if (hidden_out.length > 0) {
@@ -279,15 +290,12 @@ sagecell.initCell = (function(sagecellInfo) {
     var editor = sagecellInfo.editor;
     var replaceOutput = sagecellInfo.replaceOutput;
     var collapse = sagecellInfo.collapse;
-    var sageMode = inputLocation.find(".sagecell_sageModeCheck");
     var textArea = inputLocation.find(".sagecell_commands");
+    var langSelect = inputLocation.find(".sagecell_language select");
     var files = [];
     var editorData, temp;
     if (editor === "textarea" || editor === "textarea-readonly") {
         inputLocation.find(".sagecell_editorToggle input").attr("checked", false);
-    }
-    if (! sagecellInfo.sageMode) {
-        sageMode.attr("checked", false);
     }
     temp = this.renderEditor(editor, inputLocation, collapse);
     editor = temp[0];
@@ -300,6 +308,10 @@ sagecell.initCell = (function(sagecellInfo) {
     inputLocation.find(".sagecell_advancedTitle").click(function () {
         inputLocation.find(".sagecell_advancedFields").slideToggle();
         return false;
+    });
+    langSelect.change(function () {
+        var mode = langSelect.find("option")[langSelect[0].selectedIndex].value;
+        editorData.setOption("mode", sagecell.modes[mode]);
     });
     function fileRemover(i, li) {
         return function () {
@@ -390,8 +402,7 @@ sagecell.initCell = (function(sagecellInfo) {
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
-        var session = new sagecell.Session(outputLocation);
-
+        var session = new sagecell.Session(outputLocation, langSelect.find("option")[langSelect[0].selectedIndex].value);
         session.execute(textArea.val());
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
@@ -577,9 +588,11 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         } else {
             editor = "codemirror";
         }
+        var langSelect = inputLocation.find(".sagecell_language select");
+        var mode = langSelect.find("option")[langSelect[0].selectedIndex].value;
         editorData = CodeMirror.fromTextArea(
             commands.get(0),
-            {mode: "python",
+            {mode: sagecell.modes[mode],
              indentUnit: 4,
              tabMode: "shift",
              lineNumbers: true,
@@ -642,6 +655,8 @@ sagecell.templates = {
         "hide": ["editorToggle", "files", "permalink"],
     }
 };
+
+sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "python", "r", "singular"]
 
 // Various utility functions for the Single Cell Server
 sagecell.util = {
