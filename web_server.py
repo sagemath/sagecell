@@ -10,6 +10,9 @@ import misc
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
 from db_sqlalchemy import DB
 
+import logging
+logging.basicConfig(format='%(asctime)s %(name)s:%(levelname)s %(message)s',level=logging.INFO)
+
 # Tornado / zmq imports
 import zmq
 from zmq.eventloop import ioloop
@@ -67,8 +70,6 @@ if __name__ == "__main__":
                         help='port to launch the server')
     
     args = parser.parse_args()
-    import logging
-    logging.getLogger().setLevel(logging.INFO)
     logging.info("starting tornado web server")
     application = SageCellServer()
     application.listen(args.port)
