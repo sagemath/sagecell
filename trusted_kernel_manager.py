@@ -10,6 +10,7 @@ import time
 import sys
 from Queue import Queue, Empty
 import logging
+logger = logging.getLogger('sagecell')
 import sender
 
 class TrustedMultiKernelManager(object):
@@ -40,7 +41,7 @@ class TrustedMultiKernelManager(object):
                 if preforked:
                     for i in range(preforked):
                         self.new_session_prefork(comp_id = comp_id)
-                    logging.debug("Requested %d preforked kernels"%preforked)
+                    logger.debug("Requested %d preforked kernels"%preforked)
 
     def get_kernel_ids(self, comp = None):
         """ A function for obtaining kernel ids of a particular computer.
@@ -86,7 +87,7 @@ class TrustedMultiKernelManager(object):
         logfile = cfg.get("log_file", os.devnull)
         ip = socket.gethostbyname(cfg["host"])
         code = "%s '%s/receiver.py' '%s' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile, comp_id)
-        logging.debug(code)
+        logger.debug(code)
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
 
@@ -125,12 +126,12 @@ class TrustedMultiKernelManager(object):
         port = self._ssh_untrusted(cfg, client, comp_id)
         retval = None
         if port is None:
-            logging.error("Computer %s did not respond, connecting failed!"%comp_id)
+            logger.error("Computer %s did not respond, connecting failed!"%comp_id)
         else:
             self._sender.register_computer(cfg["host"], port, comp_id=comp_id)
             self._clients[comp_id] = {"ssh": client}
             self._comps[comp_id] = cfg
-            logging.info("ZMQ Connection with computer %s at port %d established." %(comp_id, port))
+            logger.info("ZMQ Connection with computer %s at port %d established." %(comp_id, port))
             retval = comp_id
 
         return retval
@@ -186,9 +187,9 @@ class TrustedMultiKernelManager(object):
                                       comp_id)
 
         if reply["type"] == "success":
-            logging.info("Kernel %s interrupted."%kernel_id)
+            logger.info("Kernel %s interrupted."%kernel_id)
         else:
-            logging.info("Kernel %s not interrupted!"%kernel_id)
+            logger.info("Kernel %s not interrupted!"%kernel_id)
         return reply
 
     def _setup_session(self, reply, comp_id, timeout=None):
@@ -238,10 +239,10 @@ class TrustedMultiKernelManager(object):
                 kernel_id = reply["content"]["kernel_id"]
                 self._setup_session(reply, comp_id, timeout=sys.float_info.max)
                 self._kernel_queue.put((kernel_id, comp_id))
-                logging.info("Started preforked kernel %s, computer %s"%(kernel_id, comp_id))
+                logger.info("Started preforked kernel on %s: %s", comp_id[:4], kernel_id)
             else:
-                logging.error("Error starting prefork kernel on computer %s"%comp_id)
-        logging.info("Trying to start kernel on %s"%(comp_id[:4],))
+                logger.error("Error starting prefork kernel on computer %s", comp_id)
+        logger.info("Trying to start kernel on %s", comp_id[:4])
         self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
     def new_session_async(self, callback=None):
@@ -261,16 +262,19 @@ class TrustedMultiKernelManager(object):
         """
         try:
             preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
-            logging.info("Using kernel on %s.  Queue: %s kernels on %s computers"%(comp_id[:4], self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue]))
+            logger.info("Using kernel on %s.  Queue: %s kernels on %s computers"%(comp_id[:4], self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue]))
             self._kernels[preforked_kernel_id]["timeout"] = time.time()+self.kernel_timeout
             self.new_session_prefork(comp_id)
+            logger.info("Activated kernel %s on computer %s (preforked)", preforked_kernel_id, comp_id)
             callback(preforked_kernel_id)
         except Empty:
             comp_id = self._find_open_computer()
             def cb(reply):
                 if reply["type"] == "success":
+                    kernel_id = reply["content"]["kernel_id"]
                     self._setup_session(reply, comp_id)
-                    callback(reply["content"]["kernel_id"])
+                    logger.info("Activated kernel %s on computer %s", kernel_id, comp_id)
+                    callback(kernel_id)
                 else:
                     callback(False)
 
@@ -289,6 +293,7 @@ class TrustedMultiKernelManager(object):
             if (reply["type"] == "error"):
                 pass
             else:
+                logger.info("Ended kernel %s", kernel_id)
                 del self._kernels[kernel_id]
                 del self._comps[comp_id]["kernels"][kernel_id]
 

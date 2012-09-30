@@ -13,6 +13,8 @@ from db_sqlalchemy import DB
 import logging
 logging.basicConfig(format='%(asctime)s %(name)s:%(levelname)s %(message)s',level=logging.INFO)
 
+logger = logging.getLogger('sagecell')
+
 # Tornado / zmq imports
 import zmq
 from zmq.eventloop import ioloop
@@ -70,14 +72,14 @@ if __name__ == "__main__":
                         help='port to launch the server')
     
     args = parser.parse_args()
-    logging.info("starting tornado web server")
+    logger.info("starting tornado web server")
     application = SageCellServer()
     application.listen(args.port)
     try:
         application.ioloop.start()
     except KeyboardInterrupt:
-        print "\nReceived KeyboardInterrupt, so I'm shutting down."
+        logger.info("Received KeyboardInterrupt, so I'm shutting down.")
         try:
             application.km.shutdown()
         except KeyboardInterrupt:
-            print "\nReceived another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over."
+            logging.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")

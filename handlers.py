@@ -10,6 +10,7 @@ from zmq.utils import jsonapi
 from IPython.zmq.session import Session
 from misc import json_default, Timer
 import logging
+logger = logging.getLogger('sagecell')
 
 class RootHandler(tornado.web.RequestHandler):
     """
@@ -96,9 +97,8 @@ class KernelHandler(tornado.web.RequestHandler):
         ws_url = "%s://%s/" % (proto, host)
         km = self.application.km
         
-        logging.info("Starting session: %s"%timer)
+        logger.info("Starting session: %s"%timer)
         kernel_id = yield gen.Task(km.new_session_async)
-        logging.info("Assigning kernel %s: %s"%(kernel_id,timer))
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
