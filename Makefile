@@ -45,8 +45,7 @@ $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
 $(all-min-js): $(jsmin-bin) $(all-js)
-	cp $(all-js) $(all-min-js)
-	#$(jsmin-bin) < $(all-js) > $(all-min-js)
+	$(jsmin-bin) < $(all-js) > $(all-min-js)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(cm-python-mode) \
            $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
