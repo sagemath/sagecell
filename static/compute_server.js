@@ -606,7 +606,8 @@ sagecell.InteractData.InputBox.prototype.rendered = function () {
             {"rows": this.control.height, "cols": this.control.width});
     } else if (this.control.subtype === "input") {
         this.textbox = sagecell.util.createElement("input",
-            {"size": this.control.width});
+            /* Most of the time these will be Sage expressions, so turn all "helpful" features */
+            {"size": this.control.width,  "autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
     }
     this.textbox.value = this.control["default"];
     if (this.control.evaluate) {
@@ -640,7 +641,8 @@ sagecell.InteractData.InputGrid.prototype.rendered = function () {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
             var textbox = ce("input", {"value": this.control["default"][row][col],
-                                       "size": this.control.width});
+                                       "size": this.control.width,
+                                       "autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
             if (this.control.evaluate) {
                 textbox.style.fontFamily = "monospace";
             }
@@ -691,7 +693,8 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
         column.appendChild(slider);
         var that = this;
         if (this.control.subtype === "continuous") {
-            var textbox = ce("input", {"class": "sagecell_interactValueBox"});
+            var textbox = ce("input", {"class": "sagecell_interactValueBox", "type": "number", 
+                                       "min": this.control.range[i][0], "max": this.control.range[i][1]});
             textbox.value = this.values[i].toString();
             textbox.size = textbox.value.length + 1;
             textbox.style.display = this.control.display_values ? "" : "none";
@@ -855,10 +858,12 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                    "step": this.control.step,
                                    "range": true,
                                    "values": this.values,});
-            var min_text = ce("input", {"class": "sagecell_interactValueBox",
-                                        "value": this.values[0].toString()});
-            var max_text = ce("input", {"class": "sagecell_interactValueBox",
-                                        "value": this.values[1].toString()});
+            var min_text = ce("input", {"class": "sagecell_interactValueBox", "type": "number",
+                                        "value": this.values[0].toString(), "min": this.control.range[0],
+                                        "max": this.control.range[1], "step": this.control.step});
+            var max_text = ce("input", {"class": "sagecell_interactValueBox", "type": "number",
+                                        "value": this.values[1].toString(), "min": this.control.range[0],
+                                        "max": this.control.range[1], "step": this.control.step});
             min_text.size = min_text.value.length;
             max_text.size = max_text.value.length;
             min_text.style.marginTop = max_text.style.marginTop = "3px";
@@ -918,8 +923,9 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                    "max": this.control.range[1],
                                    "step": this.control.step,
                                    "value": this.value});
-            var textbox = ce("input", {"class": "sagecell_interactValueBox",
-                                       "value": this.value.toString()});
+            var textbox = ce("input", {"class": "sagecell_interactValueBox", "type": "number",
+                                       "value": this.value.toString(), "min": this.control.range[0],
+                                       "max": this.control.range[1], "step": this.control.step});
             textbox.size = textbox.value.length + 1;
             $(this.slider).on("slide", function (event, ui) {
                 textbox.value = (that.value = ui.value).toString();
