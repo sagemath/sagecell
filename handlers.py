@@ -246,6 +246,8 @@ class ServiceHandler(tornado.web.RequestHandler):
             pass
 
         retval = self.iopub_handler.streams
+        self.shell_handler.on_close()
+        self.iopub_handler.on_close()
         retval.update(success=self.success)
         self.set_header("Access-Control-Allow-Origin", "*")
         self.write(retval)
