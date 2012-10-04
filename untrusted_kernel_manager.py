@@ -13,11 +13,12 @@ class UntrustedMultiKernelManager(object):
             try:
                 x = self.fkm.start_kernel(resource_limits=resource_limits)
                 break
-            except KernelError:
+            except KernelError as e:
                 retry -=1
                 logging.debug("kernel error--trying again %s"%retry)
                 if not retry:
                     logging.debug("kernel error--giving up %s"%retry)
+                    logging.exception(e)
                     raise
         self._kernels.add(x["kernel_id"])
         return x
