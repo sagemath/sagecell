@@ -259,8 +259,7 @@ sagecell.makeSagecell = function (args) {
                 langOpts.not(function () {
                     return $.inArray(this.value, settings.languages) !== -1;
                 }).css("display", "none");
-                langOpts[0].parentNode.selectedIndex = langOpts.index(
-                        langOpts.filter("[value=" + settings.defaultLanguage + "]"));
+                langOpts[0].parentNode.value = settings.defaultLanguage;
                 if (hideAdvanced.files) {
                     inputLocation.find(".sagecell_advancedFrame").css("display", "none");
                 }
