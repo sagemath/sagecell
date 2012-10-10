@@ -844,7 +844,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                       this.control.subtype === "continuous_range";
     this.range = this.control.subtype === "discrete_range" ||
                  this.control.subtype === "continuous_range";
-    var container = ce("span");
+    var container = ce("span", {"class": "sagecell_sliderContainer"});
     this.value_boxes = $();
     container.style.whitespace = "nowrap";
     this.slider = ce("span", {"class": "sagecell_sliderControl"});

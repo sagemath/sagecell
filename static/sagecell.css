@@ -157,6 +157,10 @@
     border-color: transparent;
 }
 
+.sagecell_sliderContainer {
+    white-space: nowrap;
+}
+
 .sagecell_interactControls > tr > td.sagecell_dirtyControl {
     border-color: red;
 }
