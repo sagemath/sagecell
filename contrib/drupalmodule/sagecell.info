@@ -1,0 +1,6 @@
+name = Sage Cell field
+description = A module that adds the embeddable Sage Cell content field
+package = Fields
+core = 7.x
+dependencies[] = field
+version = "7.x-1.1"

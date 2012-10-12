@@ -1,0 +1,21 @@
+<?php
+/**
+ * Implementation of hook_field_schema
+ * @columns
+ *      The only column in our schema is the 'code' column which will hold a large amount of text. $
+ */
+function sagecell_field_schema($field) {
+        if ($field['type'] == 'sagecell') {             // type must be 'sagecell' (defined in hook$
+                $schema['columns']['code'] = array(
+                        'type' => 'text',                               // $schema['columns']['code$
+                        'size' => 'medium',
+                        'not null' => TRUE,
+                        //'length' => 100000,
+                        );
+                //$schema['indexes'] = array(
+                  //     'code' => array(array('code',30)),                // $schema['indexes']['code'] = ('c$
+                  //      );
+               
+        }
+        return $schema;
+}

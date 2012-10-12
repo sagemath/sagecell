@@ -1,0 +1,196 @@
+<?php
+/**
+ * @file
+ *		Defines the Sage Cell field / widgets.
+ */
+
+/**
+ * Implementation of hook_field_info
+ * @return
+ *	A definition array for the 'sagecell' field
+ *		'sagecell' : machine name for the field
+ * 			'label' : human-readable name (appears to the user)
+ *			'description' : brief explanation of the field and it's use
+ *			'default_widget' : the default widget (content editor) for the sagecell field type
+ */
+function sagecell_field_info() {
+    return array(
+        'sagecell' => array(
+            'label' => t('Sage Cell'),
+            'description' => t('A field to store Sage code to be presented in a Sage Cell instance.'),
+            'default_widget' => 'sagecell_code',	// see hook_field_widget_info
+            'default_formatter' => 'sagecell_default',	// see hook_field_formatter_info
+        ),
+    );
+}
+
+/**
+ * Implementation of hook_field_is_empty
+ * @'code'
+ *	Our field is empty only if the 'code' item is empty (PHP defines empty to include an empty string)
+ */
+function sagecell_field_is_empty($item, $field) {
+    if ($field['type'] == 'sagecell') {
+    	if (empty($item['code'])) {
+    		return TRUE;
+    	}
+    }
+    return FALSE;
+}
+
+/**
+ * Implementation of hook_field_validate
+ * 
+ * - MAY NOT NEED THIS FUNCTION -
+ * 
+ * @<x,y,z> inside of <script type="text/x-sage"> tags
+ *	- Could possibly include something here to help with the <x,y,z> issue addressed in the formatter of sagecell.module
+ *		if they enter something in (?)$items['code'] that is an HTML tag or could be interpretted as an HTML tag
+ *		then it is invalid and throws an error. Need to check the regex ability of PHP and how exactly to implement this.
+ * 
+function sagecell_field_validate($obj_type, $object, $field, $instance, $langcode, &$items, &$errors) {
+	if ($field['type'] == 'sagecell') {
+
+	}
+}
+ */
+
+/**
+ * Implementation of hook_field_widget_info
+ *
+ * @ _text
+ *	A widget (editor) that is a simple textarea.
+ *
+ * @ _code
+ *	A widget (editor) that utilizes a Sage Cell to allow the user to edit their code (type using Code Mirror,
+ *	'evaluate' their code, check for bugs) before submission
+ * 	
+ *	Hopefully this is an option - it would require the inclusion of a <div id='editcell'> to be added to the page
+ *	every time the page is edited. It would populate the Sage Cell that is created with $item['code']; NOTE: The
+ *	implementation of the widget is not in this hook. This just adds the option of the 'Code text area' to the user's
+ *	field->widget selection drop down.
+ *	
+ */
+function sagecell_field_widget_info() {
+	 $widgetinfo = array(
+	 	// _text
+	 	'sagecell_text' => array(				// no Sage Cell widget
+	 		'label' => t('Simple text area'),
+	 		'description' => t('The user enters code as plain text - no code formatting / evaluating.'),
+	 		'field types' => array('sagecell'),		// make this widget available to 'sagecell' field type (hook_field_info)
+	 	),
+	 	// _code
+	 	'sagecell_code' => array(
+	 		'label' => t('Code text area'),
+	 		'description' => t('The user enters code into a Sage Cell'),
+	 		'field types' => array('sagecell'),		// make this widget available to 'sagecell' field type
+	 	),
+	 );
+	 return $widgetinfo;
+}
+
+/**
+ * Implementation of hook_field_widget_form
+ *
+ * @ _text
+ *	The widget (used on the Edit form) will appear as a plain text area.
+ * 
+ * @ _code
+ *	The widget (used on the Edit form) will appear as a Sage Cell that can be Evaluated before submitting.
+ *
+ */
+function sagecell_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+	$base = $element;
+
+	// _text
+	if ($instance['widget']['type'] == 'sagecell_text') {
+		$element['code'] = array(
+			'#type' => 'textarea',
+			'#title' => t('Code'),
+			'#default_value' => isset($items[$delta]['code']) ? $items[$delta]['code'] : '',
+		) + $base;
+	}
+	// _code
+	if ($instance['widget']['type'] == 'sagecell_code') {
+		// Still create a textarea for the Sage Code, to be used by the embedded_sagecell
+		$element['code'] = array(
+			'#type' => 'textarea',
+			'#title' => t('Code'),
+			'#default_value' => isset($items[$delta]['code']) ? $items[$delta]['code'] : '',
+			'#attributes' => array(
+				'id' => 'editcelltextarea',	// specifies an id for the makeSagecell's 'inputLocation'
+			),
+			'#resizable' => FALSE,	// removes the 'grippie' resizable bar from the widget (edit form)
+			'#pre_render' => array('sagecell_cell_load_js'),	// calls the 'sagecell_cell_load_js' function pre-render (fixes form_set_error reload issue for the widget)
+		) + $base;
+	}
+	return $element;
+}
+
+/**
+ * Called from sagecell_field_widget_form()
+ * 
+ *	Fixes the bug where if a user tried to submit a block and verification found that required fields were incomplete,
+ *	then the form would reload (with form_set_error) but just get the form from cache (without the JS to create a Sage Cell)
+ *
+ *	Uses 'require_once' php function to add the 'drupal_add_js' calls only once, but always for the widget.
+ *		Using 'drupal_add_js' here instead of 'require_once' would add the JS twice (so there were duplicated <script>'s).
+ *
+ *	@sagecell_makesagecell.inc file
+ *		Contains all the 'drupal_add_js' calls that add the aleph headers and embed the Sage Cell
+ */
+function sagecell_cell_load_js($element) {
+	require_once('sagecell_makesagecell.inc'); // includes the 'sagecell_makesagecell.inc' file
+	return $element;
+}
+
+/**
+ * Implementation of hook_field_formatter_info
+ */
+function sagecell_field_formatter_info() {
+	return array(
+		'sagecell_default' => array(
+			'label' => t('Default (Sage Cell)'),
+			'field types' => array('sagecell'),
+		),
+		'sagecell_plain' => array(
+			'label' => t('Plain text (Just Code)'),
+			'field types' => array('sagecell'),
+		),
+	);
+}
+
+/**
+ * Implementation of hook_field_formatter_view
+ */
+function sagecell_field_formatter_view($obj_type, $object, $field, $instance, $langcode, $items, $display) {
+	$element = array();
+	
+	switch ($display['type']) {
+		// Sage Cell output
+		case 'sagecell_default':
+			// Add the JS required to embed a Sage Cell
+			drupal_add_js('http://aleph.sagemath.org/static/jquery.min.js', array('scope' => 'header', 'every_page' => TRUE));
+    		drupal_add_js('http://aleph.sagemath.org/embedded_sagecell.js', array('scope' => 'header', 'every_page' => TRUE));
+			
+			// Add the JS to 'make' a Sage Cell - sagecell.jQuery function & 'defer' ensure that makeSagecell occurs after the #viewcell <div> actually exists
+			drupal_add_js("sagecell.jQuery(function () { sagecell.makeSagecell({inputLocation: '#viewcell', hide: ['files', 'sageMode'], evalButtonText: 'Evaluate'}); });", array('type' => 'inline', 'defer' => TRUE, 'every_page' => TRUE));
+			
+			// Create the HTML markup for the field
+			foreach ($items as $delta => $item) {
+				// Could not use @code because it did not properly format HTML special characters in the 'code'
+				$output = '<div id="viewcell"><script type="text/x-sage">' . $item['code'] . '</script></div>';
+				$element[$delta] = array('#markup' => $output);
+			}
+			break;
+
+		// Plain-text output
+		case 'sagecell_plain':
+			foreach ($items as $delta => $item) {
+				$output = '<pre>' . $item['code'] . '</pre>';
+				$element[$delta] = array('#markup' => $output);
+			}
+			break;
+	}
+	return $element;
+}
