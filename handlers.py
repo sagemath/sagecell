@@ -315,7 +315,8 @@ class ShellHandler(ZMQStreamHandler):
 
     def _request_timeout(self, msg):
         if msg["header"]["msg_type"] == "execute_request":
-            msg["content"]["user_expressions"].update(_sagecell_timeout="sys._sage_.kernel_timeout")
+            msg["content"]["user_expressions"]["_sagecell_timeout"] = \
+                "float('inf')" if msg["content"].get("linked", False) else "sys._sage_.kernel_timeout"
 
     def _reset_timeout(self, msg):
         if msg["msg_type"] == "execute_reply":
