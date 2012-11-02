@@ -138,9 +138,11 @@ evaluate button::
    .. }
 
 The ``inputLocation`` argument (required) should be a
-`jQuery selector <http://api.jquery.com/category/selectors/>`_
-for a single DOM node. If the DOM node is a textarea, the textarea will be used
-as the basis for the code input box.
+`jQuery selector <http://api.jquery.com/category/selectors/>`_ (which
+may actually return more than one DOM element---each one will be made
+into a Sage cell). If a DOM node is a textarea, the textarea will be used
+as the basis for the code input box (this can be helpful if you are
+trying to make an existing form textarea a live Sage cell).
 
 Output Location
 ^^^^^^^^^^^^^^^
