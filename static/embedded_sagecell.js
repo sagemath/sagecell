@@ -126,7 +126,9 @@ sagecell.sagecell_dependencies_callback = function () {
     }
 };
 
-sagecell.makeSagecell = function (args) {
+sagecell.kernels = [];
+
+sagecell.makeSagecell = function (args, k) {
     var defaults;
     var settings = {};
     if (args === undefined) {
@@ -135,15 +137,24 @@ sagecell.makeSagecell = function (args) {
     if (args.inputLocation === undefined) {
         throw "Must specify an inputLocation!";
     }
+    if (args.linked) {
+        settings.autoeval = false;
+    }
     var input = $(args.inputLocation);
     if (input.length > 1 && args.outputLocation === undefined) {
         var r = [];
+        if (args.linked) {
+            k = sagecell.kernels.push(null) - 1;
+        }
         for (var i = 0, i_max = input.length; i < i_max; i++) {
             var a = $.extend({}, args);
             a.inputLocation = input[i];
-            r.push(sagecell.makeSagecell(a));
+            r.push(sagecell.makeSagecell(a, k));
         }
         return r;
+    }
+    if (k === undefined) {
+        k = sagecell.kernels.push(null) - 1;
     }
     if (args.outputLocation === undefined) {
         args.outputLocation = args.inputLocation;
@@ -259,7 +270,7 @@ sagecell.makeSagecell = function (args) {
                 langOpts.not(function () {
                     return $.inArray(this.value, settings.languages) !== -1;
                 }).css("display", "none");
-                langOpts[0].parentNode.selectedIndex = langOpts.index($("[value=" + settings.defaultLanguage + "]"));
+                langOpts[0].parentNode.value = settings.defaultLanguage;
                 if (hideAdvanced.files) {
                     inputLocation.find(".sagecell_advancedFrame").css("display", "none");
                 }
@@ -278,13 +289,13 @@ sagecell.makeSagecell = function (args) {
             if (evalButtonText !== undefined) {
                 inputLocation.find(".sagecell_evalButton").text(evalButtonText);
             }
-            sagecell.initCell(settings);
+            sagecell.initCell(settings, k);
         });
     }, 100);
     return settings;
 };
 
-sagecell.initCell = (function(sagecellInfo) {
+sagecell.initCell = (function (sagecellInfo, k) {
     var inputLocation = $(sagecellInfo.inputLocation);
     var outputLocation = $(sagecellInfo.outputLocation);
     var editor = sagecellInfo.editor;
@@ -310,7 +321,7 @@ sagecell.initCell = (function(sagecellInfo) {
         return false;
     });
     langSelect.change(function () {
-        var mode = langSelect.find("option")[langSelect[0].selectedIndex].value;
+        var mode = langSelect[0].value;
         editorData.setOption("mode", sagecell.modes[mode]);
     });
     function fileRemover(i, li) {
@@ -402,8 +413,9 @@ sagecell.initCell = (function(sagecellInfo) {
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
-        var session = new sagecell.Session(outputLocation, langSelect.find("option:selected").val() || "sage");
+        var session = new sagecell.Session(outputLocation, langSelect[0].value, k, sagecellInfo.linked || false);
         session.execute(textArea.val());
+        session.createPermalink(textArea.val());
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
@@ -588,7 +600,8 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         } else {
             editor = "codemirror";
         }
-        var mode = inputLocation.find(".sagecell_language select option:selected").val() || "sage";
+        var langSelect = inputLocation.find(".sagecell_language select");
+        var mode = langSelect[0].value;
         editorData = CodeMirror.fromTextArea(
             commands.get(0),
             {mode: sagecell.modes[mode],
