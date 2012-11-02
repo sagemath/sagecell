@@ -28,10 +28,12 @@ like)::
        <script src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
        <script>
    $(function () {
+       // Make the div with id 'mycell' a Sage cell
        sagecell.makeSagecell({inputLocation:  '#mycell',
                               template:       sagecell.templates.minimal,
                               evalButtonText: 'Activate'});
-       sagecell.makeSagecell({inputLocation: '#mycell2',
+       // Make *any* div with class 'compute' a Sage cell
+       sagecell.makeSagecell({inputLocation: 'div.compute',
                               evalButtonText: 'Evaluate'});
    });
        </script>
@@ -48,9 +50,14 @@ like)::
     </script>
    </div>
 
-   <h2>Your own computation</h2>
+   <h2>Your own computations</h2>
    Type your own Sage computation below and click &ldquo;Evaluate&rdquo;.
-       <div id="mycell2"><script type="text/x-sage">plot(sin(x), (x, 0, 2*pi))</script></div>
+       <div class="compute"><script type="text/x-sage">plot(sin(x), (x, 0, 2*pi))</script></div>
+       <div class="compute"><script type="text/x-sage">
+   @interact
+   def f(n=(0,10)):
+       print 2^n
+   </script></div>
      </body>
    </html>
 
