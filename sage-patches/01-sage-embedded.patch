@@ -616,11 +616,11 @@ diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 --- a/sage/plot/plot3d/tachyon.py
 +++ b/sage/plot/plot3d/tachyon.py
 @@ -315,7 +315,7 @@
-             filename = sage.misc.misc.graphics_filename()
+             filename = graphics_filename()
              self.save(SAGE_TMP + '/test.png', verbose=verbose, extra_opts=extra_opts)
              return
 -        if sage.plot.plot.EMBEDDED_MODE:
 +        if sage.misc.misc.EMBEDDED_MODE:
-             filename = sage.misc.misc.graphics_filename()
+             filename = graphics_filename()
              self.save(filename, verbose=verbose, extra_opts=extra_opts)
              return
