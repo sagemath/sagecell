@@ -163,7 +163,8 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
              self.save(DOCTEST_MODE_FILE, **kwds)
 -        elif sage.plot.plot.EMBEDDED_MODE:
 +        elif sage.misc.misc.EMBEDDED_MODE:
-             kwds.setdefault('filename', sage.misc.temporary_file.graphics_filename())
+-            kwds.setdefault('filename', graphics_filename())
++            kwds.setdefault('filename', sage.misc.temporary_file.graphics_filename())
 +            filename=kwds['filename']
              self.save(**kwds)
 -            if linkmode == True:
@@ -184,7 +185,8 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +                else:
 +                    html("<img src='cell://%s'>"%filename)
          else:
-             kwds.setdefault('filename', tmp_filename(ext='.png'))
+-            kwds.setdefault('filename', tmp_filename(ext='.png'))
++            kwds.setdefault('filename', sage.misc.misc.tmp_filename() + '.png')
              self.save(**kwds)
 @@ -2534,42 +2544,47 @@
          options.update(kwds)
@@ -281,7 +283,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +                sys._sage_messages.message_queue.display(msg)
              return
 -        if filename is None:
--            filename = sage.misc.misc.tmp_filename() + '.png'
+-            filename = tmp_filename(ext='.png')
          self._render(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
          os.system('%s %s 2>/dev/null 1>/dev/null &'%(
                           sage.misc.viewer.browser(), filename))
