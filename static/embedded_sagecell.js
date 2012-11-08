@@ -668,7 +668,7 @@ sagecell.templates = {
     }
 };
 
-sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "python", "r", "singular"]
+sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "python", "r", "singular"]
 
 // Various utility functions for the Single Cell Server
 sagecell.util = {
