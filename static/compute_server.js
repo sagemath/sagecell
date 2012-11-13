@@ -83,7 +83,6 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     } else {
         var old_ws = window.WebSocket, old_log = console.log;
         window.WebSocket = sagecell.MultiSockJS;
-        console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
@@ -95,7 +94,6 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             this._kernel_started(json);
             sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
             this.shell_channel.onopen = function () {
-                console.log = old_log;
                 sagecell.log('kernel channel opened: '+that.timer()+' ms.');
                 that.kernel.opened = true;
                 while (that.kernel.deferred_code.length > 0) {
