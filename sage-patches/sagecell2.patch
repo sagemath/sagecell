@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Jason Grout <jason.grout@drake.edu>
-# Parent 5894098d045416ea7a03ffaaefee755bc025d840
+# Parent 24840dd9f5ffd6e1afd48909aa550b2e91c61a14
 Changes for Sage Cell Server 2.0
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
@@ -27,7 +27,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -2016,7 +2016,7 @@
+@@ -2052,7 +2052,7 @@
              if misc.EMBEDDED_MODE['frontend']=='sagecell':
                  mathexpr=mathjax_expr.replace('<html>','').replace('</html>','')
                  import sys
@@ -36,7 +36,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
              else:
                  print mathjax_expr
          else:
-@@ -2027,11 +2027,7 @@
+@@ -2063,11 +2063,7 @@
                  debug=debug, engine=engine)
              if misc.EMBEDDED_MODE['frontend']=='sagecell':
                  import sys
@@ -52,7 +52,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 --- a/sage/plot/animate.py
 +++ b/sage/plot/animate.py
-@@ -390,12 +390,9 @@
+@@ -391,12 +391,9 @@
                  check_call(cmd, shell=True)
                  import sage.misc.misc as misc
                  if misc.EMBEDDED_MODE and misc.EMBEDDED_MODE['frontend']=='sagecell':
@@ -70,8 +70,8 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1712,18 +1712,17 @@
-             kwds.setdefault('filename', sage.misc.misc.graphics_filename())
+@@ -1734,18 +1734,17 @@
+             kwds.setdefault('filename', graphics_filename())
              filename=kwds['filename']
              self.save(**kwds)
 -            import sys
@@ -94,7 +94,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
                  else:
                      html("<img src='cell://%s'>"%filename)
          else:
-@@ -2949,12 +2948,10 @@
+@@ -2982,12 +2981,10 @@
          if sage.misc.misc.EMBEDDED_MODE:
              self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
              if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
@@ -113,7 +113,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 --- a/sage/plot/plot3d/base.pyx
 +++ b/sage/plot/plot3d/base.pyx
-@@ -1096,12 +1096,9 @@
+@@ -1097,12 +1097,9 @@
              T = self._prepare_for_tachyon(frame, axes, frame_aspect_ratio, aspect_ratio, zoom)
              tachyon_rt(T.tachyon(), filename_full, verbosity, True, opts)
              if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='sagecell':
@@ -129,7 +129,7 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
  
              import sage.misc.viewer
              viewer_app = sage.misc.viewer.browser()
-@@ -1139,13 +1136,9 @@
+@@ -1140,13 +1137,9 @@
              viewer_app = os.path.join(sage.misc.misc.SAGE_LOCAL, "bin/jmol")
  
              if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='sagecell':
@@ -146,7 +146,7 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
              else:
                  # We need a script to load the file
                  if EMBEDDED_MODE and EMBEDDED_MODE['frontend']=='notebook':
-@@ -1161,7 +1154,7 @@
+@@ -1162,7 +1155,7 @@
              # If the server has a Java installation we can make better static images with Jmol
              # Test for Java then make image with Jmol or Tachyon if no JavaVM
              # TODO: Support sage cell server
@@ -158,8 +158,8 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 --- a/sage/plot/plot3d/tachyon.py
 +++ b/sage/plot/plot3d/tachyon.py
-@@ -319,12 +319,9 @@
-             filename = sage.misc.misc.graphics_filename()
+@@ -320,12 +320,9 @@
+             filename = graphics_filename()
              self.save(filename, verbose=verbose, extra_opts=extra_opts)
              if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
 -                import json #TODO: be smart about which json
@@ -171,5 +171,5 @@ diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 +                msg={'text/image-filename': filename}
 +                sys._sage_.display_message(msg)
              return
-         filename = sage.misc.misc.tmp_filename() + '.png'
+         filename = tmp_filename(ext='.png')
          self.save(filename, verbose=verbose, extra_opts=extra_opts)

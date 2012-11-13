@@ -2,13 +2,13 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent ce02e6279fcb0ead000073b2c0dde074f2e5581b
+# Parent 9b6226228a70e625deecd9698e33afeda37d946c
 imported patch embedded.patch
 
 diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
 --- a/sage/databases/sql_db.py
 +++ b/sage/databases/sql_db.py
-@@ -352,6 +352,7 @@
+@@ -353,6 +353,7 @@
      global p
      p = 0
      def row_str(row, html):
@@ -16,7 +16,7 @@ diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
          f = 0
          global p
          cur_str = []
-@@ -359,10 +360,7 @@
+@@ -360,10 +361,7 @@
              if index in pcol_index:
                  if html:
                      plot = pcol_map[p%len(pcol_map)](row[index])
@@ -28,7 +28,7 @@ diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
                      p += 1
                  else:
                      raise NotImplementedError('Cannot display plot on ' \
-@@ -376,26 +374,19 @@
+@@ -377,26 +375,19 @@
                      f += 1
                  else:
                      field_val = row[index]
@@ -292,7 +292,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/interpreter.py b/sage/misc/interpreter.py
 --- a/sage/misc/interpreter.py
 +++ b/sage/misc/interpreter.py
-@@ -87,19 +87,6 @@
+@@ -71,19 +71,6 @@
  from preparser import (preparse, preparse_file, load_wrap,
                         modified_attached_files, attached_files)
  
@@ -326,7 +326,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
  \usepackage{amssymb}
 @@ -56,6 +54,7 @@
  
- from misc import tmp_dir, graphics_filename
+ from sage.misc.temporary_file import tmp_dir, graphics_filename
  import sage_eval
 +from sage.misc.misc import EMBEDDED_MODE
  from sage.misc.sage_ostools import have_program
@@ -345,7 +345,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
      """
      if EMBEDDED_MODE:
          return "{\\rm %s}"%x
-@@ -1964,14 +1963,14 @@
+@@ -1997,14 +1996,14 @@
  
      EXAMPLES::
  
@@ -362,7 +362,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
  
      TESTS::
  
-@@ -1989,7 +1988,7 @@
+@@ -2022,7 +2021,7 @@
          Traceback (most recent call last):
          ...
          ValueError: Unsupported LaTeX engine.
@@ -371,7 +371,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          sage: view(4, engine="garbage", viewer="pdf")
          Traceback (most recent call last):
          ...
-@@ -2216,14 +2215,14 @@
+@@ -2249,14 +2248,14 @@
  
          sage: sage.misc.latex.print_or_typeset(3)
          3
@@ -391,7 +391,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/misc/misc.py b/sage/misc/misc.py
 --- a/sage/misc/misc.py
 +++ b/sage/misc/misc.py
-@@ -47,6 +47,13 @@
+@@ -51,6 +51,13 @@
  
  LOCAL_IDENTIFIER = '%s.%s'%(HOSTNAME , os.getpid())
  
@@ -405,7 +405,7 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
  def sage_makedirs(dir):
      """
      Python version of ``mkdir -p``: try to create a directory, and also
-@@ -2161,19 +2168,6 @@
+@@ -2086,19 +2093,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -454,7 +454,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
  
-@@ -816,7 +816,6 @@
+@@ -818,7 +818,6 @@
      if not interact:
          return results
  
@@ -462,7 +462,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1381,7 +1380,6 @@
+@@ -1380,7 +1379,6 @@
          if testing:
              return (url, path)
  
@@ -560,16 +560,16 @@ diff --git a/sage/misc/trace.py b/sage/misc/trace.py
 diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 --- a/sage/plot/animate.py
 +++ b/sage/plot/animate.py
-@@ -20,7 +20,7 @@
+@@ -21,7 +21,7 @@
  from sage.structure.sage_object import SageObject
- 
+ from sage.misc.temporary_file import tmp_filename, tmp_dir
  import plot
 -import sage.misc.misc
 +import sage.misc.misc as misc
  import sage.misc.viewer
  
  class Animation(SageObject):
-@@ -453,7 +453,7 @@
+@@ -454,7 +454,7 @@
              self.gif(savefile=filename, delay=delay, iterations=iterations)
              return
          
@@ -577,11 +577,11 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 +        if misc.EMBEDDED_MODE:
              self.gif(delay = delay, iterations = iterations)
          else:
-             filename = sage.misc.misc.tmp_filename() + '.gif'
+             filename = tmp_filename(ext='.gif')
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -343,7 +343,7 @@
+@@ -348,7 +348,7 @@
  ## going to be used.
  
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)
@@ -593,7 +593,7 @@ diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 --- a/sage/plot/plot3d/base.pyx
 +++ b/sage/plot/plot3d/base.pyx
-@@ -821,7 +821,7 @@
+@@ -822,7 +822,7 @@
          return box_min, box_max
  
      def _prepare_for_jmol(self, frame, axes, frame_aspect_ratio, aspect_ratio, zoom):
@@ -602,9 +602,9 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
          if EMBEDDED_MODE:
              s = 6
          else:
-@@ -1075,7 +1075,8 @@
+@@ -1076,7 +1076,8 @@
          else:
-             filename = sage.misc.misc.tmp_filename()
+             filename = tmp_filename()
  
 -        from sage.plot.plot import EMBEDDED_MODE, DOCTEST_MODE
 +        from sage.plot.plot import DOCTEST_MODE
@@ -615,9 +615,9 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 --- a/sage/plot/plot3d/tachyon.py
 +++ b/sage/plot/plot3d/tachyon.py
-@@ -315,7 +315,7 @@
+@@ -316,7 +316,7 @@
              filename = graphics_filename()
-             self.save(SAGE_TMP + '/test.png', verbose=verbose, extra_opts=extra_opts)
+             self.save(os.path.join(SAGE_TMP, 'test.png'), verbose=verbose, extra_opts=extra_opts)
              return
 -        if sage.plot.plot.EMBEDDED_MODE:
 +        if sage.misc.misc.EMBEDDED_MODE:

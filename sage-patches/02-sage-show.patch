@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1311809242 25200
 # Node ID f67d7039d959b56d5b611b5979375b95dbe69398
-# Parent 0ea3cdafee8bc6fa65a643899700573b1ea03518
+# Parent b4e0f1381e3b2d03ba71563e8745393f161f052d
 [mq]: show.patch
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
@@ -90,7 +90,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -2006,7 +2006,8 @@
+@@ -2039,7 +2039,8 @@
      if pdflatex or (viewer == "pdf" and engine == "latex"):
          engine = "pdflatex"
      # notebook
@@ -100,7 +100,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          MathJax_okay = True
          for t in latex.mathjax_avoid_list():
              if s.find(t) != -1:
-@@ -2014,14 +2015,28 @@
+@@ -2047,14 +2048,28 @@
              if not MathJax_okay:
                  break
          if MathJax_okay:  # put comma at end of line below?
@@ -134,7 +134,25 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 --- a/sage/plot/animate.py
 +++ b/sage/plot/animate.py
-@@ -388,6 +388,15 @@
+@@ -19,7 +19,7 @@
+ import os
+ 
+ from sage.structure.sage_object import SageObject
+-from sage.misc.temporary_file import tmp_filename, tmp_dir
++from sage.misc.temporary_file import tmp_filename, tmp_dir, graphics_filename
+ import plot
+ import sage.misc.misc as misc
+ import sage.misc.viewer
+@@ -378,7 +378,7 @@
+                 raise OSError, msg
+         else:
+             if not savefile:
+-                savefile = sage.misc.misc.graphics_filename(ext='gif')
++                savefile = graphics_filename(ext='gif')
+             if not savefile.endswith('.gif'):
+                 savefile += '.gif'
+             savefile = os.path.abspath(savefile)
+@@ -389,6 +389,15 @@
              from subprocess import check_call, CalledProcessError
              try:
                  check_call(cmd, shell=True)
@@ -150,10 +168,19 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
                  if show_path:
                      print "Animation saved to file %s." % savefile
              except (CalledProcessError, OSError):
+@@ -554,7 +563,7 @@
+             if not savefile:
+                 if output_format is None:
+                     output_format = 'mpg'
+-                savefile = sage.misc.misc.graphics_filename(ext=output_format)
++                savefile = graphics_filename(ext=output_format)
+             else:
+                 if output_format is None:
+                     suffix = os.path.splitext(savefile)[1]
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1705,17 +1705,27 @@
+@@ -1727,17 +1727,27 @@
  
          # This option should not be passed on to save().
          linkmode = kwds.pop('linkmode', False)
@@ -163,8 +190,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
              self.save(DOCTEST_MODE_FILE, **kwds)
 -        elif sage.plot.plot.EMBEDDED_MODE:
 +        elif sage.misc.misc.EMBEDDED_MODE:
--            kwds.setdefault('filename', graphics_filename())
-+            kwds.setdefault('filename', sage.misc.temporary_file.graphics_filename())
+             kwds.setdefault('filename', graphics_filename())
 +            filename=kwds['filename']
              self.save(**kwds)
 -            if linkmode == True:
@@ -185,10 +211,9 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +                else:
 +                    html("<img src='cell://%s'>"%filename)
          else:
--            kwds.setdefault('filename', tmp_filename(ext='.png'))
-+            kwds.setdefault('filename', sage.misc.misc.tmp_filename() + '.png')
+             kwds.setdefault('filename', tmp_filename(ext='.png'))
              self.save(**kwds)
-@@ -2534,42 +2544,47 @@
+@@ -2567,42 +2577,47 @@
          options.update(kwds)
          dpi = options.pop('dpi')
          transparent = options.pop('transparent')
@@ -265,13 +290,13 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
  
  
  class GraphicsArray(SageObject):
-@@ -2929,11 +2944,18 @@
+@@ -2962,11 +2977,18 @@
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
              return
 -        if sage.plot.plot.EMBEDDED_MODE:
 +        if filename is None:
-+            filename = sage.misc.misc.graphics_filename()
++            filename = graphics_filename()
 +        if sage.misc.misc.EMBEDDED_MODE:
              self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
 +            if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
@@ -290,7 +315,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -343,7 +343,6 @@
+@@ -348,7 +348,6 @@
  ## going to be used.
  
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)
@@ -301,7 +326,7 @@ diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 --- a/sage/plot/plot3d/base.pyx
 +++ b/sage/plot/plot3d/base.pyx
-@@ -1077,6 +1077,7 @@
+@@ -1078,6 +1078,7 @@
  
          from sage.plot.plot import DOCTEST_MODE
          from sage.misc.misc import EMBEDDED_MODE
@@ -309,7 +334,7 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
          ext = None
  
          # Tachyon resolution options
-@@ -1090,9 +1091,18 @@
+@@ -1091,9 +1092,18 @@
              opts = '-res %s %s'%(figsize[0]*100, figsize[1]*100)
  
          if DOCTEST_MODE or viewer=='tachyon' or (viewer=='java3d' and EMBEDDED_MODE):
@@ -330,7 +355,7 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
              import sage.misc.viewer
              viewer_app = sage.misc.viewer.browser()
  
-@@ -1128,19 +1138,29 @@
+@@ -1129,19 +1139,29 @@
              T.export_jmol(archive_name, force_reload=EMBEDDED_MODE, zoom=zoom*100, **kwds)
              viewer_app = os.path.join(sage.misc.misc.SAGE_LOCAL, "bin/jmol")
  
@@ -372,9 +397,9 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 --- a/sage/plot/plot3d/tachyon.py
 +++ b/sage/plot/plot3d/tachyon.py
-@@ -318,6 +318,13 @@
+@@ -319,6 +319,13 @@
          if sage.misc.misc.EMBEDDED_MODE:
-             filename = sage.misc.misc.graphics_filename()
+             filename = graphics_filename()
              self.save(filename, verbose=verbose, extra_opts=extra_opts)
 +            if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
 +                import json #TODO: be smart about which json
@@ -384,5 +409,5 @@ diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 +                msg={'text/filename': filename}
 +                sys._sage_messages.message_queue.display(msg)
              return
-         filename = sage.misc.misc.tmp_filename() + '.png'
+         filename = tmp_filename(ext='.png')
          self.save(filename, verbose=verbose, extra_opts=extra_opts)
