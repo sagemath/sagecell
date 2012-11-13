@@ -31,7 +31,7 @@ sagecell.simpletimer = function () {
            t = new_t;
        }
        //a+=1;
-       sagecell.log('time since '+t+': '+(new_t-old_t));
+       //sagecell.log('time since '+t+': '+(new_t-old_t));
        return new_t-old_t;
    };
 };
