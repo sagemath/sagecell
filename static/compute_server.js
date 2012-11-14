@@ -125,18 +125,18 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
-    $([IPython.events]).on("status_busy.Kernel", function (e) {
-        if (e.kernel.kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_busy.Kernel", function (evt, data) {
+        if (data.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
         }
     });
-    $([IPython.events]).on("status_idle.Kernel", function (e) {
-        if (e.kernel.kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_idle.Kernel", function (evt, data) {
+        if (data.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "none";
         }
     });
-    $([IPython.events]).on("status_dead.Kernel", function (e) {
-        if (e.kernel.kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_dead.Kernel", function (evt, data) {
+        if (data.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
