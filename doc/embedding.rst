@@ -238,6 +238,19 @@ whatever the user had in that particular cell before (using the web browser's
 session storage capabilities). If that fails, the editor is initialized to an
 empty string.
 
+Linked Cells
+^^^^^^^^^^^^
+
+When multiple input locations are given, this sets whether the code from these
+cells is to be executed from the same kernel, so that code executed in one
+will affect the execution of code from another cell::
+
+   { ..
+   linked: boolean
+   .. }
+
+This option is ``false`` by default.
+
 Evaluate button text
 ^^^^^^^^^^^^^^^^^^^^
 

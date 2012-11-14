@@ -83,6 +83,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     } else {
         var old_ws = window.WebSocket, old_log = console.log;
         window.WebSocket = sagecell.MultiSockJS;
+        console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
@@ -94,6 +95,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             this._kernel_started(json);
             sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
             this.shell_channel.onopen = function () {
+                console.log = old_log;
                 sagecell.log('kernel channel opened: '+that.timer()+' ms.');
                 that.kernel.opened = true;
                 while (that.kernel.deferred_code.length > 0) {
@@ -125,18 +127,18 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ]));
-    $([IPython.events]).on("status_busy.Kernel", function (e) {
-        if (e.kernel.kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_busy.Kernel", function (evt, data) {
+        if (data.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
         }
     });
-    $([IPython.events]).on("status_idle.Kernel", function (e) {
-        if (e.kernel.kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_idle.Kernel", function (evt, data) {
+        if (data.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "none";
         }
     });
-    $([IPython.events]).on("status_dead.Kernel", function (e) {
-        if (e.kernel.kernel_id === that.kernel.kernel_id) {
+    $([IPython.events]).on("status_dead.Kernel", function (evt, data) {
+        if (data.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
