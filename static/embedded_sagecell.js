@@ -51,7 +51,13 @@ sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
                   "html": "htmlmixed", "r": "r"};
 sagecell.loadMathJax = true;
-sagecell.log = function (obj) { if (sagecell.debug) {console.log(obj);}}
+sagecell.log = (function (log) {
+    return function (obj) {
+        if (sagecell.debug) {
+            log(obj);
+        }
+    };
+}($.proxy(console.log, console)));
 
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
