@@ -173,7 +173,7 @@ sagecell.makeSagecell = function (args, k) {
     }
     defaults = {"editor": "codemirror",
                 "evalButtonText": "Evaluate",
-                "hide": ["computationID", "messages"],
+                "hide": ["messages"],
                 "mode": "normal",
                 "replaceOutput": true,
                 "languages": ["sage"]};
@@ -246,9 +246,9 @@ sagecell.makeSagecell = function (args, k) {
                 console.warn("Running the Sage Cell in debug mode!");
             } else {
                 var hideAdvanced = {};
-                var hideable = {"in": {"computationID": true, "editor": true,
-                                       "editorToggle": true,  "files": true,
-                                       "evalButton": true,    "language": true},
+                var hideable = {"in": {"editor": true,        "editorToggle": true,
+                                       "files": true,         "evalButton": true,
+                                       "language": true},
                                 "out": {"output": true,       "messages": true,
                                         "sessionFiles": true, "permalink": true}};
                 var hidden_out = [];
