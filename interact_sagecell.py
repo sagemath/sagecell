@@ -55,7 +55,7 @@ Nested interacts::
 Nested interacts where the number of controls is changed::
 
     @interact
-    def f(n=(0,10)):
+    def f(n=(0,10,1)):
         @interact(controls=[('x%d'%i, (0,10)) for i in range(n)])
         def s(multiplier=2, **kwargs):
             print sum(kwargs.values())*multiplier
@@ -65,7 +65,7 @@ Recursively nested interact::
 
     c=1
     @interact
-    def f(n=(0,10)):
+    def f(n=(0,10,1)):
         global c
         c+=1
         print 'f evaluated %d times'%c
