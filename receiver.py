@@ -99,6 +99,19 @@ from sagenb.misc.support import automatic_names
             ip.payload_manager.write_payload({"new_files": new_files})
             return ''
         _sage_.new_files = new_files
+        def register_handler(key, handler):
+            msg_types = set([ 'execute_request', 'complete_request',
+                          'object_info_request', 'history_request',
+                          'connect_request', 'shutdown_request',
+                          'apply_request',
+                          ])
+            if key not in msg_types:
+                ka.kernel.shell_handlers[key] = handler
+        _sage_.register_handler = register_handler
+	def send_message(stream, msg_type, content, parent, **kwargs):
+		ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
+	_sage_.send_message = send_message
+
         sys._sage_ = _sage_
         user_ns = ka.kernel.shell.user_ns
         # TODO: maybe we don't want to cut down the flush interval?

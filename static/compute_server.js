@@ -152,6 +152,14 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.eventHandlers = {};
 };
 
+// metadata is optional
+sagecell.Session.prototype.send_message = function(msg_type, content, callbacks, metadata) {
+    var msg = this.kernel._get_msg(msg_type, content);
+    msg['metadata'] = metadata || {};
+    this.kernel.shell_channel.send(JSON.stringify(msg));
+    this.kernel.set_callbacks_for_msg(msg.header.msg_id, callbacks);
+}
+
 sagecell.Session.prototype.execute = function (code) {
     if (this.kernel.opened) {
         sagecell.log('opened and executing in kernel: '+this.timer()+' ms');
@@ -333,18 +341,16 @@ sagecell.InteractCell.prototype.bindChange = function () {
     var handler = function (event, ui) {
         $(that.rows[event.data.name]).addClass("sagecell_dirtyControl");
         if (that.update[event.data.name]) {
-            var code = "sys._sage_.update_interact(" + JSON.stringify(that.interact_id) + ",{";
-            var kwargs = [];
+	    var msg_dict = {'interact_id': that.interact_id, 'control_vals': {}};
             for (var name in that.controls) {
                 if (that.controls.hasOwnProperty(name) &&
                         that.update[event.data.name].indexOf(name) !== -1) {
-                    kwargs.push(JSON.stringify(name) + ":" + that.controls[name].py_value(ui));
+		    msg_dict['control_vals'][name]=that.controls[name].json_value(ui)
                     $(that.rows[name]).removeClass("sagecell_dirtyControl");
                 }
             }
-            code += kwargs.join(",") + "})";
             that.session.replace_output[that.interact_id] = true;
-            that.session.execute(code);
+	    that.session.send_message('sagenb.interact.update_interact', msg_dict);
         }
     };
     for (var name in this.controls) {
@@ -464,10 +470,10 @@ sagecell.InteractData.Button.prototype.changeHandlers = function () {
     return {"clickdone": this.button};
 };
 
-sagecell.InteractData.Button.prototype.py_value = function () {
+sagecell.InteractData.Button.prototype.json_value = function () {
     var c = this.clicked;
     this.clicked = false;
-    return c ? "True" : "False";
+    return c;
 }
 
 sagecell.InteractData.Button.prototype.disable = function () {
@@ -509,10 +515,10 @@ sagecell.InteractData.ButtonBar.prototype.changeHandlers = function () {
     return {"clickdone": this.buttons};
 }
 
-sagecell.InteractData.ButtonBar.prototype.py_value = function () {
+sagecell.InteractData.ButtonBar.prototype.json_value = function () {
     var i = this.index;
     this.index = null;
-    return i !== null ? i : "None";
+    return i;
 }
 
 sagecell.InteractData.ButtonBar.prototype.disable = function () {
@@ -531,8 +537,8 @@ sagecell.InteractData.Checkbox.prototype.changeHandlers = function () {
     return {"change": this.input};
 }
 
-sagecell.InteractData.Checkbox.prototype.py_value = function () {
-    return this.input.checked ? "True" : "False";
+sagecell.InteractData.Checkbox.prototype.json_value = function () {
+    return this.input.checked;
 }
 
 sagecell.InteractData.Checkbox.prototype.disable = function () {
@@ -567,8 +573,8 @@ sagecell.InteractData.ColorSelector.prototype.changeHandlers = function() {
     return {"change": this.span};
 }
 
-sagecell.InteractData.ColorSelector.prototype.py_value = function() {
-    return JSON.stringify(this.color);
+sagecell.InteractData.ColorSelector.prototype.json_value = function() {
+    return this.color;
 }
 
 sagecell.InteractData.ColorSelector.prototype.disable = function () {
@@ -588,8 +594,8 @@ sagecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
     return {};
 }
 
-sagecell.InteractData.HtmlBox.prototype.py_value = function() {
-    return "None";
+sagecell.InteractData.HtmlBox.prototype.json_value = function() {
+    return null;
 }
 
 sagecell.InteractData.HtmlBox.prototype.disable = function () {}
@@ -619,8 +625,8 @@ sagecell.InteractData.InputBox.prototype.changeHandlers = function() {
     return h;
 }
 
-sagecell.InteractData.InputBox.prototype.py_value = function () {
-    return "u" + JSON.stringify(this.textbox.value);
+sagecell.InteractData.InputBox.prototype.json_value = function () {
+    return this.textbox.value;
 }
 
 sagecell.InteractData.InputBox.prototype.disable = function () {
@@ -654,16 +660,16 @@ sagecell.InteractData.InputGrid.prototype.changeHandlers = function () {
     return {"change": this.textboxes};
 }
 
-sagecell.InteractData.InputGrid.prototype.py_value = function () {
-    var string = "[";
+sagecell.InteractData.InputGrid.prototype.json_value = function () {
+    var value = [];
     for (var row = 0; row < this.control.nrows; row++) {
-        string += "[";
+	var rowlist = [];
         for (var col = 0; col < this.control.ncols; col++) {
-            string += "u" + JSON.stringify(this.textboxes[row * this.control.ncols + col].value) + ","
+            rowlist.push(this.textboxes[row * this.control.ncols + col].value);
         }
-        string += "],";
+	value.push(rowlist);
     }
-    return string + "]";
+    return value;
 }
 
 sagecell.InteractData.InputGrid.prototype.disable = function () {
@@ -750,10 +756,9 @@ sagecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
     return {"slidechange": this.sliders};
 }
 
-sagecell.InteractData.MultiSlider.prototype.py_value = function () {
-    return JSON.stringify(this.values);
+sagecell.InteractData.MultiSlider.prototype.json_value = function () {
+    return this.values;
 }
-
 sagecell.InteractData.MultiSlider.prototype.disable = function () {
     this.sliders.slider("option", "disabled", true);
     this.value_boxes.attr("disabled", true);
@@ -818,8 +823,8 @@ sagecell.InteractData.Selector.prototype.changeHandlers = function () {
     return {"changedone": this.changing};
 }
 
-sagecell.InteractData.Selector.prototype.py_value = function () {
-    return JSON.stringify(this.value);
+sagecell.InteractData.Selector.prototype.json_value = function () {
+    return this.value;
 }
 
 sagecell.InteractData.Selector.prototype.disable = function () {
@@ -985,12 +990,11 @@ sagecell.InteractData.Slider.prototype.changeHandlers = function() {
     return {"slidechange": this.slider};
 }
 
-sagecell.InteractData.Slider.prototype.py_value = function () {
+sagecell.InteractData.Slider.prototype.json_value = function () {
     if (this.range) {
-            return "(" + JSON.stringify(this.values[0]) + "," +
-                         JSON.stringify(this.values[1]) + ")";
+	return this.values;
     } else {
-        return JSON.stringify(this.value);
+        return this.value;
     }
 }
 

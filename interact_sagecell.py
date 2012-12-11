@@ -90,6 +90,15 @@ def update_interact(interact_id, control_vals):
             interact_info["state"][var]=kwargs[var]
     __interacts[interact_id]["function"](control_vals=kwargs)
 
+def update_interact_msg(stream, ident, msg):
+    interact_id = msg['content']['interact_id']
+    control_vals = msg['content']['control_vals']
+    update_interact(interact_id, control_vals)
+    sys._sage_.send_message(stream, 'sagenb.interact.update_reply',
+      content={'status': 'ok'}, parent=msg, ident=ident)
+
+import sys
+sys._sage_.register_handler("sagenb.interact.update_interact", update_interact_msg)
 
 def interact_func(session, pub_socket):
     """
