@@ -239,12 +239,18 @@ sagecell.Session.prototype.output = function(html, block_id, create) {
     return out;
 };
 
+sagecell.Session.prototype.handle_message_reply = function(msg) {
+}
+
+
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
     sagecell.log('reply walltime: '+this.timer() + " ms");
-    if(msg.status==="error") {
+    /* This would give two error messages (since a pyerr should have already come)
+      if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
             .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
     } 
+    */
     var payload = msg.payload[0];
     if (payload && payload.new_files){
         var files = payload.new_files;
@@ -268,6 +274,9 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
 }
     
 sagecell.Session.prototype.handle_output = function (msg_type, content, metadata) {
+    console.log('handling output');
+    console.log(msg_type);
+    console.log(content);
     var block_id = metadata.interact_id || null;
     // Handle each stream type.  This should probably be separated out into different functions.
     switch (msg_type) {
@@ -350,7 +359,11 @@ sagecell.InteractCell.prototype.bindChange = function () {
                 }
             }
             that.session.replace_output[that.interact_id] = true;
-	    that.session.send_message('sagenb.interact.update_interact', msg_dict);
+            var callbacks = {"output": $.proxy(that.session.handle_output, that.session),
+                             "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)};
+
+	    that.session.send_message('sagenb.interact.update_interact', msg_dict,
+				      callbacks);
         }
     };
     for (var name in this.controls) {
