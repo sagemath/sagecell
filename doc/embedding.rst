@@ -155,7 +155,7 @@ Output Location
 ^^^^^^^^^^^^^^^
 
 This sets the location of the output elements of a Sage Cell, which includes
-the session output, the computation ID, and server messages::
+the session output and server messages::
 
    { ..
    outputLocation: "#..."
@@ -323,7 +323,6 @@ The following output elements can be hidden:
 
 Additionally, the following debugging elements are hidden by default:
 
-* Computation ID logging (``computationID``)
 * Message logging (``messages``)
 * Session title (``sessionTitle``)
 * Sage Mode toggle (``sageMode``)
@@ -421,8 +420,7 @@ A special "debug" mode is avaliable by passing the following to
      .. }
 
 This shows all page elements (overriding ``hide`` specification), which provides
-computation ID logging, session titles, and sent / recieved message logging, that
-are otherwise hidden by default. Since this mode is not intended for production
-purposes, a browser warning will be raised when initializing a Sage Cell instance
-in debug mode.
+session titles and sent / recieved message logging that are otherwise hidden by
+default. Since this mode is not intended for production purposes, a browser
+warning will be raised when initializing a Sage Cell instance in debug mode.
 

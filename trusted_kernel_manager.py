@@ -102,6 +102,9 @@ class TrustedMultiKernelManager(object):
                 output += stdout_channel.recv(1024)
             except socket.timeout:
                 polls+= 1
+            if stdout_channel.closed:
+                print "An error occurred getting data from the untrusted side."
+                return None
             if polls>20:
                 return None
         return int(output.split("\n")[0])
