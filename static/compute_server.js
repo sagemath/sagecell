@@ -315,23 +315,21 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
 
     case "display_data":
         var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
-        if (content.data["application/sage-interact"]) {
-            this.interacts.push(new sagecell.InteractCell(this, content.data["application/sage-interact"], block_id));
-        } else if (content.data["text/html"]) {
-            var html = content.data['text/html'].replace(/cell:\/\//gi, filepath);
-	    //console.log(html);
-            this.output("<div></div>", block_id).html(html);
-        } else if (content.data["text/image-filename"]) {
-            this.output("<img src='"+filepath+content.data["text/image-filename"]+"'/>", block_id);
-        } else if (content.data["image/png"]) {
-            this.output("<img src='data:image/png;base64,"+content.data["image/png"]+"'/>", block_id);
-        } else if(content.data['application/x-jmol']) {
-            sagecell.log('making jmol applet');
-            jmolSetDocument(false);
-            this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+content.data['application/x-jmol']+'";\n script SCRIPT;\n'),block_id);            
-        } else if (content.data["text/plain"]) {
-            this.output("<pre></pre>", block_id).text(content.data["text/plain"]);
-        }
+	// find any key of content that is in the display_handlers array and execute that handler
+	// if none found, do the text/plain 
+	var already_handled = false;
+	for (var key in content.data) {
+	    if (content.data.hasOwnProperty(key) && this.display_handlers[key]) {
+		$.proxy(this.display_handlers[key], this)(content.data[key], block_id, filepath);
+		already_handled = true;
+		// we only use one mime type
+		break;
+	    }
+	}
+	if (!already_handled && content.data['text/plain']) {
+	    // we are *always* supposed to have a text/plain attribute
+	    this.output("<pre></pre>", block_id).text(content.data['text/plain']);
+	}
         break;
     }
     sagecell.log('handled output: '+this.timer()+' ms');
@@ -341,6 +339,17 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
     MathJax.Hub.Queue(["Typeset",MathJax.Hub, output]);
     MathJax.Hub.Queue([function () {$(output).find(".math").removeClass('math');}]);
 };
+
+// dispatch table on mime type
+sagecell.Session.prototype.display_handlers = {
+    'application/sage-interact': function(data, block_id, filepath) {this.interacts.push(new sagecell.InteractCell(this, data, block_id));},
+    'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); },
+    'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);},
+    'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);},
+    'application/x-jmol': function(data, block_id, filepath) {
+	jmolSetDocument(false); 
+	this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+data+'";\n script SCRIPT;\n'),block_id); }
+}
 
 sagecell.InteractCell = function (session, data, parent_block) {
     this.interact_id = data.new_interact_id;
