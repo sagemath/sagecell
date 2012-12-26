@@ -70,8 +70,10 @@ if __name__ == "__main__":
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-p', '--port', type=int, default=8888,
                         help='port to launch the server')
-    
+    parser.add_argument('-d', '--debug', action='store_true', help='debug messages')
     args = parser.parse_args()
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
     application = SageCellServer()
     application.listen(args.port)
