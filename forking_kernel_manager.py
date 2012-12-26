@@ -41,10 +41,16 @@ class ForkingKernelManager(object):
         """
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
+        logging.debug("kernel forked; now configuring")
         ka = IPKernelApp.instance(config=config, ip=config["ip"])
         ka.initialize([])
-        if self.update_function is not None:
-            self.update_function(ka)
+        logging.debug("now updating")
+        try:
+            if self.update_function is not None:
+                self.update_function(ka)
+        except:
+            logging.exception("Error setting up kernel")
+        logging.debug("finished updating")
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
