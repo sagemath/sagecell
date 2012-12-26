@@ -36,9 +36,24 @@ sagecell.simpletimer = function () {
    };
 };
 
+    sagecell.findSession = function(node) {
+	if (node instanceof jQuery) {
+	    node = node[0]
+	}
+	while(!node.sagecell_session) {
+	    node = node.parentNode
+	}
+	if (node) {
+	    return node.sagecell_session;
+	} else {
+	    return undefined;
+	}
+    }
+
 sagecell.Session = function (outputDiv, language, k, linked) {
     this.timer = sagecell.simpletimer();
     this.outputDiv = outputDiv;
+    this.outputDiv[0].sagecell_session = this;
     this.language = language;
     this.linked = linked;
     this.last_requests = {};
@@ -274,9 +289,9 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
 }
     
 sagecell.Session.prototype.handle_output = function (msg_type, content, metadata) {
-    console.log('handling output');
-    console.log(msg_type);
-    console.log(content);
+    //console.log('handling output');
+    //console.log(msg_type);
+    //console.log(content);
     var block_id = metadata.interact_id || null;
     // Handle each stream type.  This should probably be separated out into different functions.
     switch (msg_type) {
@@ -304,6 +319,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
             this.interacts.push(new sagecell.InteractCell(this, content.data["application/sage-interact"], block_id));
         } else if (content.data["text/html"]) {
             var html = content.data['text/html'].replace(/cell:\/\//gi, filepath);
+	    //console.log(html);
             this.output("<div></div>", block_id).html(html);
         } else if (content.data["text/image-filename"]) {
             this.output("<img src='"+filepath+content.data["text/image-filename"]+"'/>", block_id);
