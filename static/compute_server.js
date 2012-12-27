@@ -371,7 +371,7 @@ sagecell.Session.prototype.register_control = function(namespace, variable, cont
     if (this.namespaces[namespace] === undefined) {
 	this.namespaces[namespace] = {};
     }
-    if (this.namespaces[namespace][variable] == undefined) {
+    if (this.namespaces[namespace][variable] === undefined) {
 	this.namespaces[namespace][variable] = []
     }
     this.namespaces[namespace][variable].push(control);
