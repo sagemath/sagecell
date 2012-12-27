@@ -326,8 +326,8 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
 	var already_handled = false;
 	for (var key in content.data) {
 	    if (content.data.hasOwnProperty(key) && this.display_handlers[key]) {
-		$.proxy(this.display_handlers[key], this)(content.data[key], block_id, filepath);
-		already_handled = true;
+		// return false if the mime type wasn't handled after all
+		already_handled = false !== $.proxy(this.display_handlers[key], this)(content.data[key], block_id, filepath);
 		// we only use one mime type
 		break;
 	    }
@@ -356,20 +356,11 @@ sagecell.Session.prototype.display_handlers = {
 	jmolSetDocument(false); 
 	this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+data+'";\n script SCRIPT;\n'),block_id); }
     ,'application/sage-interact-control': function(data, block_id, filepath) {
-	// for each interactive area that depends on any of the variables listed in data
-	//     request an update to the area
-	var control
-	if (data.control_type === 'slider') {
-	    control = new sagecell.InteractControls.Slider(this, data.control_id);
-	    control.create(data, block_id);
-	} else if (data.control_type === 'input') {
-	    control = new sagecell.InteractControls.Input(this, data.control_id);
-	    control.create(data, block_id);
-	} else if (data.control_type === 'pythoncode') {
-	    control = new sagecell.InteractControls.PythonCode(this, data.control_id);
-	    control.create(data, block_id);
-	}
 	var that=this;
+	var control_class = sagecell.interact_controls[data.control_type];
+	if ( control_class === undefined) {return false;}
+	var control = new control_class(this, data.control_id);
+	control.create(data, block_id);
 	$.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
 	control.update(data.namespace, data.variable[0], '');
     }
@@ -479,6 +470,18 @@ sagecell.InteractControls.PythonCode.prototype.update = function (namespace, var
 				  }
 			      }});
 }
+
+sagecell.interact_controls = {
+    'slider': sagecell.InteractControls.Slider,
+    'input': sagecell.InteractControls.Input,
+    'pythoncode': sagecell.InteractControls.PythonCode
+}
+
+/**********************************************
+    OLD Interacts
+**********************************************/
+
+
 
 sagecell.InteractCell = function (session, data, parent_block) {
     this.interact_id = data.new_interact_id;
