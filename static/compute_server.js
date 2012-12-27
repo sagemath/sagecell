@@ -18,6 +18,7 @@
 (function($) {
 "use strict";
 var undefined;
+var ce = sagecell.util.createElement;
 
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
@@ -123,7 +124,6 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         this.kernel.start(IPython.utils.uuid());
     }
     this.output_blocks = {};
-    var ce = sagecell.util.createElement;
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
                 ce("div", {"class": "sagecell_permalink"}, [
@@ -231,7 +231,7 @@ sagecell.Session.prototype.set_last_request = function (interact_id, msg_id) {
 sagecell.Session.prototype.appendMsg = function(msg, text) {
     // Append the message to the div of messages
     // Use $.text() so that strings are automatically escaped
-    this.outputDiv.find(".sagecell_messages").append(document.createElement('div')).children().last().text(text+JSON.stringify(msg));
+    this.outputDiv.find(".sagecell_messages").append(ce('div')).children().last().text(text+JSON.stringify(msg));
 };
 
 sagecell.Session.prototype.last_output = function(block_id) {
@@ -406,7 +406,7 @@ sagecell.InteractControls.InteractControl = function () {
 sagecell.InteractControls.Slider = sagecell.InteractControls.InteractControl();
 sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
     var that = this;
-    this.control = this.session.output("<div id='"+data.control_id+"'></div>", block_id);
+    this.control = this.session.output(ce("div", {id: data.control_id}), block_id);
     this.control.slider({
 	disabled: data.variable.length > 1,
 	slide: function(event, ui) {
@@ -434,13 +434,7 @@ sagecell.InteractControls.Slider.prototype.update = function (namespace, variabl
 sagecell.InteractControls.Input = sagecell.InteractControls.InteractControl();
 sagecell.InteractControls.Input.prototype.create = function (data, block_id) {
     var that = this;
-    var s = "type='textbox'";
-    var enabled = true;
-    if (data.variable.length>1) {
-	s += " disabled='disabled'"
-	enabled = false
-    }
-    this.control = this.session.output("<input id='"+data.control_id+"' "+s+"></input>", block_id);
+    this.control = this.session.output(ce("input", {id: data.control_id, type: 'textbox'}), block_id);
     if (enabled) {
 	this.control.change(function(event) {
 	    if (! event.originalEvent) {return;}
@@ -468,13 +462,12 @@ sagecell.InteractControls.Input.prototype.update = function (namespace, variable
 sagecell.InteractControls.PythonCode = sagecell.InteractControls.InteractControl();
 sagecell.InteractControls.PythonCode.prototype.create = function (data, block_id) {
     var that = this;
-    this.control = this.session.output("<div id='"+data.control_id+"'></div>", block_id);
+    this.control = this.session.output(ce("div", {id: data.control_id}), block_id);
     this.session.output_blocks[this.control_id] = this.control;
     this.message_number = 1;
 }
 
 sagecell.InteractControls.PythonCode.prototype.update = function (namespace, variable, control_id) {
-    // Do something to cancel the previous requests...
     var that = this;
     this.session.replace_output[this.control_id] = true;
     this.message_number += 1;
@@ -551,7 +544,6 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
 
      */
     var cells = {};
-    var ce = sagecell.util.createElement;
     var locs = [["top_left",    "top_center",    "top_right"   ],
                 ["left",        null,            "right"       ],
                 ["bottom_left", "bottom_center", "bottom_right"]];
@@ -626,7 +618,7 @@ sagecell.InteractData.InteractControl = function () {
 sagecell.InteractData.Button = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Button.prototype.rendered = function() {
-    this.button = sagecell.util.createElement("button", {}, [
+    this.button = ce("button", {}, [
         document.createTextNode(this.control.text)
     ]);
     this.button.style.width = this.control.width;
@@ -657,7 +649,6 @@ sagecell.InteractData.Button.prototype.disable = function () {
 sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.ButtonBar.prototype.rendered = function () {
-    var ce = sagecell.util.createElement;
     var table = ce("table", {"style": "width: auto;"});
     var i = -1;
     this.buttons = $();
@@ -702,7 +693,7 @@ sagecell.InteractData.ButtonBar.prototype.disable = function () {
 sagecell.InteractData.Checkbox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Checkbox.prototype.rendered = function () {
-    this.input = sagecell.util.createElement("input", {"type": "checkbox"});
+    this.input = ce("input", {"type": "checkbox"});
     this.input.checked = this.control["default"];
     return this.input;
 }
@@ -722,9 +713,9 @@ sagecell.InteractData.Checkbox.prototype.disable = function () {
 sagecell.InteractData.ColorSelector = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.ColorSelector.prototype.rendered = function () {
-    var selector = sagecell.util.createElement("span", {"class": "sagecell_colorSelector"});
+    var selector = ce("span", {"class": "sagecell_colorSelector"});
     var text = document.createTextNode(this.control["default"]);
-    this.span = sagecell.util.createElement("span", {}, [selector]);
+    this.span = ce("span", {}, [selector]);
     if (!this.control.hide_input) {
         selector.style.marginRight = "10px";
         this.span.appendChild(text);
@@ -759,7 +750,7 @@ sagecell.InteractData.ColorSelector.prototype.disable = function () {
 sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.HtmlBox.prototype.rendered = function () {
-    this.div = document.createElement("div");
+    this.div = ce("div");
     $(this.div).html(this.control.value);
     return this.div;
 }
@@ -778,10 +769,10 @@ sagecell.InteractData.InputBox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.InputBox.prototype.rendered = function () {
     if (this.control.subtype === "textarea") {
-        this.textbox = sagecell.util.createElement("textarea",
+        this.textbox = ce("textarea",
             {"rows": this.control.height, "cols": this.control.width});
     } else if (this.control.subtype === "input") {
-        this.textbox = sagecell.util.createElement("input",
+        this.textbox = ce("input",
             /* Most of the time these will be Sage expressions, so turn all "helpful" features */
             {"size": this.control.width,  "autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
     }
@@ -811,7 +802,6 @@ sagecell.InteractData.InputGrid = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.InputGrid.prototype.rendered = function () {
     this.textboxes = $();
-    var ce = sagecell.util.createElement;
     var table = ce("table", {"style": "width: auto;"});
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
@@ -853,7 +843,6 @@ sagecell.InteractData.InputGrid.prototype.disable = function () {
 sagecell.InteractData.MultiSlider = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.MultiSlider.prototype.rendered = function () {
-    var ce = sagecell.util.createElement;
     var div = ce("div");
     this.sliders = $();
     this.value_boxes = $();
@@ -941,7 +930,6 @@ sagecell.InteractData.MultiSlider.prototype.disable = function () {
 sagecell.InteractData.Selector = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
-    var ce = sagecell.util.createElement;
     var that = this;
     if (this.control.subtype === "list") {
         var select = ce("select");
@@ -1014,7 +1002,6 @@ sagecell.InteractData.Selector.prototype.disable = function () {
 sagecell.InteractData.Slider = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Slider.prototype.rendered = function () {
-    var ce = sagecell.util.createElement;
     this.continuous = this.control.subtype === "continuous" ||
                       this.control.subtype === "continuous_range";
     this.range = this.control.subtype === "discrete_range" ||
