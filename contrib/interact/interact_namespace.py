@@ -198,3 +198,164 @@ def handler_wrapper(msg_type):
 def update_interact_msg(msg):
     print msg['content']['SLIDER']
     return {'x': msg['content']['SLIDER']}
+
+
+"""
+http://localhost:8080/?z=eJx1U01vnDAQvfMrLKcVtkRJKqWX7W6UQ3uo1FNzTCPkwMBaMQbZhl204r93DJilVeODxXjevDdf2MGmmRUVZOkbGA0qc7KGpnPkQErVCMeo1CXl0dHVilFK94XsiSwOVNiipMS6QcGB1uL86SQLd9yRL3cf6cP-FmEPe5sb2bqHiJWdzp1sNOPkEvXCEFBe4fcHRm8mIj69WrAWUejxKeWgVFpKXTzNzwyD-NcI79QqWYBhl4jgyY9CV7Ajqwj0oF1COunVPGLhTS3oIqvRQHYW5511TZ25oYU4IZf46eePb99_xTsMTHuhOhjxlWIv2s7RHSabtqY5DyywoWyhIJsBSRDhySTpT1Aw0KoBefNG20ZBqppqxEI8ZJxvtDbOoICvI2d8f7v0EdvPo-hRagdG5C4qoCQZ0wd2l3zmfDdRtQbdREeTc87QZCcj2hb7VdtqKnfByrptjCN2sJPpIwxU0iI9KxdMcGBSzoCoExz-1F3k2kD8MeA6o0npZfjqsdcNC-TZkteaT0KWgIUiAFeS68fjvzXRzRixPT7Xri2Egyz0KUMZdk137hDazzH23GEx8ctzGP7LNo1LfMapvYcc5x4HFdkDy5sCa9F2UbrBncBZwInMO0JeVZO_bVxdS4Re0l3Xd_HnQinijvBf91oa_omdll6XdZ0sUn_dM45rEgY3h7PNrE7SHcO24t_gBAIEu8QbUix7Y41L8F_ThjPkxAsjklSqeRXKMu6rDwWKHt4rL4r-AKzraQ8=&lang=sage
+
+TODO:
+
+* register handler on js side (see Brian's pull request) for a display_data
+  - gets list of outputs that depend on the given variable
+  - sends requests for updates on those outputs
+* implement the variable-changed message
+* implement a namespace variable control like a slider
+
+CONTROLS (including a "python control")
+
+* message to create a control, along with the variables to listen for changes to
+* in python:
+   - create control object
+   - create an update function
+   - send the js control message
+
+* in js:
+   - create the control,
+   - register for necessary messages
+
+When a js control needs to notify a change in a variable:
+   - send a message back to the python control to update the variable
+   - upon return with status ok, trigger an event telling controls to update
+
+When a js control receives a variable-change event:
+   - ignore if it's an event we already took care of
+   - sends a message to Sage to update the control
+
+"""
+sys._sage_.kernel_timeout = float("inf")
+from uuid import uuid4
+controls={}
+namespaces = {}
+
+def handler_wrapper(msg_type):
+    import sys
+    def register(f):
+        def g(stream, ident, msg):
+            return f(msg['content'])
+        sys._sage_.register_handler(msg_type, g)
+    return register
+
+@handler_wrapper("variable_update")
+def update_interact_msg(msg):
+    return controls[msg['control_id']].variable_update(msg)
+
+@handler_wrapper("control_update")
+def update_interact_msg(msg):
+    return controls[msg['control_id']].control_update(msg)
+
+class InteractiveNamespace(dict):
+    def __init__(self, *args, **kwargs):
+        dict.__init__(self,*args,**kwargs)
+        self.id = 'namespace-'+unicode(uuid4())
+        global namespaces
+        namespaces[self.id] = self
+    def __setitem__(self, key, value):
+        dict.__setitem__(self, key, value)
+        sys._sage_.display_message({'text/plain': 'variable changed',
+                                    'application/sage-interact-variable': {'namespace': self.id,
+                                                                     'variable': key,
+                                                                     'value': value}})
+class slider(object):
+    def __init__(self, var, ns, min, max, code=None):
+        self.var = var
+        self.ns = ns
+        self.min = min
+        self.max = max
+        global controls
+        self.id = 'control-'+unicode(uuid4())
+        controls[self.id] = self
+        self.code = code
+        
+    def create(self):
+        sys._sage_.display_message({'text/plain': 'slider control, %s'%((self.var,self.min,self.max),), 
+                                    'application/sage-interact-control': {'control_id': self.id,
+                                                                     'control_type': 'slider',
+                                                                     'variable': self.var,
+                                                                     'namespace': self.ns.id,
+                                                                     'range': map(float, (self.min, self.max))}})
+        
+    def variable_update(self, msg):
+        if len(self.var)==1:
+            self.ns[self.var[0]] = msg['value']
+
+    def control_update(self, msg):
+        if self.code is None and len(self.var)==1:
+            return {'value': self.ns[self.var[0]]}
+        else:
+            return {'value': eval(self.code,globals(), self.ns)}
+
+class input(object):
+    def __init__(self, var, ns, code=None):
+        self.var = var
+        self.ns = ns
+        global controls
+        self.id = 'control-'+unicode(uuid4())
+        controls[self.id] = self
+        self.code = code
+        
+    def create(self):
+        sys._sage_.display_message({'text/plain': 'slider control, %s'%((self.var),), 
+                                    'application/sage-interact-control': {'control_id': self.id,
+                                                                     'control_type': 'input',
+                                                                     'variable': self.var,
+                                                                     'namespace': self.ns.id}})
+        
+    def variable_update(self, msg):
+        if len(self.var)==1:
+            self.ns[self.var[0]] = int(msg['value'])
+
+    def control_update(self, msg):
+        if self.code is None and len(self.var)==1:
+            return {'value': self.ns[self.var[0]]}
+        else:
+            return {'value': eval(self.code,globals(), self.ns)}
+
+
+class pythoncode(object):
+    def __init__(self, var, ns, code):
+        self.var = var
+        self.ns = ns
+        global controls
+        self.id = 'control-'+unicode(uuid4())
+        controls[self.id] = self
+        self.code = code
+        
+    def create(self):
+        sys._sage_.display_message({'text/plain': 'python code control, %s'%((self.var),), 
+                                    'application/sage-interact-control': {'control_id': self.id,
+                                                                     'control_type': 'pythoncode',
+                                                                     'variable': self.var,
+                                                                     'namespace': self.ns.id}})
+        
+    def variable_update(self, msg):
+        pass
+
+    def control_update(self, msg):
+        exec self.code in globals(),self.ns
+
+ns = InteractiveNamespace(x=10,y=3)
+A=slider('x', ns, 0, 2)
+A.create()
+B=slider('y', ns, 0, 2)
+B.create()
+C=slider('xy', ns, 0, 2, 'x-y')
+C.create()
+var('t')
+E=pythoncode('x',ns,"""
+print x
+show(plot(sin(x*t), (t,-3,3),plot_points=3,figsize=2))
+print 'hi'
+""")
+E.create()
+D=input('xy',ns,'x')
+D.create()

@@ -58,6 +58,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.linked = linked;
     this.last_requests = {};
     this.sessionContinue = true;
+    this.namespaces = {};
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": sagecell.log};
     $.post = function (url, callback) {
@@ -233,25 +234,22 @@ sagecell.Session.prototype.appendMsg = function(msg, text) {
     this.outputDiv.find(".sagecell_messages").append(document.createElement('div')).children().last().text(text+JSON.stringify(msg));
 };
 
-sagecell.Session.prototype.output = function(html, block_id, create) {
-    // create===false means just pass back the last child of the output_block
-    // if we aren't replacing the output block
-    if (create === undefined) {
-        create = true;
+sagecell.Session.prototype.last_output = function(block_id) {
+    if (this.replace_output[block_id]) {
+	return undefined;
+    } else {
+	return $(this.output_blocks[block_id]).children().last()
     }
+}
+
+sagecell.Session.prototype.output = function(html, block_id) {
+    // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
     var output_block=$(this.output_blocks[block_id]);
     if (block_id !== undefined && block_id !== null && this.replace_output[block_id]) {
         output_block.empty();
         this.replace_output[block_id]=false;
-        create=true;
     }
-    var out;
-    if (create) {
-        out = output_block.append(html).children().last();
-    } else {
-        out = output_block.children().last();
-    }
-    return out;
+    return output_block.append(html).children().last();
 };
 
 sagecell.Session.prototype.handle_message_reply = function(msg) {
@@ -288,16 +286,24 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     }
 }
     
-sagecell.Session.prototype.handle_output = function (msg_type, content, metadata) {
+sagecell.Session.prototype.handle_output = function (msg_type, content, metadata, default_block_id) {
     //console.log('handling output');
     //console.log(msg_type);
     //console.log(content);
-    var block_id = metadata.interact_id || null;
+    var block_id = metadata.interact_id || default_block_id || null;
     // Handle each stream type.  This should probably be separated out into different functions.
     switch (msg_type) {
     case "stream":
-        var new_pre = !$(this.output_blocks[block_id]).children().last().hasClass("sagecell_" + content.name);
-        var out = this.output("<pre class='sagecell_" + content.name + "'></pre>", block_id, new_pre);
+	// First, see if we should consolidate this output with the previous output <pre>
+	// this reaches into the inner workings of output
+	var last_output = this.last_output(block_id)
+        if (last_output && last_output.hasClass("sagecell_" + content.name)) {
+	    // passing in an empty html string will actually return the last child of the output region
+	    var html = "";
+	} else {
+	    var html = "<pre class='sagecell_" + content.name + "'></pre>";
+	}
+        var out = this.output(html, block_id);
         out.text(out.text() + content.data);
         break;
 
@@ -342,13 +348,143 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
 
 // dispatch table on mime type
 sagecell.Session.prototype.display_handlers = {
-    'application/sage-interact': function(data, block_id, filepath) {this.interacts.push(new sagecell.InteractCell(this, data, block_id));},
-    'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); },
-    'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);},
-    'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);},
-    'application/x-jmol': function(data, block_id, filepath) {
+    'application/sage-interact': function(data, block_id, filepath) {this.interacts.push(new sagecell.InteractCell(this, data, block_id));}
+    ,'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); }
+    ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
+    ,'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);}
+    ,'application/x-jmol': function(data, block_id, filepath) {
 	jmolSetDocument(false); 
 	this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+data+'";\n script SCRIPT;\n'),block_id); }
+    ,'application/sage-interact-control': function(data, block_id, filepath) {
+	// for each interactive area that depends on any of the variables listed in data
+	//     request an update to the area
+	var control
+	if (data.control_type === 'slider') {
+	    control = new sagecell.InteractControls.Slider(this, data.control_id);
+	    control.create(data, block_id);
+	} else if (data.control_type === 'input') {
+	    control = new sagecell.InteractControls.Input(this, data.control_id);
+	    control.create(data, block_id);
+	} else if (data.control_type === 'pythoncode') {
+	    control = new sagecell.InteractControls.PythonCode(this, data.control_id);
+	    control.create(data, block_id);
+	}
+	var that=this;
+	$.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
+	control.update(data.namespace, data.variable[0], '');
+    }
+    ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable, '');}
+}
+
+sagecell.Session.prototype.register_control = function(namespace, variable, control) {
+    if (this.namespaces[namespace] === undefined) {
+	this.namespaces[namespace] = {};
+    }
+    if (this.namespaces[namespace][variable] == undefined) {
+	this.namespaces[namespace][variable] = []
+    }
+    this.namespaces[namespace][variable].push(control);
+}
+
+sagecell.Session.prototype.update_variable = function(namespace, variable, control_id) {
+    if (this.namespaces[namespace] && this.namespaces[namespace][variable]) {
+	$.each(this.namespaces[namespace][variable], function(index, value) {
+	    $.proxy(value.update, value)(namespace, variable, control_id);
+	});
+    }
+}
+
+sagecell.InteractControls = {};
+
+sagecell.InteractControls.InteractControl = function () {
+    return function (session, control_id) {
+	this.session = session;
+        this.control_id = control_id;
+    }
+}
+
+sagecell.InteractControls.Slider = sagecell.InteractControls.InteractControl();
+sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
+    var that = this;
+    this.control = this.session.output("<div id='"+data.control_id+"'></div>", block_id);
+    this.control.slider({
+	disabled: data.variable.length > 1,
+	slide: function(event, ui) {
+	    if (! event.originalEvent) {return;}
+	    that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
+				      {"output": $.proxy(that.session.handle_output, that.session)});
+	}
+    });
+}
+
+sagecell.InteractControls.Slider.prototype.update = function (namespace, variable, control_id) {
+    var that = this;
+    if (control_id !== this.control_id) {
+	this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+				  {"output": $.proxy(this.session.handle_output, this.session), 
+				   "control_update_reply": function(content, metadata) {
+				       if (content.status === 'ok') {
+					   that.control.slider('value', content.result.value);
+				       }
+				   }});
+    }
+}
+
+
+sagecell.InteractControls.Input = sagecell.InteractControls.InteractControl();
+sagecell.InteractControls.Input.prototype.create = function (data, block_id) {
+    var that = this;
+    var s = "type='textbox'";
+    var enabled = true;
+    if (data.variable.length>1) {
+	s += " disabled='disabled'"
+	enabled = false
+    }
+    this.control = this.session.output("<input id='"+data.control_id+"' "+s+"></input>", block_id);
+    if (enabled) {
+	this.control.change(function(event) {
+	    if (! event.originalEvent) {return;}
+	    that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
+				      {"output": $.proxy(that.session.handle_output, that.session)});
+	});
+    }
+}
+
+sagecell.InteractControls.Input.prototype.update = function (namespace, variable, control_id) {
+    var that = this;
+    if (control_id !== this.control_id) {
+	this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+				  {"output": $.proxy(this.session.handle_output, this.session), 
+				   "control_update_reply": function(content, metadata) {
+				       if (content.status === 'ok') {
+					   that.control.val(content.result.value);
+				       }
+				   }});
+    }
+}
+
+
+
+sagecell.InteractControls.PythonCode = sagecell.InteractControls.InteractControl();
+sagecell.InteractControls.PythonCode.prototype.create = function (data, block_id) {
+    var that = this;
+    this.control = this.session.output("<div id='"+data.control_id+"'></div>", block_id);
+    this.session.output_blocks[this.control_id] = this.control;
+    this.message_number = 1;
+}
+
+sagecell.InteractControls.PythonCode.prototype.update = function (namespace, variable, control_id) {
+    // Do something to cancel the previous requests...
+    var that = this;
+    this.session.replace_output[this.control_id] = true;
+    this.message_number += 1;
+    var msg_number = this.message_number;
+    this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+			      {"output": function(msg_type, content, metadata) {
+				  if (msg_number === that.message_number) {
+				      $.proxy(that.session.handle_output, that.session)(msg_type, content, metadata, that.control_id);
+				  }
+			      }});
 }
 
 sagecell.InteractCell = function (session, data, parent_block) {
