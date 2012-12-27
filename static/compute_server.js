@@ -364,8 +364,9 @@ sagecell.Session.prototype.display_handlers = {
 	$.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
 	control.update(data.namespace, data.variable[0], '');
     }
-    ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable, '');}
+    ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable);}
 }
+
 
 sagecell.Session.prototype.register_control = function(namespace, variable, control) {
     if (this.namespaces[namespace] === undefined) {
@@ -377,10 +378,10 @@ sagecell.Session.prototype.register_control = function(namespace, variable, cont
     this.namespaces[namespace][variable].push(control);
 }
 
-sagecell.Session.prototype.update_variable = function(namespace, variable, control_id) {
+sagecell.Session.prototype.update_variable = function(namespace, variable) {
     if (this.namespaces[namespace] && this.namespaces[namespace][variable]) {
 	$.each(this.namespaces[namespace][variable], function(index, value) {
-	    $.proxy(value.update, value)(namespace, variable, control_id);
+	    $.proxy(value.update, value)(namespace, variable);
 	});
     }
 }
