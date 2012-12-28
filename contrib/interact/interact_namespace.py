@@ -112,7 +112,7 @@ class ExpressionSlider(Slider):
         self.code = compile(expr, '<string>', 'eval')
 
     def control_update(self, msg):
-        return {'value': eval(self.code, globals(), self.ns)}
+        return {'value': float(eval(self.code, globals(), self.ns))}
 
 class VariableSlider(Slider):
     def __init__(self, var, *args, **kwargs):
@@ -122,7 +122,7 @@ class VariableSlider(Slider):
     def variable_update(self, msg):
         self.ns[self.var] = VariableUpdate(value=msg['value'], control=self.id)
     def control_update(self, msg):
-        return {'value': self.ns[self.var]}
+        return {'value': float(self.ns[self.var])}
 
 
 def slider(var, ns, min, max):
@@ -145,7 +145,7 @@ class ExpressionBox(Control):
     def variable_update(self, msg):
         self.ns[self.var] = sage_eval(msg['value'])
     def control_update(self, msg):
-        return {'value': self.ns[self.var]}
+        return {'value': unicode(self.ns[self.var])}
 
 class PythonCode(Control):
     def __init__(self, code, ns):
