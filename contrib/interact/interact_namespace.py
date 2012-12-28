@@ -175,20 +175,22 @@ class InteractFunction(Control):
     def __init__(self, f):
         super(InteractFunction, self).__init__()
         self.fn = f
-        # get arguments; these should be added to the namespace with their default values
         self.ns = InteractiveNamespace()
+        # TODO: the argument names of f should be added to self.ns, along with default values
         self.var = self.ns.keys()
-        
-    def create(self):
-        # make controls with the same namespace
 
-        # output region
+    def create(self):
+        # TODO: make controls with the same namespace, using the existing automatic rules
+        # TODO: lay these out according to whatever layout is specified, or the automatic layout rules
+
+        # output region is an output_region control that depends on all of the function inputs
         sys._sage_.display_message({'text/plain': 'python code control, %s'%((self.var),), 
                                     'application/sage-interact-control': {'control_id': self.id,
                                                                      'control_type': 'output_region',
                                                                      'variable': self.var,
                                                                      'namespace': self.ns.id}})
     def control_update(self, msg):
+        # run the function with the appropriate arguments
         self.fn(**ns)
 
 """
