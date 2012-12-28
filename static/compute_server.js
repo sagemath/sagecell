@@ -449,17 +449,15 @@ sagecell.InteractControls.Input.prototype.update = function (namespace, variable
     }
 }
 
-
-
-sagecell.InteractControls.PythonCode = sagecell.InteractControls.InteractControl();
-sagecell.InteractControls.PythonCode.prototype.create = function (data, block_id) {
+sagecell.InteractControls.OutputRegion = sagecell.InteractControls.InteractControl();
+sagecell.InteractControls.OutputRegion.prototype.create = function (data, block_id) {
     var that = this;
     this.control = this.session.output(ce("div", {id: data.control_id}), block_id);
     this.session.output_blocks[this.control_id] = this.control;
     this.message_number = 1;
 }
 
-sagecell.InteractControls.PythonCode.prototype.update = function (namespace, variable, control_id) {
+sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, variable) {
     var that = this;
     this.session.replace_output[this.control_id] = true;
     this.message_number += 1;
@@ -475,7 +473,7 @@ sagecell.InteractControls.PythonCode.prototype.update = function (namespace, var
 sagecell.interact_controls = {
     'slider': sagecell.InteractControls.Slider,
     'input': sagecell.InteractControls.Input,
-    'pythoncode': sagecell.InteractControls.PythonCode
+    'output_region': sagecell.InteractControls.OutputRegion
 }
 
 /**********************************************

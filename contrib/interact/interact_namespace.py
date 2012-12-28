@@ -70,6 +70,12 @@ class Control(object):
         global controls
         controls[self.id] = self
 
+    def create(self):
+        pass
+    def variable_update(self, msg):
+        pass
+    def control_update(self, msg):
+        pass
 
 class Slider(Control):
     def __init__(self, var, ns, min, max):
@@ -95,8 +101,6 @@ class ExpressionSlider(Slider):
         self.var = [v for v in symtable.symtable(expr, '<string>', 'exec').get_identifiers() if v in ns]
         self.code = compile(expr, '<string>', 'eval')
 
-    def variable_update(self, msg):
-        pass
     def control_update(self, msg):
         return {'value': eval(self.code, globals(), self.ns)}
 
@@ -117,8 +121,8 @@ def slider(var, ns, min, max):
     else:
         return ExpressionSlider(var, ns, min, max)
 
-class Input(Control):
-    def __init__(self, var, ns, enabled=True):
+class ExpressionBox(Control):
+    def __init__(self, var, ns):
         super(Input, self).__init__()
         self.var = var
         self.ns = ns
@@ -129,10 +133,9 @@ class Input(Control):
                                                                      'variable': [self.var],
                                                                      'namespace': self.ns.id}})
     def variable_update(self, msg):
-        self.ns[self.var] = msg['value']
+        self.ns[self.var] = sage_eval(msg['value'])
     def control_update(self, msg):
         return {'value': self.ns[self.var]}
-
 
 class PythonCode(Control):
     def __init__(self, code, ns):
@@ -142,14 +145,30 @@ class PythonCode(Control):
         self.code = compile(code, '<string>', 'exec')
 
     def create(self):
-        sys._sage_.display_message({'text/plain': 'python code control, %s'%((self.var),), 
+        sys._sage_.display_message({'text/plain': 'output_region',
                                     'application/sage-interact-control': {'control_id': self.id,
-                                                                     'control_type': 'pythoncode',
+                                                                     'control_type': 'output_region',
                                                                      'variable': self.var,
                                                                      'namespace': self.ns.id}})
-    def variable_update(self, msg):
-        pass
-
     def control_update(self, msg):
         exec(self.code, globals(), self.ns)
 
+class InteractFunction(Control):
+    def __init__(self, f):
+        super(InteractFunction, self).__init__()
+        self.fn = f
+        # get arguments; these should be added to the namespace with their default values
+        self.ns = InteractiveNamespace()
+        self.var = self.ns.keys()
+        
+    def create(self):
+        # make controls with the same namespace
+
+        # output region
+        sys._sage_.display_message({'text/plain': 'python code control, %s'%((self.var),), 
+                                    'application/sage-interact-control': {'control_id': self.id,
+                                                                     'control_type': 'output_region',
+                                                                     'variable': self.var,
+                                                                     'namespace': self.ns.id}})
+    def control_update(self, msg):
+        self.fn(**ns)
