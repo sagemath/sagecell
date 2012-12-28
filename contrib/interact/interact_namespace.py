@@ -127,9 +127,9 @@ class ExpressionBox(Control):
         self.var = var
         self.ns = ns
     def create(self):
-        sys._sage_.display_message({'text/plain': 'input',
+        sys._sage_.display_message({'text/plain': 'Expression box',
                                     'application/sage-interact-control': {'control_id': self.id,
-                                                                     'control_type': 'input',
+                                                                     'control_type': 'expression_box',
                                                                      'variable': [self.var],
                                                                      'namespace': self.ns.id}})
     def variable_update(self, msg):

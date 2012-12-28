@@ -421,20 +421,18 @@ sagecell.InteractControls.Slider.prototype.update = function (namespace, variabl
 }
 
 
-sagecell.InteractControls.Input = sagecell.InteractControls.InteractControl();
-sagecell.InteractControls.Input.prototype.create = function (data, block_id) {
+sagecell.InteractControls.ExpressionBox = sagecell.InteractControls.InteractControl();
+sagecell.InteractControls.ExpressionBox.prototype.create = function (data, block_id) {
     var that = this;
     this.control = this.session.output(ce("input", {id: data.control_id, type: 'textbox'}), block_id);
-    if (enabled) {
-	this.control.change(function(event) {
-	    if (! event.originalEvent) {return;}
-	    that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
-				      {"output": $.proxy(that.session.handle_output, that.session)});
-	});
-    }
+    this.control.change(function(event) {
+	if (! event.originalEvent) {return;}
+	that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
+				  {"output": $.proxy(that.session.handle_output, that.session)});
+    });
 }
 
-sagecell.InteractControls.Input.prototype.update = function (namespace, variable) {
+sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, variable) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
 			      {"output": $.proxy(this.session.handle_output, this.session), 
@@ -468,7 +466,7 @@ sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, v
 
 sagecell.interact_controls = {
     'slider': sagecell.InteractControls.Slider,
-    'input': sagecell.InteractControls.Input,
+    'expression_box': sagecell.InteractControls.ExpressionBox,
     'output_region': sagecell.InteractControls.OutputRegion
 }
 
