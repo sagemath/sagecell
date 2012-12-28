@@ -364,7 +364,7 @@ sagecell.Session.prototype.display_handlers = {
 	$.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
 	control.update(data.namespace, data.variable[0]);
     }
-    ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable);}
+    ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable, data.control);}
 }
 
 
@@ -378,10 +378,10 @@ sagecell.Session.prototype.register_control = function(namespace, variable, cont
     this.namespaces[namespace][variable].push(control);
 }
 
-sagecell.Session.prototype.update_variable = function(namespace, variable) {
+sagecell.Session.prototype.update_variable = function(namespace, variable, control_id) {
     if (this.namespaces[namespace] && this.namespaces[namespace][variable]) {
 	$.each(this.namespaces[namespace][variable], function(index, value) {
-	    $.proxy(value.update, value)(namespace, variable);
+	    $.proxy(value.update, value)(namespace, variable, control_id);
 	});
     }
 }
@@ -409,15 +409,17 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
     });
 }
 
-sagecell.InteractControls.Slider.prototype.update = function (namespace, variable) {
+sagecell.InteractControls.Slider.prototype.update = function (namespace, variable, control_id) {
     var that = this;
-    this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-			      {"output": $.proxy(this.session.handle_output, this.session), 
-			       "control_update_reply": function(content, metadata) {
-				   if (content.status === 'ok') {
-				       that.control.slider('value', content.result.value);
-				   }
-			       }});
+    if (this.control_id !== control_id) {
+	this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+				  {"output": $.proxy(this.session.handle_output, this.session), 
+				   "control_update_reply": function(content, metadata) {
+				       if (content.status === 'ok') {
+					   that.control.slider('value', content.result.value);
+				       }
+				   }});
+    }
 }
 
 
@@ -432,7 +434,7 @@ sagecell.InteractControls.ExpressionBox.prototype.create = function (data, block
     });
 }
 
-sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, variable) {
+sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
 			      {"output": $.proxy(this.session.handle_output, this.session), 
@@ -451,7 +453,7 @@ sagecell.InteractControls.OutputRegion.prototype.create = function (data, block_
     this.message_number = 1;
 }
 
-sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, variable) {
+sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.replace_output[this.control_id] = true;
     this.message_number += 1;

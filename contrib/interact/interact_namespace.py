@@ -27,6 +27,9 @@ import symtable
 import re
 import tokenize
 from keyword import iskeyword
+from collections import namedtuple
+
+VariableUpdate = namedtuple('VariableUpdate', ['value', 'control'])
 
 controls={}
 namespaces = {}
@@ -59,11 +62,17 @@ class InteractiveNamespace(dict):
         global namespaces
         namespaces[self.id] = self
     def __setitem__(self, key, value):
+        if isinstance(value, VariableUpdate):
+            control = value.control
+            value = value.value
+        else:
+            control = None
         dict.__setitem__(self, key, value)
         sys._sage_.display_message({'text/plain': 'variable changed',
                                     'application/sage-interact-variable': {'namespace': self.id,
                                                                      'variable': key,
-                                                                     'value': value}})
+                                                                     'value': value,
+                                                                     'control': control}})
 class Control(object):
     def __init__(self):
         self.id = 'control-'+unicode(uuid4())
@@ -110,7 +119,7 @@ class VariableSlider(Slider):
         self.enabled = True
         self.var = var
     def variable_update(self, msg):
-        self.ns[self.var] = msg['value']
+        self.ns[self.var] = VariableUpdate(value=msg['value'], control=self.id)
     def control_update(self, msg):
         return {'value': self.ns[self.var]}
 
