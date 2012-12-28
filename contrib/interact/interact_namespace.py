@@ -68,10 +68,10 @@ class InteractiveNamespace(dict):
         else:
             control = None
         dict.__setitem__(self, key, value)
+        # we don't send the value because it may not be jsonalizable
         sys._sage_.display_message({'text/plain': 'variable changed',
                                     'application/sage-interact-variable': {'namespace': self.id,
                                                                      'variable': key,
-                                                                     'value': value,
                                                                      'control': control}})
 class Control(object):
     def __init__(self):
