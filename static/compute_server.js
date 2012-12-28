@@ -362,7 +362,7 @@ sagecell.Session.prototype.display_handlers = {
 	var control = new control_class(this, data.control_id);
 	control.create(data, block_id);
 	$.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
-	control.update(data.namespace, data.variable[0]);
+	control.update(data.namespace, data.variable);
     }
     ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable, data.control);}
 }
@@ -378,12 +378,26 @@ sagecell.Session.prototype.register_control = function(namespace, variable, cont
     this.namespaces[namespace][variable].push(control);
 }
 
-sagecell.Session.prototype.update_variable = function(namespace, variable, control_id) {
+sagecell.Session.prototype.get_variable_controls = function(namespace, variable) {
+    var notify = {};
     if (this.namespaces[namespace] && this.namespaces[namespace][variable]) {
-	$.each(this.namespaces[namespace][variable], function(index, value) {
-	    $.proxy(value.update, value)(namespace, variable, control_id);
+	$.each(this.namespaces[namespace][variable], function(index, control) {
+	    notify[control.control_id] = control;
 	});
     }
+    return notify;
+}
+
+sagecell.Session.prototype.update_variable = function(namespace, variable, control_id) {
+    var that = this;
+    var notify;
+    if ($.isArray(variable)) {
+	notify = {};
+	$.each(variable, function(index, v) {$.extend(notify, that.get_variable_controls(namespace, v))});
+    } else {
+	notify = this.get_variable_controls(namespace, variable);
+    }
+    $.each(notify, function(k,v) {$.proxy(v.update, v)(namespace, variable, control_id);});
 }
 
 sagecell.InteractControls = {};

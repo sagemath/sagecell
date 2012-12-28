@@ -71,8 +71,16 @@ class InteractiveNamespace(dict):
         # we don't send the value because it may not be jsonalizable
         sys._sage_.display_message({'text/plain': 'variable changed',
                                     'application/sage-interact-variable': {'namespace': self.id,
-                                                                     'variable': key,
-                                                                     'control': control}})
+                                                                           'variable': key,
+                                                                           'control': control}})
+    def multiset(self, d, control=None):
+        for k,v in d.iteritems():
+            dict.__setitem__(self, k, v)
+        # we don't send the value because it may not be jsonalizable
+        sys._sage_.display_message({'text/plain': 'variable changed',
+                                    'application/sage-interact-variable': {'namespace': self.id,
+                                                                           'variable': d.keys(),
+                                                                           'control': control}})
 class Control(object):
     def __init__(self):
         self.id = 'control-'+unicode(uuid4())
