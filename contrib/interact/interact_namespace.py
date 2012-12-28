@@ -143,7 +143,7 @@ class ExpressionBox(Control):
                                                                      'variable': [self.var],
                                                                      'namespace': self.ns.id}})
     def variable_update(self, msg):
-        self.ns[self.var] = sage_eval(msg['value'])
+        self.ns[self.var] = sage_eval(msg['value'], locals=self.ns)
     def control_update(self, msg):
         return {'value': unicode(self.ns[self.var])}
 
