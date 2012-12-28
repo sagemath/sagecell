@@ -362,7 +362,7 @@ sagecell.Session.prototype.display_handlers = {
 	var control = new control_class(this, data.control_id);
 	control.create(data, block_id);
 	$.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
-	control.update(data.namespace, data.variable[0], '');
+	control.update(data.namespace, data.variable[0]);
     }
     ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable);}
 }
@@ -409,17 +409,15 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
     });
 }
 
-sagecell.InteractControls.Slider.prototype.update = function (namespace, variable, control_id) {
+sagecell.InteractControls.Slider.prototype.update = function (namespace, variable) {
     var that = this;
-    if (control_id !== this.control_id) {
-	this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-				  {"output": $.proxy(this.session.handle_output, this.session), 
-				   "control_update_reply": function(content, metadata) {
-				       if (content.status === 'ok') {
-					   that.control.slider('value', content.result.value);
-				       }
-				   }});
-    }
+    this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+			      {"output": $.proxy(this.session.handle_output, this.session), 
+			       "control_update_reply": function(content, metadata) {
+				   if (content.status === 'ok') {
+				       that.control.slider('value', content.result.value);
+				   }
+			       }});
 }
 
 
@@ -436,17 +434,15 @@ sagecell.InteractControls.Input.prototype.create = function (data, block_id) {
     }
 }
 
-sagecell.InteractControls.Input.prototype.update = function (namespace, variable, control_id) {
+sagecell.InteractControls.Input.prototype.update = function (namespace, variable) {
     var that = this;
-    if (control_id !== this.control_id) {
-	this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-				  {"output": $.proxy(this.session.handle_output, this.session), 
-				   "control_update_reply": function(content, metadata) {
-				       if (content.status === 'ok') {
-					   that.control.val(content.result.value);
-				       }
-				   }});
-    }
+    this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+			      {"output": $.proxy(this.session.handle_output, this.session), 
+			       "control_update_reply": function(content, metadata) {
+				   if (content.status === 'ok') {
+				       that.control.val(content.result.value);
+				   }
+			       }});
 }
 
 sagecell.InteractControls.OutputRegion = sagecell.InteractControls.InteractControl();
