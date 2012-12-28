@@ -123,7 +123,7 @@ def slider(var, ns, min, max):
 
 class ExpressionBox(Control):
     def __init__(self, var, ns):
-        super(Input, self).__init__()
+        super(ExpressionBox, self).__init__()
         self.var = var
         self.ns = ns
     def create(self):
