@@ -100,7 +100,8 @@ class Slider(Control):
                                                                      'variable': self.var if isinstance(self.var, list) else [self.var],
                                                                      'namespace': self.ns.id,
                                                                      'enabled': self.enabled,
-                                                                     'range': map(float, (self.min, self.max))}})
+                                                                     'min': float(self.min),
+                                                                     'max': float(self.max) }})
 
 class ExpressionSlider(Slider):
     def __init__(self, expr, ns, *args, **kwargs):

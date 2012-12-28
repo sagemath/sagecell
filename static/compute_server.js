@@ -400,7 +400,9 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
     var that = this;
     this.control = this.session.output(ce("div", {id: data.control_id}), block_id);
     this.control.slider({
-	disabled: data.variable.length > 1,
+	disabled: !data.enabled,
+	min: data.min,
+	max: data.max,
 	slide: function(event, ui) {
 	    if (! event.originalEvent) {return;}
 	    that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
