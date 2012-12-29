@@ -253,6 +253,16 @@ class ExpressionBox(Control):
     def control_update(self, msg):
         return {'value': repr(self.ns[self.var])}
 
+class Checkbox(Control):
+    def __init__(self, var, ns=None):
+        super(Checkbox, self).__init__(var=var, namespace=ns)
+    def create(self):
+        self.send_create_message('Checkbox')
+    def variable_update(self, msg):
+        self.ns[self.var] = msg['value']
+    def control_update(self, msg):
+        return {'value': bool(self.ns[self.var])}
+        
 class PythonCode(Control):
     def __init__(self, code, ns=None):
         global __default_namespace__

@@ -463,6 +463,29 @@ sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, 
 			       }});
 }
 
+sagecell.InteractControls.Checkbox = sagecell.InteractControls.InteractControl();
+sagecell.InteractControls.Checkbox.prototype.create = function (data, block_id) {
+    var that = this;
+    this.control = this.session.output(ce("input", {id: data.control_id, type: 'checkbox'}), block_id);
+    this.control.change(function(event) {
+	if (! event.originalEvent) {return;}
+	that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).prop("checked")}, 
+				  {"output": $.proxy(that.session.handle_output, that.session)});
+    });
+}
+
+sagecell.InteractControls.Checkbox.prototype.update = function (namespace, variable, control_id) {
+    var that = this;
+    this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+			      {"output": $.proxy(this.session.handle_output, this.session), 
+			       "control_update_reply": function(content, metadata) {
+				   if (content.status === 'ok') {
+				       that.control.prop('checked', content.result.value);
+				   }
+			       }});
+}
+
+
 sagecell.InteractControls.OutputRegion = sagecell.InteractControls.InteractControl();
 sagecell.InteractControls.OutputRegion.prototype.create = function (data, block_id) {
     var that = this;
@@ -487,7 +510,9 @@ sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, v
 sagecell.interact_controls = {
     'Slider': sagecell.InteractControls.Slider,
     'ExpressionBox': sagecell.InteractControls.ExpressionBox,
+    'Checkbox': sagecell.InteractControls.Checkbox,
     'OutputRegion': sagecell.InteractControls.OutputRegion
+
 }
 
 /**********************************************
