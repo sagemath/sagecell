@@ -19,6 +19,7 @@
 "use strict";
 var undefined;
 var ce = sagecell.util.createElement;
+var throttle = sagecell.util.throttle;
 
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
@@ -400,7 +401,7 @@ sagecell.Session.prototype.update_variable = function(namespace, variable, contr
     $.each(notify, function(k,v) {$.proxy(v.update, v)(namespace, variable, control_id);});
 }
 
-sagecell.InteractControls = {};
+sagecell.InteractControls = {'throttle': 100};
 
 sagecell.InteractControls.InteractControl = function () {
     return function (session, control_id) {
@@ -417,11 +418,12 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
 	disabled: !data.enabled,
 	min: data.min,
 	max: data.max,
-	slide: function(event, ui) {
+	step: data.step,
+	slide: throttle(function(event, ui) {
 	    if (! event.originalEvent) {return;}
 	    that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
 				      {"output": $.proxy(that.session.handle_output, that.session)});
-	}
+	}, sagecell.InteractControls.throttle)
     });
 }
 
@@ -483,9 +485,9 @@ sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, v
 }
 
 sagecell.interact_controls = {
-    'slider': sagecell.InteractControls.Slider,
-    'expression_box': sagecell.InteractControls.ExpressionBox,
-    'output_region': sagecell.InteractControls.OutputRegion
+    'Slider': sagecell.InteractControls.Slider,
+    'ExpressionBox': sagecell.InteractControls.ExpressionBox,
+    'OutputRegion': sagecell.InteractControls.OutputRegion
 }
 
 /**********************************************
