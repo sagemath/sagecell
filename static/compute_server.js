@@ -410,6 +410,26 @@ sagecell.InteractControls.InteractControl = function () {
     }
 }
 
+/* 
+// To implement a new control, do something like the following.  
+// See below for examples.  The Checkbox control is particularly simple.
+
+sagecell.InteractControls.MyControl = sagecell.InteractControls.InteractControl();
+sagecell.InteractControls.MyControl.prototype.create = function (data, block_id) {
+    // The create message is in `data`, while the block id to use for `this.session.output` is in block_id.  
+    // This method creates the control and registers any change handlers.
+    // Change handlers should send a `variable_update` message back to the server.  This message is handled 
+    // by the control's python variable_update method.
+}
+
+sagecell.InteractControls.Checkbox.prototype.update = function (namespace, variable, control_id) {
+    // If a variable in the namespace is updated (i.e., the client receives a variable update message),
+    // this method is called.  The namespace is the UUID of the namespace, the variable is the variable name as a string, 
+    // and the control_id is the UUID of the control.  This method should send a message and register a handler for the reply
+    // from the control's python update_control method. The reply handler should then update the control appropriately.
+}
+*/
+
 sagecell.InteractControls.Slider = sagecell.InteractControls.InteractControl();
 sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
     var that = this;

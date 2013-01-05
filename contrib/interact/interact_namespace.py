@@ -119,14 +119,15 @@ def __get_ns(ns):
         return ns
 
 class Control(object):
-    """
-    
-    """
     def __init__(self, var, namespace=None):
         """
-        Register the control
+        Initialize the control
 
-        TODO: maybe we should also take care of the namespace here so that things are uniform?
+        Subclasses should call this function with a list of variables
+        (either as a list of strings, or as a single string with
+        variables separated by commas or whitespace), and a namespace
+        (which may be None, in which case the current active namespace
+        will be used).
         """
         self.id = 'control-'+unicode(uuid4())
         global controls
@@ -142,22 +143,43 @@ class Control(object):
     def create(self):
         """
         Create a control by sending necessary messages
+
+        Subclasses should use self.send_create_message to send a
+        message to the client with the necessary information to create
+        a control.  Simple classes will probably just implement this
+        as a single call to self.send_message('ControlName').
         """
         pass
     
     def variable_update(self, msg):
         """
         Update variables based on the content of the message.
+
+        Subclasses should override this to receive messages from the
+        client control and set the necessary variables in the
+        namespace `self.ns`.  Simple controls may implement this as
+        just `self.ns[self.var] = msg['value']`.
         """
         pass
 
     def control_update(self, msg):
         """
         Return the necessary information to update a control.
+
+        Subclasses should override this to *return* a dictionary
+        representing a JSON message to be sent to the client control
+        with whatever information the client needs to update the
+        control.  Usually, this method is called when a variable in
+        self.var is updated.
         """
         pass
 
     def send_create_message(self, control_type, msg = None):
+        """
+        A utility function to send a message to the client side to create a control.
+
+        This function won't normally be overridden by subclasses.
+        """
         if msg is None:
             msg = {}
         msg['control_id'] = self.id
