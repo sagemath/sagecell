@@ -357,7 +357,7 @@ class InputBox(InteractControl):
     :arg bool keypress: update the value of the interact when the user presses
         any key, rather than when the user presses Enter or unfocuses the textbox
     """
-    def __init__(self, default=u"", label=None, width=0, height=1, keypress=True):
+    def __init__(self, default=u"", label=None, width=0, height=1, keypress=False):
         if not isinstance(default, basestring):
             default = repr(default)
         self.default=default
