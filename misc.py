@@ -196,10 +196,10 @@ def session_metadata(metadata):
         sys.stderr.flush()
         session.metadata = old_metadata
 
-def display_message(data):
+def display_message(data, metadata=None):
     session = sys.stdout.session
     content = {'data': data, 'source': 'sagecell'}
-    session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header)
+    session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header, metadata=metadata)
 
 def json_default(obj):
     if isinstance(obj, datetime):

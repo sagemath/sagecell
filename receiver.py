@@ -99,6 +99,122 @@ from sagenb.misc.support import automatic_names
             ip.payload_manager.write_payload({"new_files": new_files})
             return ''
         _sage_.new_files = new_files
+
+        def handler_wrapper(key, handler):
+            """
+            On the one hand, it makes a lot of sense to just call
+            run_cell with store_history=False and silent=True.  Then
+            the message will be transformed, all of the necessary
+            error handling will be put in place, etc.  However, it
+            adds quite a bit of overhead, with the pre_run_code bit,
+            the user_variables bit, etc.  Also, if the user has handed
+            you a function, you actually want to call that function,
+            instead of whatever has that name currently (i.e., you
+            want to use the actual function and closure, not just
+            convert things back to strings again).  Even building up
+            an AST right away calls the function name rather than the
+            actual function. (what I wouldn't give for Lisp macros
+            right now! :).
+
+            On the other hand, if we just literally store the function
+            and call the function, then it's hard to run in the user
+            namespace.  How do you exec in a namespace, but use an
+            actual function object rather than trying to find the
+            string.  Oh, I guess you can just assign the function to
+            some storage dictionary and use *that* string, and hope
+            the user doesn't change that dictionary.  In a sense,
+            that's doing a gensym.
+
+            The last is probably the best approach.  Use that and
+            run_code, though we should time things to see how much
+            overhead is introduced, or at least provide an option for
+            running a minimal version of the code.
+
+            Pursuant to this, we should probably remove the ident and
+            stream options, and just provide the actual message to the
+            handler.  The handler can return a content and metadata
+            dictionary that will automatically be sent in a
+            key+'_reply' message, or raise an error that will be sent
+            in that status message.
+
+            So, still to do: either make the execute_request handler a
+            subcase of this, or abstract out some of the things done
+            in the handler into maybe a context manager so that the
+            things like sending a kernel busy message are shared.
+
+            Discuss namespaces and things for message ids.  I think
+            it's fine to request that a module that is adding handler
+            functions use a message type that reflects the module
+            name, or in some way reflects the project (e.g.,
+            'sagenb.interact.update')
+
+            Also, should these requests be broadcast out to other
+            clients?  I think not, but double-check this.
+
+            Provide an option to just run the code with minimal
+            changes (i.e., no input splitting).  This provides fast
+            execution.
+
+            """
+            
+            kernel = ka.kernel
+            from functools import wraps
+            @wraps(handler)
+            def f(stream, ident, parent, *args, **kwargs):
+                kernel._publish_status(u'busy', parent)
+                md = kernel._make_metadata(parent['metadata'])
+                # Set the parent message of the display hook and out streams.
+                kernel.shell.displayhook.set_parent(parent)
+                kernel.shell.display_pub.set_parent(parent)
+                kernel.shell.data_pub.set_parent(parent)
+                sys.stdout.set_parent(parent)
+                sys.stderr.set_parent(parent)
+                reply_content = {}
+                try:
+                    reply_content[u'result'] = handler(stream, ident, parent, *args, **kwargs)
+                except:
+                    status = u'error'
+                    etype, evalue, tb = sys.exc_info()
+                    import traceback
+                    tb_list = traceback.format_exception(etype, evalue, tb)
+                    reply_content.update(kernel.shell._showtraceback(etype, evalue, tb_list))
+                else:
+                    status = u'ok'
+                reply_content[u'status'] = status
+                sys.stdout.flush()
+                sys.stderr.flush()
+                if kernel._execute_sleep:
+                    import time
+                    time.sleep(kernel._execute_sleep)
+
+                from IPython.utils.jsonutil import json_clean
+                reply_content = json_clean(reply_content)
+
+                md['status'] = reply_content['status']
+                if reply_content['status'] == 'error' and \
+                                reply_content['ename'] == 'UnmetDependency':
+                        md['dependencies_met'] = False
+                reply_msg = kernel.session.send(stream, key+u'_reply',
+                                              reply_content, parent, metadata=md,
+                                              ident=ident)
+                kernel.log.debug("%s", reply_msg)
+
+                kernel._publish_status(u'idle', parent)
+            return f
+        def register_handler(key, handler):
+            msg_types = set([ 'execute_request', 'complete_request',
+                          'object_info_request', 'history_request',
+                          'connect_request', 'shutdown_request',
+                          'apply_request',
+                          ])
+
+            if key not in msg_types:
+                ka.kernel.shell_handlers[key] = handler_wrapper(key, handler)
+        _sage_.register_handler = register_handler
+	def send_message(stream, msg_type, content, parent, **kwargs):
+		ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
+	_sage_.send_message = send_message
+
         sys._sage_ = _sage_
         user_ns = ka.kernel.shell.user_ns
         # TODO: maybe we don't want to cut down the flush interval?
