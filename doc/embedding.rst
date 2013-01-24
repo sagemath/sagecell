@@ -15,7 +15,7 @@ Example
 
 This is a very simple HTML page showing how to embed two cells with
 most things turned off and a default piece of code (you can replace
-``aleph.sagemath.org`` with a different Sage Cell server, if you
+``sagecell.sagemath.org`` with a different Sage Cell server, if you
 like)::
 
    <!DOCTYPE HTML>
@@ -24,8 +24,8 @@ like)::
        <meta charset="utf-8">
        <meta name="viewport" content="width=device-width">
        <title>Sage Cell Server</title>
-       <script src="http://aleph.sagemath.org/static/jquery.min.js"></script>
-       <script src="http://aleph.sagemath.org/embedded_sagecell.js"></script>
+       <script src="http://sagecell.sagemath.org/static/jquery.min.js"></script>
+       <script src="http://sagecell.sagemath.org/embedded_sagecell.js"></script>
        <script>
    $(function () {
        // Make the div with id 'mycell' a Sage cell

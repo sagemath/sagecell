@@ -31,12 +31,12 @@ Embedding a Sage cell into a webpage is straightforward:
 
 <ol>
   <li>Include this at the top of the webpage (optionally replacing
-  <code>aleph.sagemath.org</code> with the name of your server).  The
+  <code>sagecell.sagemath.org</code> with the name of your server).  The
   third line makes it so that any div element with a class of
   <code>sage</code> will turn into a Sage cell.
   <pre>
-&lt;script src="http://aleph.sagemath.org/static/jquery.min.js">&lt;/script>
-&lt;script src="http://aleph.sagemath.org/static/embedded_sagecell.js">&lt;/script>
+&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js">&lt;/script>
+&lt;script src="http://sagecell.sagemath.org/static/embedded_sagecell.js">&lt;/script>
 &lt;script>$(function(){sagecell.makeSagecell({inputLocation:'.sage'})});&lt;/script>
 </pre>
   </li>
@@ -118,7 +118,7 @@ The Sage Cell Server is built on top of the <a href="http://ipython.org">IPython
 
 <h3>A short history</h3>
 
-<p>In January 2011 at <a href="http://wiki.sagemath.org/days27">Sage Days 27</a>, William Stein and Jason Grout implemented a proof-of-concept of a "Single Cell" server that would be a web interface for a single Sage computation.  Ira Hanson soon joined the project and Jason and Ira continued building a prototype.  Many helpful design discussions with Robert Bradshaw, Fernando Perez, Min Ragan-Kelly, and Brian Granger at <a href="http://wiki.sagemath.org/days29">Sage Days 29</a> pushed the design further.  Alex Kramer joined the project in May 2011, and Jason, Ira, and Alex (the "Drake Sage Group") worked full-time at Drake University (thanks to the <a href="http://utmost.aimath.org">UTMOST</a> NSF funding and a <a href="http://artsci.drake.edu/grout/lib/exe/fetch.php/assistantships-scalableinternetinterfaceforsage.pdf">Drake internal grant</a>) to design and implement version 1 of the Sage Cell Server in summer 2011.  Ira Hanson worked with Michael Gage, Jason Aubrey, Davide Cervone, and John Travis from Webwork at <a href="http://wiki.sagemath.org/days31">Sage Days 31</a> to embed Sage cells in Webwork problems.  In July 2011, we <a href="https://groups.google.com/forum/?fromgroups=#!topic/sage-devel/SRnR9vdNmBc">announced</a> a public beta for the Sage Cell Server version 1 and set up the public <a href="http://aleph.sagemath.org">aleph.sagemath.org</a> server.</p>
+<p>In January 2011 at <a href="http://wiki.sagemath.org/days27">Sage Days 27</a>, William Stein and Jason Grout implemented a proof-of-concept of a "Single Cell" server that would be a web interface for a single Sage computation.  Ira Hanson soon joined the project and Jason and Ira continued building a prototype.  Many helpful design discussions with Robert Bradshaw, Fernando Perez, Min Ragan-Kelly, and Brian Granger at <a href="http://wiki.sagemath.org/days29">Sage Days 29</a> pushed the design further.  Alex Kramer joined the project in May 2011, and Jason, Ira, and Alex (the "Drake Sage Group") worked full-time at Drake University (thanks to the <a href="http://utmost.aimath.org">UTMOST</a> NSF funding and a <a href="http://artsci.drake.edu/grout/lib/exe/fetch.php/assistantships-scalableinternetinterfaceforsage.pdf">Drake internal grant</a>) to design and implement version 1 of the Sage Cell Server in summer 2011.  Ira Hanson worked with Michael Gage, Jason Aubrey, Davide Cervone, and John Travis from Webwork at <a href="http://wiki.sagemath.org/days31">Sage Days 31</a> to embed Sage cells in Webwork problems.  In July 2011, we <a href="https://groups.google.com/forum/?fromgroups=#!topic/sage-devel/SRnR9vdNmBc">announced</a> a public beta for the Sage Cell Server version 1 and set up a public server.</p>
 
 <p>Version 1 of the Sage Cell Server reimplemented much of the IPython 0.12 messaging protocol in a custom layer on top of Sage (since IPython was not yet mature enough to be included in Sage).  Jason, Ira, and Alex continued maintaining and improving this codebase throughout the 2011-2012 academic year.  The Android and iOS apps were built by Ivan Andrus and Volker Braun, which relied on the Sage Cell Server.  Several people started incorporating Sage Cells into their curricular materials, and momentum was gathering.   Alex and Jason attended <a href="http://wiki.sagemath.org/days35.5">Sage Days 35.5</a> to help in these and other efforts.</p>
 
