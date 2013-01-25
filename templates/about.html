@@ -1,133 +1,281 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html> <head>
-<title>About the Sage Cell Server</title>
-</head>
-
-<body>
-<h1>About the Sage Cell Server</h1>
-
-<p><a href="#embedding">Embedding in a web page</a><br/>
-<a href="#permalinks">Permalinks</a><br/>
-<a href="#in-use">Where is it used?</a><br/>
-<a href="#technology">Technology used</a><br/>
-<a href="#authors">Authors</a></p>
-
-<p>The <a href="https://github.com/sagemath/sagecell">Sage Cell
-Server</a> is an <a href="https://github.com/sagemath/sagecell/blob/master/LICENSE.txt">open-source</a>
-scalable easy-to-use web interface to <a href="http://sagemath.org">Sage</a>, a comprehensive open-source math
-software system.  Additionally, you can use the Sage Cell Server to
-embed Sage computations into any webpages.  The Sage Cell Server also
-powers the Sage <a
- href="https://play.google.com/store/apps/details?id=org.sagemath.droid">Android</a>
-and <a
- href="https://itunes.apple.com/us/app/sage-math/id496492945?mt=8">iPhone</a>
-apps.  </p>
-
-Here are <a href="http://sage.math.washington.edu/home/jason/sagecellslides/">slides</a> to a short introductory talk about the Sage Cell Server given at the Joint AMS/MAA Mathematical conference in San Diego, January 2013.
-
-<h2 id="embedding">Embedding into a webpage</h2>
-
-Embedding a Sage cell into a webpage is straightforward:
-
-<ol>
-  <li>Include this at the top of the webpage (optionally replacing
-  <code>sagecell.sagemath.org</code> with the name of your server).  The
-  third line makes it so that any div element with a class of
-  <code>sage</code> will turn into a Sage cell.
-  <pre>
-&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js">&lt;/script>
-&lt;script src="http://sagecell.sagemath.org/static/embedded_sagecell.js">&lt;/script>
-&lt;script>$(function(){sagecell.makeSagecell({inputLocation:'.sage'})});&lt;/script>
-</pre>
-  </li>
-  <li>Include code in the body of the page.  We wrap the code in
-  script tags so that any &lt; characters in the code are not
-  interpreted as html.
-  <pre>
-&lt;div class="sage">&lt;script type="text/x-sage">
-1+2
-&lt;/script>&lt;/div>
-</pre></li>
-</ol>
-
-<p>There are <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">lots of options</a> controlling how cells are embedded.  Some popular options include linking multiple cells together to one session, hiding various parts of the embedding interface (like the code box, so there is just an evaluate button), changing the evaluate button text, and changing the system used to evaluate code (so the code is evaluated in <a href="http://www.r-project.org/">R</a>, for example).</p>
-
-<h2 id="permalinks">Permalinks</h2>
-
-<p>The Sage Cell Server has two types of permalinks associated with each computation (accessible from links at the upper right of any output).
-<dl>
-  <dt>Permalink<dt><dd>A link which contains a compressed version of the code.  This is a true <em>perma</em>link that does not depend on the server storing the code (since the code can be retrieved from the link itself).  This link can be used with a different Sage Cell Server simply by changing the server name.  Sometimes the length of this link may cause problems in browsers, so it is best to check if the link works well in your browser.</dd>
-  <dt>Shortened Temporary Link</dt><dd>A short link containing a key id for the code.  The code is stored in a database on the server and retrieved using the key id, so the link is good only as long as the server database remembers the input.</dd>
-</dl>
-
-  </p>
-
-<h2 id="in-use">Where is it used?</h2>
-
-The Sage Cell Server is being used in a variety of places.  If you know of another use of the Sage Cell Server, please let us know.
-
-<ul>
-  <li>Curricular materials
-  <ul>
-    <li><a href="http://buzzard.ups.edu/">Rob Beezer</a>'s <a href="http://linear.ups.edu/html/fcla.html">Linear Algebra</a> (see, for example the Sage demonstrations in the section on <a href="http://linear.ups.edu/html/section-RREF.html">RREF</a>)</li>
-    <li>The <a href="http://calculuscourse.maa.org/">MAA Calculus textbook</a>.  This book is transitioning to using embedded Sage cells for all interactive activities.
-    <li>Ben Woodruff's <a href="http://github.com/downloads/jasongrout/multivariable-calculus/multivariable-calculus.pdf">Multivariable Calculus notes</a> (search for "Sage" links in the margins)</li>
-    <li><a href="http://www.mc.edu/faculty/travis">John Travis</a> has been embedding Sage Cells in <a href="http://webwork.maa.org/">Webwork</a> problems
-    <li><a href="http://jasongrout.github.com/applied-linear-algebra/">Applied Linear Algebra notes</a> by Jason Grout</li>
-    <li><a href="http://buzzard.ups.edu/">Rob Beezer's home page</a> also was one of the first examples of embedding a Sage Cell in a web page</li>
-  </ul>
-
-</li>
-  <li><a href="http://interact.sagemath.org">interact.sagemath.org</a>, an online resource for submitting and browsing Sage interacts</li>
-  <li><a href="http://www.sagemath.org/eval.html">Short example computations</a> on the Sage website</li>
-  <li>The <a href="http://wiki.sagemath.org/interact/">Sage Wiki</a></li>
-  <li>The Sage Cell Server powers the Sage <a href="https://play.google.com/store/apps/details?id=org.sagemath.droid">Android</a> and <a href="https://itunes.apple.com/us/app/sage-math/id496492945?mt=8">iPhone</a> apps</li>
-  </ul>
-  
-<h2 id="technology">Technology used</h2>
-
-The Sage Cell Server is built on top of the <a href="http://ipython.org">IPython</a> architecture for communicating with python processes running code.  We use:
-
-<ul>
-  <li>Custom IPython kernel managers, including a <a href="https://github.com/sagemath/sagecell/blob/master/trusted_kernel_manager.py">Trusted MultiKernel Manager</a> running in the web server, which communicates via <a href="http://www.zeromq.org">ZeroMQ</a> to an <a href="https://github.com/sagemath/sagecell/blob/master/untrusted_kernel_manager.py">Untrusted
-  MultiKernel Manager</a> running on a restricted computer account (for executing user code).
-  The untrusted multikernel manager launches new kernels using a <a href="https://github.com/sagemath/sagecell/blob/master/forking_kernel_manager.py">Forking Kernel Manager</a>, which starts kernels quickly by forking a master process and maintaining a queue of preforked kernels.</li>
-  <li>Custom <a href="https://github.com/sagemath/sagecell/tree/master/sage-patches">patches</a> to Sage which implement the IPython message protocol in Sage</li>
-  <li>Custom Sage <a href="https://github.com/sagemath/sagecell/blob/master/interact_sagecell.py">interact</a> implementation providing cleaner code and better functionality, along with a <a href="https://github.com/sagemath/sagecell/blob/master/interact_compatibility.py">backwards compatible interact</a> interface</li>
-  <li><a href="http://www.tornadoweb.org/">Tornado</a> web server (and something like <a href="http://nginx.org/">nginx</a> could be set up to serve static assets and <a href="http://haproxy.1wt.eu/">HAProxy</a> could be set up to proxy connections).</li>
-  <li><a href="http://www.sqlite.org/">SQLite</a> (via <a href="http://www.sqlalchemy.org/">SQLAlchemy</a>) for storing permalinks and usage statistics</li>
-  <li>In the browser, we use
-  <ul>
-    <li><a href="http://jquery.com/">JQuery</a> for general javascript code
-    <li><a href="http://jqueryui.com/">JQueryUI</a> for interact controls</li>
-    <li><a href="https://github.com/furf/jquery-ui-touch-punch">JQueryUI Touch Punch</a> for enabling touch events in JQueryUI</li>
-    <li><a href="http://www.mathjax.org/">MathJax</a> for rendering mathematics</li>
-    <li><a href="http://sockjs.org">SockJS</a> for communication with the browser (which on modern browsers uses <a href="http://www.websocket.org/">WebSockets</a>).</li>
-    <li><a href="http://codemirror.net/">CodeMirror</a> for editing code</li>
-  </ul>
-</ul>
-
-  <h2 id="authors">Authors</h2>
-<ul>
-  <li><a href="http://artsci.drake.edu/grout/doku.php/home">Jason Grout</a></li>
-  <li><a href="https://github.com/ihanson">Ira Hanson</a></li>
-  <li><a href="https://github.com/stevenJohnson">Steven Johnson</a></li>
-  <li><a href="https://github.com/kramer314">Alex Kramer</a></li>
-  <li><a href="wstein.org">William Stein</a></li>
-</ul>
-
-<h3>A short history</h3>
-
-<p>In January 2011 at <a href="http://wiki.sagemath.org/days27">Sage Days 27</a>, William Stein and Jason Grout implemented a proof-of-concept of a "Single Cell" server that would be a web interface for a single Sage computation.  Ira Hanson soon joined the project and Jason and Ira continued building a prototype.  Many helpful design discussions with Robert Bradshaw, Fernando Perez, Min Ragan-Kelly, and Brian Granger at <a href="http://wiki.sagemath.org/days29">Sage Days 29</a> pushed the design further.  Alex Kramer joined the project in May 2011, and Jason, Ira, and Alex (the "Drake Sage Group") worked full-time at Drake University (thanks to the <a href="http://utmost.aimath.org">UTMOST</a> NSF funding and a <a href="http://artsci.drake.edu/grout/lib/exe/fetch.php/assistantships-scalableinternetinterfaceforsage.pdf">Drake internal grant</a>) to design and implement version 1 of the Sage Cell Server in summer 2011.  Ira Hanson worked with Michael Gage, Jason Aubrey, Davide Cervone, and John Travis from Webwork at <a href="http://wiki.sagemath.org/days31">Sage Days 31</a> to embed Sage cells in Webwork problems.  In July 2011, we <a href="https://groups.google.com/forum/?fromgroups=#!topic/sage-devel/SRnR9vdNmBc">announced</a> a public beta for the Sage Cell Server version 1 and set up a public server.</p>
-
-<p>Version 1 of the Sage Cell Server reimplemented much of the IPython 0.12 messaging protocol in a custom layer on top of Sage (since IPython was not yet mature enough to be included in Sage).  Jason, Ira, and Alex continued maintaining and improving this codebase throughout the 2011-2012 academic year.  The Android and iOS apps were built by Ivan Andrus and Volker Braun, which relied on the Sage Cell Server.  Several people started incorporating Sage Cells into their curricular materials, and momentum was gathering.   Alex and Jason attended <a href="http://wiki.sagemath.org/days35.5">Sage Days 35.5</a> to help in these and other efforts.</p>
-
-<p>By spring 2012, it was clear that the IPython codebase had matured enough to be included in Sage and serve as a base for the cell server.  Steven Johnson joined Jason, Ira, and Alex to work full-time (under NSF funding) during summer 2012 to go back to the drawing board and redesign and reimplement the Sage Cell Server to take advantage of insights we gained during the first year.  Byron Varberg also joined the Drake Sage Group to implement the <a href="http://interact.sagemath.org">Sage Interact website</a>.  Sage Cell Server version 2 went beta in <a href="https://groups.google.com/forum/?fromgroups#!topic/sage-devel/8B3ihC93DYU">July 2012</a>.</p>
-
-<p>In summer and fall 2012, David Smith started transitioning the MAA Calculus book to use Sage interacts for all interactive activities, which was tested at Hood college during the 2012-2013 academic year.  Jason, Ira, and Alex continued maintaining and improving the cell server codebase during the academic year as well.</p>
-
-
-<p>This material is based upon work supported by the National Science Foundation under Grant No. DUE-1022574. Any opinions, findings and conclusions or recomendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation (NSF).</p>
-
-</body>
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="icon" href="/static/favicon.ico?v=4cd12">
+    <link rel="stylesheet" href="/static/root.css?v=96a43">
+    <title>About the Sage Cell Server</title>
+  </head>
+  <body>
+    <h1>About the Sage Cell Server</h1>
+    <ol class="sagecell_toc">
+      <li><a href="#embedding">Embedding in a web page</a></li>
+      <li><a href="#permalinks">Permalinks</a></li>
+      <li><a href="#in-use">Where is it used?</a></li>
+      <li><a href="#technology">Technology used</a></li>
+      <li><a href="#authors">Authors</a></li>
+    </ol>
+    <p>
+      The <a href="https://github.com/sagemath/sagecell">Sage Cell Server</a>
+      is an <a href="https://github.com/sagemath/sagecell/blob/master/LICENSE.txt">open-source</a>,
+      scalable, and easy-to-use web interface to
+      <a href="http://sagemath.org">Sage</a>, a comprehensive open-source math
+      software system. Additionally, the Sage Cell Server can be used to embed
+      Sage computations into any webpage.
+    </p>
+    <p>
+      Here are <a href="http://sage.math.washington.edu/home/jason/sagecellslides/">slides</a>
+      to a short introductory talk about the Sage Cell Server given at the
+      Joint AMS/MAA Mathematical conference in San Diego, January 2013.
+    </p>
+    <h2 id="embedding">Embedding into a webpage</h2>
+    Embedding a Sage cell into a webpage is straightforward:
+    <ol>
+      <li>
+        Include the following HTML at the top of the webpage
+        (optionally replacing <code>sagecell.sagemath.org</code> with the name
+        of your server). The third line makes it so that any element with a
+        class of <code>sage</code> will turn into a Sage cell.
+        <pre><code>&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
+&lt;script src="http://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
+&lt;script&gt;$(function () { sagecell.makeSagecell({"inputLocation": ".sage"}) });&lt;/script&gt;</code></pre>
+      </li>
+      <li>
+        Include code in the body of the page. The code is wrapped in
+        <code>&lt;script&gt;</code> tags so that it is not treated as HTML.
+        <pre><code>&lt;div class="sage"&gt;
+  &lt;script type="text/x-sage"&gt;1+2&lt;/script&gt;
+&lt;/div&gt;</code></pre>
+      </li>
+    </ol>
+    There are <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">lots of options</a>
+    controlling how cells are embedded, including:
+    <ul>
+      <li>
+        linking multiple cells together with a single session
+      </li>
+      <li>
+        hiding various parts of the user interface (for example, hiding the
+        code box so only the Evaluate button is visible)
+      </li>
+      <li>
+        changing the text of the Evaluate button
+      </li>
+      <li>
+        changing the system used to evaluate code (so the code is evaluated
+        as <a href="http://www.r-project.org/">R</a>, for example).
+      </li>
+    </ul>
+    <h2 id="permalinks">Permalinks</h2>
+    The Sage Cell Server has two types of permalinks generated with each
+    computation (accessible from links at the upper right of any output).
+    <dl>
+      <dt>Permalink<dt>
+        <dd>
+          A URL which contains a compressed version of the code. This is a
+          truly permanent link that does not depend on the server storing the
+          code (since the text is encoded in the URL itself). This URL can be
+          used with a different Sage Cell Server simply by changing the
+          domain name. If the code is too long, the length of the URL may
+          cause problems in some browsers.
+        </dd>
+      <dt>Shortened Temporary Link</dt>
+      <dd>
+        A shorter URL containing an identifier for the code. The code is
+        stored in a database on the server and retrieved using the ID, so the
+        link will be valid only with a single server, and only as long as the
+        server database retains the input.
+      </dd>
+    </dl>
+    <h2 id="in-use">Where is it used?</h2>
+    The Sage Cell Server is used in a variety of places. If you know of
+    another use of the Sage Cell Server, please let us know.
+    <ul>
+      <li>
+        Curricular materials
+        <ul>
+          <li>
+            <a href="http://buzzard.ups.edu/">Rob Beezer</a>&rsquo;s
+            <a href="http://linear.ups.edu/html/fcla.html"><cite>A First Course in Linear Algebra</cite></a>
+            (see, for example, the Sage demonstrations in the section on
+            <a href="http://linear.ups.edu/html/section-RREF.html">RREF</a>)
+          </li>
+          <li>
+            The <a href="http://calculuscourse.maa.org/">MAA Calculus textbook</a>.
+            This book is transitioning to using embedded Sage Cells for all
+            of its interactive activities.
+          </li>
+          <li>
+            Ben Woodruff&rsquo;s
+            <a href="https://github.com/bmwoodruff/multivariable-calculus-IBL">Multivariable Calculus notes</a>,
+            with Sage links in the margins
+          </li>
+          <li>
+            <a href="http://www.mc.edu/faculty/travis">John Travis</a> has
+            been embedding Sage Cells in <a href="http://webwork.maa.org/">WeBWorK</a> problems
+          <li>
+            <a href="http://jasongrout.github.com/applied-linear-algebra/">Applied Linear Algebra notes</a>
+            by Jason Grout
+          </li>
+          <li>
+            <a href="http://buzzard.ups.edu/">Rob Beezer&rsquo;s home page</a>
+            was also one of the first examples of embedding a Sage Cell in a web page
+          </li>
+        </ul>
+      </li>
+      <li>
+        The <a href="http://interact.sagemath.org">Sage Interact website</a>,
+        an online resource for submitting and browsing Sage interacts
+      </li>
+      <li>
+        <a href="http://www.sagemath.org/eval.html">Short example computations</a>
+        on the Sage website
+      </li>
+      <li>
+        The <a href="http://wiki.sagemath.org/interact/">Sage Wiki</a>
+      </li>
+      <li>
+        The Sage Cell Server powers the Sage
+        <a href="https://play.google.com/store/apps/details?id=org.sagemath.droid">Android</a> and
+        <a href="https://itunes.apple.com/us/app/sage-math/id496492945">iOS</a> apps
+      </li>
+    </ul>
+    <h2 id="technology">Technology used</h2>
+    The Sage Cell Server is built on top of the
+    <a href="http://ipython.org">IPython</a> architecture for executing Python
+    code remotely. We use:
+    <ul>
+      <li>
+        Custom IPython kernel managers, including a
+        <a href="https://github.com/sagemath/sagecell/blob/master/trusted_kernel_manager.py">Trusted MultiKernel Manager</a>
+        running in the web server, which communicates over
+        <a href="http://www.zeromq.org">&Oslash;MQ</a> with an
+        <a href="https://github.com/sagemath/sagecell/blob/master/untrusted_kernel_manager.py">Untrusted MultiKernel Manager</a>
+        running on a restricted computer account (for executing user code). The
+        untrusted multikernel manager launches new kernels using a
+        <a href="https://github.com/sagemath/sagecell/blob/master/forking_kernel_manager.py">Forking Kernel Manager</a>,
+        which starts kernels quickly by forking a master process and maintaining a queue of preforked kernels.
+      </li>
+      <li>
+        <a href="https://github.com/sagemath/sagecell/tree/master/sage-patches">Patches</a>
+        to Sage which implement the
+        <a href="http://ipython.org/ipython-doc/stable/development/messaging.html">IPython message protocol</a>
+        in Sage
+      </li>
+      <li>
+        A <a href="https://github.com/sagemath/sagecell/blob/master/interact_sagecell.py">new implementation</a>
+        of Sage interacts which provides cleaner code and better functionality,
+        along with a
+        <a href="https://github.com/sagemath/sagecell/blob/master/interact_compatibility.py">backwards-compatible interact interface</a>
+      </li>
+      <li>
+        <a href="http://www.tornadoweb.org/">Tornado</a> web server (possibly
+        set up with something like <a href="http://nginx.org/">nginx</a>, to
+        serve static assets, and <a href="http://haproxy.1wt.eu/">HAProxy</a>,
+        to proxy connections)
+      </li>
+      <li>
+        <a href="http://www.sqlite.org/">SQLite</a> (via
+        <a href="http://www.sqlalchemy.org/">SQLAlchemy</a>) for storing
+        permalinks and usage statistics
+      </li>
+      <li>
+        In the browser, we use:
+        <ul>
+          <li>
+            <a href="http://jquery.com/">jQuery</a> for general JavaScript code
+          </li>
+          <li>
+            <a href="http://jqueryui.com/">jQuery UI</a> for interact controls
+          </li>
+          <li>
+            <a href="https://github.com/furf/jquery-ui-touch-punch">jQuery UI Touch Punch</a>
+            for allowing touch events in jQuery UI
+          </li>
+          <li>
+            <a href="http://www.mathjax.org/">MathJax</a> for rendering mathematics
+          </li>
+          <li>
+            <a href="https://github.com/sockjs/sockjs-client">SockJS</a> for
+            communication with the server (using
+            <a href="http://www.websocket.org/">WebSockets</a> in modern browsers).
+          </li>
+          <li>
+            <a href="http://codemirror.net/">CodeMirror</a> for the code editor
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <h2 id="authors">Authors</h2>
+    <ul>
+      <li><a href="http://artsci.drake.edu/grout/doku.php/home">Jason Grout</a></li>
+      <li><a href="https://github.com/ihanson">Ira Hanson</a></li>
+      <li><a href="https://github.com/stevenJohnson">Steven Johnson</a></li>
+      <li><a href="https://github.com/kramer314">Alex Kramer</a></li>
+      <li><a href="http://wstein.org">William Stein</a></li>
+    </ul>
+    <h3>A short history</h3>
+    <p>
+      In January 2011 at <a href="http://wiki.sagemath.org/days27">Sage Days 27</a>,
+      William Stein and Jason Grout implemented a proof-of-concept
+      &ldquo;Single Cell&rdquo; server designed to be a web interface for a
+      single Sage computation. Ira Hanson soon joined the project and Jason and
+      Ira continued building a prototype. Many helpful design discussions with
+      Robert Bradshaw, Fernando Perez, Min Ragan-Kelly, and Brian Granger at
+      <a href="http://wiki.sagemath.org/days29">Sage Days 29</a> pushed the
+      design further. Alex Kramer joined the project in May 2011, and Jason,
+      Ira, and Alex (the &ldquo;Drake Sage Group&rdquo;) worked full-time at
+      Drake University (thanks to the
+      <a href="http://utmost.aimath.org">UTMOST</a> NSF funding and a
+      <a href="http://artsci.drake.edu/grout/lib/exe/fetch.php/assistantships-scalableinternetinterfaceforsage.pdf">Drake internal grant</a>)
+      to design and implement the first version of the Sage Cell Server in the
+      summer of 2011. Ira Hanson worked with Michael Gage, Jason Aubrey, Davide
+      Cervone, and John Travis from WeBWorK at
+      <a href="http://wiki.sagemath.org/days31">Sage Days 31</a> to allow Sage
+      cells to be embedded in WeBWorK problems and other external pages.  In
+      July 2011, the Sage Cell developers
+      <a href="https://groups.google.com/forum/?fromgroups=#!topic/sage-devel/SRnR9vdNmBc">announced</a>
+      the release of an open beta for the Sage Cell Server Version 1 on a
+      public server for testing.
+    </p>
+    <p>
+      Version 1 of the Sage Cell Server reimplemented much of the IPython 0.12
+      messaging protocol in a custom layer on top of Sage (since IPython was
+      not yet mature enough to be included in Sage). Jason, Ira, and Alex
+      continued maintaining and improving this codebase throughout the
+      2011&ndash;2012 academic year. The Android and iOS apps, which relied on
+      the Sage Cell Server, were built by Ivan Andrus and Volker Braun. People
+      started incorporating Sage Cells into their curricular materials, and
+      momentum was gathering. Alex and Jason attended
+      <a href="http://wiki.sagemath.org/days35.5">Sage Days 35.5</a> to help
+      in these and other efforts.
+    </p>
+    <p>
+      By the spring of 2012, the IPython codebase had matured enough to be
+      included in Sage and serve as a base for the Cell Server. Steven Johnson
+      joined Jason, Ira, and Alex to work full-time (under NSF funding) during
+      the summer of 2012 to go back to the drawing board and redesign and
+      reimplement the Sage Cell Server to take advantage of insights gained
+      during the first year. Byron Varberg also joined the Drake Sage Group to
+      implement the
+      <a href="http://interact.sagemath.org">Sage Interact website</a>. Sage
+      Cell Server Version 2
+      <a href="https://groups.google.com/forum/?fromgroups#!topic/sage-devel/8B3ihC93DYU">went beta</a>
+      in July 2012.
+    </p>
+    <p>
+      In the summer and fall of 2012, David Smith started transitioning the MAA
+      Calculus book to use Sage interacts for all interactive activities, which
+      was tested at Hood College during the 2012&ndash;2013 academic year.
+      Jason, Ira, and Alex continued maintaining and improving the Cell Server
+      codebase during the academic year as well.
+    </p>
+    <p class="sagecell_disclaimer">
+      This material is based upon work supported by the National Science
+      Foundation under Grant No. DUE-1022574. Any opinions, findings and
+      conclusions or recomendations expressed in this material are those of the
+      author(s) and do not necessarily reflect the views of the National
+      Science Foundation (NSF).
+    </p>
+  </body>
 </html>

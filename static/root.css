@@ -1,7 +1,11 @@
 body {
-    margin-bottom: 80%;
     margin-left: 50px;
     font-family: sans-serif;
+    background-color: white;
+}
+
+#sagecell_main {
+    margin-bottom: 80%;
 }
 
 a {
@@ -17,53 +21,19 @@ a:hover {
     font-size: 120%;
 }
 
-body > #about {
+#sagecell_about {
     position: absolute;
     top: 5px;
     right: 5px;
     font-size: 80%;
 }
 
-body > #about > div:first-child {
-    text-align: right;
-    cursor: default;
-    color: darkgreen;
+ol.sagecell_toc {
+   list-style: none;
 }
 
-body > #about > div:last-child {
-    visibility: hidden;
-    position: absolute;
-    left: -6ex;
-    border: 2px solid black;
-    border-radius: 5px;
-    padding: 5px;
-    background-color: rgba(230, 230, 230, 0.95);
-    box-shadow: 2px 2px 2px gray;
-    opacity: 0;
-    transition: visibility 0s 0.2s, opacity 0.2s;
-    -o-transition: visibility 0s 0.2s, opacity 0.2s;
-    -moz-transition: visibility 0s 0.2s, opacity 0.2s;
-    -webkit-transition: visibility 0s 0.2s, opacity 0.2s;
-}
-
-body > #about > div:last-child > ul {
-    list-style: none;
-    margin-top: 0px;
-    padding-left: 10px;
-}
-
-body > #about:focus {
-    outline: none;
-}
-
-body > #about:hover > div:first-child ~ div,
-body > #about:focus > div:first-child ~ div {
-    visibility: visible;
-    opacity: 1;
-    transition-delay: 0s;
-    -o-transition-delay: 0s;
-    -moz-transition-delay: 0s;
-    -webkit-transition-delay: 0s;
+.sagecell_disclaimer {
+    font-size: 80%;
 }
 
 .CodeMirror-scroll {
