@@ -28,7 +28,8 @@ a:hover {
     font-size: 80%;
 }
 
-ol.sagecell_toc {
+ol.sagecell_toc,
+ol.sagecell_toc ol {
    list-style: none;
 }
 
