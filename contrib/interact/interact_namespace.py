@@ -243,8 +243,11 @@ class Slider(Control):
 class ExpressionSlider(Slider):
     def __init__(self, expr, range, ns=None):
         # find the variables in the expression
+        global __default_namespace__
+        if ns is None:
+            ns = __default_namespace__
         var = [v for v in symtable.symtable(expr, '<string>', 'exec').get_identifiers() if v in ns]
-        super(ExpressionSlider, self).__init__(var=var, values=values, ns=ns, enabled=False)
+        super(ExpressionSlider, self).__init__(var=var, values=range, ns=ns, enabled=False)
         self.code = compile(expr, '<string>', 'eval')
 
     def control_update(self, msg):
