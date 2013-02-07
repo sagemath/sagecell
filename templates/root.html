@@ -1,5 +1,5 @@
-<!DOCTYPE HTML>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
@@ -22,12 +22,10 @@ $(function () {
 });
     </script>
   </head>
-  <body>
+  <body id="sagecell_main">
     <h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
     Type some Sage code below and press Evaluate.
     <div id="sagecell"></div>
-    <div id="about" tabindex="-1">
-      <a href="{{ static_url('about.html') }}">About Sage Cell Server</a>
-    </div>
+    <a href="{{ static_url('about.html') }}" id="sagecell_about">About Sage Cell Server</a>
   </body>
 </html>
