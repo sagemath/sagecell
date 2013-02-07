@@ -33,7 +33,6 @@ class SageCellServer(tornado.web.Application):
     def __init__(self):
         handlers_list = [
             (r"/", handlers.RootHandler),
-            (r"/about.html", handlers.AboutHandler),
             (r"/kernel", handlers.KernelHandler),
             (r"/embedded_sagecell.js", tornado.web.RedirectHandler, {"url":"/static/embedded_sagecell.js"}),
             (r"/sagecell.html", handlers.SageCellHandler),

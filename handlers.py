@@ -69,10 +69,6 @@ class RootHandler(tornado.web.RequestHandler):
             options["lang"] = None
         self.render("root.html", **options)
 
-class AboutHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.render("about.html")
-
 class KernelHandler(tornado.web.RequestHandler):
     """
     Kernel startup request handler.
