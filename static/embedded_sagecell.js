@@ -28,10 +28,19 @@ sagecell.URLs = {};
     } else if ((el = $("link[property=sagecell-root]")).length > 0) {
         sagecell.URLs.root = el.last().attr("href");
     } else {
-        var r = $("script").last().attr("src").match(/^.*(?=embedded_sagecell.js)/)[0];
-        var s = "static/";
-        if (r.substring(r.length - s.length) === s) {
-            r = r.substring(0, r.length - s.length);
+        /* get the first part of the last script element's src that loaded something called 'embedded_sagecell.js'
+           also, strip off the static/ part of the url if the src looked like 'static/embedded_sagecell.js'
+           modified from MathJax source
+           We could use the jquery reverse plugin at  http://www.mail-archive.com/discuss@jquery.com/msg04272.html 
+           and the jquery .each() to get this as well, but this approach avoids creating a reversed list, etc. */
+        var scripts = (document.documentElement || document).getElementsByTagName("script");
+        var namePattern = /^.*?(?=(?:static\/)?embedded_sagecell.js)/;
+        for (var i = scripts.length-1; i >= 0; i--) {
+            var m = (scripts[i].src||"").match(namePattern);
+            if (m) {
+                var r = m[0];
+                break;
+            }
         }
         if (r === "" || r === "/") {
             r = window.location.protocol + "//" + window.location.host + "/";
