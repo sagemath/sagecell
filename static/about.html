@@ -39,22 +39,23 @@
     Embedding a Sage cell into a webpage is straightforward:
     <ol>
       <li>
-        <p>Include the following HTML at the top of the webpage
+      <p>
+        Include the following HTML at the top of the webpage
         (optionally replacing <code>sagecell.sagemath.org</code> with the name
         of your server). The third line makes it so that any element with a
         class of <code>sage</code> will turn into a Sage cell.
-        <pre><code>&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
+      </p>
+      <pre><code>&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
 &lt;script src="http://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
 &lt;script&gt;$(function () { sagecell.makeSagecell({"inputLocation": ".sage"}) });&lt;/script&gt;</code></pre>
-        </p>
-      
-      <p>If you are embedding into a webpage with lots of styling (like a
-      blog, or a deck.js presentation), there might be conflicts
-      between the page styling and the styles for the Sage cell.  In
-      that case, you might also include the following code after the
-      above in order to fix the Sage cell styles.
-      <pre><code>&lt;link rel="stylesheet" type="text/css" href="http://sagecell.sagemath.org/static/sagecell_embed.css"></code></pre>
+      <p>
+        If you are embedding into a webpage with lots of styling
+        (like a blog, or a deck.js presentation), there might be
+        conflicts between the page styling and the styles for the Sage
+        cell.  In that case, you might also include the following code
+        after the above in order to fix the Sage cell styles.
       </p>
+      <pre><code>&lt;link rel="stylesheet" type="text/css" href="http://sagecell.sagemath.org/static/sagecell_embed.css"></code></pre>
       </li>
       <li>
         Include code in the body of the page. The code is wrapped in
