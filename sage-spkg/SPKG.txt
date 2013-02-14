@@ -18,8 +18,6 @@ Jason Grout <jason-sage@creativetrax.com>
 
 == Dependencies ==
 
-* flask sage notebook
-
 Other dependencies are included (zeromq, pyzmq)
 
 == Changelog ==

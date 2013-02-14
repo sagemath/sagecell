@@ -14,8 +14,6 @@ cd src
 
 SRC="`pwd`"
 
-# make sure the new sagenb is installed somehow...
-
 cd $SAGE_ROOT/devel/sage/
 if hg qseries | grep -q 01-sage-embedded.patch;  then
     echo "Sage patches already applied.  Checking the patches..."
