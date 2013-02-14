@@ -260,14 +260,23 @@ This sets the text of the evaluate button::
    evalButtonText: "text"
    .. }
 
-Sage Mode
+Languages
 ^^^^^^^^^
 
-This sets whether the Sage Cell can evaluate Sage-specific code::
+This sets the list of languages that can be evaluated in the Sage Cell::
 
    { ..
-   sageMode: boolean
+   languages: ["sage", ...]
    .. }
+
+Possible values in this array are ``"sage"``, ``"gap"``, ``"gp"``, ``"html"``,
+``"maxima"``, ``"octave"``, ``"python"``, ``"r"``, and ``"singular"``.
+If more than one language is specified in this option, a selection box will
+appear to allow the user to select a language.
+
+The default value is ``["sage"]`` (only Sage code allowed). To allow all of the
+available languages, use the value ``sagecell.allLanguages`` in place of the
+array.
 
 Managing subsequent sessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -312,6 +321,7 @@ The following input elements can be hidden:
 
 * Editor (``editor``)
 * Editor type toggle (``editorToggle``)
+* Language selection box (``language``)
 * Evaluate button (``evalButton``)
 
 The following output elements can be hidden:
@@ -325,7 +335,6 @@ Additionally, the following debugging elements are hidden by default:
 
 * Message logging (``messages``)
 * Session title (``sessionTitle``)
-* Sage Mode toggle (``sageMode``)
 
 These elements can be displayed in :ref:`debug_mode`.
 
@@ -374,10 +383,10 @@ information, as these options mirror what can be given to
    evalButtonText: "text"
    .. }
 
-* "Sage Mode"::
+* Language selection::
 
    { ..
-   sageMode: boolean
+   languages: ["sage", ...]
    .. }
 
 * Replacing or appending subsequent sessions::
