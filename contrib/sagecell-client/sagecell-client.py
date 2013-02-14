@@ -84,6 +84,7 @@ class SageCell(object):
         self._iopub.close()
 
 if __name__ == "__main__":
-    a=SageCell('http://aleph2.sagemath.org')
+    # argv[1] is the web address
+    a=SageCell(sys.argv[1])
     import pprint
     pprint.pprint(a.execute_request('factorial(2012)'))
