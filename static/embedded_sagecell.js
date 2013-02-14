@@ -211,71 +211,9 @@ sagecell.makeSagecell = function (args, k) {
     if (args.linked) {
         settings.autoeval = false;
     }
-    var input = $(args.inputLocation);
-    if (input.length > 1 && args.outputLocation === undefined) {
-        var r = [];
-        if (args.linked) {
-            k = sagecell.kernels.push(null) - 1;
-        }
-        for (var i = 0, i_max = input.length; i < i_max; i++) {
-            var a = $.extend({}, args);
-            a.inputLocation = input[i];
-            r.push(sagecell.makeSagecell(a, k));
-        }
-        return r;
-    }
-    if (k === undefined) {
-        k = sagecell.kernels.push(null) - 1;
-    }
-    if (args.outputLocation === undefined) {
-        args.outputLocation = args.inputLocation;
-    }
-    if (args.code === undefined) {
-        if (args.codeLocation !== undefined) {
-            args.code = $(args.codeLocation).html();
-        } else if ($(args.inputLocation).children("script").length > 0) {
-            args.code = $(args.inputLocation).children("script").html();
-        } else if ($(args.inputLocation).is("textarea")) {
-            args.code = $(args.inputLocation).val();
-        } else {
-            args.code = $(args.inputLocation).text();
-        }
-        args.code = $.trim(args.code);
-    }
-    defaults = {"editor": "codemirror",
-                "evalButtonText": "Evaluate",
-                "hide": ["messages"],
-                "mode": "normal",
-                "replaceOutput": true,
-                "languages": ["sage"]};
-
-    // jQuery.extend() has issues with nested objects, so we manually merge
-    // hide parameters.
-    if (args.hide === undefined) {
-        args.hide = defaults.hide;
-    } else {
-        args.hide = $.merge(args.hide, defaults.hide);
-    }
-
-    if (args.template !== undefined) {
-        settings = $.extend({}, defaults, args.template, args)
-        if (args.template.hide !== undefined) {
-            settings.hide = $.merge(settings.hide, args.template.hide);
-        }
-    } else {
-        settings = $.extend({}, defaults, args);
-    }
-    if ($.inArray(settings.defaultLanguage, settings.languages) === -1) {
-        settings.defaultLanguage = settings.languages[0];
-    }
-    if (settings.languages.length === 1) {
-        settings.hide.push("language");
-    }
     setTimeout(function waitForLoad() {
-        // Wait for CodeMirror to load before using the $ function
-        // Could we use MathJax Queues for this?
-        // We have to do something special here since Codemirror is loaded dynamically,
-        // so it may not be ready even though the page is loaded and ready.
+	// Wait for dependencies to load before setting up the Sage cell
+	// TODO: look into something like require.js?
         if (!sagecell.dependencies_loaded) {
             if (sagecell.dependencies_loaded === undefined) {
                 sagecell.init();
@@ -283,7 +221,69 @@ sagecell.makeSagecell = function (args, k) {
             setTimeout(waitForLoad, 100);
             return false;
         }
+	// Wait for the page to load before trying to find various DOM elements
         $(function () {
+            var input = $(args.inputLocation);
+            if (input.length > 1 && args.outputLocation === undefined) {
+                var r = [];
+                if (args.linked) {
+                    k = sagecell.kernels.push(null) - 1;
+                }
+                for (var i = 0, i_max = input.length; i < i_max; i++) {
+                    var a = $.extend({}, args);
+                    a.inputLocation = input[i];
+                    r.push(sagecell.makeSagecell(a, k));
+                }
+                return r;
+            }
+            if (k === undefined) {
+                k = sagecell.kernels.push(null) - 1;
+            }
+            if (args.outputLocation === undefined) {
+                args.outputLocation = args.inputLocation;
+            }
+            if (args.code === undefined) {
+                if (args.codeLocation !== undefined) {
+                    args.code = $(args.codeLocation).html();
+                } else if ($(args.inputLocation).children("script").length > 0) {
+                    args.code = $(args.inputLocation).children("script").html();
+                } else if ($(args.inputLocation).is("textarea")) {
+                    args.code = $(args.inputLocation).val();
+                } else {
+                    args.code = $(args.inputLocation).text();
+                }
+                args.code = $.trim(args.code);
+            }
+            defaults = {"editor": "codemirror",
+                        "evalButtonText": "Evaluate",
+                        "hide": ["messages"],
+                        "mode": "normal",
+                        "replaceOutput": true,
+                        "languages": ["sage"]};
+        
+            // jQuery.extend() has issues with nested objects, so we manually merge
+            // hide parameters.
+            if (args.hide === undefined) {
+                args.hide = defaults.hide;
+            } else {
+                args.hide = $.merge(args.hide, defaults.hide);
+            }
+        
+            if (args.template !== undefined) {
+                $.extend(settings, defaults, args.template, args)
+                if (args.template.hide !== undefined) {
+                    settings.hide = $.merge(settings.hide, args.template.hide);
+                }
+            } else {
+                $.extend(settings, defaults, args);
+            }
+            if ($.inArray(settings.defaultLanguage, settings.languages) === -1) {
+                settings.defaultLanguage = settings.languages[0];
+            }
+            if (settings.languages.length === 1) {
+                settings.hide.push("language");
+            }
+
             var hide = settings.hide;
             var inputLocation = $(settings.inputLocation);
             var outputLocation = $(settings.outputLocation);
