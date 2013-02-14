@@ -68,6 +68,63 @@ sagecell.log = (function (log) {
     };
 }($.proxy(console.log, console)));
 
+// Various utility functions for the Single Cell Server
+sagecell.util = {
+    "createElement": function (type, attrs, children) {
+        var node = document.createElement(type);
+        for (var k in attrs) {
+            if (attrs.hasOwnProperty(k)) {
+                node.setAttribute(k, attrs[k]);
+            }
+        }
+        if (children) {
+            for (var i = 0; i < children.length; i++) {
+		if (typeof children[i] == 'string') {
+		    node.appendChild(document.createTextNode(children[i]));
+		} else {
+                    node.appendChild(children[i]);
+		}
+            }
+        }
+        return node;
+    }
+
+//     throttle is from:
+//     Underscore.js 1.4.3
+//     http://underscorejs.org
+//     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
+//     Underscore may be freely distributed under the MIT license.
+// Returns a function, that, when invoked, will only be triggered at most once
+// during a given window of time.
+    ,"throttle": function(func, wait) {
+    var context, args, timeout, result;
+    var previous = 0;
+    var later = function() {
+      previous = new Date;
+      timeout = null;
+      result = func.apply(context, args);
+    };
+    return function() {
+      var now = new Date;
+      var remaining = wait - (now - previous);
+      context = this;
+      args = arguments;
+      if (remaining <= 0) {
+        clearTimeout(timeout);
+        timeout = null;
+        previous = now;
+        result = func.apply(context, args);
+      } else if (!timeout) {
+        timeout = setTimeout(later, remaining);
+      }
+      return result;
+    };
+  }
+
+};
+
+var ce = sagecell.util.createElement;
+
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
         return;
@@ -97,8 +154,7 @@ sagecell.init = function (callback) {
                        sagecell.URLs.root + "static/colorpicker/css/colorpicker.css",
                        sagecell.URLs.root + "static/all.min.css"]
     for (var i = 0; i < stylesheets.length; i++) {
-        document.head.appendChild(sagecell.util.createElement("link",
-                {"rel": "stylesheet", "href": stylesheets[i]}));
+        document.head.appendChild(ce("link", {rel: "stylesheet", href: stylesheets[i]}));
     }
 
     if(window.MathJax === undefined && sagecell.loadMathJax) {
@@ -346,8 +402,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         }
     }
     var fileButton = inputLocation.find(".sagecell_addFile");
-    var input = sagecell.util.createElement("input",
-            {"type": "file", "multiple": "true", "name": "file"});
+    var input = ce("input", {type: "file", multiple: "true", name: "file"});
     if (navigator.userAgent.indexOf("MSIE") === -1) {
         // Create an off-screen file input box if not in Internet Explorer
         input.style.position = "absolute";
@@ -364,8 +419,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
                 document.createElement("br"));
     }
     function change() {
-        var delButton = sagecell.util.createElement("span",
-                {"title": "Remove file"});
+        var delButton = ce("span", {title: "Remove file"});
         $(delButton).addClass("sagecell_deleteButton");
         var fileList = inputLocation.find(".sagecell_fileList");
         var li = document.createElement("li");
@@ -404,8 +458,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
             $(li.childNodes[0]).click(fileRemover(files.length - 1, li));
             fileList.append(li);
         }
-        var newInput = sagecell.util.createElement("input",
-            {"type": "file", "multiple": "true", "name": "file"});
+        var newInput = ce("input", {type: "file", multiple: "true", name: "file"});
         if (navigator.userAgent.indexOf("MSIE") === -1) {
             newInput.style.position = "absolute";
             newInput.style.top = "0px";
@@ -514,16 +567,14 @@ sagecell.sendRequest = function (method, url, data, callback, files, accept) {
         // Use a form submission to send POST requests
         var iframe = document.createElement("iframe");
         iframe.name = IPython.utils.uuid();
-        var form = sagecell.util.createElement("form",
-                {"method": method, "action": url, "target": iframe.name});
+        var form = ce("form", {method: method, action: url, target: iframe.name});
         for (var k in data) {
             if (data.hasOwnProperty(k)) {
                 form.appendChild(sagecell.util.createElement("input",
                         {"name": k, "value": data[k]}));
             }
         }
-        form.appendChild(sagecell.util.createElement("input",
-                {"name": "frame", "value": "on"}));
+        form.appendChild(ce("input", {name: "frame", value: "on"}));
         if (hasFiles) {
             form.setAttribute("enctype", "multipart/form-data");
             for (var i = 0; i < files.length; i++) {
@@ -563,7 +614,7 @@ sagecell.deleteSagecell = function (sagecellInfo) {
 };
 
 sagecell.moveInputForm = function (sagecellInfo) {
-    var moved = sagecell.util.createElement("div", {"id": "sagecell_moved"});
+    var moved = ce("div", {id: "sagecell_moved"});
     moved.style.display = "none";
     $(document.body).append(moved);
     $(sagecellInfo.inputLocation).contents().appendTo($(moved));
@@ -580,10 +631,8 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
     var editorData;
     if (collapse !== undefined) {
         var header, code;
-        var accordion = sagecell.util.createElement("div", {}, [
-            header = sagecell.util.createElement("h3", {}, [
-                document.createTextNode("Code")
-            ]),
+        var accordion = ce("div", {}, [
+            header = ce("h3", {}, ["Code"]),
             code = document.createElement("div")
         ]);
         header.style.paddingLeft = "2.2em";
@@ -685,56 +734,6 @@ sagecell.templates = {
 
 sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "python", "r", "singular"]
 
-// Various utility functions for the Single Cell Server
-sagecell.util = {
-    "createElement": function (type, attrs, children) {
-        var node = document.createElement(type);
-        for (var k in attrs) {
-            if (attrs.hasOwnProperty(k)) {
-                node.setAttribute(k, attrs[k]);
-            }
-        }
-        if (children) {
-            for (var i = 0; i < children.length; i++) {
-                node.appendChild(children[i]);
-            }
-        }
-        return node;
-    }
-
-//     throttle is from:
-//     Underscore.js 1.4.3
-//     http://underscorejs.org
-//     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
-//     Underscore may be freely distributed under the MIT license.
-// Returns a function, that, when invoked, will only be triggered at most once
-// during a given window of time.
-    ,"throttle": function(func, wait) {
-    var context, args, timeout, result;
-    var previous = 0;
-    var later = function() {
-      previous = new Date;
-      timeout = null;
-      result = func.apply(context, args);
-    };
-    return function() {
-      var now = new Date;
-      var remaining = wait - (now - previous);
-      context = this;
-      args = arguments;
-      if (remaining <= 0) {
-        clearTimeout(timeout);
-        timeout = null;
-        previous = now;
-        result = func.apply(context, args);
-      } else if (!timeout) {
-        timeout = setTimeout(later, remaining);
-      }
-      return result;
-    };
-  }
-
-};
 
 // Purely for backwards compability
 window.singlecell = window.sagecell;

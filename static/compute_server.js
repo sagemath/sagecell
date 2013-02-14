@@ -128,16 +128,15 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
                 ce("div", {"class": "sagecell_permalink"}, [
-                    ce("a", {"class": "sagecell_permalink_zip"}, [document.createTextNode("Permalink")]),
-                    document.createTextNode(", "),
-                    ce("a", {"class": "sagecell_permalink_query"}, [document.createTextNode("Shortened Temporary Link")])
+                    ce("a", {"class": "sagecell_permalink_zip"}, ["Permalink"]), ", ",
+                    ce("a", {"class": "sagecell_permalink_query"}, ["Shortened Temporary Link"])
                 ]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
                         "alt": "Loading", "class": "sagecell_spinner"})
             ]),
             ce("div", {"class": "sagecell_poweredBy"}, [
-                document.createTextNode("Powered by "),
+                "Powered by ",
                 ce("a", {"href": "http://www.sagemath.org"}, [
                     ce("img", {"src": sagecell.URLs.sage_logo, "alt": "Sage"})
                 ])
@@ -641,7 +640,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                     if (varcontrol.control.label !== "") {
                         var left = ce("td", {"class": "sagecell_interactcontrollabelcell"}, [
                             ce("label", {"for": id, "title": varname}, [
-                                document.createTextNode(varcontrol.control.label || varname)
+                                varcontrol.control.label || varname
                             ])
                         ]);
                         tr.appendChild(left);
@@ -679,9 +678,7 @@ sagecell.InteractData.InteractControl = function () {
 sagecell.InteractData.Button = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.Button.prototype.rendered = function() {
-    this.button = ce("button", {}, [
-        document.createTextNode(this.control.text)
-    ]);
+    this.button = ce("button", {}, [this.control.text]);
     this.button.style.width = this.control.width;
     var that = this;
     $(this.button).click(function () {
@@ -717,9 +714,7 @@ sagecell.InteractData.ButtonBar.prototype.rendered = function () {
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
-            var button = ce("button", {}, [
-                document.createTextNode(this.control.value_labels[++i])
-            ]);
+            var button = ce("button", {}, [this.control.value_labels[++i]]);
             button.style.width = this.control.width;
             $(button).click(function (i) {
                 return function (event) {
@@ -944,8 +939,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
             that.value_boxes = that.value_boxes.add(textbox);
             column.appendChild(textbox);
         } else {
-            var span = ce("span", {},
-                    [document.createTextNode(this.values[i].toString())]);
+            var span = ce("span", {}, [this.values[i].toString()]);
             span.style.fontFamily = "monospace";
             span.style.display = this.control.display_values ? "" : "none";
             that.value_boxes = that.value_boxes.add(span);
@@ -995,9 +989,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
     if (this.control.subtype === "list") {
         var select = ce("select");
         for (var i = 0; i < this.control.values; i++) {
-            select.appendChild(ce("option", {}, [
-                document.createTextNode(this.control.value_labels[i])
-            ]));
+            select.appendChild(ce("option", {}, [this.control.value_labels[i]]));
         }
         this.value = select.selectedIndex = this.control["default"];
         $(select).change(function (event) {
@@ -1020,9 +1012,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
                     option.checked = true;
                     this.value = i;
                 }
-                var label = ce("label", {"for": id}, [
-                    document.createTextNode(this.control.value_labels[i])
-                ]);
+                var label = ce("label", {"for": id}, [this.control.value_labels[i]]);
                 label.style.width = this.control.width;
                 $(option).change(function (i) {
                     return function (event) {
@@ -1130,13 +1120,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
             $([min_text, max_text]).blur(function (event) {
                 event.target.size = event.target.value.length;
             });
-            var span = ce("span", {}, [
-                document.createTextNode("("),
-                min_text,
-                document.createTextNode(", "),
-                max_text,
-                document.createTextNode(")")
-            ]);
+            var span = ce("span", {}, [ "(", min_text, ",", max_text, ")"]);
             this.value_boxes = $([min_text, max_text]);
             span.style.fontFamily = "monospace";
             container.appendChild(span);
@@ -1178,10 +1162,8 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                "step": this.control.step,
                                "range": true,
                                "values": this.values});
-        var span = ce("span", {}, [
-            document.createTextNode("(" + this.control.values[this.values[0]] +
-                    ", " + this.control.values[this.values[1]] + ")")
-        ]);
+        var span = ce("span", {}, ["(" + this.control.values[this.values[0]] +
+				   ", " + this.control.values[this.values[1]] + ")" ]);
         span.style.fontFamily = "monospace";
         $(this.slider).on("slide", function (event, ui) {
             that.values = ui.values.slice()
@@ -1196,9 +1178,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                "max": this.control.range[1],
                                "step": this.control.step,
                                "value": this.value});
-        var span = ce("span", {}, [
-            document.createTextNode(this.control.values[this.value].toString())
-        ]);
+        var span = ce("span", {}, [this.control.values[this.value].toString()]);
         span.style.fontFamily = "monospace";
         $(this.slider).on("slide", function (event, ui) {
             $(span).text(that.control.values[that.value = ui.value].toString());
