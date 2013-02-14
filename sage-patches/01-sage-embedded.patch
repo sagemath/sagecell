@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent 9b6226228a70e625deecd9698e33afeda37d946c
+# Parent ca877a1fdc06f49f74e422f648ed5c05fea1a570
 imported patch embedded.patch
 
 diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
@@ -46,7 +46,7 @@ diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
 +            return ' '.join(cur_str)
  
 -    from sage.server.support import EMBEDDED_MODE
--    if EMBEDDED_MODE or (kwds.has_key('html_table') and kwds['html_table']):
+-    if EMBEDDED_MODE or ('html_table' in kwds and kwds['html_table']):
 +    import sage.misc.misc as misc    
 +    if misc.EMBEDDED_MODE or (kwds.has_key('html_table') and kwds['html_table']):
          # Notebook Version
@@ -332,7 +332,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
  from sage.misc.sage_ostools import have_program
  from sage.misc.cachefunc import cached_function, cached_method
  
-@@ -238,10 +237,10 @@
+@@ -245,10 +244,10 @@
  
      TESTS::
  
@@ -345,7 +345,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
      """
      if EMBEDDED_MODE:
          return "{\\rm %s}"%x
-@@ -1997,14 +1996,14 @@
+@@ -2063,14 +2062,14 @@
  
      EXAMPLES::
  
@@ -362,7 +362,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
  
      TESTS::
  
-@@ -2022,7 +2021,7 @@
+@@ -2088,7 +2087,7 @@
          Traceback (most recent call last):
          ...
          ValueError: Unsupported LaTeX engine.
@@ -371,7 +371,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          sage: view(4, engine="garbage", viewer="pdf")
          Traceback (most recent call last):
          ...
-@@ -2249,14 +2248,14 @@
+@@ -2323,14 +2322,14 @@
  
          sage: sage.misc.latex.print_or_typeset(3)
          3
@@ -391,7 +391,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/misc/misc.py b/sage/misc/misc.py
 --- a/sage/misc/misc.py
 +++ b/sage/misc/misc.py
-@@ -51,6 +51,13 @@
+@@ -52,6 +52,13 @@
  
  LOCAL_IDENTIFIER = '%s.%s'%(HOSTNAME , os.getpid())
  
@@ -405,7 +405,7 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
  def sage_makedirs(dir):
      """
      Python version of ``mkdir -p``: try to create a directory, and also
-@@ -2086,19 +2093,6 @@
+@@ -2115,19 +2122,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -454,7 +454,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
  
-@@ -818,7 +818,6 @@
+@@ -821,7 +821,6 @@
      if not interact:
          return results
  
@@ -462,7 +462,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1380,7 +1379,6 @@
+@@ -1383,7 +1382,6 @@
          if testing:
              return (url, path)
  
@@ -481,7 +481,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
  
  def isclassinstance(obj):
      r"""
-@@ -1147,7 +1146,8 @@
+@@ -1384,7 +1383,8 @@
          # sometimes s contains "*args" or "**keywds", and the
          # asterisks confuse ReST/sphinx/docutils, so escape them:
          # change * to \*, and change ** to \**.
@@ -491,7 +491,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
              s = s.replace('**', '\\**')  # replace ** with \**
              t = ''
              while True:  # replace * with \*
-@@ -1264,13 +1264,14 @@
+@@ -1501,13 +1501,14 @@
      - extensions by Nick Alexander
      """
      import sage.misc.sagedoc
@@ -581,7 +581,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -348,7 +348,7 @@
+@@ -352,7 +352,7 @@
  ## going to be used.
  
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)

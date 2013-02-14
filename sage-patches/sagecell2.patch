@@ -1,6 +1,6 @@
 # HG changeset patch
 # User Jason Grout <jason.grout@drake.edu>
-# Parent 24840dd9f5ffd6e1afd48909aa550b2e91c61a14
+# Parent 50e5b9945b4898388c742c901fca2a17799bece5
 Changes for Sage Cell Server 2.0
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
@@ -27,7 +27,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -2052,7 +2052,7 @@
+@@ -2118,7 +2118,7 @@
              if misc.EMBEDDED_MODE['frontend']=='sagecell':
                  mathexpr=mathjax_expr.replace('<html>','').replace('</html>','')
                  import sys
@@ -36,7 +36,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
              else:
                  print mathjax_expr
          else:
-@@ -2063,11 +2063,7 @@
+@@ -2129,11 +2129,7 @@
                  debug=debug, engine=engine)
              if misc.EMBEDDED_MODE['frontend']=='sagecell':
                  import sys
@@ -70,7 +70,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1734,18 +1734,17 @@
+@@ -1761,18 +1761,17 @@
              kwds.setdefault('filename', graphics_filename())
              filename=kwds['filename']
              self.save(**kwds)
@@ -94,7 +94,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
                  else:
                      html("<img src='cell://%s'>"%filename)
          else:
-@@ -2982,12 +2981,10 @@
+@@ -3022,12 +3021,10 @@
          if sage.misc.misc.EMBEDDED_MODE:
              self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
              if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
@@ -128,7 +128,7 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 +                sys._sage_.sent_files[filename_full] = os.path.getmtime(filename_full)
  
              import sage.misc.viewer
-             viewer_app = sage.misc.viewer.browser()
+             viewer_app = sage.misc.viewer.png_viewer()
 @@ -1140,13 +1137,9 @@
              viewer_app = os.path.join(sage.misc.misc.SAGE_LOCAL, "bin/jmol")
  

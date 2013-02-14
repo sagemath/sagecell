@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1311809242 25200
 # Node ID f67d7039d959b56d5b611b5979375b95dbe69398
-# Parent b4e0f1381e3b2d03ba71563e8745393f161f052d
+# Parent 0ecbbafefee2a58bfa776410b1788e38612f6a3b
 [mq]: show.patch
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
@@ -90,7 +90,7 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -2039,7 +2039,8 @@
+@@ -2105,7 +2105,8 @@
      if pdflatex or (viewer == "pdf" and engine == "latex"):
          engine = "pdflatex"
      # notebook
@@ -100,7 +100,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          MathJax_okay = True
          for t in latex.mathjax_avoid_list():
              if s.find(t) != -1:
-@@ -2047,14 +2048,28 @@
+@@ -2113,14 +2114,28 @@
              if not MathJax_okay:
                  break
          if MathJax_okay:  # put comma at end of line below?
@@ -147,7 +147,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
                  raise OSError, msg
          else:
              if not savefile:
--                savefile = sage.misc.misc.graphics_filename(ext='gif')
+-                savefile = sage.misc.temporary_file.graphics_filename(ext='gif')
 +                savefile = graphics_filename(ext='gif')
              if not savefile.endswith('.gif'):
                  savefile += '.gif'
@@ -172,7 +172,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
              if not savefile:
                  if output_format is None:
                      output_format = 'mpg'
--                savefile = sage.misc.misc.graphics_filename(ext=output_format)
+-                savefile = sage.misc.temporary_file.graphics_filename(ext=output_format)
 +                savefile = graphics_filename(ext=output_format)
              else:
                  if output_format is None:
@@ -180,7 +180,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1727,17 +1727,27 @@
+@@ -1754,17 +1754,27 @@
  
          # This option should not be passed on to save().
          linkmode = kwds.pop('linkmode', False)
@@ -213,7 +213,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
          else:
              kwds.setdefault('filename', tmp_filename(ext='.png'))
              self.save(**kwds)
-@@ -2567,42 +2577,47 @@
+@@ -2607,42 +2617,47 @@
          options.update(kwds)
          dpi = options.pop('dpi')
          transparent = options.pop('transparent')
@@ -290,7 +290,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
  
  
  class GraphicsArray(SageObject):
-@@ -2962,11 +2977,18 @@
+@@ -3002,11 +3017,18 @@
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
              return
@@ -311,11 +311,11 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 -            filename = tmp_filename(ext='.png')
          self._render(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
          os.system('%s %s 2>/dev/null 1>/dev/null &'%(
-                          sage.misc.viewer.browser(), filename))
+                          sage.misc.viewer.png_viewer(), filename))
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -348,7 +348,6 @@
+@@ -352,7 +352,6 @@
  ## going to be used.
  
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)
@@ -353,7 +353,7 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 +                sys._sage_messages.message_queue.display(msg)
 +
              import sage.misc.viewer
-             viewer_app = sage.misc.viewer.browser()
+             viewer_app = sage.misc.viewer.png_viewer()
  
 @@ -1129,19 +1139,29 @@
              T.export_jmol(archive_name, force_reload=EMBEDDED_MODE, zoom=zoom*100, **kwds)
