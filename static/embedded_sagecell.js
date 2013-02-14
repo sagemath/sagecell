@@ -59,14 +59,18 @@ sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
                   "html": "htmlmixed", "r": "r"};
-sagecell.loadMathJax = true;
-sagecell.log = (function (log) {
-    return function (obj) {
-        if (sagecell.debug) {
-            log(obj);
-        }
-    };
-}($.proxy(console.log, console)));
+if (sagecell.loadMathJax === undefined) {
+    sagecell.loadMathJax = true;
+}
+if (sagecell.log === undefined) {
+    sagecell.log = (function (log) {
+	return function (obj) {
+            if (sagecell.debug) {
+		log(obj);
+            }
+	};
+    }($.proxy(console.log, console)));
+}
 
 // Various utility functions for the Single Cell Server
 sagecell.util = {
