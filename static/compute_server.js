@@ -1224,7 +1224,7 @@ sagecell.MultiSockJS = function (url) {
         sagecell.MultiSockJS.channels = {};
         sagecell.MultiSockJS.opened = false;
         sagecell.MultiSockJS.to_init = [];
-        sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs);
+        sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, sagecell.sockjs_options || {});
         sagecell.MultiSockJS.sockjs.onopen = function (e) {
             sagecell.MultiSockJS.opened = true;
             while (sagecell.MultiSockJS.to_init.length > 0) {
