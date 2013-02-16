@@ -228,6 +228,9 @@ sagecell.makeSagecell = function (args, k) {
 	// Wait for the page to load before trying to find various DOM elements
         $(function () {
             var input = $(args.inputLocation);
+            if (input.length === 0) {
+                return [];
+            }
             if (input.length > 1 && args.outputLocation === undefined) {
                 var r = [];
                 if (args.linked) {
@@ -239,6 +242,9 @@ sagecell.makeSagecell = function (args, k) {
                     r.push(sagecell.makeSagecell(a, k));
                 }
                 return r;
+            }
+            if (input.hasClass("sagecell")) {
+            	return null;
             }
             if (k === undefined) {
                 k = sagecell.kernels.push(null) - 1;
