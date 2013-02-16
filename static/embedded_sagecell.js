@@ -372,7 +372,7 @@ sagecell.makeSagecell = function (args, k) {
             }
             sagecell.initCell(settings, k);
         });
-    }, 100);
+    }, 0);
     return settings;
 };
 
