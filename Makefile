@@ -14,6 +14,7 @@ sagecell-css   = static/sagecell.css
 sockjs-client  = static/sockjs.js
 codemirror-css = submodules/codemirror/lib/codemirror.css
 codemirror     = submodules/codemirror/lib/codemirror.js
+cm-brackets    = submodules/codemirror/addon/edit/matchbrackets.js
 cm-python-mode = submodules/codemirror/mode/python/python.js
 cm-xml-mode    = submodules/codemirror/mode/xml/xml.js
 cm-html-mode   = submodules/codemirror/mode/htmlmixed/htmlmixed.js
@@ -49,8 +50,8 @@ $(all-min-js): $(jsmin-bin) $(all-js)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(cm-python-mode) \
            $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
-           $(cm-r-mode) $(jmol-js) $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(codemirror) $(cm-python-mode) $(cm-xml-mode) $(cm-html-mode) \
+           $(cm-r-mode) $(cm-brackets) $(jmol-js) $(sockjs-client) $(compute_server) $(sagecell)
+	cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) $(cm-html-mode) \
 	    $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) $(jmol-js) $(ip-namespace) \
 	    $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
