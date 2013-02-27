@@ -8,7 +8,6 @@ from hashlib import sha1
 import misc
 
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
-from db_sqlalchemy import DB
 
 import logging
 logging.basicConfig(format='%(asctime)s %(name)s:%(levelname)s %(message)s',level=logging.INFO)
@@ -71,10 +70,14 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--port', type=int, default=8888,
                         help='port to launch the server')
     parser.add_argument('-d', '--debug', action='store_true', help='debug messages')
+    parser.add_argument('--db', type=str, default="sqlalchemy", choices=['sqlalchemy','web'])
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
+
+    from db_web import DB
+
     application = SageCellServer()
     application.listen(args.port)
     try:

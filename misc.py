@@ -120,9 +120,8 @@ def get_db_file(config):
 
     db = config.get_config("db")
     db_config = config.get_config("db_config")
-    if db == "sqlalchemy":
+    if db in ("sqlalchemy", "web"):
         db_file = db_config.get("uri")
-
     return db_file
         
 

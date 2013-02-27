@@ -215,13 +215,14 @@ sagecell.Session.prototype.createPermalink = function (code) {
     sagecell.sendRequest("POST", sagecell.URLs.permalink,
 			 {"code": code, "language": this.language},
         function (data) {
+            data = JSON.parse(data);
             sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
-                .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
+                .attr("href", sagecell.URLs.root + "?q=" + data.query);
             // TODO: eventually use the client to zip this using javascript
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
                 .attr("href", sagecell.URLs.root + "?z=" +
-                JSON.parse(data).zip + "&lang=" + that.language);
+                data.zip + "&lang=" + that.language);
         });
 };
 

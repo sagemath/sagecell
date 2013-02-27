@@ -27,17 +27,19 @@ class RootHandler(tornado.web.RequestHandler):
     ```<root_url>?q=<uuid>`` loads code from a database based
     upon a unique identifying permalink (uuid4-based)
     """
+    @tornado.web.asynchronous
     def get(self):
         db = self.application.db
-        options = {"code": None, "lang": None}
+        code = None
+        language = None
         args = self.request.arguments
 
         if "lang" in args:
-            options["lang"] = args["lang"][0]
+            language = args["lang"][0]
 
         if "c" in args:
             # If the code is explicitly specified
-            options["code"] = "".join(args["c"])
+            code = "".join(args["c"])
 
         elif "z" in args:
             # If the code is base64-compressed
@@ -47,21 +49,25 @@ class RootHandler(tornado.web.RequestHandler):
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
                 z += "=" * ((4 - (len(z) % 4)) % 4)
-                options["code"] = zlib.decompress(base64.urlsafe_b64decode(z))
+                code = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
-                options["code"] = "# Error decompressing code %s"%e
+                code = "# Error decompressing code %s"%e
 
-        elif "q" in args:
+        if "q" in args:
             # if the code is referenced by a permalink identifier
             q = "".join(args["q"])
-            options["code"], options["lang"] = db.get_exec_msg(q)
-            print options
-        if options["code"] is not None:
-            if isinstance(options["code"], unicode):
-                options["code"] = options["code"].encode("utf8")
-            options["code"] = urllib.quote(options["code"])
-            options["autoeval"] = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
-        self.render("root.html", **options)
+            db.get_exec_msg(q, self.return_root)
+        else:
+            self.return_root(code, language)
+
+    def return_root(self, code, language):
+        autoeval = None
+        if code is not None:
+            if isinstance(code, unicode):
+                code = code.encode("utf8")
+            code = urllib.quote(code)
+            autoeval = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
+        self.render("root.html", code=code, lang=language, autoeval=autoeval)
 
 class KernelHandler(tornado.web.RequestHandler):
     """
@@ -161,6 +167,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
     The specified id can be used to generate permalinks
     with the format ``<root_url>?q=<id>``.
     """
+    @tornado.web.asynchronous
+    @gen.engine
     def post(self):
         args = self.request.arguments
         retval = {"query": None, "zip": None}
@@ -172,7 +180,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
             self.write_error(400)
         import zlib, base64
         retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
-        retval["query"] = self.application.db.new_exec_msg(code, language)
+        retval["query"] = yield gen.Task(self.application.db.new_exec_msg, code, language)
+
         if "frame" not in self.request.headers:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
