@@ -687,9 +687,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              extraKeys: {
                  "Tab": "indentMore", 
                  "Shift-Tab": "indentLess",
-                 "Shift-Enter": function (editor) {
-                     return CodeMirror.Pass;
-                 }
+                 "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
              },
              onKeyEvent: function (editor, event) {
                  editor.save();
