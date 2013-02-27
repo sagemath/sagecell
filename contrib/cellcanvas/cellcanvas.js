@@ -30,35 +30,35 @@ canvas.click(function(e) {
 
     },400);
 
-	if (e.shiftKey) {
-            newcell.addClass('markdowncell');
-	    (function() { 
-                var data;
-                newcell.text("Double-click to edit");
-		newcell.editable(function(value, settings) {
-		    data = value;
-                    renderedHtml = converter.makeHtml(value);
-                    $(this).data('cellcanvas_renderedHtml', renderedHtml) 
-		    setTimeout(function() {MathJax.Hub.Queue(["Typeset",MathJax.Hub,id]);}, 100);
-		    return(renderedHtml);
-		}, {type: 'markdown', rows: 7, columns: 30,
-                    onblur: 'ignore',
-                    indicator: 'Saving...',
-		    submit: 'Save',
-                    event: "dblclick",
-                    tooltip: "Double-click to edit",
-                    placeholder: "Double-click to edit",
-		    data: function(value, settings){return data;},
-		   });
-                newcell.dblclick();
-	    })();
-	} else {
-            newcell.addClass('interactivesagecell');
-	    sagecell.makeSagecell({
-	        inputLocation: '#'+id,
-	        template: celltemplate,
-	    });
-	}
+    if (e.shiftKey) {
+        newcell.addClass('markdowncell');
+        (function() { 
+            var data;
+            newcell.text("Double-click to edit");
+            newcell.editable(function(value, settings) {
+                data = value;
+                renderedHtml = converter.makeHtml(value);
+                $(this).data('cellcanvas_renderedHtml', renderedHtml) 
+                setTimeout(function() {MathJax.Hub.Queue(["Typeset",MathJax.Hub,id]);}, 100);
+                return(renderedHtml);
+            }, {type: 'markdown', rows: 7, columns: 30,
+                onblur: 'ignore',
+                indicator: 'Saving...',
+                submit: 'Save',
+                event: "dblclick",
+                tooltip: "Double-click to edit",
+                placeholder: "Double-click to edit",
+                data: function(value, settings){return data;},
+               });
+            newcell.dblclick();
+        })();
+    } else {
+        newcell.addClass('interactivesagecell');
+        sagecell.makeSagecell({
+            inputLocation: '#'+id,
+            template: celltemplate,
+        });
+    }
     divnum += 1;
 });
 
