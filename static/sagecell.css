@@ -42,15 +42,22 @@
 
 .CodeMirror {
     border: 1px solid;
+    height: 200px;
 }
 
 /* resizable */
-/* .CodeMirror-scroll {height: auto; overflow-y: auto; overflow-x: auto; min-height: 10ex; max-height: 60ex;}  */
-
-/* not resizeable */
-.CodeMirror-scroll {
-    height: 200px;
+/* 
+.CodeMirror {
+    height: auto;
+    min-height: 10ex;
+    max-height: 60ex;
 }
+.CodeMirror-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+*/
+
 
 .sagecell_output, .sagecell_input {
     overflow: hidden;
