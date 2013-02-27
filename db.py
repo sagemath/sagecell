@@ -35,7 +35,7 @@ class DB(object):
 
         :arg str ident: a unique identifying value for the
             requested message.
-        :returns: a string version of the requested message
-        :rtype: str
+        :returns: (string of the code, string of the language)
+        :rtype: tuple of str
         """
         raise NotImplementedError

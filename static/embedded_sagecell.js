@@ -485,15 +485,17 @@ sagecell.initCell = (function (sagecellInfo, k) {
         return false;
     });
     sagecellInfo.submit = function (evt) {
+        var code = textArea.val();
+        var language = langSelect[0].value;
         if (replaceOutput && sagecell.last_session[evt.data.id]) {
             $(sagecell.last_session[evt.data.id].session_container).remove();
         }
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
-        var session = new sagecell.Session(outputLocation, langSelect[0].value, k, sagecellInfo.linked || false);
-        session.execute(textArea.val());
-        session.createPermalink(textArea.val());
+        var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
+        session.execute(code);
+        session.createPermalink(code, language);
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell

@@ -28,11 +28,12 @@ class RootHandler(tornado.web.RequestHandler):
     upon a unique identifying permalink (uuid4-based)
     """
     def get(self):
-        valid_query_chars = set(string.letters+string.digits+"-")
         db = self.application.db
-        options = {}
-
+        options = {"code": None, "lang": None}
         args = self.request.arguments
+
+        if "lang" in args:
+            options["lang"] = args["lang"][0]
 
         if "c" in args:
             # If the code is explicitly specified
@@ -53,20 +54,13 @@ class RootHandler(tornado.web.RequestHandler):
         elif "q" in args:
             # if the code is referenced by a permalink identifier
             q = "".join(args["q"])
-            if set(q).issubset(valid_query_chars):
-                options["code"] = db.get_exec_msg(q)
-
-        if "code" in options:
+            options["code"], options["lang"] = db.get_exec_msg(q)
+            print options
+        if options["code"] is not None:
             if isinstance(options["code"], unicode):
                 options["code"] = options["code"].encode("utf8")
             options["code"] = urllib.quote(options["code"])
             options["autoeval"] = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
-        else:
-            options["code"] = None
-        if "lang" in args:
-            options["lang"] = args["lang"][0]
-        else:
-            options["lang"] = None
         self.render("root.html", **options)
 
 class KernelHandler(tornado.web.RequestHandler):
@@ -155,6 +149,9 @@ class PermalinkHandler(tornado.web.RequestHandler):
     """
     Permalink generation request handler.
 
+    This accepts the code and language strings and stores
+    these in the permalink database.  A zip and query string are returned.
+
     This accepts the string version of an IPython
     execute_request message, and stores the code associated
     with that request in a database linked to a unique id,
@@ -166,17 +163,16 @@ class PermalinkHandler(tornado.web.RequestHandler):
     """
     def post(self):
         args = self.request.arguments
-        retval = {"zip": None, "query": None}
-        if "message" in args:
-            try:
-                message = jsonapi.loads("".join(args["message"]))
-                if message["header"]["msg_type"] == "execute_request":
-                    import zlib, base64
-                    retval["zip"] = base64.urlsafe_b64encode(zlib.compress(message["content"]["code"].encode('utf8')))
-                    db = self.application.db
-                    retval["query"] = db.new_exec_msg(message)
-            except:
-                pass
+        retval = {"query": None, "zip": None}
+        print args
+        if "code" in args:
+            code = ("".join(args["code"])).encode('utf8')
+            language = "".join(args.get("language", ["sage"]))
+        else:
+            self.write_error(400)
+        import zlib, base64
+        retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
+        retval["query"] = self.application.db.new_exec_msg(code, language)
         if "frame" not in self.request.headers:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:

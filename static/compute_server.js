@@ -206,17 +206,19 @@ sagecell.Session.prototype.execute = function (code) {
 };
 
 sagecell.Session.prototype.createPermalink = function (code) {
+    // check to see if permalink request has already been submitted with this code
+    // 
+    // Send request to permalink server
+    // callback will unhide div with permalink links when request comes back
     var that = this;
     sagecell.log('sending permalink request post: '+that.timer()+' ms.');
     sagecell.sendRequest("POST", sagecell.URLs.permalink,
-        {"message": JSON.stringify({"header": {"msg_type": "execute_request"},
-                                    "metadata": {},
-                                    "content": {"code": code}})},
+			 {"code": code, "language": this.language},
         function (data) {
             sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
-                .attr("href", sagecell.URLs.root + "?q=" +
-                JSON.parse(data).query + "&lang=" + that.language);
+                .attr("href", sagecell.URLs.root + "?q=" + JSON.parse(data).query);
+            // TODO: eventually use the client to zip this using javascript
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
                 .attr("href", sagecell.URLs.root + "?z=" +
                 JSON.parse(data).zip + "&lang=" + that.language);
