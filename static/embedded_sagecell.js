@@ -684,7 +684,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              matchBrackets: true,
              readOnly: readOnly,
              extraKeys: {
-                 "Tab": "indentMore", 
+                 "Tab": "indentMore",
                  "Shift-Tab": "indentLess",
                  "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
              },
