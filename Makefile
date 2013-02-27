@@ -12,6 +12,7 @@ jquery-ui      = static/jquery-ui/js/jquery-ui-1.8.21.custom.min.js
 sagecell       = static/sagecell.js
 sagecell-css   = static/sagecell.css
 sockjs-client  = static/sockjs.js
+codemirror-cat = static/codemirror.js
 codemirror-css = submodules/codemirror/lib/codemirror.css
 codemirror     = submodules/codemirror/lib/codemirror.js
 cm-brackets    = submodules/codemirror/addon/edit/matchbrackets.js
@@ -21,6 +22,8 @@ cm-html-mode   = submodules/codemirror/mode/htmlmixed/htmlmixed.js
 cm-js-mode     = submodules/codemirror/mode/javascript/javascript.js
 cm-css-mode    = submodules/codemirror/mode/css/css.js
 cm-r-mode      = submodules/codemirror/mode/r/r.js
+cm-runmode     = submodules/codemirror/addon/runmode/runmode.js
+cm-colorize    = submodules/codemirror/addon/runmode/colorize.js
 jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
 cssmin         = submodules/cssmin/src/cssmin.py
 jsmin          = submodules/jsmin/jsmin.c
@@ -48,12 +51,16 @@ $(jquery):
 $(all-min-js): $(jsmin-bin) $(all-js)
 	$(jsmin-bin) < $(all-js) > $(all-min-js)
 
-$(all-js): $(ip-namespace) $(wrap-js) $(codemirror) $(cm-python-mode) \
+$(codemirror-cat): $(codemirror) $(cm-python-mode) \
            $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
-           $(cm-r-mode) $(cm-brackets) $(jmol-js) $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) $(cm-html-mode) \
-	    $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) $(jmol-js) $(ip-namespace) \
-	    $(wrap-js) > $(all-js)
+           $(cm-r-mode) $(cm-brackets) $(cm-runmode) $(cm-colorize)
+	cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
+	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
+	    $(cm-runmode) $(cm-colorize) > $(codemirror-cat)
+
+$(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) \
+           $(sockjs-client) $(compute_server) $(sagecell)
+	cat $(codemirror-cat) $(jmol-js) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
