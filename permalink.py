@@ -26,7 +26,6 @@ class PermalinkHandler(tornado.web.RequestHandler):
     def post(self):
         args = self.request.arguments
         retval = {"query": None}
-        print args
         if "code" in args:
             code = ("".join(args["code"])).encode('utf8')
             language = "".join(args.get("language", ["sage"]))
@@ -45,7 +44,6 @@ class PermalinkHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def get(self):
-        print self.request.__dict__
         q = "".join(self.request.arguments["q"])
         response = yield gen.Task(self.application.db.get_exec_msg, q)
         if self.request.headers["Accept"] == "application/json":
@@ -53,7 +51,6 @@ class PermalinkHandler(tornado.web.RequestHandler):
         else:
             retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(response),)
             self.set_header("Content-Type", "text/html")
-        print "PERMALINK RESPONSE", response[0]
         self.write(json.dumps(response[0]))
         self.finish()
 
