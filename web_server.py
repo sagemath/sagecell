@@ -54,7 +54,8 @@ class SageCellServer(tornado.web.Application):
 
         self.km = TMKM(computers=initial_comps, default_computer_config=default_comp,
                        kernel_timeout=kernel_timeout)
-        self.db = DB(misc.get_db_file(self.config))
+        db = __import__('db_'+self.config.get_config('db'))
+        self.db = db.DB(self.config.get_config('db_config')['uri'])
         self.ioloop = ioloop.IOLoop.instance()
 
         # to check for blocking when debugging, uncomment the following
@@ -70,13 +71,10 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--port', type=int, default=8888,
                         help='port to launch the server')
     parser.add_argument('-d', '--debug', action='store_true', help='debug messages')
-    parser.add_argument('--db', type=str, default="sqlalchemy", choices=['sqlalchemy','web'])
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
-
-    from db_web import DB
 
     application = SageCellServer()
     application.listen(args.port)
