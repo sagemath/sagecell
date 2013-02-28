@@ -63,7 +63,8 @@ class PermalinkServer(tornado.web.Application):
             (r"/", PermalinkHandler),
             ]
         self.config = misc.Config()
-        self.db = DB("sqlite:///sqlite.db")
+        db = __import__('db_'+self.config.get_config('permalink_server')['db'])
+        self.db = db.DB(self.config.get_config('permalink_server')['db_config']['uri'])
 
         #self.ioloop = ioloop.IOLoop.instance()
         # to check for blocking when debugging, uncomment the following
