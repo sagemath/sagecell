@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="root.css">
+    <link rel="stylesheet" href="all.min.css">
     <title>About the Sage Cell Server</title>
   </head>
   <body>
@@ -45,9 +46,9 @@
         of your server). The third line makes it so that any element with a
         class of <code>sage</code> will turn into a Sage cell.
       </p>
-      <pre><code>&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
+      <pre data-lang="text/html">&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
 &lt;script src="http://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
-&lt;script&gt;sagecell.makeSagecell({"inputLocation": ".sage"});&lt;/script&gt;</code></pre>
+&lt;script&gt;sagecell.makeSagecell({"inputLocation": ".sage"});&lt;/script&gt;</pre>
       <p>
         If you are embedding into a webpage with lots of styling
         (like a blog, or a deck.js presentation), there might be
@@ -55,14 +56,15 @@
         cell.  In that case, you might also include the following code
         after the above in order to fix the Sage cell styles.
       </p>
-      <pre><code>&lt;link rel="stylesheet" type="text/css" href="http://sagecell.sagemath.org/static/sagecell_embed.css"></code></pre>
+      <pre data-lang="text/html">&lt;link rel="stylesheet" type="text/css" href="http://sagecell.sagemath.org/static/sagecell_embed.css"></pre>
       </li>
       <li>
         Include code in the body of the page. The code is wrapped in
-        <code>&lt;script&gt;</code> tags so that it is not treated as HTML.
-        <pre><code>&lt;div class="sage"&gt;
+        <code>&lt;script&gt;</code> tags so that it is not
+        treated as HTML.
+        <pre data-lang="text/html">&lt;div class="sage"&gt;
   &lt;script type="text/x-sage"&gt;1+2&lt;/script&gt;
-&lt;/div&gt;</code></pre>
+&lt;/div&gt;</pre>
       </li>
     </ol>
     There are <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">lots of options</a>
@@ -294,5 +296,9 @@
       author(s) and do not necessarily reflect the views of the National
       Science Foundation (NSF).
     </p>
+    <script src="codemirror.js"></script>
+    <script>
+        setTimeout(CodeMirror.colorize, 0);
+    </script>
   </body>
 </html>

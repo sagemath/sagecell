@@ -6,6 +6,7 @@ config.py
 
 # generated web files
 static/all*
+static/codemirror.js
 static/jquery.min.js
 static/sockjs.js
 static/wrap.js

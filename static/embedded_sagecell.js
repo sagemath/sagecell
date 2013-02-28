@@ -64,11 +64,11 @@ if (sagecell.loadMathJax === undefined) {
 }
 if (sagecell.log === undefined) {
     sagecell.log = (function (log) {
-	return function (obj) {
+        return function (obj) {
             if (sagecell.debug) {
-		log(obj);
+                log(obj);
             }
-	};
+        };
     }($.proxy(console.log, console)));
 }
 
@@ -83,11 +83,11 @@ sagecell.util = {
         }
         if (children) {
             for (var i = 0; i < children.length; i++) {
-		if (typeof children[i] == 'string') {
-		    node.appendChild(document.createTextNode(children[i]));
-		} else {
+                if (typeof children[i] == 'string') {
+                    node.appendChild(document.createTextNode(children[i]));
+                } else {
                     node.appendChild(children[i]);
-		}
+                }
             }
         }
         return node;
@@ -216,8 +216,8 @@ sagecell.makeSagecell = function (args, k) {
         settings.autoeval = false;
     }
     setTimeout(function waitForLoad() {
-	// Wait for dependencies to load before setting up the Sage cell
-	// TODO: look into something like require.js?
+        // Wait for dependencies to load before setting up the Sage cell
+        // TODO: look into something like require.js?
         if (!sagecell.dependencies_loaded) {
             if (sagecell.dependencies_loaded === undefined) {
                 sagecell.init();
@@ -225,7 +225,7 @@ sagecell.makeSagecell = function (args, k) {
             setTimeout(waitForLoad, 100);
             return false;
         }
-	// Wait for the page to load before trying to find various DOM elements
+        // Wait for the page to load before trying to find various DOM elements
         $(function () {
             var input = $(args.inputLocation);
             if (input.length === 0) {
@@ -244,7 +244,7 @@ sagecell.makeSagecell = function (args, k) {
                 return r;
             }
             if (input.hasClass("sagecell")) {
-            	return null;
+                    return null;
             }
             if (k === undefined) {
                 k = sagecell.kernels.push(null) - 1;

@@ -39,17 +39,17 @@ sagecell.simpletimer = function () {
 };
 
     sagecell.findSession = function(node) {
-	if (node instanceof jQuery) {
-	    node = node[0]
-	}
-	while(!node.sagecell_session) {
-	    node = node.parentNode
-	}
-	if (node) {
-	    return node.sagecell_session;
-	} else {
-	    return undefined;
-	}
+        if (node instanceof jQuery) {
+            node = node[0]
+        }
+        while(!node.sagecell_session) {
+            node = node.parentNode
+        }
+        if (node) {
+            return node.sagecell_session;
+        } else {
+            return undefined;
+        }
     }
 
 sagecell.Session = function (outputDiv, language, k, linked) {
@@ -236,9 +236,9 @@ sagecell.Session.prototype.appendMsg = function(msg, text) {
 
 sagecell.Session.prototype.last_output = function(block_id) {
     if (this.replace_output[block_id]) {
-	return undefined;
+        return undefined;
     } else {
-	return $(this.output_blocks[block_id]).children().last()
+        return $(this.output_blocks[block_id]).children().last()
     }
 }
 
@@ -294,15 +294,15 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
     // Handle each stream type.  This should probably be separated out into different functions.
     switch (msg_type) {
     case "stream":
-	// First, see if we should consolidate this output with the previous output <pre>
-	// this reaches into the inner workings of output
-	var last_output = this.last_output(block_id)
+        // First, see if we should consolidate this output with the previous output <pre>
+        // this reaches into the inner workings of output
+        var last_output = this.last_output(block_id)
         if (last_output && last_output.hasClass("sagecell_" + content.name)) {
-	    // passing in an empty html string will actually return the last child of the output region
-	    var html = "";
-	} else {
-	    var html = "<pre class='sagecell_" + content.name + "'></pre>";
-	}
+            // passing in an empty html string will actually return the last child of the output region
+            var html = "";
+        } else {
+            var html = "<pre class='sagecell_" + content.name + "'></pre>";
+        }
         var out = this.output(html, block_id);
         out.text(out.text() + content.data);
         break;
@@ -321,21 +321,21 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
 
     case "display_data":
         var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
-	// find any key of content that is in the display_handlers array and execute that handler
-	// if none found, do the text/plain 
-	var already_handled = false;
-	for (var key in content.data) {
-	    if (content.data.hasOwnProperty(key) && this.display_handlers[key]) {
-		// return false if the mime type wasn't handled after all
-		already_handled = false !== $.proxy(this.display_handlers[key], this)(content.data[key], block_id, filepath);
-		// we only use one mime type
-		break;
-	    }
-	}
-	if (!already_handled && content.data['text/plain']) {
-	    // we are *always* supposed to have a text/plain attribute
-	    this.output("<pre></pre>", block_id).text(content.data['text/plain']);
-	}
+        // find any key of content that is in the display_handlers array and execute that handler
+        // if none found, do the text/plain 
+        var already_handled = false;
+        for (var key in content.data) {
+            if (content.data.hasOwnProperty(key) && this.display_handlers[key]) {
+                // return false if the mime type wasn't handled after all
+                already_handled = false !== $.proxy(this.display_handlers[key], this)(content.data[key], block_id, filepath);
+                // we only use one mime type
+                break;
+            }
+        }
+        if (!already_handled && content.data['text/plain']) {
+            // we are *always* supposed to have a text/plain attribute
+            this.output("<pre></pre>", block_id).text(content.data['text/plain']);
+        }
         break;
     }
     sagecell.log('handled output: '+this.timer()+' ms');
@@ -353,16 +353,16 @@ sagecell.Session.prototype.display_handlers = {
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
     ,'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);}
     ,'application/x-jmol': function(data, block_id, filepath) {
-	jmolSetDocument(false); 
-	this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+data+'";\n script SCRIPT;\n'),block_id); }
+        jmolSetDocument(false); 
+        this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+data+'";\n script SCRIPT;\n'),block_id); }
     ,'application/sage-interact-control': function(data, block_id, filepath) {
-	var that=this;
-	var control_class = sagecell.interact_controls[data.control_type];
-	if ( control_class === undefined) {return false;}
-	var control = new control_class(this, data.control_id);
-	control.create(data, block_id);
-	$.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
-	control.update(data.namespace, data.variable);
+        var that=this;
+        var control_class = sagecell.interact_controls[data.control_type];
+        if ( control_class === undefined) {return false;}
+        var control = new control_class(this, data.control_id);
+        control.create(data, block_id);
+        $.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
+        control.update(data.namespace, data.variable);
     }
     ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable, data.control);}
 }
@@ -370,10 +370,10 @@ sagecell.Session.prototype.display_handlers = {
 
 sagecell.Session.prototype.register_control = function(namespace, variable, control) {
     if (this.namespaces[namespace] === undefined) {
-	this.namespaces[namespace] = {};
+        this.namespaces[namespace] = {};
     }
     if (this.namespaces[namespace][variable] === undefined) {
-	this.namespaces[namespace][variable] = []
+        this.namespaces[namespace][variable] = []
     }
     this.namespaces[namespace][variable].push(control);
 }
@@ -381,9 +381,9 @@ sagecell.Session.prototype.register_control = function(namespace, variable, cont
 sagecell.Session.prototype.get_variable_controls = function(namespace, variable) {
     var notify = {};
     if (this.namespaces[namespace] && this.namespaces[namespace][variable]) {
-	$.each(this.namespaces[namespace][variable], function(index, control) {
-	    notify[control.control_id] = control;
-	});
+        $.each(this.namespaces[namespace][variable], function(index, control) {
+            notify[control.control_id] = control;
+        });
     }
     return notify;
 }
@@ -392,10 +392,10 @@ sagecell.Session.prototype.update_variable = function(namespace, variable, contr
     var that = this;
     var notify;
     if ($.isArray(variable)) {
-	notify = {};
-	$.each(variable, function(index, v) {$.extend(notify, that.get_variable_controls(namespace, v))});
+        notify = {};
+        $.each(variable, function(index, v) {$.extend(notify, that.get_variable_controls(namespace, v))});
     } else {
-	notify = this.get_variable_controls(namespace, variable);
+        notify = this.get_variable_controls(namespace, variable);
     }
     $.each(notify, function(k,v) {$.proxy(v.update, v)(namespace, variable, control_id);});
 }
@@ -404,7 +404,7 @@ sagecell.InteractControls = {'throttle': 100};
 
 sagecell.InteractControls.InteractControl = function () {
     return function (session, control_id) {
-	this.session = session;
+        this.session = session;
         this.control_id = control_id;
     }
 }
@@ -434,28 +434,28 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
     var that = this;
     this.control = this.session.output(ce("div", {id: data.control_id}), block_id);
     this.control.slider({
-	disabled: !data.enabled,
-	min: data.min,
-	max: data.max,
-	step: data.step,
-	slide: throttle(function(event, ui) {
-	    if (! event.originalEvent) {return;}
-	    that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
-				      {"output": $.proxy(that.session.handle_output, that.session)});
-	}, sagecell.InteractControls.throttle)
+        disabled: !data.enabled,
+        min: data.min,
+        max: data.max,
+        step: data.step,
+        slide: throttle(function(event, ui) {
+            if (! event.originalEvent) {return;}
+            that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
+                                      {"output": $.proxy(that.session.handle_output, that.session)});
+        }, sagecell.InteractControls.throttle)
     });
 }
 
 sagecell.InteractControls.Slider.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     if (this.control_id !== control_id) {
-	this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-				  {"output": $.proxy(this.session.handle_output, this.session), 
-				   "control_update_reply": function(content, metadata) {
-				       if (content.status === 'ok') {
-					   that.control.slider('value', content.result.value);
-				       }
-				   }});
+        this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
+                                  {"output": $.proxy(this.session.handle_output, this.session), 
+                                   "control_update_reply": function(content, metadata) {
+                                       if (content.status === 'ok') {
+                                           that.control.slider('value', content.result.value);
+                                       }
+                                   }});
     }
 }
 
@@ -465,21 +465,21 @@ sagecell.InteractControls.ExpressionBox.prototype.create = function (data, block
     var that = this;
     this.control = this.session.output(ce("input", {id: data.control_id, type: 'textbox'}), block_id);
     this.control.change(function(event) {
-	if (! event.originalEvent) {return;}
-	that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
-				  {"output": $.proxy(that.session.handle_output, that.session)});
+        if (! event.originalEvent) {return;}
+        that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
+                                  {"output": $.proxy(that.session.handle_output, that.session)});
     });
 }
 
 sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-			      {"output": $.proxy(this.session.handle_output, this.session), 
-			       "control_update_reply": function(content, metadata) {
-				   if (content.status === 'ok') {
-				       that.control.val(content.result.value);
-				   }
-			       }});
+                              {"output": $.proxy(this.session.handle_output, this.session), 
+                               "control_update_reply": function(content, metadata) {
+                                   if (content.status === 'ok') {
+                                       that.control.val(content.result.value);
+                                   }
+                               }});
 }
 
 sagecell.InteractControls.Checkbox = sagecell.InteractControls.InteractControl();
@@ -487,21 +487,21 @@ sagecell.InteractControls.Checkbox.prototype.create = function (data, block_id) 
     var that = this;
     this.control = this.session.output(ce("input", {id: data.control_id, type: 'checkbox'}), block_id);
     this.control.change(function(event) {
-	if (! event.originalEvent) {return;}
-	that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).prop("checked")}, 
-				  {"output": $.proxy(that.session.handle_output, that.session)});
+        if (! event.originalEvent) {return;}
+        that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).prop("checked")}, 
+                                  {"output": $.proxy(that.session.handle_output, that.session)});
     });
 }
 
 sagecell.InteractControls.Checkbox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-			      {"output": $.proxy(this.session.handle_output, this.session), 
-			       "control_update_reply": function(content, metadata) {
-				   if (content.status === 'ok') {
-				       that.control.prop('checked', content.result.value);
-				   }
-			       }});
+                              {"output": $.proxy(this.session.handle_output, this.session), 
+                               "control_update_reply": function(content, metadata) {
+                                   if (content.status === 'ok') {
+                                       that.control.prop('checked', content.result.value);
+                                   }
+                               }});
 }
 
 
@@ -519,11 +519,11 @@ sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, v
     this.message_number += 1;
     var msg_number = this.message_number;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-			      {"output": function(msg_type, content, metadata) {
-				  if (msg_number === that.message_number) {
-				      $.proxy(that.session.handle_output, that.session)(msg_type, content, metadata, that.control_id);
-				  }
-			      }});
+                              {"output": function(msg_type, content, metadata) {
+                                  if (msg_number === that.message_number) {
+                                      $.proxy(that.session.handle_output, that.session)(msg_type, content, metadata, that.control_id);
+                                  }
+                              }});
 }
 
 sagecell.interact_controls = {
@@ -564,11 +564,11 @@ sagecell.InteractCell.prototype.bindChange = function () {
     var handler = function (event, ui) {
         $(that.rows[event.data.name]).addClass("sagecell_dirtyControl");
         if (that.update[event.data.name]) {
-	    var msg_dict = {'interact_id': that.interact_id, 'control_vals': {}};
+            var msg_dict = {'interact_id': that.interact_id, 'control_vals': {}};
             for (var name in that.controls) {
                 if (that.controls.hasOwnProperty(name) &&
                         that.update[event.data.name].indexOf(name) !== -1) {
-		    msg_dict['control_vals'][name]=that.controls[name].json_value(ui)
+                    msg_dict['control_vals'][name]=that.controls[name].json_value(ui)
                     $(that.rows[name]).removeClass("sagecell_dirtyControl");
                 }
             }
@@ -576,8 +576,8 @@ sagecell.InteractCell.prototype.bindChange = function () {
             var callbacks = {"output": $.proxy(that.session.handle_output, that.session),
                              "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)};
 
-	    that.session.send_message('sagenb.interact.update_interact', msg_dict,
-				      callbacks);
+            that.session.send_message('sagenb.interact.update_interact', msg_dict,
+                                      callbacks);
         }
     };
     for (var name in this.controls) {
@@ -883,11 +883,11 @@ sagecell.InteractData.InputGrid.prototype.changeHandlers = function () {
 sagecell.InteractData.InputGrid.prototype.json_value = function () {
     var value = [];
     for (var row = 0; row < this.control.nrows; row++) {
-	var rowlist = [];
+        var rowlist = [];
         for (var col = 0; col < this.control.ncols; col++) {
             rowlist.push(this.textboxes[row * this.control.ncols + col].value);
         }
-	value.push(rowlist);
+        value.push(rowlist);
     }
     return value;
 }
@@ -1163,7 +1163,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                "range": true,
                                "values": this.values});
         var span = ce("span", {}, ["(" + this.control.values[this.values[0]] +
-				   ", " + this.control.values[this.values[1]] + ")" ]);
+                                   ", " + this.control.values[this.values[1]] + ")" ]);
         span.style.fontFamily = "monospace";
         $(this.slider).on("slide", function (event, ui) {
             that.values = ui.values.slice()
@@ -1194,7 +1194,7 @@ sagecell.InteractData.Slider.prototype.changeHandlers = function() {
 
 sagecell.InteractData.Slider.prototype.json_value = function () {
     if (this.range) {
-	return this.values;
+        return this.values;
     } else {
         return this.value;
     }
