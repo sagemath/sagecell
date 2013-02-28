@@ -38,24 +38,21 @@ class DB(db.DB):
         http_client.fetch(self.url, exec_callback, method="POST", body=body, headers={"Accept": "application/json"})
 
     def return_exec_msg_id(self, callback, response):
-        # TODO: error handling
-        print response.body
+        if response.code != 200:
+            raise StandardError("Error in response")
         callback(response.body)
 
     def get_exec_msg(self, key, callback):
         """
         See :meth:`db.DB.get_exec_msg`
         """
-        print "URL", self.url
         http_client = tornado.httpclient.AsyncHTTPClient()
         exec_callback = partial(self.return_exec_msg_code, callback)
         http_client.fetch(self.url+"?q=%s"%key, exec_callback, method="GET", headers={"Accept": "application/json"})
 
     def return_exec_msg_code(self, callback, response):
-        print "RESPONSE", response
         if response.code == 200:
             code, language = json.loads(response.body)
         else:
             raise LookupError("Code lookup produced error")
-        print "GOT WEB CODE", (code, language)
         callback(code, language)
