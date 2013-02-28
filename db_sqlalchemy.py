@@ -35,7 +35,7 @@ class DB(db.DB):
         Base.metadata.create_all(self.engine)
         self.dbsession = self.SQLSession()
 
-    def new_exec_msg(self, code, language):
+    def new_exec_msg(self, code, language, callback):
         """
         See :meth:`db.DB.new_exec_msg`
         """
@@ -48,20 +48,19 @@ class DB(db.DB):
             self.dbsession.commit()
         except:
             session_id = None
+        callback(session_id)
 
-        return session_id
-
-    def get_exec_msg(self, ident):
+    def get_exec_msg(self, key, callback):
         """
         See :meth:`db.DB.get_exec_msg`
         """
-        msg = self.dbsession.query(ExecMessage).filter_by(ident = ident).first()
+        msg = self.dbsession.query(ExecMessage).filter_by(ident = key).first()
         if msg:
             msg.requested = ExecMessage.requested+1
             self.dbsession.commit()
         if msg is None:
             raise LookupError
-        return (msg.code, msg.language)
+        callback(msg.code, msg.language)
 
 Base = declarative_base()
 

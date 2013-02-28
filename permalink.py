@@ -5,6 +5,8 @@ import misc
 from db_sqlalchemy import DB
 import json
 import hashlib
+import tornado.gen as gen
+
 
 class PermalinkHandler(tornado.web.RequestHandler):
     """
@@ -19,6 +21,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
     The specified id can be used to generate permalinks
     with the format ``<root_url>?q=<id>``.
     """
+    @tornado.web.asynchronous
+    @gen.engine
     def post(self):
         args = self.request.arguments
         retval = {"query": None}
@@ -28,7 +32,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
             language = "".join(args.get("language", ["sage"]))
         else:
             self.write_error(400)
-        query = self.application.db.new_exec_msg(code, language)
+        query = yield gen.Task(self.application.db.new_exec_msg, code, language)
 
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
@@ -38,17 +42,19 @@ class PermalinkHandler(tornado.web.RequestHandler):
         self.write(query)
         self.finish()
 
+    @tornado.web.asynchronous
+    @gen.engine
     def get(self):
         print self.request.__dict__
         q = "".join(self.request.arguments["q"])
-        response = self.application.db.get_exec_msg(q)
+        response = yield gen.Task(self.application.db.get_exec_msg, q)
         if self.request.headers["Accept"] == "application/json":
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
             retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(response),)
             self.set_header("Content-Type", "text/html")
-        print "RESPONSE", response
-        self.write(json.dumps(response))
+        print "PERMALINK RESPONSE", response[0]
+        self.write(json.dumps(response[0]))
         self.finish()
 
 class PermalinkServer(tornado.web.Application):
