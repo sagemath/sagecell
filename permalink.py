@@ -1,25 +1,21 @@
+"""
+Permalink web server
+
+This Tornado server provides a permalink service with a convenient
+post/get api for storing and retrieving code.
+"""
+
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import misc
-from db_sqlalchemy import DB
 import json
-import hashlib
 import tornado.gen as gen
 
 
 class PermalinkHandler(tornado.web.RequestHandler):
     """
     Permalink generation request handler.
-
-    This accepts the string version of an IPython
-    execute_request message, and stores the code associated
-    with that request in a database linked to a unique id,
-    which is returned to the requester in a JSON-compatible
-    form.
-
-    The specified id can be used to generate permalinks
-    with the format ``<root_url>?q=<id>``.
     """
     @tornado.web.asynchronous
     @gen.engine
