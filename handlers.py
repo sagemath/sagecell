@@ -178,6 +178,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
             language = "".join(args.get("language", ["sage"]))
         else:
             self.write_error(400)
+            return
         import zlib, base64
         retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
         retval["query"] = yield gen.Task(self.application.db.new_exec_msg, code, language)
