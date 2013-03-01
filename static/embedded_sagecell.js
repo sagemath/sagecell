@@ -191,7 +191,7 @@ processEnvironments: false}\n\
                 // many prerequisites that have been smashed together into all.min.js
                 load({"src": sagecell.URLs.root + "static/all.min.js"})
             });
-        }, undefined, "text/html");
+        }, undefined);
 };
 
 sagecell.sagecell_dependencies_callback = function () {
@@ -512,7 +512,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
     return sagecellInfo;
 });
 
-sagecell.sendRequest = function (method, url, data, callback, files, accept) {
+sagecell.sendRequest = function (method, url, data, callback, files) {
     method = method.toUpperCase();
     var hasFiles = false;
     if (files === undefined) {
@@ -559,7 +559,6 @@ sagecell.sendRequest = function (method, url, data, callback, files, accept) {
     if (window.FormData || !(isXDomain || hasFiles)) {
         // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
-        xhr.setRequestHeader("Accept", accept || "application/json");
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 /* DONE */) {
                 callback(xhr.responseText);

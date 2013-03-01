@@ -1,10 +1,13 @@
 *.pyc
 *~
 doc/_build/*
-static/jmol
+tests/multimechanize/results/
+sqlite.db
 config.py
 
 # generated web files
+submodules/jsmin-bin
+static/jmol
 static/all*
 static/codemirror.js
 static/jquery.min.js
