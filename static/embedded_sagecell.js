@@ -485,14 +485,14 @@ sagecell.initCell = (function (sagecellInfo, k) {
         return false;
     });
     sagecellInfo.submit = function (evt) {
-        var code = textArea.val();
-        var language = langSelect[0].value;
         if (replaceOutput && sagecell.last_session[evt.data.id]) {
             $(sagecell.last_session[evt.data.id].session_container).remove();
         }
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
+        var code = textArea.val();
+        var language = langSelect[0].value;
         var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
         session.execute(code);
         session.createPermalink(code, language);
