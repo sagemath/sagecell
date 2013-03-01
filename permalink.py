@@ -29,11 +29,12 @@ class PermalinkHandler(tornado.web.RequestHandler):
             self.write_error(400)
         query = yield gen.Task(self.application.db.new_exec_msg, code, language)
 
-        if self.request.headers["Accept"] == "application/json":
+        if "frame" not in self.request.headers:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
-            query = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(query),)
+            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
             self.set_header("Content-Type", "text/html")
+
         self.write(query)
         self.finish()
 
@@ -42,11 +43,12 @@ class PermalinkHandler(tornado.web.RequestHandler):
     def get(self):
         q = "".join(self.request.arguments["q"])
         response = yield gen.Task(self.application.db.get_exec_msg, q)
-        if self.request.headers["Accept"] == "application/json":
+        if "frame" not in self.request.headers:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
-            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(response),)
+            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
             self.set_header("Content-Type", "text/html")
+
         self.write(json.dumps(response[0]))
         self.finish()
 
