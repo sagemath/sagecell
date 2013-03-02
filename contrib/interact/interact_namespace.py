@@ -289,6 +289,14 @@ class Checkbox(Control):
         return {'value': bool(self.ns[self.var])}
         
 class PythonCode(Control):
+    """
+    with interactive_namespace(x=4,y=20):
+        print "x="
+        slider('x', (0,100)).create()
+        print "y="
+        slider('y', (0,100)).create()
+        PythonCode('print x+y').create()
+    """
     def __init__(self, code, ns=None):
         global __default_namespace__
         if ns is None:
@@ -305,25 +313,69 @@ class PythonCode(Control):
 
 class InteractFunction(Control):
     def __init__(self, f):
-        raise NotImplementedError
-        super(InteractFunction, self).__init__()
+        ns = InteractiveNamespace()
+        import inspect
+        argspec = inspect.getargspec(f)
+        self.defaults = zip(argspec.args, [None]*(len(argspec.args)-len(argspec.defaults))+list(argspec.defaults))
+        ns.update(self.defaults)
+        super(InteractFunction, self).__init__(var = ns.keys(), namespace=ns)
         self.fn = f
-        self.ns = InteractiveNamespace()
-        # TODO: the argument names of f should be added to self.ns, along with default values
-        self.var = self.ns.keys()
+        self.order = argspec.args
+        self.fn.ns = ns
+        self.create()
 
     def create(self):
-        # TODO: make controls with the same namespace, using the existing automatic rules
+        # TODO: use the existing automatic rules
         # TODO: lay these out according to whatever layout is specified, or the automatic layout rules
-
-        # output region is an output_region control that depends on all of the function inputs
         self.send_create_message('OutputRegion')
+        for v in self.order:
+            ExpressionBox(v,ns=self.ns).create()
+        # output region is an output_region control that depends on all of the function inputs
 
     def control_update(self, msg):
         # run the function with the appropriate arguments
-        self.fn(**ns)
+        self.fn(**self.ns)
 
 """
 Point2d:
 http://aleph.sagemath.org/?z=eJytV01v4zYQPce_gmukELVQZMdpD3XWBbLJHrZAi0WxPaWBoUi0zY1MCiKVRDX83_tGH5RkZzc5VAdbIoczj28eh6QpTbg00VoswweRK5EurdwKXVi2YKtUR5aPpVqN_RHeE-5trM3MfDLJo6dwLe2muA9jvZ18i4xW6xzDJuQrFmk6kcqKPIrt2VYYajSTWCuby3vX416WKoJRFsUizErPH9ETp5Ex7IuGzeyGX9NQnfrzEcOTiBVbLqWSdrnkRqSrgD1G-XmAn1nAlGnM6DFFJnLeuAkYGfuhG-t3dugIyQnmTX9HHbO6YzbsUAbNyjhUcS4iKypMfRAdyYk0WRqVy4YUvvOseLYTtEnlzZk3u6nn7AVu9I8eL8qyVMaRlVpV1J852uOaMjjdec37Uib4rIDL5G0BXkfQ-rZlJmgGWcV18sYJvO4fpMvoPiXfty5LQZeXu_8rkBNhy5EyoGm_9112WyjLIkvaNAdsa9b9XDcjt0VqpRGW7xzoOZne0oTOvbveDLr2mXe3D1jD6KJJVBe_pfoH4XNhi1wh5VUUN5GOOQSuIx33ze72o43dpjwfj8ejDybOZWZ_G6GHxQI6b5d2WFiZhrXUP6ViK5S9HI0mkwrA3yoRuYl1LsJvhp2HP4cXbRcVD9SOwll8M6HO1203j302m05_PZtNz2fsd5GLbcmuzOZBqMgE7EbHBYW6TnWRsM8qDo9Dsm1UsnvBVrkQacmw2KjgFFYkrIrK7EawPz5_ZVgzQhlRufirosywiK0KFdNKCmAX2YA9bYRiUj3qB5HgS6Yp0yqtIsDveg2ICYss22pj0RMLpAEOkyKXag1_a_kIB09SJfqJ6RWj0hrChhi1m1xbmxKvbVhOL4gTSeuzXZXSintkHTUiYFG-Bg9NfQ6QagONXTq7LBePUhdUkaZda4ok5f0grWvWH6DEE7uB5WXT1W0CqkjTtrWO2DgLqfSUfIDOry339V-jxRciEzAFTo4DUw8Sj2pIFC4qMtgZ42R95hD7rXkTHYZ2I03bSlDQhL9KMa5drhjvnH8ATx0k-EpFlH-tJ84bAlyg71EyZFE_XfZW4tvIAl1MpEZU6N61cXu4usAoJy2-Kq1BR1XnzOWqIr8vkiot-Kket5g_NxtGs8WasNks-wv-yOaggSP8qw7DDIrXtE00taOnSsZR0aKA3ac6fsA21dc_rcVBguktJCox9UrbVYPBjgpPIdjJQFAs-DiRj-OA7WQyZ-Q-7LbBvd-L9ZLXMDaG7zZCrjcWm9r5dJo9e1QDErvpfd_rHGWFGrJnZnQqE7iN4gd0ZVGSIDHo-wWm-8MowAHkpw6n75NGhEq-aj6E8sLII3QH4F7DtoX-pELXtAcNvmElwlSv-e0QQtAPHgyh1Ci4f-d3RafeoPpVR6ASQveFpMye4Knlzqp27AISeKL0E33Bohbv5b62JAG49BpQ5E5P3sGOjKlVQ2gUY7su30cCqE-McwAKM20kYQxTsbJVO3ZkJPis32d1th86H9dCG8_ZKSn7ueQDnJtIJcBVGwWDOfjEeO2lXa8DRpM8Wq9pVnzHmhRQGZsfSBQHhSI3mjK81Y809_r7CpY74MUkApoS_veBi0fO52734TVvAc3Xf-EgZSo_tVHjgsDv31A_esv9SA6o5-1hK3CnKnfweW39k3L6hMGevVssDoafDKrCUDbDgxSYG0jlwDduFC3YOXsB99y91TSffEccPTRH4uj6_EZlmOd4CHOZC-whcOkWVbWd0LLaChuRwN3i6va7xiY0NrK0SYEnTz94reVJJT5oc1BZPNINTojt4HoXaU7eHjTh1SvkuH_WaLuFsG8_9m2Z2UM9TjzuBtiEN7fu_nD3ww2oEdnl6MOkPafi0BoSRUgO9069wPvn1PPpMlld0loPOJL92eaQPy_Op0G5uPBHGY5slnnP3uhqYVAqcWn0qIgqnLim9fIYXTX7Fq6NrX3pjT46-_LA_mPP_hoQ2sssOSZjXFRH1z0b0Mc9i_uvWdABvIW0-Ak-S_x6P_HnoATWVFv-_N5Ixcv3FoLhNji7CC78YCXXRv4rFhcB2SwrKg2-II6MZg4JUY2AdjDn0Gz0E-JSrJvFl9JutLrWCe4VFbKbDtl_aK31JQ==&lang=sage
+"""
+
+
+
+
+"""
+sys._sage_.kernel_timeout = 100
+load('/Users/grout/projects/sagenb/sagecell/contrib/interact/interact_namespace.py')
+
+@InteractFunction
+def f(x=1,y=2):
+    print x,y
+    from time import sleep
+    sleep(1)
+    if f.ns['y']>10: return
+    print 'changing y'
+    f.ns['y'] = f.ns['x']+f.ns['y']
+    print 'changing x'
+    f.ns['x'] = f.ns['x']+1
+    sleep(1)
+
+What I think should happen:
+
+1. output region created, expression boxes created
+2. function executed once
+3. change notification sent out for y.  the expressionbox for y queued up, the output region queued up
+4. f continues to execute, sends out change notification for x, the expressionbox for x and the output region queued up again
+5. then the expressionbox for y is processed, changes y
+6. then the output region executed (from y's change), which actually picks up x's change.
+7. the output regio
+ 
+
+Okay, *HUGE* problem: controls are not updated immediately, so controls have to wait until the python code is executed in order to ask for their values.
+
+* Solution 1: have a separate thread that is used to inquire about control values
+* Solution 2: send the new control values instead of just an update message
+
+
+
 """
