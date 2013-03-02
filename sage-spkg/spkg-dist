@@ -62,9 +62,9 @@ print "Fetching the required packages"
 pkg_index = PackageIndex()
 tmp_dir = mkdtemp()
 # in order of dependencies
-zeromq_version='2.1.11'
+zeromq_version='2.2.0'
 required_packages = ('paramiko',
-                     'pyzmq=='+zeromq_version,
+                     'pyzmq',
                      'tornado',
                      'sockjs-tornado',
     )
