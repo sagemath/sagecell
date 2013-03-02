@@ -231,7 +231,7 @@ sagecell.Session.prototype.set_last_request = function (interact_id, msg_id) {
 sagecell.Session.prototype.appendMsg = function(msg, text) {
     // Append the message to the div of messages
     // Use $.text() so that strings are automatically escaped
-    this.outputDiv.find(".sagecell_messages").append(ce('div')).children().last().text(text+JSON.stringify(msg));
+    $(ce('div')).text(text+JSON.stringify(msg)).prependTo(this.outputDiv.find(".sagecell_messages"));
 };
 
 sagecell.Session.prototype.last_output = function(block_id) {
