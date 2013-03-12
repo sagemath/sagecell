@@ -4,6 +4,11 @@ var undefined;
 
 // Make a global sagecell namespace for our functions
 window.sagecell = window.sagecell || {};
+if (!window.console) {
+    // IE8 does not have console object before activating Developer Tools
+    window.console = {"log": function () {}};
+    console.warn = console.log;
+}
 
 if (!document.head) {
     document.head = document.getElementsByTagName("head")[0];
