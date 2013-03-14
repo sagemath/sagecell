@@ -69,7 +69,7 @@ if (sagecell.log === undefined) {
                 log(obj);
             }
         };
-    }($.proxy(console.log, console)));
+    }(typeof console === "undefined" ? function() {} : $.proxy(console.log, console)));
 }
 
 // Various utility functions for the Single Cell Server
@@ -324,7 +324,7 @@ sagecell.makeSagecell = function (args, k) {
             outputLocation.find(".sagecell_output_elements").hide();
             hide.push("files"); // TODO: Delete this line when this feature is implemented.
             if (settings.mode === "debug") {
-                console.warn("Running the Sage Cell in debug mode!");
+                sagecell.log("Running the Sage Cell in debug mode!");
             } else {
                 var hideAdvanced = {};
                 var hideable = {"in": {"editor": true,        "editorToggle": true,
