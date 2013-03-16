@@ -35,7 +35,7 @@ The Sage Cell Server is designed to be compatible with recent versions of:
 * Firefox
 * Safari
 * Opera
-* Internet Explorer (8+)
+* Internet Explorer (9+)
 
 If you notice issues with any of these browsers, please let us know.
 
