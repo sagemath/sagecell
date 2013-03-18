@@ -91,7 +91,7 @@ class KernelHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
-        timer = Timer("Kernel handler for %s"%self.get_argument("notebook"))
+        timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
         proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
         ws_url = "%s://%s/" % (proto, host)
