@@ -99,8 +99,12 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     if (sagecell.kernels[k]) {
         this.kernel = sagecell.kernels[k];
     } else {
-        var old_ws = window.WebSocket, old_log = console.log;
+        var old_ws = window.WebSocket;
+        // sometimes (IE8) window.console is not defined (until the console is opened)
+        var old_console = window.console;
+        var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
+        console = window.console || {};
         console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.opened = false;
@@ -114,6 +118,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
             this.shell_channel.onopen = function () {
                 console.log = old_log;
+                console = old_console;
                 sagecell.log('kernel channel opened: '+that.timer()+' ms.');
                 that.kernel.opened = true;
                 while (that.kernel.deferred_code.length > 0) {
@@ -234,7 +239,7 @@ sagecell.Session.prototype.set_last_request = function (interact_id, msg_id) {
 sagecell.Session.prototype.appendMsg = function(msg, text) {
     // Append the message to the div of messages
     // Use $.text() so that strings are automatically escaped
-    this.outputDiv.find(".sagecell_messages").append(ce('div')).children().last().text(text+JSON.stringify(msg));
+    $(ce('div')).text(text+JSON.stringify(msg)).prependTo(this.outputDiv.find(".sagecell_messages"));
 };
 
 sagecell.Session.prototype.last_output = function(block_id) {
