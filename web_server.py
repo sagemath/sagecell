@@ -27,6 +27,7 @@ _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 
 # Tornado Web Server
 import handlers
+import permalink
 
 class SageCellServer(tornado.web.Application):
     def __init__(self):
@@ -38,7 +39,7 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel/%s/iopub" % _kernel_id_regex, handlers.IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
             (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": "/tmp/sagecell/"}),
-            (r"/permalink", handlers.PermalinkHandler),
+            (r"/permalink", permalink.PermalinkHandler),
             (r"/service", handlers.ServiceHandler),
             ] + handlers.KernelRouter.urls
         settings = dict(

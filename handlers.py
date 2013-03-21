@@ -151,45 +151,6 @@ class SageCellHandler(tornado.web.RequestHandler):
             self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
             self.set_header("Content-Type", "application/javascript")
 
-class PermalinkHandler(tornado.web.RequestHandler):
-    """
-    Permalink generation request handler.
-
-    This accepts the code and language strings and stores
-    these in the permalink database.  A zip and query string are returned.
-
-    This accepts the string version of an IPython
-    execute_request message, and stores the code associated
-    with that request in a database linked to a unique id,
-    which is returned to the requester in a JSON-compatible
-    form.
-
-    The specified id can be used to generate permalinks
-    with the format ``<root_url>?q=<id>``.
-    """
-    @tornado.web.asynchronous
-    @gen.engine
-    def post(self):
-        args = self.request.arguments
-        retval = {"query": None, "zip": None}
-        if "code" in args:
-            code = ("".join(args["code"])).encode('utf8')
-            language = "".join(args.get("language", ["sage"]))
-        else:
-            self.write_error(400)
-            return
-        import zlib, base64
-        retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
-        retval["query"] = yield gen.Task(self.application.db.new_exec_msg, code, language)
-
-        if "frame" not in args:
-            self.set_header("Access-Control-Allow-Origin", "*");
-        else:
-            retval = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(retval),)
-            self.set_header("Content-Type", "text/html")
-        self.write(retval)
-        self.finish()
-
 class StaticHandler(tornado.web.StaticFileHandler):
     """Handler for static requests"""
     def set_extra_headers(self, path):
