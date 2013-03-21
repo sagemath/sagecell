@@ -91,7 +91,7 @@ class KernelHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
-        timer = Timer("Kernel handler for %s"%self.get_argument("notebook"))
+        timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
         proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
         ws_url = "%s://%s/" % (proto, host)
@@ -100,10 +100,10 @@ class KernelHandler(tornado.web.RequestHandler):
         logger.info("Starting session: %s"%timer)
         kernel_id = yield gen.Task(km.new_session_async)
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
-        if "frame" not in self.request.headers:
+        if "frame" not in self.request.arguments:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
-            data = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(data),)
+            data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
         self.write(data)
         self.finish()
@@ -177,10 +177,10 @@ class PermalinkHandler(tornado.web.RequestHandler):
                     retval["query"] = db.new_exec_msg(message)
             except:
                 pass
-        if "frame" not in self.request.headers:
+        if "frame" not in args:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
-            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
+            retval = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(retval),)
             self.set_header("Content-Type", "text/html")
         self.write(retval)
         self.finish()
