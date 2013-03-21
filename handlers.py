@@ -172,7 +172,6 @@ class PermalinkHandler(tornado.web.RequestHandler):
     def post(self):
         args = self.request.arguments
         retval = {"query": None, "zip": None}
-        print args
         if "code" in args:
             code = ("".join(args["code"])).encode('utf8')
             language = "".join(args.get("language", ["sage"]))

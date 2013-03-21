@@ -21,21 +21,25 @@ class PermalinkHandler(tornado.web.RequestHandler):
     @gen.engine
     def post(self):
         args = self.request.arguments
-        retval = {"query": None}
+        retval = {"query": None, "zip": None}
         if "code" in args:
             code = ("".join(args["code"])).encode('utf8')
             language = "".join(args.get("language", ["sage"]))
         else:
-            self.write_error(400)
-        query = yield gen.Task(self.application.db.new_exec_msg, code, language)
+            self.send_error(400)
+            return
 
-        if "frame" not in self.request.headers:
+        import zlib, base64
+        retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
+        retval["query"] = yield gen.Task(self.application.db.new_exec_msg, code, language)
+
+        if "frame" not in self.request.arguments:
             self.set_header("Access-Control-Allow-Origin", "*");
         else:
-            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
+            retval = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(retval),)
             self.set_header("Content-Type", "text/html")
 
-        self.write(query)
+        self.write(retval)
         self.finish()
 
     @tornado.web.asynchronous
@@ -43,13 +47,15 @@ class PermalinkHandler(tornado.web.RequestHandler):
     def get(self):
         q = "".join(self.request.arguments["q"])
         response = yield gen.Task(self.application.db.get_exec_msg, q)
-        if "frame" not in self.request.headers:
-            self.set_header("Access-Control-Allow-Origin", "*");
+        # response_json is [code, language]
+        response_json = json.dumps(response[0])
+        if len(self.get_arguments("callback")) == 0:
+            self.write(response_json)
+            self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header("Content-Type", "application/json")
         else:
-            retval = '<script>parent.postMessage(%s,"*");</script>' % (json.dumps(retval),)
-            self.set_header("Content-Type", "text/html")
-
-        self.write(json.dumps(response[0]))
+            self.write("%s(%r);" % (self.get_argument("callback"), response_json))
+            self.set_header("Content-Type", "application/javascript")
         self.finish()
 
 class PermalinkServer(tornado.web.Application):

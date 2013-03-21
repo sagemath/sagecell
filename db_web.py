@@ -40,7 +40,7 @@ class DB(db.DB):
     def return_exec_msg_id(self, callback, response):
         if response.code != 200:
             raise StandardError("Error in response")
-        callback(response.body)
+        callback(json.loads(response.body)['query'])
 
     def get_exec_msg(self, key, callback):
         """
