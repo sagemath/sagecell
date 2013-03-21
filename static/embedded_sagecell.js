@@ -595,7 +595,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         form.style.display = iframe.style.display = "none";
         document.body.appendChild(iframe);
         document.body.appendChild(form);
-        listen = function (evt) {
+        var listen = function (evt) {
             if (evt.source === iframe.contentWindow &&
                 evt.origin + "/" === sagecell.URLs.root) {
                 if (window.removeEventListener) {
