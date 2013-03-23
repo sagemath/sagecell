@@ -12,10 +12,7 @@ Security
 --------
 * Implement untrusted account restrictions:
   * explore SELinux or some other solution for untrusted users
-  * have a pool of user accounts to execute code in.  Have the forking
-    kernel manager drop privileges when forking and switch users to an
-    unused user account, then clean up any files by the user when the
-    computation is done.
+  * have a pool of user accounts to execute code in.  Have the forking kernel manager drop privileges when forking and switch users to an unused user account, then clean up any files by the user when the computation is done.
 * Manage daemons without screen (using https://pypi.python.org/pypi/python-daemon/, maybe?  Or maybe http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/ ?  See also http://www.python.org/dev/peps/pep-3143/ ).
 
 Codebase
