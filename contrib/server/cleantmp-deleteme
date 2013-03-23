@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+
+import shutil 
+import re
+ROOT='/home/sagenb/sagecell'
+dir_re = re.compile('^/tmp/sagecell/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+
+f = open(ROOT+'/delete-tmp')
+files = [i for i in f.read().split('\0') if dir_re.match(i)]
+f.close()
+
+for i in files:
+    shutil.rmtree(i,ignore_errors=True)

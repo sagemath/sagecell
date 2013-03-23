@@ -1,0 +1,4 @@
+deflog on
+# for some reason, having logdir and logfile doesn't seem to work
+#logdir /sagenb/sagecell/logs/
+logtstamp on

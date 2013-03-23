@@ -1,0 +1,4 @@
+#!/bin/bash
+ROOT=/home/sagenb/sagecell
+find /tmp/sagecell -maxdepth 1 -mmin +60 -print0 > ${ROOT}/delete-tmp
+ssh sagenbws@localhost ${ROOT}/cleantmp-deleteme
