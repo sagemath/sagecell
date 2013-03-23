@@ -11,8 +11,8 @@ Scaling
 Security
 --------
 * Implement untrusted account restrictions:
-  * explore SELinux or some other solution for untrusted users
-  * have a pool of user accounts to execute code in.  Have the forking kernel manager drop privileges when forking and switch users to an unused user account, then clean up any files by the user when the computation is done.
+    * explore SELinux or some other solution for untrusted users
+    * have a pool of user accounts to execute code in.  Have the forking kernel manager drop privileges when forking and switch users to an unused user account, then clean up any files by the user when the computation is done.
 * Manage daemons without screen (using https://pypi.python.org/pypi/python-daemon/, maybe?  Or maybe http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/ ?  See also http://www.python.org/dev/peps/pep-3143/ ).
 
 Codebase
@@ -25,14 +25,14 @@ Codebase
 Permalink database
 ------------------
 * Either implement database mirroring or use a server that does, deploy multiple permalink servers.  Possibilities for a database server include:
-  * web side in Tornado, Go, or Node.js (for many simultaneous connections, but I suppose we could go back to flask/wsgi or something of that nature too)
-  * database side in PostgreSQL (with propogation), Redis, Couchbase, Cassandra (Cassandra seems to fit the distributed, no-single-point-of-failure need)
-  * Another possibility is to do the permalink server as a simple Google App Engine project.  William has lots of credit for this sort of thing.
+    * web side in Tornado, Go, or Node.js (for many simultaneous connections, but I suppose we could go back to flask/wsgi or something of that nature too)
+    * database side in PostgreSQL (with propogation), Redis, Couchbase, Cassandra (Cassandra seems to fit the distributed, no-single-point-of-failure need)
+    * Another possibility is to do the permalink server as a simple Google App Engine project.  William has lots of credit for this sort of thing.
 * permalinks only requested when wanted (hide div, requested and shown when you click on permalink)
 * logging of all requests (separate from permalinks):
-  * python logging facility (load-test this)
-  * straight to append-only file
-  * to database?
+    * python logging facility (load-test this)
+    * straight to append-only file
+    * to database?
 
 Lower priority
 ==============
