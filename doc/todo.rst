@@ -3,7 +3,10 @@ The next phase
 
 Scaling
 -------
-* rate limiting (in HAProxy? or iptables?) for incoming computations and permalink requests, both total and by IP
+* rate limiting for incoming computations and permalink requests, both total and by IP
+
+  * HAProxy (upgrade to 1.5dev): http://blog.serverfault.com/2010/08/26/1016491873/ or http://blog.exceliance.fr/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/ or https://code.google.com/p/haproxy-docs/wiki/rate_limit_sessions
+  * iptables: http://www.debian-administration.org/articles/187 or http://penguinsecurity.net/wiki/index.php?title=The_iptables_Rate-Limiting_Module (for example)
 * load testing (ab, httperf, jmeter, our own multimechanize solution)
 * Set up nginx to serve static assets
 
