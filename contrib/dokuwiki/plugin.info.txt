@@ -1,0 +1,7 @@
+base   sagecell
+author Jason Grout
+email  jason.grout@drake.edu
+date   2013-03-30
+name   sagecell plugin
+desc   Embed a Sage Cell into your page
+url    https://github.com/sagemath/sagecell
