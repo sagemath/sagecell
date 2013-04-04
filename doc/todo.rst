@@ -13,7 +13,7 @@ Scaling
 
 Security
 --------
-* Implement untrusted account restrictions:
+* (Alex K.) Implement untrusted account restrictions:
 
   * explore SELinux or some other solution for untrusted users:
     http://docs.fedoraproject.org/en-US/Fedora/13/html/Security-Enhanced_Linux/sect-Security-Enhanced_Linux-Targeted_Policy-Confined_and_Unconfined_Users.html,
@@ -24,9 +24,11 @@ Security
 
 Codebase
 --------
-* implement cookie-based TOS agreement, activated on evaluating your first computation (necessary for hosting at UW)
-* Change output model so that output of a request can be confined, and the browser knows where the output goes (instead of just trusting the python side to send an output id)
-* pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up.
+* (Joel) implement cookie-based TOS agreement, activated on evaluating your first computation (necessary for hosting at UW)
+* Change output model so that output of a request can be confined, and
+  the browser knows where the output goes (instead of just trusting
+  the python side to send an output id).  This would help with 
+* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up.
 
 
 Permalink database
@@ -36,7 +38,7 @@ Permalink database
   * web side in Tornado, Go, or Node.js (for many simultaneous connections, but I suppose we could go back to flask/wsgi or something of that nature too)
   * database side in PostgreSQL (with propogation), Redis, Couchbase, Cassandra (Cassandra seems to fit the distributed, no-single-point-of-failure need)
   * Another possibility is to do the permalink server as a simple Google App Engine project.  William has lots of credit for this sort of thing.
-* permalinks only requested when wanted (hide div, requested and shown when you click on permalink)
+* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink)
 * logging of all requests (separate from permalinks): 
 
   * python logging facility (load-test this)
