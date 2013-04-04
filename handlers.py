@@ -6,8 +6,12 @@ import tornado.gen as gen
 import sockjs.tornado
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
+try:
+    from IPython.kernel.zmq.session import Session
+except ImportError:
+    # old IPython
+    from IPython.zmq.session import Session
 
-from IPython.zmq.session import Session
 from misc import json_default, Timer
 import logging
 logger = logging.getLogger('sagecell')
