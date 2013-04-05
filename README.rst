@@ -7,11 +7,12 @@ Installation
 
 1. Make sure you have git; if you're on Ubuntu, you’ll also need the `uuid-dev` package installed (for ØMQ).
 2. Compile Sage 5.8 (download it from http://www.sagemath.org/download-latest.html).
-3. Install ipython past commit ipython/ipython@0d4706f74b5b454c0a54026547a286caa786e6a4.  For example, you can do this::
+3. Delete the IPython installation in Sage: go to ``SAGE_ROOT/local/lib/python/site-packages/`` and delete the IPython directory and the ipython egg.
+4. Install ipython past commit ipython/ipython@0d4706f74b5b454c0a54026547a286caa786e6a4.  For example, you can do this::
 
     sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
 
-4. Install the latest sagecell spkg at http://sage.math.washington.edu/home/jason/sagecell-spkg/ (replace ``<filename>`` below with the name of the current spkg)::
+5. Install the latest sagecell spkg at http://sage.math.washington.edu/home/jason/sagecell-spkg/ (replace ``<filename>`` below with the name of the current spkg)::
 
     sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/<filename>.spkg
 
