@@ -14,10 +14,15 @@ if sage == "":
         sage = "sage"
 
 db = "sqlalchemy"
-db_config = {}
+db_config = {"uri": "sqlite:///sqlite.db"}
 
-if db == "sqlalchemy":
-    db_config["uri"] = "sqlite:///sqlite.db"
+# db = "web"
+# db_config = {"uri": "http://localhost:8889"}
+
+permalink_server = {
+    'db': 'sqlalchemy',
+    'db_config': {'uri': 'sqlite:///sqlite.db'}
+}
 
 max_kernel_timeout = 60
 

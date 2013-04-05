@@ -35,30 +35,32 @@ class DB(db.DB):
         Base.metadata.create_all(self.engine)
         self.dbsession = self.SQLSession()
 
-    def new_exec_msg(self, msg):
+    def new_exec_msg(self, code, language, callback):
         """
         See :meth:`db.DB.new_exec_msg`
         """
         session_id = None
         try:
+            #session_id = hashlib.sha1(code).hexdigest()
             session_id = str(uuid.uuid4())
-            message = ExecMessage(ident=session_id, code=str(msg["content"]["code"]))
+            message = ExecMessage(ident=session_id, code=code, language=language)
             self.dbsession.add(message)
             self.dbsession.commit()
         except:
             session_id = None
+        callback(session_id)
 
-        return session_id
-
-    def get_exec_msg(self, ident):
+    def get_exec_msg(self, key, callback):
         """
         See :meth:`db.DB.get_exec_msg`
         """
-        msg = self.dbsession.query(ExecMessage).filter_by(ident = ident).first()
+        msg = self.dbsession.query(ExecMessage).filter_by(ident = key).first()
         if msg:
             msg.requested = ExecMessage.requested+1
             self.dbsession.commit()
-        return msg.code if msg is not None else ""
+        if msg is None:
+            raise LookupError
+        callback(msg.code, msg.language)
 
 Base = declarative_base()
 
@@ -66,9 +68,10 @@ class ExecMessage(Base):
     """
     Table of input messages in JSON form.
     """
-    __tablename__ = "exec_messages"
+    __tablename__ = "permalinks"
     ident = Column(String, primary_key = True, index = True)
     code = Column(String)
+    language = Column(String)
     created = Column(DateTime, default=datetime.utcnow)
-    last_accessed = Column(DateTime, default=datetime.now, onupdate=datetime.utcnow)
+    last_accessed = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     requested = Column(Integer, default=0)
