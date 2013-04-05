@@ -15,6 +15,7 @@ class PermalinkServer(tornado.web.Application):
     def __init__(self):
         handlers_list = [
             (r"/", permalink.PermalinkHandler),
+            (r"/permalink", permalink.PermalinkHandler),
             ]
         self.config = misc.Config()
         db = __import__('db_'+self.config.get_config('permalink_server')['db'])
