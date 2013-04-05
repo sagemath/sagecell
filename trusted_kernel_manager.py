@@ -2,7 +2,11 @@ import uuid, random
 import zmq
 import socket
 from zmq.eventloop.zmqstream import ZMQStream
-from IPython.zmq.session import Session
+try:
+    from IPython.kernel.zmq.session import Session
+except ImportError:
+    # old IPython
+    from IPython.zmq.session import Session
 from zmq import ssh
 import paramiko
 import os

@@ -1,0 +1,14 @@
+#!/bin/sh
+ROOT=/home/sagenb/sagecell
+${ROOT}/sage/sage ${ROOT}/sagecell/contrib/sagecell-client/sagecell-service.py $1
+if [ $? -ne 0 ]
+ then
+   echo `date` 
+   echo Error in server. Restarting...
+   cd ${ROOT}
+   ${ROOT}/restart 
+   echo Restarted `date`
+   echo "************"
+   exit 1
+fi
+

@@ -2,7 +2,11 @@ import uuid
 import os
 import signal
 import resource
-from IPython.zmq.ipkernel import IPKernelApp
+try:
+    from IPython.kernel.zmq.kernelapp import IPKernelApp
+except ImportError:
+    # old IPython
+    from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
 import logging
