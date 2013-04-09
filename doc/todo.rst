@@ -19,16 +19,16 @@ Security
     http://docs.fedoraproject.org/en-US/Fedora/13/html/Security-Enhanced_Linux/sect-Security-Enhanced_Linux-Targeted_Policy-Confined_and_Unconfined_Users.html,
     http://selinux-mac.blogspot.com/2009/06/selinux-lockdown-part-four-customized.html,
     http://www.gentoo.org/proj/en/hardened/selinux/selinux-handbook.xml, http://debian-handbook.info/browse/wheezy/sect.selinux.html
-  * have a pool of user accounts to execute code in.  Have the forking kernel manager drop privileges when forking and switch users to an unused user account, then clean up any files by the user when the computation is done.
-* Manage daemons without screen (using https://pypi.python.org/pypi/python-daemon/, maybe?  Or maybe http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/ ?  See also http://www.python.org/dev/peps/pep-3143/ ).
+  * have a pool of user accounts to execute code in.  Have the forking kernel manager drop privileges when forking and switch users to an unused user account, then clean up any files by the user when the computation is done. (see https://github.com/sagemath/sagecell/issues/233)
+* Manage daemons without screen (using https://pypi.python.org/pypi/python-daemon/, maybe?  Or maybe http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/ ?  See also http://www.python.org/dev/peps/pep-3143/ ). (see https://github.com/sagemath/sagecell/issues/253 and https://github.com/sagemath/sagecell/issues/120)
 
 Codebase
 --------
 * (Joel) implement cookie-based TOS agreement, activated on evaluating your first computation (necessary for hosting at UW)
 * Change output model so that output of a request can be confined, and
   the browser knows where the output goes (instead of just trusting
-  the python side to send an output id).  This would help with displaying errors, for example.
-* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up.
+  the python side to send an output id).  This would help with displaying errors, for example. (see https://github.com/sagemath/sagecell/issues/387)
+* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up. (See https://github.com/sagemath/sagecell/issues/389)
 * Automatically expire and restart idle workers.  See https://github.com/sagemath/sagecell/issues/391
 
 Permalink database
@@ -38,7 +38,7 @@ Permalink database
   * web side in Tornado, Go, or Node.js (for many simultaneous connections, but I suppose we could go back to flask/wsgi or something of that nature too)
   * database side in PostgreSQL (with propogation), Redis, Couchbase, Cassandra (Cassandra seems to fit the distributed, no-single-point-of-failure need)
   * Another possibility is to do the permalink server as a simple Google App Engine project.  William has lots of credit for this sort of thing.
-* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink)
+* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink) (see https://github.com/sagemath/sagecell/issues/350)
 * logging of all requests (separate from permalinks): 
 
   * python logging facility (load-test this)
