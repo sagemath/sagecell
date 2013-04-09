@@ -491,9 +491,11 @@ sagecell.initCell = (function (sagecellInfo, k) {
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
-        var session = new sagecell.Session(outputLocation, langSelect[0].value, k, sagecellInfo.linked || false);
-        session.execute(textArea.val());
-        session.createPermalink(textArea.val());
+        var code = textArea.val();
+        var language = langSelect[0].value;
+        var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
+        session.execute(code);
+        session.createPermalink(code, language);
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
@@ -684,7 +686,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              matchBrackets: true,
              readOnly: readOnly,
              extraKeys: {
-                 "Tab": "indentMore", 
+                 "Tab": "indentMore",
                  "Shift-Tab": "indentLess",
                  "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
              },

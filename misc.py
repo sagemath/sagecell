@@ -106,26 +106,6 @@ class Config(object):
         """
         return dir(self.config)
 
-def get_db_file(config):
-    """
-    A convenience function to get the correct location of a
-    database from a config object.
-
-    :arg config: a Config object
-    :returns: the localation of the database file, for the
-        purposes of instantiating a database.
-    :rtype: str
-    """
-    db_file = None
-
-    db = config.get_config("db")
-    db_config = config.get_config("db_config")
-    if db == "sqlalchemy":
-        db_file = db_config.get("uri")
-
-    return db_file
-        
-
 
 def decorator_defaults(func):
     """

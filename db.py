@@ -18,24 +18,31 @@ class DB(object):
     def __init__(self):
         raise NotImplementedError
 
-    def new_exec_msg(self, msg):
+    def new_exec_msg(self, code, language, callback):
         """
-        Add an exec_request message to the database to be
-        retrieved by :meth:`get_exec_msg`.
+        Add the code (with mode ``language``) to the database.
 
-        :arg dict msg: a JSON-compatible message containing
-            code to be executed by the kernel.
+        This function "returns" by calling the ``callback`` function with the identifier key for the
+        code.  The callback function should accept a single argument.
+
+        :arg str code: the code
+        :arg str language: the language mode
+        :arg function callback: a function accepting one argument: the
+            unique key for the entry in the database.
         """
         raise NotImplementedError
 
-    def get_exec_msg(self, ident):
+    def get_exec_msg(self, key, callback):
         """
-        Retrieve an exec_request message from the database
+        Retrieve the code and language from the database
         matching a unique identifier.
 
-        :arg str ident: a unique identifying value for the
+        The callback function is called with two arguments, the code
+        string and the language string.
+
+        :arg str key: a unique identifying value for the
             requested message.
-        :returns: a string version of the requested message
-        :rtype: str
+        :arg function callback: a function accepting two arguments,
+            the code string and the language string.
         """
         raise NotImplementedError

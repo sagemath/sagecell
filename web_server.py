@@ -8,7 +8,6 @@ from hashlib import sha1
 import misc
 
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
-from db_sqlalchemy import DB
 
 import logging
 logging.basicConfig(format='%(asctime)s %(name)s:%(levelname)s %(message)s',level=logging.INFO)
@@ -28,6 +27,7 @@ _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 
 # Tornado Web Server
 import handlers
+import permalink
 
 class SageCellServer(tornado.web.Application):
     def __init__(self):
@@ -39,7 +39,7 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel/%s/iopub" % _kernel_id_regex, handlers.IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
             (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": "/tmp/sagecell/"}),
-            (r"/permalink", handlers.PermalinkHandler),
+            (r"/permalink", permalink.PermalinkHandler),
             (r"/service", handlers.ServiceHandler),
             ] + handlers.KernelRouter.urls
         settings = dict(
@@ -55,7 +55,8 @@ class SageCellServer(tornado.web.Application):
 
         self.km = TMKM(computers=initial_comps, default_computer_config=default_comp,
                        kernel_timeout=kernel_timeout)
-        self.db = DB(misc.get_db_file(self.config))
+        db = __import__('db_'+self.config.get_config('db'))
+        self.db = db.DB(self.config.get_config('db_config')['uri'])
         self.ioloop = ioloop.IOLoop.instance()
 
         # to check for blocking when debugging, uncomment the following
@@ -75,6 +76,7 @@ if __name__ == "__main__":
     if args.debug:
         logger.setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
+
     application = SageCellServer()
     application.listen(args.port)
     try:

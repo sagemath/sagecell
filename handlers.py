@@ -31,16 +31,19 @@ class RootHandler(tornado.web.RequestHandler):
     ```<root_url>?q=<uuid>`` loads code from a database based
     upon a unique identifying permalink (uuid4-based)
     """
+    @tornado.web.asynchronous
     def get(self):
-        valid_query_chars = set(string.letters+string.digits+"-")
         db = self.application.db
-        options = {}
-
+        code = None
+        language = None
         args = self.request.arguments
+
+        if "lang" in args:
+            language = args["lang"][0]
 
         if "c" in args:
             # If the code is explicitly specified
-            options["code"] = "".join(args["c"])
+            code = "".join(args["c"])
 
         elif "z" in args:
             # If the code is base64-compressed
@@ -50,28 +53,25 @@ class RootHandler(tornado.web.RequestHandler):
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
                 z += "=" * ((4 - (len(z) % 4)) % 4)
-                options["code"] = zlib.decompress(base64.urlsafe_b64decode(z))
+                code = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
-                options["code"] = "# Error decompressing code %s"%e
+                code = "# Error decompressing code %s"%e
 
-        elif "q" in args:
+        if "q" in args:
             # if the code is referenced by a permalink identifier
             q = "".join(args["q"])
-            if set(q).issubset(valid_query_chars):
-                options["code"] = db.get_exec_msg(q)
+            db.get_exec_msg(q, self.return_root)
+        else:
+            self.return_root(code, language)
 
-        if "code" in options:
-            if isinstance(options["code"], unicode):
-                options["code"] = options["code"].encode("utf8")
-            options["code"] = urllib.quote(options["code"])
-            options["autoeval"] = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
-        else:
-            options["code"] = None
-        if "lang" in args:
-            options["lang"] = args["lang"][0]
-        else:
-            options["lang"] = None
-        self.render("root.html", **options)
+    def return_root(self, code, language):
+        autoeval = None
+        if code is not None:
+            if isinstance(code, unicode):
+                code = code.encode("utf8")
+            code = urllib.quote(code)
+            autoeval = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
+        self.render("root.html", code=code, lang=language, autoeval=autoeval)
 
 class KernelHandler(tornado.web.RequestHandler):
     """
@@ -154,40 +154,6 @@ class SageCellHandler(tornado.web.RequestHandler):
         else:
             self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
             self.set_header("Content-Type", "application/javascript")
-
-class PermalinkHandler(tornado.web.RequestHandler):
-    """
-    Permalink generation request handler.
-
-    This accepts the string version of an IPython
-    execute_request message, and stores the code associated
-    with that request in a database linked to a unique id,
-    which is returned to the requester in a JSON-compatible
-    form.
-
-    The specified id can be used to generate permalinks
-    with the format ``<root_url>?q=<id>``.
-    """
-    def post(self):
-        args = self.request.arguments
-        retval = {"zip": None, "query": None}
-        if "message" in args:
-            try:
-                message = jsonapi.loads("".join(args["message"]))
-                if message["header"]["msg_type"] == "execute_request":
-                    import zlib, base64
-                    retval["zip"] = base64.urlsafe_b64encode(zlib.compress(message["content"]["code"].encode('utf8')))
-                    db = self.application.db
-                    retval["query"] = db.new_exec_msg(message)
-            except:
-                pass
-        if "frame" not in args:
-            self.set_header("Access-Control-Allow-Origin", "*");
-        else:
-            retval = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(retval),)
-            self.set_header("Content-Type", "text/html")
-        self.write(retval)
-        self.finish()
 
 class StaticHandler(tornado.web.StaticFileHandler):
     """Handler for static requests"""
