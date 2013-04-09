@@ -27,7 +27,7 @@ Codebase
 * (Joel) implement cookie-based TOS agreement, activated on evaluating your first computation (necessary for hosting at UW)
 * Change output model so that output of a request can be confined, and
   the browser knows where the output goes (instead of just trusting
-  the python side to send an output id).  This would help with 
+  the python side to send an output id).  This would help with displaying errors, for example.
 * (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up.
 
 
