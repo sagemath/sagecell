@@ -29,7 +29,7 @@ Codebase
   the browser knows where the output goes (instead of just trusting
   the python side to send an output id).  This would help with displaying errors, for example.
 * (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up.
-
+* Automatically expire and restart idle workers.  See https://github.com/sagemath/sagecell/issues/391
 
 Permalink database
 ------------------
