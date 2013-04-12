@@ -320,6 +320,13 @@ class ShellHandler(ZMQStreamHandler):
         super(ShellHandler, self).on_close()
 
     def _on_zmq_reply(self, msg_list):
+        """
+        After receiving a kernel's final execute_reply, immediately kill the kernel
+        and send that status to the client (rather than waiting for the message to
+        be sent after the heartbeat fails. This prevents the user from attempting to
+        execute code in a kernel between the time that the kernel is killed
+        and the time that the browser receives the "kernel killed" message.
+        """
         super(ShellHandler, self)._on_zmq_reply(msg_list)
         if self.kill_kernel:
             self.shell_stream.flush()
@@ -375,6 +382,8 @@ class IOPubHandler(ZMQStreamHandler):
                 self.hb_stream.flush()
                 try:
                     if self.km._kernels[self.kernel_id]["executing"] == 0:
+                        # only kill the kernel after all pending
+                        # execute requests have finished
                         timeout = self.km._kernels[self.kernel_id]["timeout"]
 
                         if time.time() > timeout:
