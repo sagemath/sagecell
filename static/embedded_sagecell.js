@@ -497,8 +497,6 @@ sagecell.initCell = (function (sagecellInfo, k) {
         session.execute(code);
         session.createPermalink(code, language);
         sagecell.last_session[evt.data.id] = session;
-        // TODO: kill the kernel when a computation with no interacts finishes,
-        //       and also when a new computation begins from the same cell
         outputLocation.find(".sagecell_output_elements").show();
         // return false to make *sure* any containing form doesn't submit
         return false;

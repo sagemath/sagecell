@@ -164,6 +164,8 @@ sagecell.Session = function (outputDiv, language, k, linked) {
                 that.interacts[i].disable();
             }
             $(that.output_blocks[null]).removeClass("sagecell_active");
+            data.kernel.shell_channel = {};
+            data.kernel.iopub_channel = {};
             sagecell.kernels[k] = null;
         }
     });
