@@ -96,7 +96,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     window.WebSocket = old_ws;
     */
     var that = this;
-    if (sagecell.kernels[k]) {
+    if (linked && sagecell.kernels[k]) {
         this.kernel = sagecell.kernels[k];
     } else {
         var old_ws = window.WebSocket;

@@ -485,8 +485,11 @@ sagecell.initCell = (function (sagecellInfo, k) {
         return false;
     });
     sagecellInfo.submit = function (evt) {
-        if (replaceOutput && sagecell.last_session[evt.data.id]) {
-            $(sagecell.last_session[evt.data.id].session_container).remove();
+        if (sagecell.last_session[evt.data.id]) {
+            sagecell.last_session[evt.data.id].kernel.kill()
+            if (replaceOutput) {
+                $(sagecell.last_session[evt.data.id].session_container).remove();
+            }
         }
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();

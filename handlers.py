@@ -112,6 +112,9 @@ class KernelHandler(tornado.web.RequestHandler):
         self.write(data)
         self.finish()
 
+    def delete(self, kernel_id):
+        self.application.km.end_session(kernel_id)
+
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
         self.session = session
