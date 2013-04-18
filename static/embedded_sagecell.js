@@ -486,7 +486,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
     });
     sagecellInfo.submit = function (evt) {
         if (sagecell.last_session[evt.data.id]) {
-            sagecell.last_session[evt.data.id].kernel.kill()
+            sagecell.last_session[evt.data.id].kernel.kill();
             if (replaceOutput) {
                 $(sagecell.last_session[evt.data.id].session_container).remove();
             }

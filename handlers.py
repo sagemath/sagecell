@@ -126,14 +126,17 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
     def on_message(self, message):
         prefix, message = message.split(",", 1)
         kernel, channel = prefix.split("/")
-        if kernel not in self.channels:
-            application = self.session.handler.application
-            self.channels[kernel] = \
-                {"shell": ShellSockJSHandler(kernel, self.send, application),
-                 "iopub": IOPubSockJSHandler(kernel, self.send, application)}
-            self.channels[kernel]["shell"].open(kernel)
-            self.channels[kernel]["iopub"].open(kernel)
-        self.channels[kernel][channel].on_message(message)
+        try:
+            if kernel not in self.channels:
+                application = self.session.handler.application
+                self.channels[kernel] = \
+                    {"shell": ShellSockJSHandler(kernel, self.send, application),
+                     "iopub": IOPubSockJSHandler(kernel, self.send, application)}
+                self.channels[kernel]["shell"].open(kernel)
+                self.channels[kernel]["iopub"].open(kernel)
+            self.channels[kernel][channel].on_message(message)
+        except KeyError:
+            pass # Ignore messages to nonexistant or killed kernels
 
     def on_close(self):
         for channel in self.channels.itervalues():
