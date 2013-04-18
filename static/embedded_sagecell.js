@@ -376,6 +376,10 @@ sagecell.makeSagecell = function (args, k) {
     return settings;
 };
 
+
+var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
+var accepted_tos = false;
+
 sagecell.initCell = (function (sagecellInfo, k) {
     var inputLocation = $(sagecellInfo.inputLocation);
     var outputLocation = $(sagecellInfo.outputLocation);
@@ -484,22 +488,62 @@ sagecell.initCell = (function (sagecellInfo, k) {
         inputLocation.find(".sagecell_fileList").empty();
         return false;
     });
+    var startEvaluation = function (evt) {
+         if (replaceOutput && sagecell.last_session[evt.data.id]) {
+             $(sagecell.last_session[evt.data.id].session_container).remove();
+         }
+         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
+             editorData.save();
+         }
+         var code = textArea.val();
+         var language = langSelect[0].value;
+         var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
+         session.execute(code);
+         session.createPermalink(code, language);
+         sagecell.last_session[evt.data.id] = session;
+         // TODO: kill the kernel when a computation with no interacts finishes,
+         //       and also when a new computation begins from the same cell
+         outputLocation.find(".sagecell_output_elements").show();
+    };
     sagecellInfo.submit = function (evt) {
-        if (replaceOutput && sagecell.last_session[evt.data.id]) {
-            $(sagecell.last_session[evt.data.id].session_container).remove();
+        // JOEL---here's the button handler
+        if (accepted_tos){
+            startEvaluation(evt);
+            return false;
         }
-        if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
-            editorData.save();
-        }
-        var code = textArea.val();
-        var language = langSelect[0].value;
-        var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
-        session.execute(code);
-        session.createPermalink(code, language);
-        sagecell.last_session[evt.data.id] = session;
-        // TODO: kill the kernel when a computation with no interacts finishes,
-        //       and also when a new computation begins from the same cell
-        outputLocation.find(".sagecell_output_elements").show();
+        sagecell.sendRequest("GET", sagecell.URLs.root + "tos.html", {}, function (data) {
+            if (data.length === 0) {
+                accepted_tos = true;
+                startEvaluation();
+            } else {
+                var terms = $("<div/>");
+                terms.html(data);
+                terms.dialog({
+                    "modal": true,
+                    "width": 600,
+                    "buttons": {
+                        "Accept": function () {
+                            $(this).dialog("close");
+                            accepted_tos = true;
+                            if (isXDomain) {
+                                var iframe = sagecell.createElement("iframe",
+                                    {"src": sagecell.URLs.root + "static/set_cookie.html"});
+                                window.addEventListener("message", function listen(event) {
+                                    document.body.removeChild(iframe);
+                                    window.removeEventListener(listen);
+                                });
+                                iframe.style.display = "hidden";
+                                document.body.appendChild(iframe);
+                            }
+                            startEvaluation(evt);
+                        },
+                        "Cancel": function () {
+                            $(this).dialog("close");
+                        }
+                    }
+                });
+            }
+        });
         // return false to make *sure* any containing form doesn't submit
         return false;
     };
@@ -527,10 +571,12 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         }
     }
     var xhr = new XMLHttpRequest();
-    var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
     var fd = undefined;
     if (method === "GET") {
         data.rand = Math.random().toString();
+    }
+    if (method === "POST" && accepted_tos) {
+        data.accepted_tos = "true";
     }
     // Format parameters to send as a string or a FormData object
     if (window.FormData && method !== "GET") {
@@ -561,6 +607,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     if (window.FormData || !(isXDomain || hasFiles)) {
         // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
+        xhr.withCredentials = true;
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 /* DONE */) {
                 callback(xhr.responseText);
