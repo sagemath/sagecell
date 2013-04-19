@@ -514,13 +514,15 @@ sagecell.initCell = (function (sagecellInfo, k) {
         sagecell.sendRequest("GET", sagecell.URLs.root + "tos.html", {}, function (data) {
             if (data.length === 0) {
                 accepted_tos = true;
-                startEvaluation();
+                startEvaluation(evt);
             } else {
                 var terms = $("<div/>");
                 terms.html(data);
                 terms.dialog({
                     "modal": true,
                     "width": 600,
+                    "appendTo": "#sagecell",
+                    "title": "Terms of Service",
                     "buttons": {
                         "Accept": function () {
                             $(this).dialog("close");
