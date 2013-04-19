@@ -104,16 +104,26 @@ class KernelHandler(tornado.web.RequestHandler):
         logger.info("Starting session: %s"%timer)
         kernel_id = yield gen.Task(km.new_session_async)
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
-        if "frame" not in self.request.arguments:
-            self.set_header("Access-Control-Allow-Origin", "*");
-        else:
-            data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
-            self.set_header("Content-Type", "text/html")
+        self.permissions(data)
         self.write(data)
         self.finish()
 
     def delete(self, kernel_id):
         self.application.km.end_session(kernel_id)
+        self.permissions()
+
+    def options(self, kernel_id):
+        logger.info("options kernel: %s",kernel_id)
+        self.permissions()
+
+    def permissions(self, data=None):
+        if "frame" not in self.request.arguments:
+            self.set_header("Access-Control-Allow-Origin", "*");
+            self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
+        else:
+            data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
+            self.set_header("Content-Type", "text/html")
+        
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
@@ -136,6 +146,7 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
                 self.channels[kernel]["iopub"].open(kernel)
             self.channels[kernel][channel].on_message(message)
         except KeyError:
+            logger.info("Message sent to deleted kernel: %s"%kernel)
             pass # Ignore messages to nonexistant or killed kernels
 
     def on_close(self):

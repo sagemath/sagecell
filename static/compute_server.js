@@ -112,7 +112,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         window.WebSocket = old_ws;
         this.kernel._kernel_started = function (json) {
             sagecell.log('kernel start callback: '+that.timer()+' ms.');
-            this.base_url = this.base_url.substr(sagecell.URLs.root.length);
+            //this.base_url = this.base_url.substr(sagecell.URLs.root.length);
             this._kernel_started = IPython.Kernel.prototype._kernel_started;
             this._kernel_started(json);
             sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
