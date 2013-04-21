@@ -176,17 +176,15 @@ function GraphWidget(cm) {
 
     this.graph.changed = function() {
         var u,v,i;
-        var graph = {'widget': 'graph'};
-        graph.vertices = _this.graph.nodes.length;
-        graph.edges = [];
+        var graph = {'widget': 'graph', data: {}};
+        graph.data.vertices = _this.graph.nodes.length;
+        graph.data.edges = [];
         for (i = 0; i < _this.graph.links.length; i++) {
             u = _this.graph.nodes.indexOf(_this.graph.links[i].source);
             v = _this.graph.nodes.indexOf(_this.graph.links[i].target);
-            graph.edges.push([u,v]);
+            graph.data.edges.push([u,v]);
         }
         _this.setText(JSON.stringify(graph));
-        console.log(graph);
-
     }
     this.graph.changed();
 }
