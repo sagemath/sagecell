@@ -8,7 +8,7 @@ compute_server = static/compute_server.js
 jmol           = static/jmol
 jmol-js        = $(jmol)/appletweb/Jmol.js
 jquery         = static/jquery.min.js
-jquery-ui      = static/jquery-ui/js/jquery-ui-1.8.21.custom.min.js
+jquery-ui      = static/jquery-ui/js/jquery-ui-1.10.2.custom.min.js
 sagecell       = static/sagecell.js
 sagecell-css   = static/sagecell.css
 sockjs-client  = static/sockjs.js
@@ -68,6 +68,7 @@ $(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
             $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
+	sed -i 's/+ ++a/+(++a)/' $(wrap-js) # JSMin minimizes this expression incorrectly
 
 $(all-min-css): $(codemirror-css) $(sagecell-css)
 	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)

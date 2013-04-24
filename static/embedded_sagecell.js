@@ -154,7 +154,7 @@ sagecell.init = function (callback) {
     sagecell.last_session = {};
 
     // many stylesheets that have been smashed together into all.min.css
-    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.8.21.custom.css",
+    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.10.2.custom.min.css",
                        sagecell.URLs.root + "static/colorpicker/css/colorpicker.css",
                        sagecell.URLs.root + "static/all.min.css"]
     for (var i = 0; i < stylesheets.length; i++) {
@@ -743,7 +743,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     inputLocation.find(".sagecell_evalButton").click();
                 }
             }});
-        $(accordion).on("accordionchange", function () {
+        $(accordion).on("accordionactivate", function () {
             editorData.refresh();
         });
     }
