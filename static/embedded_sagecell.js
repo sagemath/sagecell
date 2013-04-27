@@ -220,7 +220,14 @@ sagecell.makeSagecell = function (args, k) {
         // TODO: look into something like require.js?
         if (!sagecell.dependencies_loaded) {
             if (sagecell.dependencies_loaded === undefined) {
-                sagecell.init();
+                sagecell.init(function () {
+                    IPython.Kernel.prototype.kill = function () {
+                        if (this.running) {
+                            this.running = false;
+                            sagecell.sendRequest("DELETE", this.kernel_url);
+                        }
+                    }
+                });
             }
             setTimeout(waitForLoad, 100);
             return false;
@@ -270,7 +277,6 @@ sagecell.makeSagecell = function (args, k) {
                         "mode": "normal",
                         "replaceOutput": true,
                         "languages": ["sage"]};
-        
             // jQuery.extend() has issues with nested objects, so we manually merge
             // hide parameters.
             if (args.hide === undefined) {
@@ -563,7 +569,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
         xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 /* DONE */) {
+            if (xhr.readyState === 4 /* DONE */ && callback) {
                 callback(xhr.responseText);
             }
         };
@@ -577,9 +583,14 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         $.getJSON(url, data, callback);
     } else {
         // Use a form submission to send POST requests
+        // Methods such as DELETE and OPTIONS will be sent as POST instead
         var iframe = document.createElement("iframe");
         iframe.name = IPython.utils.uuid();
-        var form = ce("form", {method: method, action: url, target: iframe.name});
+        var form = ce("form", {method: "POST", action: url, target: iframe.name});
+        if (data === undefined) {
+            data = {};
+        }
+        data.method = method;
         for (var k in data) {
             if (data.hasOwnProperty(k)) {
                 form.appendChild(sagecell.util.createElement("input",

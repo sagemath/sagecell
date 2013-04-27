@@ -94,27 +94,33 @@ class KernelHandler(tornado.web.RequestHandler):
     """
     @tornado.web.asynchronous
     @gen.engine
-    def post(self):
-        timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
-        proto = self.request.protocol.replace("http", "ws", 1)
-        host = self.request.host
-        ws_url = "%s://%s/" % (proto, host)
-        km = self.application.km
-        
-        logger.info("Starting session: %s"%timer)
-        kernel_id = yield gen.Task(km.new_session_async)
-        data = {"ws_url": ws_url, "kernel_id": kernel_id}
-        self.permissions(data)
-        self.write(data)
-        self.finish()
+    def post(self, *args, **kwargs):
+        method = self.get_argument("method", "POST")
+        if method == "DELETE":
+            self.delete(*args, **kwargs)
+        elif method == "OPTIONS":
+            self.options(*args, **kwargs)
+        else:
+            timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
+            proto = self.request.protocol.replace("http", "ws", 1)
+            host = self.request.host
+            ws_url = "%s://%s/" % (proto, host)
+            km = self.application.km
+            logger.info("Starting session: %s"%timer)
+            kernel_id = yield gen.Task(km.new_session_async)
+            data = {"ws_url": ws_url, "kernel_id": kernel_id}
+            self.write(self.permissions(data))
+            self.finish()
 
     def delete(self, kernel_id):
         self.application.km.end_session(kernel_id)
         self.permissions()
+        self.finish()
 
     def options(self, kernel_id):
         logger.info("options kernel: %s",kernel_id)
         self.permissions()
+        self.finish()
 
     def permissions(self, data=None):
         if "frame" not in self.request.arguments:
@@ -123,7 +129,7 @@ class KernelHandler(tornado.web.RequestHandler):
         else:
             data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
-        
+        return data
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
