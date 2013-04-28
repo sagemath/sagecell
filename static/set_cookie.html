@@ -1,6 +1,6 @@
 <script>
 var expiration = new Date();
-expiration.setMonth(expiration.getMonth() + 1);
+expiration.setYear(expiration.getYear() + 1);
 document.cookie = "accepted_tos=true;path=/;expires=" + expiration.toGMTString();
 window.parent.sendMessage("", "*");
 </script>

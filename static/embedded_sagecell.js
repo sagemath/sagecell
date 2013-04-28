@@ -55,6 +55,8 @@ sagecell.URLs = {};
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
 sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
+sagecell.URLs.cell = sagecell.URLs.root + "sagecell.html";
+sagecell.URLs.terms = sagecell.URLs.root + "tos.html";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
@@ -184,7 +186,7 @@ processEnvironments: false}\n\
     // Preload images
     new Image().src = sagecell.URLs.sage_logo;
     new Image().src = sagecell.URLs.spinner;
-    sagecell.sendRequest("GET", sagecell.URLs.root + "sagecell.html", {},
+    sagecell.sendRequest("GET", sagecell.URLs.cell, {},
         function (data) {
             $(function () {
                 sagecell.body = data;
@@ -506,12 +508,14 @@ sagecell.initCell = (function (sagecellInfo, k) {
          outputLocation.find(".sagecell_output_elements").show();
     };
     sagecellInfo.submit = function (evt) {
-        // JOEL---here's the button handler
-        if (accepted_tos){
+        if (!isXDomain && document.cookie.split(";").indexOf("accepted_tos=true") !== -1) {
+            accepted_tos = true;
+        }
+        if (accepted_tos) {
             startEvaluation(evt);
             return false;
         }
-        sagecell.sendRequest("GET", sagecell.URLs.root + "tos.html", {}, function (data) {
+        sagecell.sendRequest("GET", sagecell.URLs.terms, {}, function (data) {
             if (data.length === 0) {
                 accepted_tos = true;
                 startEvaluation(evt);

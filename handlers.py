@@ -99,7 +99,7 @@ class KernelHandler(tornado.web.RequestHandler):
             self.get_argument("accepted_tos", "false") != "true":
             self.set_status(403)
             self.finish()
-            return;
+            return
         timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
         proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
@@ -114,6 +114,7 @@ class KernelHandler(tornado.web.RequestHandler):
         else:
             data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
+        self.set_cookie("accepted_tos", "true", expires_days=365)
         self.write(data)
         self.finish()
 
