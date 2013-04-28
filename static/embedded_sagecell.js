@@ -57,6 +57,7 @@ sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.cell = sagecell.URLs.root + "sagecell.html";
 sagecell.URLs.terms = sagecell.URLs.root + "tos.html";
+sagecell.URLs.cookie = sagecell.URLs.root + "static/set_cookie.html";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
@@ -520,25 +521,26 @@ sagecell.initCell = (function (sagecellInfo, k) {
                 accepted_tos = true;
                 startEvaluation(evt);
             } else {
-                var terms = $("<div/>");
+                var terms = $(document.createElement("div"));
                 terms.html(data);
                 terms.dialog({
                     "modal": true,
+                    "height": 400,
                     "width": 600,
-                    "appendTo": "#sagecell",
+                    "appendTo": inputLocation,
                     "title": "Terms of Service",
                     "buttons": {
                         "Accept": function () {
                             $(this).dialog("close");
                             accepted_tos = true;
                             if (isXDomain) {
-                                var iframe = sagecell.createElement("iframe",
-                                    {"src": sagecell.URLs.root + "static/set_cookie.html"});
+                                var iframe = sagecell.util.createElement("iframe",
+                                    {"src": sagecell.URLs.cookie + "?rand=" + Math.random()});
                                 window.addEventListener("message", function listen(event) {
                                     document.body.removeChild(iframe);
-                                    window.removeEventListener(listen);
+                                    window.removeEventListener("message", listen);
                                 });
-                                iframe.style.display = "hidden";
+                                iframe.style.display = "none";
                                 document.body.appendChild(iframe);
                             }
                             startEvaluation(evt);
@@ -626,7 +628,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     } else if (method === "GET") {
         // Use JSONP to send cross-domain GET requests
         url += (url.indexOf("?") === -1 ? "?" : "&") + "callback=?";
-        $.getJSON(url, data, callback);
+        $.getJSON(url, callback);
     } else {
         // Use a form submission to send POST requests
         var iframe = document.createElement("iframe");

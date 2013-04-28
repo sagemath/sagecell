@@ -36,7 +36,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
         retval["query"] = yield gen.Task(self.application.db.new_exec_msg, code, language)
 
         if "frame" not in args:
-            self.set_header("Access-Control-Allow-Origin", "*");
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
         else:
             retval = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(retval),)
             self.set_header("Content-Type", "text/html")
@@ -53,7 +54,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
         response_json = json.dumps(response[0])
         if len(self.get_arguments("callback")) == 0:
             self.write(response_json)
-            self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "application/json")
         else:
             self.write("%s(%r);" % (self.get_argument("callback"), response_json))
