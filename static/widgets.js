@@ -59,15 +59,13 @@ function Widget(cm) {
     var to = cm.getCursor(false);
     this.mark = cm.markText(from, to, {replacedWith: this.domNode});
 
-    if (this.enter) {
-        CodeMirror.on(this.mark, "beforeCursorEnter", function(e) {
-            // register the enter function 
-            // the actual movement happens if the cursor movement was a plain navigation
-            // but not if it was a backspace or selection extension, etc.
-            var direction = posEq(_this.cm.getCursor(), _this.mark.find().from) ? 'left' : 'right';
-            cm.widgetEnter = $.proxy(_this, 'enterIfDefined', direction);
-        });
-    }
+    CodeMirror.on(this.mark, "beforeCursorEnter", function(e) {
+        // register the enter function 
+        // the actual movement happens if the cursor movement was a plain navigation
+        // but not if it was a backspace or selection extension, etc.
+        var direction = posEq(_this.cm.getCursor(), _this.mark.find().from) ? 'left' : 'right';
+        cm.widgetEnter = $.proxy(_this, 'enterIfDefined', direction);
+    });
 
     cm.setCursor(to);
     cm.refresh()
@@ -75,7 +73,7 @@ function Widget(cm) {
 
 Widget.prototype.enterIfDefined = function(direction) {
     // check to make sure the mark still exists
-    if (this.mark.find()) {
+    if (this.mark.find() && this.enter) {
         this.enter(direction);
     } else {
         // if we don't do this and do:
