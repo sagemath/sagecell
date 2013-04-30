@@ -90,18 +90,18 @@ Widget.prototype.enterIfDefined = function(direction) {
 }
 
 Widget.prototype.range = function() {
-    var find = this.mark.find()
-    find.from.ch+=1
-    find.to.ch-=1
+    var find = this.mark.find();
+    find.from.ch+=1;
+    find.to.ch-=1;
     return find;
 }
 Widget.prototype.setText = function(text) {
-    var r = this.range()
-    this.cm.replaceRange(text, r.from, r.to)
+    var r = this.range();
+    this.cm.replaceRange(text, r.from, r.to);
 }
-Widget.prototype.getText = function() {
-    var r = this.range()
-    return this.cm.getRange(r.from, r.to)
+    Widget.prototype.getText = function() {
+    var r = this.range();
+    return this.cm.getRange(r.from, r.to);
 }
 
 function IntegerWidget(cm) {
