@@ -98,6 +98,10 @@ Widget.prototype.range = function() {
 Widget.prototype.setText = function(text) {
     var r = this.range();
     this.cm.replaceRange(text, r.from, r.to);
+    // call changed() when widget size changes
+    // Likely, this happens a lot when the backing text is changed, so we
+    // call it here too.
+    this.mark.changed();
 }
     Widget.prototype.getText = function() {
     var r = this.range();
