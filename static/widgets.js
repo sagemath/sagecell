@@ -3,43 +3,65 @@
 function posEq(a, b) {return a.line == b.line && a.ch == b.ch;}
 
 
-window.cm_widget = function(cm, node) {
- /*   
-    var cm = CodeMirror.fromTextArea($("#code")[0],
-                                     {mode: "python",
-                                      lineNumbers:true,
-                                      autofocus:true,
-                                      extraKeys: {
-                                          'Ctrl-,': false,
-                                          'Ctrl-.': false
-                                      }
-                                     })
- */
-    node.find("#insertinteger").click(function() {new IntegerWidget(cm)});
-    node.find("#inserttable").click(function() {new TableWidget(cm)});
-    node.find("#insertgraph").click(function() {new GraphWidget(cm)});
-    $(cm.getWrapperElement()).keydown('ctrl+.', function(event) {new TableWidget(cm,{rows:2})});
-    $(cm.getWrapperElement()).keydown('ctrl+,', function(event) {new TableWidget(cm,{columns:2})});
-    
-    // update the convenient display of text
-    //var updateContents = function(cm) { $("#content").text(cm.getValue())};
-    //updateContents(cm)
-    //cm.on("change", updateContents);
-
-    cm.on("cursorActivity", function(cm) {
-        if (cm.widgetEnter) {
-            // check to see if movement is purely navigational, or if it
-            // doing something like extending selection
-            var cursorHead = cm.getCursor('head');
-            var cursorAnchor = cm.getCursor('anchor');
-            if (posEq(cursorHead, cursorAnchor)) {
-                cm.widgetEnter();
+window.cm_widget = {
+    init: function(cm, node) {
+        /*   
+             var cm = CodeMirror.fromTextArea($("#code")[0],
+             {mode: "python",
+             lineNumbers:true,
+             autofocus:true,
+             extraKeys: {
+             'Ctrl-,': false,
+             'Ctrl-.': false
+             }
+             })
+        */
+        node.find("#insertinteger").click(function() {new IntegerWidget(cm)});
+        node.find("#inserttable").click(function() {new TableWidget(cm)});
+        node.find("#insertgraph").click(function() {new GraphWidget(cm)});
+        $(cm.getWrapperElement()).keydown('ctrl+.', function(event) {new TableWidget(cm,undefined, {rows:2})});
+        $(cm.getWrapperElement()).keydown('ctrl+,', function(event) {new TableWidget(cm,undefined, {columns:2})});
+        
+        // update the convenient display of text
+        //var updateContents = function(cm) { $("#content").text(cm.getValue())};
+        //updateContents(cm)
+        //cm.on("change", updateContents);
+        
+        cm.on("cursorActivity", function(cm) {
+            if (cm.widgetEnter) {
+                // check to see if movement is purely navigational, or if it
+                // doing something like extending selection
+                var cursorHead = cm.getCursor('head');
+                var cursorAnchor = cm.getCursor('anchor');
+                if (posEq(cursorHead, cursorAnchor)) {
+                    cm.widgetEnter();
+                }
+                cm.widgetEnter = undefined;
             }
-            cm.widgetEnter = undefined;
+        });
+    },
+    parseWidgets: function(cm) {
+        var d = cm.getValue();
+        var start_delimiter = '\u2af7';
+        var end_delimiter = '\u2af8';
+        var start = d.indexOf(start_delimiter)
+        while (start>=0) {
+            var end = d.indexOf(end_delimiter, start);
+            cm.setSelection(cm.posFromIndex(start), cm.posFromIndex(end+1));
+            msg = $.parseJSON(d.slice(start+1,end));
+            widget = registry[msg.widget];
+            if (widget) {new widget(cm, msg);}
+            start = d.indexOf(start_delimiter, end);
         }
-    });
+        cm.refresh();
+    }
 }
 
+var registry = {
+    table: TableWidget
+    ,integer: IntegerWidget
+    ,graph: GraphWidget
+};
 
 if ( !Object.create ) {
     // shim for ie8, etc.
@@ -50,11 +72,14 @@ if ( !Object.create ) {
     };
 }
 
-function Widget(cm) {
+function Widget(cm, msg) {
     // the subclass must define this.domNode before calling this constructor
+    // and this.type as a string for the widget registry
     var _this = this;
     this.cm = cm;
-    cm.replaceSelection("\u2af7"+cm.getSelection()+"\u2af8");
+    if (typeof msg === "undefined") {
+        cm.replaceSelection("\u2af7"+cm.getSelection()+"\u2af8");
+    }
     var from = cm.getCursor(true);
     var to = cm.getCursor(false);
     this.mark = cm.markText(from, to, {replacedWith: this.domNode});
@@ -110,10 +135,15 @@ Widget.prototype.setText = function(text) {
     return this.cm.getRange(r.from, r.to);
 }
 
-function IntegerWidget(cm) {
+    Widget.prototype.makeMessage = function(data) {
+        return {widget: this.widget, data: data}
+    }
+
+function IntegerWidget(cm, msg) {
     this.value = 0;
     this.node = $(".widget-templates .integerwidget").clone();
     this.domNode = this.node[0];
+    this.widget = "integer";
     _this = this
     Widget.apply(this, arguments);
     
@@ -133,13 +163,19 @@ function IntegerWidget(cm) {
         }
     });
 
-    var t = this.getText();
-    if (t !== "") {
-        this.value = parseInt(t);
+    if (msg) {
+        this.value = msg.data;
+    } else {
+        var t = this.getText();
+        if (t !== "") {
+            this.value = parseInt(t);
+        }
     }
     // set text to the parsed or default value initially
     this.changeValue(0)
+
 }
+
 IntegerWidget.prototype = Object.create(Widget.prototype)
 IntegerWidget.prototype.enter = function(direction) {
     var t = this.node.find('.value');
@@ -166,7 +202,7 @@ IntegerWidget.prototype.changeValue = function(inc) {
 }
 IntegerWidget.prototype.setValue = function(val) {
     this.value = parseInt(val);
-    this.setText(JSON.stringify({widget: "integer", data: this.value}));
+    this.setText(JSON.stringify(this.makeMessage(this.value)));
     this.node.find('.value').val(this.value);
 }
 
@@ -174,6 +210,7 @@ function GraphWidget(cm) {
     var _this = this
     this.node = $(".widget-templates .graphwidget").clone();
     this.domNode = this.node[0];
+    this.widget = "graph";
     // If this is too big (bigger than codemirror), the scrollCursorIntoView function in CodeMirror completely freezes the browser.
     this.graph = new GraphEditor(this.domNode, {width:100, height:100})
     Widget.apply(this, arguments);
@@ -195,10 +232,11 @@ function GraphWidget(cm) {
 GraphWidget.prototype = Object.create(Widget.prototype)
 
 
-function TableWidget(cm, options) {
+function TableWidget(cm, msg, options) {
     this.node = $(".widget-templates .tablewidget").clone();
     this.domNode = this.node[0];
-    Widget.apply(this, arguments);
+    this.widget = "table"
+    Widget.apply(this, [cm, msg]);
     _this = this;
 
     var t = this.node.find('table');
@@ -231,15 +269,30 @@ function TableWidget(cm, options) {
 
     this.updateText();
     var firstinput = t.find('input').first();
-    if (options.rows !== undefined) {
+    if (typeof msg !== "undefined") {
+        options = options || {};
+        options.rows = msg.data.length;
+        options.columns = msg.data[0].length;
+    }
+    if (options && options.rows !== undefined) {
         for (var i=1;i<options.rows;i++) {
             this.insertRow(firstinput);
         }
     }
-    if (options.columns !== undefined) {
+    if (options && options.columns !== undefined) {
         for (var i=1; i<options.columns;i++) {
             this.insertColumn(firstinput);
         }
+    }
+    if (typeof msg !== "undefined") {
+        // fill in values
+        var vals = $.map( msg.data, function(n){
+            return n;
+        });
+        t.find('input').each(function(index) {
+            $(this).val(vals[index]);
+        });
+        this.updateText();
     }
     firstinput.focus();
 }
@@ -336,7 +389,7 @@ TableWidget.prototype.updateText = function() {
         $(this).find('input').each(function() {row.push($(this).val())});
         matrix.push(row);
     });
-    this.setText(JSON.stringify({widget: "table", data: matrix}));
+    this.setText(JSON.stringify(this.makeMessage(matrix)));
 }
 
 // From http://stackoverflow.com/a/2897510/1200039
@@ -428,11 +481,11 @@ function interpret(n) {
 		if ( typeof handleObj.data !== "string" ) {
 			return;
 		}
-		
+
 		var origHandler = handleObj.handler,
 			keys = handleObj.data.toLowerCase().split(" ")
 	    //textAcceptingInputTypes = ["text", "password", "number", "email", "url", "range", "date", "month", "week", "time", "datetime", "datetime-local", "search", "color"];
-	
+
 		handleObj.handler = function( event ) {
 			// Don't fire in text-accepting inputs that we didn't directly bind to
 			/*if ( this !== event.target && (/textarea|select/i.test( event.target.nodeName ) ||
@@ -440,7 +493,7 @@ function interpret(n) {
 				return;
 			}
                         */
-			
+
 			// Keypress represents characters, not special keys
 			var special = event.type !== "keypress" && jQuery.hotkeys.specialKeys[ event.which ],
 		    character = String.fromCharCode( jQuery.hotkeys.exceptions[event.which] || event.which ).toLowerCase(),

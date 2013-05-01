@@ -698,7 +698,8 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     inputLocation.find(".sagecell_evalButton").click();
                 }
             }});
-        window.cm_widget(editorData, inputLocation);
+        window.cm_widget.init(editorData, inputLocation);
+        window.cm_widget.parseWidgets(editorData);
         $(accordion).on("accordionchange", function () {
             editorData.refresh();
         });
