@@ -58,24 +58,16 @@ function Widget(cm) {
     var from = cm.getCursor(true);
     var to = cm.getCursor(false);
     this.mark = cm.markText(from, to, {replacedWith: this.domNode});
-
-    CodeMirror.on(this.mark, "beforeCursorEnter", function(e) {
-        // register the enter function 
-        // the actual movement happens if the cursor movement was a plain navigation
-        // but not if it was a backspace or selection extension, etc.
-        var direction = posEq(_this.cm.getCursor(), _this.mark.find().from) ? 'left' : 'right';
-        cm.widgetEnter = $.proxy(_this, 'enterIfDefined', direction);
-    });
-
-    cm.setCursor(to);
-    cm.refresh()
-}
-
-Widget.prototype.enterIfDefined = function(direction) {
-    // check to make sure the mark still exists
-    if (this.mark.find() && this.enter) {
-        this.enter(direction);
-    } else {
+    if (this.enter) {
+        CodeMirror.on(this.mark, "beforeCursorEnter", function(e) {
+            // register the enter function 
+            // the actual movement happens if the cursor movement was a plain navigation
+            // but not if it was a backspace or selection extension, etc.
+            var direction = posEq(_this.cm.getCursor(), _this.mark.find().from) ? 'left' : 'right';
+            cm.widgetEnter = $.proxy(_this, 'enterIfDefined', direction);
+        });
+    }
+    CodeMirror.on(this.mark, "clear", function(e) {
         // if we don't do this and do:
 
         // G = <integer widget>
@@ -85,7 +77,17 @@ Widget.prototype.enterIfDefined = function(direction) {
         // then backspace to get rid of table widget,
         // the integer widget disappears until we type on the first
         // line again.  Calling this refresh takes care of things.
-        this.cm.refresh();
+        cm.refresh();
+    });
+
+    cm.setCursor(to);
+    cm.refresh()
+}
+
+Widget.prototype.enterIfDefined = function(direction) {
+    // check to make sure the mark still exists
+    if (this.mark.find()) {
+        this.enter(direction);
     }
 }
 
