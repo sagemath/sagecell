@@ -203,6 +203,14 @@ class ServiceHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
+        if self.get_cookie("accepted_tos") != "true" and \
+            self.get_argument("accepted_tos", "false") != "true":
+            self.write("""When evaluating code, you must acknowledge your acceptance
+of the terms of service at /tos.html by passing the parameter or cookie
+accepted_tos=true\n""")
+            self.set_status(403)
+            self.finish()
+            return
         default_timeout = 30 # seconds
         code = "".join(self.get_arguments('code', strip=False))
         if code:
