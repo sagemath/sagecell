@@ -133,8 +133,11 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
                 ce("div", {"class": "sagecell_permalink"}, [
-                    ce("a", {"class": "sagecell_permalink_zip"}, ["Permalink"]), ", ",
-                    ce("a", {"class": "sagecell_permalink_query"}, ["Shortened Temporary Link"])
+                    ce("a", {"class": "sagecell_permalink_request"}, ["Permalink"]),
+                    ce("div", {"class": "sagecell_permalink_result"}, [
+                        ce("a", {"class": "sagecell_permalink_zip"}, ["Permalink"]), ", ",
+                        ce("a", {"class": "sagecell_permalink_query"}, ["Shortened Temporary Link"])
+                    ])
                 ]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
@@ -228,6 +231,7 @@ sagecell.Session.prototype.createPermalink = function (code) {
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
                 .attr("href", sagecell.URLs.root + "?z=" +
                 data.zip + "&lang=" + that.language);
+            that.outputDiv.find("div.sagecell_permalink_results").show();
         });
 };
 

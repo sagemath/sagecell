@@ -73,6 +73,14 @@
     text-align: right;
 }
 
+.sagecell_permalink_result {
+    display: none;
+    /*position: absolute;*/
+    padding-right: 5px;
+    text-align: right;
+}
+
+
 .sagecell_sessionContainer {
     position: relative;
 }
