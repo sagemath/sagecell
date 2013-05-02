@@ -104,7 +104,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         var old_console = window.console;
         var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
-        console = window.console || {};
+        window.console = window.console || {};
         console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.opened = false;
