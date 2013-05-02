@@ -71,7 +71,21 @@
 .sagecell_permalink {
     padding-right: 5px;
     text-align: right;
+    position: relative;
 }
+
+.sagecell_permalink_result {
+    display: none;
+    position: absolute;
+    padding-right: 5px;
+    text-align: right;
+    right: 0;
+    z-index: 1;
+    background-color: #fff;
+    border: 2px solid #000;
+    padding: 5px;
+}
+
 
 .sagecell_sessionContainer {
     position: relative;

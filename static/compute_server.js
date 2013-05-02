@@ -133,8 +133,11 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
                 ce("div", {"class": "sagecell_permalink"}, [
-                    ce("a", {"class": "sagecell_permalink_zip"}, ["Permalink"]), ", ",
-                    ce("a", {"class": "sagecell_permalink_query"}, ["Shortened Temporary Link"])
+                    ce("button", {"class": "sagecell_permalink_request"}, ["Share"]),
+                    ce("div", {"class": "sagecell_permalink_result"}, [
+                        ce("a", {"class": "sagecell_permalink_zip", title: "Link that will work on any Sage Cell server"}, ["Permalink"]), ce("br"),
+                        ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link"])
+                    ])
                 ]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
@@ -228,6 +231,9 @@ sagecell.Session.prototype.createPermalink = function (code) {
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
                 .attr("href", sagecell.URLs.root + "?z=" +
                 data.zip + "&lang=" + that.language);
+            var result = that.outputDiv.find("div.sagecell_permalink_result");
+            result.show();
+            that.outputDiv.find(".sagecell_permalink_request").off('click').click(function() { result.toggle()});
         });
 };
 

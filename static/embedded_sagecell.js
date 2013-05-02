@@ -497,7 +497,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         var language = langSelect[0].value;
         var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
         session.execute(code);
-        session.createPermalink(code, language);
+        outputLocation.find(".sagecell_permalink_request").click(function() {session.createPermalink(code, language);});
         sagecell.last_session[evt.data.id] = session;
         // TODO: kill the kernel when a computation with no interacts finishes,
         //       and also when a new computation begins from the same cell
