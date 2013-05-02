@@ -55,6 +55,9 @@ sagecell.URLs = {};
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
 sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
+sagecell.URLs.cell = sagecell.URLs.root + "sagecell.html";
+sagecell.URLs.terms = sagecell.URLs.root + "tos.html";
+sagecell.URLs.cookie = sagecell.URLs.root + "static/set_cookie.html";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
@@ -154,7 +157,7 @@ sagecell.init = function (callback) {
     sagecell.last_session = {};
 
     // many stylesheets that have been smashed together into all.min.css
-    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.8.21.custom.css",
+    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.10.2.custom.min.css",
                        sagecell.URLs.root + "static/colorpicker/css/colorpicker.css",
                        sagecell.URLs.root + "static/all.min.css"]
     for (var i = 0; i < stylesheets.length; i++) {
@@ -186,7 +189,7 @@ SVG: { linebreaks: { automatic: true } }\n\
     // Preload images
     new Image().src = sagecell.URLs.sage_logo;
     new Image().src = sagecell.URLs.spinner;
-    sagecell.sendRequest("GET", sagecell.URLs.root + "sagecell.html", {},
+    sagecell.sendRequest("GET", sagecell.URLs.cell, {},
         function (data) {
             $(function () {
                 sagecell.body = data;
@@ -378,6 +381,10 @@ sagecell.makeSagecell = function (args, k) {
     return settings;
 };
 
+
+var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
+var accepted_tos = false;
+
 sagecell.initCell = (function (sagecellInfo, k) {
     var inputLocation = $(sagecellInfo.inputLocation);
     var outputLocation = $(sagecellInfo.outputLocation);
@@ -486,22 +493,67 @@ sagecell.initCell = (function (sagecellInfo, k) {
         inputLocation.find(".sagecell_fileList").empty();
         return false;
     });
+    var startEvaluation = function (evt) {
+         if (replaceOutput && sagecell.last_session[evt.data.id]) {
+             $(sagecell.last_session[evt.data.id].session_container).remove();
+         }
+         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
+             editorData.save();
+         }
+         var code = textArea.val();
+         var language = langSelect[0].value;
+         var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
+         session.execute(code);
+         session.createPermalink(code, language);
+         sagecell.last_session[evt.data.id] = session;
+         // TODO: kill the kernel when a computation with no interacts finishes,
+         //       and also when a new computation begins from the same cell
+         outputLocation.find(".sagecell_output_elements").show();
+    };
     sagecellInfo.submit = function (evt) {
-        if (replaceOutput && sagecell.last_session[evt.data.id]) {
-            $(sagecell.last_session[evt.data.id].session_container).remove();
+        if (!isXDomain && document.cookie.split(";").indexOf("accepted_tos=true") !== -1) {
+            accepted_tos = true;
         }
-        if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
-            editorData.save();
+        if (accepted_tos) {
+            startEvaluation(evt);
+            return false;
         }
-        var code = textArea.val();
-        var language = langSelect[0].value;
-        var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
-        session.execute(code);
-        session.createPermalink(code, language);
-        sagecell.last_session[evt.data.id] = session;
-        // TODO: kill the kernel when a computation with no interacts finishes,
-        //       and also when a new computation begins from the same cell
-        outputLocation.find(".sagecell_output_elements").show();
+        sagecell.sendRequest("GET", sagecell.URLs.terms, {}, function (data) {
+            if (data.length === 0) {
+                accepted_tos = true;
+                startEvaluation(evt);
+            } else {
+                var terms = $(document.createElement("div"));
+                terms.html(data);
+                terms.dialog({
+                    "modal": true,
+                    "height": 400,
+                    "width": 600,
+                    "appendTo": inputLocation,
+                    "title": "Terms of Service",
+                    "buttons": {
+                        "Accept": function () {
+                            $(this).dialog("close");
+                            accepted_tos = true;
+                            if (isXDomain) {
+                                var iframe = sagecell.util.createElement("iframe",
+                                    {"src": sagecell.URLs.cookie + "?rand=" + Math.random()});
+                                window.addEventListener("message", function listen(event) {
+                                    document.body.removeChild(iframe);
+                                    window.removeEventListener("message", listen);
+                                });
+                                iframe.style.display = "none";
+                                document.body.appendChild(iframe);
+                            }
+                            startEvaluation(evt);
+                        },
+                        "Cancel": function () {
+                            $(this).dialog("close");
+                        }
+                    }
+                });
+            }
+        });
         // return false to make *sure* any containing form doesn't submit
         return false;
     };
@@ -529,10 +581,12 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         }
     }
     var xhr = new XMLHttpRequest();
-    var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
     var fd = undefined;
     if (method === "GET") {
         data.rand = Math.random().toString();
+    }
+    if (method === "POST" && accepted_tos) {
+        data.accepted_tos = "true";
     }
     // Format parameters to send as a string or a FormData object
     if (window.FormData && method !== "GET") {
@@ -563,6 +617,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     if (window.FormData || !(isXDomain || hasFiles)) {
         // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
+        xhr.withCredentials = true;
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 /* DONE */) {
                 callback(xhr.responseText);
@@ -575,7 +630,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     } else if (method === "GET") {
         // Use JSONP to send cross-domain GET requests
         url += (url.indexOf("?") === -1 ? "?" : "&") + "callback=?";
-        $.getJSON(url, data, callback);
+        $.getJSON(url, callback);
     } else {
         // Use a form submission to send POST requests
         var iframe = document.createElement("iframe");
@@ -698,7 +753,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     inputLocation.find(".sagecell_evalButton").click();
                 }
             }});
-        $(accordion).on("accordionchange", function () {
+        $(accordion).on("accordionactivate", function () {
             editorData.refresh();
         });
     }

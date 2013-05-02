@@ -12,7 +12,8 @@ except ImportError:
     # old IPython
     from IPython.zmq.session import Session
 
-from misc import json_default, Timer
+from misc import json_default, Timer, Config
+config = Config()
 import logging
 logger = logging.getLogger('sagecell')
 
@@ -95,20 +96,26 @@ class KernelHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
+        if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
+            self.get_argument("accepted_tos", "false") != "true":
+            self.set_status(403)
+            self.finish()
+            return
         timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
         proto = self.request.protocol.replace("http", "ws", 1)
         host = self.request.host
         ws_url = "%s://%s/" % (proto, host)
         km = self.application.km
-        
         logger.info("Starting session: %s"%timer)
         kernel_id = yield gen.Task(km.new_session_async)
         data = {"ws_url": ws_url, "kernel_id": kernel_id}
         if "frame" not in self.request.arguments:
-            self.set_header("Access-Control-Allow-Origin", "*");
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
         else:
             data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
+        self.set_cookie("accepted_tos", "true", expires_days=365)
         self.write(data)
         self.finish()
 
@@ -139,6 +146,31 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
 
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
+class TOSHandler(tornado.web.RequestHandler):
+    """Handler for ``/tos.html``"""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "tos.html")
+    if not os.path.exists(path):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "tos_default.html")
+    with open(path) as f:
+        tos_html = f.read()
+        tos_json = json.dumps(tos_html)
+    
+    def get(self):
+        cookie_set = self.get_cookie("accepted_tos") == "true" or not config.get_config("requires_tos")
+        if len(self.get_arguments("callback")) == 0:
+            if cookie_set:
+                self.set_status(204)
+            else:
+                self.write(self.tos_html)
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
+            self.set_header("Content-Type", "text/html")
+        else:
+            resp = '""' if cookie_set else self.tos_json
+            self.write("%s(%s);" % (self.get_argument("callback"), resp))
+            self.set_header("Content-Type", "application/javascript")
+
+
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 
@@ -149,7 +181,8 @@ class SageCellHandler(tornado.web.RequestHandler):
     def get(self):
         if len(self.get_arguments("callback")) == 0:
             self.write(self.sagecell_html);
-            self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "text/html")
         else:
             self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
@@ -158,7 +191,8 @@ class SageCellHandler(tornado.web.RequestHandler):
 class StaticHandler(tornado.web.StaticFileHandler):
     """Handler for static requests"""
     def set_extra_headers(self, path):
-        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+        self.set_header("Access-Control-Allow-Credentials", "true")
 
 class ServiceHandler(tornado.web.RequestHandler):
     """
@@ -172,6 +206,14 @@ class ServiceHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
+        if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
+            self.get_argument("accepted_tos", "false") != "true":
+            self.write("""When evaluating code, you must acknowledge your acceptance
+of the terms of service at /tos.html by passing the parameter or cookie
+accepted_tos=true\n""")
+            self.set_status(403)
+            self.finish()
+            return
         default_timeout = 30 # seconds
         code = "".join(self.get_arguments('code', strip=False))
         if code:
@@ -224,7 +266,8 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.shell_handler.on_close()
         self.iopub_handler.on_close()
         retval.update(success=self.success)
-        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+        self.set_header("Access-Control-Allow-Credentials", "true")
         self.write(retval)
         self.finish()
 
