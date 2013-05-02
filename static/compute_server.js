@@ -96,7 +96,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     window.WebSocket = old_ws;
     */
     var that = this;
-    if (sagecell.kernels[k]) {
+    if (linked && sagecell.kernels[k]) {
         this.kernel = sagecell.kernels[k];
     } else {
         var old_ws = window.WebSocket;
@@ -104,7 +104,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         var old_console = window.console;
         var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
-        console = window.console || {};
+        window.console = window.console || {};
         console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.opened = false;
@@ -112,7 +112,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         window.WebSocket = old_ws;
         this.kernel._kernel_started = function (json) {
             sagecell.log('kernel start callback: '+that.timer()+' ms.');
-            this.base_url = this.base_url.substr(sagecell.URLs.root.length);
+            //this.base_url = this.base_url.substr(sagecell.URLs.root.length);
             this._kernel_started = IPython.Kernel.prototype._kernel_started;
             this._kernel_started(json);
             sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
@@ -167,6 +167,8 @@ sagecell.Session = function (outputDiv, language, k, linked) {
                 that.interacts[i].disable();
             }
             $(that.output_blocks[null]).removeClass("sagecell_active");
+            data.kernel.shell_channel = {};
+            data.kernel.iopub_channel = {};
             sagecell.kernels[k] = null;
         }
     });
