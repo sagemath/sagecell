@@ -30,7 +30,6 @@ Codebase
 * Change output model so that output of a request can be confined, and
   the browser knows where the output goes (instead of just trusting
   the python side to send an output id).  This would help with displaying errors, for example. (see https://github.com/sagemath/sagecell/issues/387)
-* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up. (See https://github.com/sagemath/sagecell/issues/389)
 * Automatically expire and restart idle workers.  See https://github.com/sagemath/sagecell/issues/391
 
 Permalink database
@@ -40,9 +39,7 @@ Permalink database
   * web side in Tornado, Go, or Node.js (for many simultaneous connections, but I suppose we could go back to flask/wsgi or something of that nature too)
   * database side in PostgreSQL (with propogation), Redis, Couchbase, Cassandra (Cassandra seems to fit the distributed, no-single-point-of-failure need)
   * Another possibility is to do the permalink server as a simple Google App Engine project.  William has lots of credit for this sort of thing.
-* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink) (see https://github.com/sagemath/sagecell/issues/350)
 * logging of all requests (separate from permalinks): 
-
   * python logging facility (load-test this)
   * straight to append-only file
   * to database?
@@ -61,3 +58,5 @@ Interacts
 Done
 ====
 * Set up multiple servers talking to the same database (possibly distributed) over the web
+* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink) (see https://github.com/sagemath/sagecell/issues/350)
+* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up. (See https://github.com/sagemath/sagecell/issues/389)
