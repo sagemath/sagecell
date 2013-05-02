@@ -231,7 +231,7 @@ sagecell.Session.prototype.createPermalink = function (code) {
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
                 .attr("href", sagecell.URLs.root + "?z=" +
                 data.zip + "&lang=" + that.language);
-            that.outputDiv.find("div.sagecell_permalink_results").show();
+            that.outputDiv.find("div.sagecell_permalink_result").show();
         });
 };
 
