@@ -12,7 +12,8 @@ except ImportError:
     # old IPython
     from IPython.zmq.session import Session
 
-from misc import json_default, Timer
+from misc import json_default, Timer, Config
+config = Config()
 import logging
 logger = logging.getLogger('sagecell')
 
@@ -95,7 +96,7 @@ class KernelHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
-        if self.get_cookie("accepted_tos") != "true" and \
+        if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
             self.get_argument("accepted_tos", "false") != "true":
             self.set_status(403)
             self.finish()
@@ -147,13 +148,15 @@ KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
 class TOSHandler(tornado.web.RequestHandler):
     """Handler for ``/tos.html``"""
-    
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "tos.html")) as f:
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "tos.html")
+    if not os.path.exists(path):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "tos_default.html")
+    with open(path) as f:
         tos_html = f.read()
         tos_json = json.dumps(tos_html)
     
     def get(self):
-        cookie_set = self.get_cookie("accepted_tos") == "true"
+        cookie_set = self.get_cookie("accepted_tos") == "true" or not config.get_config("requires_tos")
         if len(self.get_arguments("callback")) == 0:
             if cookie_set:
                 self.set_status(204)
@@ -203,7 +206,7 @@ class ServiceHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
-        if self.get_cookie("accepted_tos") != "true" and \
+        if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
             self.get_argument("accepted_tos", "false") != "true":
             self.write("""When evaluating code, you must acknowledge your acceptance
 of the terms of service at /tos.html by passing the parameter or cookie
