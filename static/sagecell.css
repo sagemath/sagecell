@@ -140,6 +140,7 @@
 .sagecell_interactOutput {
     padding: 10px;
     overflow-x: auto;
+    vertical-align: top;
 }
 
 .sagecell_interactValueBox {

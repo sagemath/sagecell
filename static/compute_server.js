@@ -270,6 +270,9 @@ sagecell.Session.prototype.output = function(html, block_id) {
     // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
     var output_block=$(this.output_blocks[block_id]);
     if (block_id !== undefined && block_id !== null && this.replace_output[block_id]) {
+        // freeze output_block's size for a while
+        output_block.height(output_block.height());
+        setTimeout(function() {output_block.animate({'height': ''}, 'slow')}, 3000);
         output_block.empty();
         this.replace_output[block_id]=false;
     }
