@@ -2,7 +2,7 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1309542233 18000
 # Node ID 4897dc1aa08855a8fa8672e4c831e05d35af0dc7
-# Parent ca877a1fdc06f49f74e422f648ed5c05fea1a570
+# Parent 1077314f416653b28e199c382667a1f11e444bdd
 imported patch embedded.patch
 
 diff --git a/sage/databases/sql_db.py b/sage/databases/sql_db.py
@@ -144,7 +144,7 @@ diff --git a/sage/misc/hg.py b/sage/misc/hg.py
 --- a/sage/misc/hg.py
 +++ b/sage/misc/hg.py
 @@ -73,7 +73,7 @@
- import os, shutil
+ import os, shutil, sys
  
  from   viewer import browser
 -from   misc   import tmp_filename, branch_current_hg, embedded
@@ -161,7 +161,7 @@ diff --git a/sage/misc/hg.py b/sage/misc/hg.py
          return '--config pager.pager=cat'
      else:
          return '--config pager.pager="LESS=\'R\' less"'
-@@ -852,7 +852,7 @@
+@@ -853,7 +853,7 @@
              cd ... && sage --hg log   --config pager.pager="LESS='R' less"
              ...
          """
@@ -170,7 +170,7 @@ diff --git a/sage/misc/hg.py b/sage/misc/hg.py
              limit = 20
          options = ''
          if branches:
-@@ -1504,7 +1504,7 @@
+@@ -1505,7 +1505,7 @@
              sage: hg_sage.commit('hg.py', comment='miscellaneous fixes') # not tested
              cd ... && sage --hg commit -m "miscellaneous fixes" hg.py
          """
@@ -391,7 +391,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 diff --git a/sage/misc/misc.py b/sage/misc/misc.py
 --- a/sage/misc/misc.py
 +++ b/sage/misc/misc.py
-@@ -52,6 +52,13 @@
+@@ -48,6 +48,13 @@
  
  LOCAL_IDENTIFIER = '%s.%s'%(HOSTNAME , os.getpid())
  
@@ -405,7 +405,7 @@ diff --git a/sage/misc/misc.py b/sage/misc/misc.py
  def sage_makedirs(dir):
      """
      Python version of ``mkdir -p``: try to create a directory, and also
-@@ -2115,19 +2122,6 @@
+@@ -2079,19 +2086,6 @@
      """    
      return "0"*(size-len(str(s))) + str(s)
  
@@ -449,12 +449,12 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
  import os, re, sys
  import pydoc
  from sage.misc.viewer import browser
--from sage.misc.misc import SAGE_DOC, tmp_dir
-+from sage.misc.misc import EMBEDDED_MODE, SAGE_DOC, tmp_dir
+-from sage.misc.misc import tmp_dir
++from sage.misc.misc import EMBEDDED_MODE, tmp_dir
  from sagenb.misc.sphinxify import sphinxify
  import sage.version
- 
-@@ -821,7 +821,6 @@
+ from sage.env import SAGE_DOC, SAGE_SRC
+@@ -819,7 +819,6 @@
      if not interact:
          return results
  
@@ -462,7 +462,7 @@ diff --git a/sage/misc/sagedoc.py b/sage/misc/sagedoc.py
      if EMBEDDED_MODE:   # I.e., running from the notebook
          if multiline: # insert the colons that format_search_as_html expects
              results = ":\n".join(results.splitlines()) + ":"
-@@ -1383,7 +1382,6 @@
+@@ -1381,7 +1380,6 @@
          if testing:
              return (url, path)
  
@@ -478,10 +478,10 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
  import os
  import tokenize
 -EMBEDDED_MODE = False
+ from sage.env import SAGE_SRC
  
  def isclassinstance(obj):
-     r"""
-@@ -1384,7 +1383,8 @@
+@@ -1382,7 +1381,8 @@
          # sometimes s contains "*args" or "**keywds", and the
          # asterisks confuse ReST/sphinx/docutils, so escape them:
          # change * to \*, and change ** to \**.
@@ -491,7 +491,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
              s = s.replace('**', '\\**')  # replace ** with \**
              t = ''
              while True:  # replace * with \*
-@@ -1501,13 +1501,14 @@
+@@ -1499,13 +1499,14 @@
      - extensions by Nick Alexander
      """
      import sage.misc.sagedoc
@@ -510,7 +510,7 @@ diff --git a/sage/misc/sageinspect.py b/sage/misc/sageinspect.py
 diff --git a/sage/misc/session.pyx b/sage/misc/session.pyx
 --- a/sage/misc/session.pyx
 +++ b/sage/misc/session.pyx
-@@ -65,7 +65,7 @@
+@@ -66,7 +66,7 @@
  cdef caller_locals = __builtin__.locals
  
  # Sage imports
@@ -518,8 +518,8 @@ diff --git a/sage/misc/session.pyx b/sage/misc/session.pyx
 +from sage.misc.misc import EMBEDDED_MODE
  from sage.structure.sage_object import load, save
  
- # This module-scope variables is used to save the 
-@@ -299,7 +299,7 @@
+ # This module-scope variables is used to save the
+@@ -315,7 +315,7 @@
                  print "Not saving %s: %s"%(k, msg)
              pass
      save(D, name)
@@ -528,10 +528,10 @@ diff --git a/sage/misc/session.pyx b/sage/misc/session.pyx
          # Also save D to the data directory if we're using the notebook.
          save(D, '../../data/' + name)
  
-@@ -341,7 +341,7 @@
+@@ -362,7 +362,7 @@
      """
      state = caller_locals()
-     
+ 
 -    if embedded():
 +    if EMBEDDED_MODE:
          if not os.path.exists(name):
@@ -581,7 +581,7 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -352,7 +352,7 @@
+@@ -356,7 +356,7 @@
  ## going to be used.
  
  #DEFAULT_FIGSIZE=(6, 3.70820393249937)
