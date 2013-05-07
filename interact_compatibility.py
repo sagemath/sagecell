@@ -1,3 +1,19 @@
+#########################################################################################
+#       Copyright (C) 2012 Jason Grout, Ira Hanson, Alex Kramer                         #
+#                                                                                       #
+#  Distributed under the terms of the GNU General Public License (GPL), version 2+      #
+#                                                                                       #
+#                  http://www.gnu.org/licenses/                                         #
+#########################################################################################
+
+# the only reason this file is distributed under GPLv2+ is because it
+# imports functions from interact_sagecell.py, which is distributed as
+# GPLv2+.  The actual code in this file is under the modified BSD
+# license, which means that if those imports are replaced with
+# BSD-compatible functions, this file can be distributed under the
+# modified BSD license.
+
+
 """
 This module defines a backwards-compatible API for interact controls from the first interact design.
 

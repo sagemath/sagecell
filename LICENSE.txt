@@ -1,3 +1,6 @@
+Most of the files in this repository are individually licensed with
+the modified BSD license:
+
 Copyright (c) 2011, Jason Grout, Ira Hanson, Alex Kramer, William Stein
 All rights reserved.
 
@@ -28,3 +31,12 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Some files (like interact_compatibility.py and interact_sagecell.py)
+are licensed GPLv2+ for the sole reason that they import Sage GPLv2+
+code (see the header for those files).  If those imports are removed,
+the files may be licensed with the modified BSD license.
+
+Since this package includes GPLv2+ code (namely those files above),
+the repository as a whole is licensed GPLv2+.
