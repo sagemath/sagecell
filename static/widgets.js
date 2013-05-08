@@ -50,7 +50,12 @@ window.cm_widget = {
             cm.setSelection(cm.posFromIndex(start), cm.posFromIndex(end+1));
             msg = $.parseJSON(d.slice(start+1,end));
             widget = registry[msg.widget];
-            if (widget) {new widget(cm, msg);}
+            if (widget) {
+                var w = new widget(cm, msg);
+                end = cm.indexFromPos(w.mark.find().to)
+                // creating the widget might have altered the text
+                d = cm.getValue()
+            }
             start = d.indexOf(start_delimiter, end);
         }
         cm.refresh();
