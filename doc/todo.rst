@@ -98,3 +98,29 @@ Done
 * Set up multiple servers talking to the same database (possibly distributed) over the web
 * (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink) (see https://github.com/sagemath/sagecell/issues/350)
 * (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up. (See https://github.com/sagemath/sagecell/issues/389)
+
+
+Library of exercises
+====================
+
+%exercise
+title    = r"Find a vector"
+rank = randint(2,4)
+A        = random_matrix(QQ,5,algorithm='echelonizable', rank=rank,upper_bound=10)
+kernel = A.T.kernel()
+question = "Find a basis for the nullspace of $%s$.  Your answer should be a list of vectors (e.g., '[(1,2,3), (3,2,1)]' )"%latex(A)
+def check(a):
+    try:
+        a = sage_eval(a)
+    except:
+        return False, "There was an error parsing your answer. Your answer should be a list of vectors (e.g., '[(1,2,3), (3,2,1)]' )."
+    i = [vector(QQ,j) for j in a]
+    v = span(i)
+    if v.dimension()!=len(i):
+        return False, "Are your vectors linearly independent?"
+    elif v != kernel:
+        return False, "You are missing some vectors"
+    else:
+        return True, "Great job!"
+hints = ["The RREF is $%s$."%latex(A.rref())]
+hints.append(" ".join(hints)+"  The nullity is %d."%kernel.dimension())
