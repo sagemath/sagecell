@@ -49,10 +49,48 @@ Lower priority
 
 Interacts
 ---------
+* Port over William's interact implementation
+* Implement William's exercise decorator
+* look into putting output in iframe to avoid all of the styling
+  issues we've dealt with
 * Set up dependency management on python side: control updates are sent immediately on variable assignment.  This also allows us to easily track which controls got updated so they update only once, if wanted
 * explore javascript widgets
 * explore using bootstrap to lay out widgets (see William's design)
 * implement an html layout
+
+Slider('x+y') -> 
+
+@interact
+def update(slider):
+     pass
+register an update f.slider = x+y when x is changed
+register an update f.slider = x+y when y is changed
+
+@interact
+class interact:
+    update function
+
+    set function
+
+
+vs. my way:
+
+Slider('x+y') -> 
+
+the widget knows how to parse string expressions, and registers itself for updates.  It can also have a setting method
+
+With my way, updating a slider calls just the slider update function.  Williams way, updating a slider calls the whole control group update function
+
+With my way, the grouped variables are stored in an interactive namespace.  William's they are implicitly stored as locals of a function.   William's way is more implicit.
+
+Deployment
+----------
+
+* Use virt-install and a kickstart file to configure centos from
+  scratch to a running system:
+  http://www.cyberciti.biz/faq/kvm-virt-install-install-freebsd-centos-guest/
+  http://www.cyberciti.biz/faq/kvm-install-centos-redhat-using-kickstart-ks-cfg/
+* Look into ansible to configure an image
 
 
 Done
