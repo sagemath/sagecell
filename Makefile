@@ -68,6 +68,7 @@ $(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
             $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
+	sed -i 's/+ ++a/+(++a)/' $(wrap-js) # JSMin minimizes this expression incorrectly
 
 $(all-min-css): $(codemirror-css) $(sagecell-css)
 	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
