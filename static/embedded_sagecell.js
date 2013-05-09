@@ -131,7 +131,7 @@ sagecell.util = {
 };
 
 var ce = sagecell.util.createElement;
-
+var deferred_eval = [];
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
         return;
@@ -512,46 +512,51 @@ sagecell.initCell = (function (sagecellInfo, k) {
         if (!isXDomain && document.cookie.split(";").indexOf("accepted_tos=true") !== -1) {
             accepted_tos = true;
         }
-        if (accepted_tos) {
+        if (accepted_tos || sagecellInfo.requires_tos === false) {
             startEvaluation(evt);
             return false;
         }
-        sagecell.sendRequest("GET", sagecell.URLs.terms, {}, function (data) {
-            if (data.length === 0) {
-                accepted_tos = true;
-                startEvaluation(evt);
-            } else {
-                var terms = $(document.createElement("div"));
-                terms.html(data);
-                terms.dialog({
-                    "modal": true,
-                    "height": 400,
-                    "width": 600,
-                    "appendTo": inputLocation,
-                    "title": "Terms of Service",
-                    "buttons": {
-                        "Accept": function () {
-                            $(this).dialog("close");
-                            accepted_tos = true;
-                            if (isXDomain) {
-                                var iframe = sagecell.util.createElement("iframe",
-                                    {"src": sagecell.URLs.cookie + "?rand=" + Math.random()});
-                                window.addEventListener("message", function listen(event) {
-                                    document.body.removeChild(iframe);
-                                    window.removeEventListener("message", listen);
-                                });
-                                iframe.style.display = "none";
-                                document.body.appendChild(iframe);
+        deferred_eval.push([startEvaluation, evt]);
+        if (deferred_eval.length === 1) {
+            sagecell.sendRequest("POST", sagecell.URLs.terms, {}, function (data) {
+                if (data.length === 0) {
+                    accepted_tos = true;
+                    startEvaluation(evt);
+                } else {
+                    var terms = $(document.createElement("div"));
+                    terms.html(data);
+                    terms.dialog({
+                        "modal": true,
+                        "height": 400,
+                        "width": 600,
+                        "appendTo": inputLocation,
+                        "title": "Terms of Service",
+                        "buttons": {
+                            "Accept": function () {
+                                $(this).dialog("close");
+                                accepted_tos = true;
+                                if (isXDomain) {
+                                    var iframe = sagecell.util.createElement("iframe",
+                                        {"src": sagecell.URLs.cookie + "?rand=" + Math.random()});
+                                    window.addEventListener("message", function listen(event) {
+                                        document.body.removeChild(iframe);
+                                        window.removeEventListener("message", listen);
+                                    });
+                                    iframe.style.display = "none";
+                                    document.body.appendChild(iframe);
+                                }
+                                for (var i = 0; i < deferred_eval.length; i++) {
+                                    deferred_eval[i][0](deferred_eval[i][1]);
+                                }
+                            },
+                            "Cancel": function () {
+                                $(this).dialog("close");
                             }
-                            startEvaluation(evt);
-                        },
-                        "Cancel": function () {
-                            $(this).dialog("close");
                         }
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        }
         // return false to make *sure* any containing form doesn't submit
         return false;
     };

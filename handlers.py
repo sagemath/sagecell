@@ -155,7 +155,7 @@ class TOSHandler(tornado.web.RequestHandler):
         tos_html = f.read()
         tos_json = json.dumps(tos_html)
     
-    def get(self):
+    def post(self):
         cookie_set = self.get_cookie("accepted_tos") == "true" or not config.get_config("requires_tos")
         if len(self.get_arguments("callback")) == 0:
             if cookie_set:
