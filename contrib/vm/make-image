@@ -5,7 +5,7 @@ qemu-img create -f qcow2 centos.img 20G
 
 virt-install --name centos-vm \
 --ram 8192 \
---network user,model=virtio,hostfwd=tcp::5456-:22 \
+--network user,model=virtio \
 --cpu host \
 --vcpus=12 \
 --disk path=centos.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=20  \
@@ -17,5 +17,6 @@ virt-install --name centos-vm \
 --nographics \
 --noreboot \
 --extra-args="cmdline ks=file:/sagecell-ks.cfg console=ttyS0"
+#--noautoconsole \
 
-#virsh qemu-monitor-command centos-vm --hmp 'hostfwd_add ::5456-:22'
+virsh qemu-monitor-command centos-vm --hmp 'hostfwd_add ::5456-:22'
