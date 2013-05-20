@@ -3,6 +3,9 @@
 rm centos.img
 qemu-img create -f qcow2 centos.img 20G
 
+virsh destroy centos-vm
+virsh undefine centos-vm
+
 virt-install --name centos-vm \
 --ram 8192 \
 --network user,model=virtio \
