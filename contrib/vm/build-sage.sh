@@ -2,7 +2,6 @@
 
 ### The Sage version
 SOURCE=$1
-echo $SOURCE
 if [ -z $SOURCE ] || [ ! -f $SOURCE ] ; then
     echo "Cannot find Sage source archive $SOURCE."
     exit 1
@@ -65,6 +64,10 @@ ssh -oNoHostAuthenticationForLocalhost=yes -p5456 root@localhost -T <<EOF | tee 
   ./sage <<EOFSAGE
      quit
 EOFSAGE
+  # install sagecell
+  rm -rf sage/local/lib/python/site-packages/[iI]Python*
+  ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
+  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
 EOF
 
 RC=`grep "Error building Sage" install.log` 
@@ -87,7 +90,7 @@ while [ "$STATUS" != "" ]; do
     sleep 10
     STATUS=`virsh dominfo centos-vm | grep 'State:.*running'`
 done
-if [ $? -ne 0 ]; then
-   echo "Failed to wait for installation to finish!"
-   exit 1
-fi
+#if [ $? -ne 0 ]; then
+#   echo "Failed to wait for installation to finish!"
+#   exit 1
+#fi
