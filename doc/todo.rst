@@ -1,16 +1,6 @@
 The next phase
 ==============
 
-Scaling
--------
-* (Drew) rate limiting for incoming computations and permalink requests, both total and by IP
-
-  * HAProxy (upgrade to 1.5dev): http://blog.serverfault.com/2010/08/26/1016491873/ or http://blog.exceliance.fr/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/ or https://code.google.com/p/haproxy-docs/wiki/rate_limit_sessions
-  * iptables: http://www.debian-administration.org/articles/187 or http://penguinsecurity.net/wiki/index.php?title=The_iptables_Rate-Limiting_Module (for example)
-* load testing (ab, httperf, jmeter, our own multimechanize solution)
-* Set up nginx to serve static assets
-
-
 Security
 --------
 * (Alex K.) Implement untrusted account restrictions:
@@ -83,21 +73,30 @@ With my way, updating a slider calls just the slider update function.  Williams 
 
 With my way, the grouped variables are stored in an interactive namespace.  William's they are implicitly stored as locals of a function.   William's way is more implicit.
 
-Deployment
-----------
 
-* Use virt-install and a kickstart file to configure centos from
-  scratch to a running system:
-  http://www.cyberciti.biz/faq/kvm-virt-install-install-freebsd-centos-guest/
-  http://www.cyberciti.biz/faq/kvm-install-centos-redhat-using-kickstart-ks-cfg/
-* Look into ansible to configure an image
+Summer Projects
+===============
+* Configure and deploy CentOS images using SELinux, a cloud database,
+  and nginx for static assets.  Kernels should be tied to different
+  users.  Rate limits and request logging should be in place.  All
+  things should be proper daemons with appropriate watchdog processes.
+  * Virtual image
+    [X] sagecell server
+    [X] sage worker account and ssh setup
+    [ ] sage cell config
+    [ ] permanent and temporary disks for database and tmp
+    [ ] quotas
+    [ ] immutable .ssh, .sage, etc. for sage worker
+    [ ] confine the sage worker using selinux, if possible
+    [ ] snapshots so I don't have to reinstall every single time.  Figure out how to make an image that is based on a single base image
+    [ ] Nginx
 
+  * rate limiting for incoming computations and permalink requests, both total and by IP
 
-Done
-====
-* Set up multiple servers talking to the same database (possibly distributed) over the web
-* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink) (see https://github.com/sagemath/sagecell/issues/350)
-* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up. (See https://github.com/sagemath/sagecell/issues/389)
+    * HAProxy (upgrade to 1.5dev): http://blog.serverfault.com/2010/08/26/1016491873/ or http://blog.exceliance.fr/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/ or https://code.google.com/p/haproxy-docs/wiki/rate_limit_sessions
+    * iptables: http://www.debian-administration.org/articles/187 or http://penguinsecurity.net/wiki/index.php?title=The_iptables_Rate-Limiting_Module (for example)
+  * load testing (ab, httperf, jmeter, our own multimechanize solution)
+  * pool of user accounts in which code is executed
 
 
 Library of exercises
@@ -124,3 +123,5 @@ def check(a):
         return True, "Great job!"
 hints = ["The RREF is $%s$."%latex(A.rref())]
 hints.append(" ".join(hints)+"  The nullity is %d."%kernel.dimension())
+
+
