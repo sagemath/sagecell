@@ -65,7 +65,7 @@ ssh -oNoHostAuthenticationForLocalhost=yes -p5456 root@localhost -T <<EOF | tee 
      quit
 EOFSAGE
   # install sagecell
-  rm -rf sage/local/lib/python/site-packages/[iI]Python*
+  rm -rf local/lib/python/site-packages/[iI]Python*
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
 EOF
