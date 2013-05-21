@@ -22,4 +22,3 @@ virt-install --name centos-vm \
 --extra-args="cmdline ks=file:/sagecell-ks.cfg console=ttyS0"
 #--noautoconsole \
 
-virsh qemu-monitor-command centos-vm --hmp 'hostfwd_add ::5456-:22'
