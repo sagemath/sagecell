@@ -1,3 +1,3 @@
-virsh start centos-vm
-virsh qemu-monitor-command centos-vm --hmp 'hostfwd_add ::5456-:22'
+virsh start sagecell
+virsh qemu-monitor-command sagecell --hmp 'hostfwd_add ::5456-:22'
 
