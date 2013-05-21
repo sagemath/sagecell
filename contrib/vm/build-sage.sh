@@ -1,35 +1,36 @@
 #!/bin/sh
 
 ### The Sage version
-VERSION=5.10.beta4
-
-
-SOURCE="src/sage-$VERSION.tar"
-if [ ! -f $SOURCE ] ; then
-    echo "Cannot find Sage source archive $SOURCE in the $SRCDIR directory."
+SOURCE=$1
+echo $SOURCE
+if [ -z $SOURCE ] || [ ! -f $SOURCE ] ; then
+    echo "Cannot find Sage source archive $SOURCE."
     exit 1
 fi
-export SOURCE
-
 
 # Start and install virtualbox guest additions
-virsh start centos-vm
+STATUS=`virsh dominfo centos-vm | grep 'State:.*running'`
 if [ $? -ne 0 ]; then
-   echo "Failed to start virtual machine!"
-   exit 1
+    virsh start centos-vm
+    if [ $? -ne 0 ]; then
+       echo "Failed to start virtual machine!"
+       exit 1
+    fi
+    STATUS="booting"
+    echo "Booting virtual machine"
 fi
-STATUS="booting"
 sleep 2
 virsh qemu-monitor-command centos-vm --hmp 'hostfwd_add ::5456-:22'
+STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes -p5456 root@localhost echo "ready"`
 while [ "$STATUS" != "ready" ]; do
     echo "Waiting for VM to start."
     sleep 10
     STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes -p5456 root@localhost echo "ready"`
 done
 
-
+set -v
 scp -oNoHostAuthenticationForLocalhost=yes -P5456 \
-    "$SRCDIR/sage-$VERSION.tar" root@localhost:/home/sage/sage-source.tar
+    $SOURCE root@localhost:/home/sagecell/sage-source.tar
 
 #scp -oNoHostAuthenticationForLocalhost=yes -P5456 \
 #    "$SCRIPTSDIR"/systemd-run-sage.service root@localhost:/lib/systemd/system/sage@.service
@@ -39,26 +40,34 @@ scp -oNoHostAuthenticationForLocalhost=yes -P5456 \
 
 ssh -oNoHostAuthenticationForLocalhost=yes -p5456 root@localhost -T <<EOF | tee  install.log
   set -v
+
+  yum -y update
+  yum clean all
+
   #cd /etc/systemd/system/getty.target.wants
   #ln -sf /lib/systemd/system/sage@.service getty@tty8.service
   chown -R sagecell.sagecell /home/sagecell/
 
-  su sagecell
+  su -l sagecell
   set -v
   cd
   tar xf sage-source.tar
   rm -f sage-source.tar
+  rm sage
   ln -s sage* sage
   cd sage
   # export SAGE_ATLAS_ARCH=fast
-  export SAGE_ATLAS_LIB=/usr/lib64/atlas
+  export SAGE_ATLAS_LIB=/usr/lib64/atlas/
   #export SAGE_FAT_BINARY="yes"
-  export MAKE='make -j12'
+  export MAKE='make -j16'
   make
   #make test
+  ./sage <<EOFSAGE
+     quit
+EOFSAGE
 EOF
 
-RC=`grep "Error building Sage" "install.log` 
+RC=`grep "Error building Sage" install.log` 
 if [ "$RC" != "" ]; then
    echo "Error building Sage!"
    #VBoxManage unregistervm $UUID --delete
@@ -72,11 +81,11 @@ ssh -oNoHostAuthenticationForLocalhost=yes -p5456 root@localhost -T <<EOF
 EOF
 
 echo "Waiting for the guest addition installation to finish..."
-STATUS="State:           running"
+STATUS=`virsh dominfo centos-vm | grep 'State:.*running'`
 while [ "$STATUS" != "" ]; do
-    STATUS=`virsh dominfo centos-vm | grep 'State:.*running'`
     date
-    sleep 20
+    sleep 10
+    STATUS=`virsh dominfo centos-vm | grep 'State:.*running'`
 done
 if [ $? -ne 0 ]; then
    echo "Failed to wait for installation to finish!"

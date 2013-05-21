@@ -10,7 +10,7 @@ virt-install --name centos-vm \
 --ram 8192 \
 --network user,model=virtio \
 --cpu host \
---vcpus=12 \
+--vcpus=14 \
 --disk path=centos.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=20  \
 --location mnt \
 --initrd-inject=sagecell-ks.cfg \
