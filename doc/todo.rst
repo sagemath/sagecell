@@ -96,11 +96,14 @@ Summer Projects
     [ ] confine the sage worker using selinux, if possible
     [ ] Nginx
     [ ] Make ssh more secure: http://wiki.centos.org/HowTos/Network/SecuringSSH
+    [ ] Polyinstantiated directories: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Security-Enhanced_Linux/polyinstantiated-directories.html
+    [ ] use selinux: http://magazine.redhat.com/2008/04/17/fedora-9-and-summit-preview-confining-the-user-with-selinux/ http://fedoraproject.org/wiki/SELinux  http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html
 
 Currently:
    * make-image: make an initial centos.img image
    * make-clone: make a sagecell.img clone
    * build-sage.sh sage-5.9-built.tar: build sage on the sagecell VM
+
 
 
   * rate limiting for incoming computations and permalink requests, both total and by IP
