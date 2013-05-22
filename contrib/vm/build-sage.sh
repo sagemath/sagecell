@@ -32,26 +32,36 @@ ssh $VMSSH -T <<EOF | tee  install.log
   yum -y update
   yum clean all
 
-  echo 'Resetting accounts'
-  /usr/sbin/userdel -r sagecell
-  /usr/sbin/userdel -r sageworker
-  /usr/sbin/useradd sagecell
-  /usr/sbin/useradd sageworker
-
-  echo 'Setting up ssh keys'
-  su -l sagecell -c 'ssh-keygen -q -N "" -f /home/sagecell/.ssh/id_rsa'
-  su -l sageworker -c 'mkdir .ssh && chmod 700 .ssh'
-  cp -r /home/sagecell/.ssh/id_rsa.pub /home/sageworker/.ssh/authorized_keys
-  chown -R sageworker.sageworker /home/sageworker/
-  restorecon -R /home/sagecell/.ssh
-  restorecon -R /home/sageworker/.ssh
-
+  #echo 'Setting up systemd scripts'
   #cd /etc/systemd/system/getty.target.wants
   #ln -sf /lib/systemd/system/sage@.service getty@tty8.service
 
+  echo 'Resetting accounts'
+  /usr/sbin/userdel -r sageserver
+  /usr/sbin/userdel -r sageworker
+  if grep sagecell /etc/group; then
+    /usr/sbin/groupdel sagecell
+  fi
+  /usr/sbin/groupadd sagecell
+  /usr/sbin/useradd sageserver --groups sagecell
+  /usr/sbin/useradd sageworker --groups sagecell
+
+  echo 'Setting up ssh keys'
+  su -l sageserver -c 'ssh-keygen -q -N "" -f /home/sageserver/.ssh/id_rsa'
+  su -l sageworker -c 'mkdir .ssh && chmod 700 .ssh'
+  cp -r /home/sageserver/.ssh/id_rsa.pub /home/sageworker/.ssh/authorized_keys
+  chown -R sageworker.sageworker /home/sageworker/
+  restorecon -R /home/sageserver/.ssh
+  restorecon -R /home/sageworker/.ssh
+
+  echo 'Making temporary directory'
+  su -l sageserver
+  mkdir /tmp/sagecell
+  chown sageserver.sagecell /tmp/sagecell
+  chmod g=wx /tmp/sagecell
 
   echo 'Extracting sage'
-  su -l sagecell
+  su -l sageserver
   #set -v
   tar xf /home/sage-source.tar
   rm sage
@@ -69,16 +79,13 @@ ssh $VMSSH -T <<EOF | tee  install.log
      quit
 EOFSAGE
 
-  echo 'Setting up temporary directory'
-  
-
   echo 'Installing sagecell'
   rm -rf local/lib/python/site-packages/[iI]Python*
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
 EOF
 
-scp config.py $VMSSH:/home/sagecell/sage/devel/sagecell/config.py
+scp config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
 
 RC=`grep "Error building Sage" install.log` 
 if [ "$RC" != "" ]; then
@@ -89,9 +96,9 @@ fi
 
 ssh $VMSSH <<EOF
   # get the localhost in the known_hosts file
-  su -l sagecell -c 'ssh -oStrictHostKeyChecking=no sageworker@localhost echo hi'
+  su -l sageserver -c 'ssh -oStrictHostKeyChecking=no sageworker@localhost echo hi'
   # make sure the config file is owned by the right person
-  chown -R sagecell.sagecell /home/sagecell/sage/devel/sagecell/config.py
+  chown -R sageserver.sageserver /home/sageserver/sage/devel/sagecell/config.py
 EOF
 
 # don't shut down; just exit
