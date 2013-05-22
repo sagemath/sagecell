@@ -84,16 +84,16 @@ Summer Projects
     [X] sagecell server
     [X] sage worker account and ssh setup
     [X] tar up sage install so installing it doesn't involve recompiling
-    [ ] Make temporary directory writable by both the worker and the server (maybe just group-writeable)
-    [ ] Set up http port forward
-    [ ] sage cell config
-    [ ] Figure out permissions so that sageworker can execute sage
+    [X] Make temporary directory writable by both the worker and the server (maybe just group-writeable)
+    [X] sage cell config
+    [X] Figure out permissions so that sageworker can execute sage
+    [X] Set up http port forward
+    [X] snapshots so I don't have to reinstall every single time.  Figure out how to make an image that is based on a single base image
     [ ] Figure out appropriate firewall rules (lokkit --disabled to disable firewall)
     [ ] permanent and temporary disks for database and tmp
     [ ] quotas
     [ ] immutable .ssh, .sage, etc. for sage worker
     [ ] confine the sage worker using selinux, if possible
-    [ ] snapshots so I don't have to reinstall every single time.  Figure out how to make an image that is based on a single base image
     [ ] Nginx
     [ ] Make ssh more secure: http://wiki.centos.org/HowTos/Network/SecuringSSH
 
