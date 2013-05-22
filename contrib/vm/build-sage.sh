@@ -20,7 +20,7 @@ if [ -z $SOURCE ] || [ ! -f $SOURCE ] ; then
 fi
 
 echo 'Syncing sage source'
-rsync -avv -e ssh $SOURCE $VMSSH:/home/sage-source.tar
+rsync --progress -avv -e ssh $SOURCE $VMSSH:/home/sage-source.tar
 
 #scp "$SCRIPTSDIR"/systemd-run-sage.service $VMSSH:/lib/systemd/system/sage@.service
 
@@ -58,7 +58,7 @@ ssh $VMSSH -T <<EOF | tee  install.log
   su -l sageserver
   mkdir /tmp/sagecell
   chown sageserver.sagecell /tmp/sagecell
-  chmod g=wx /tmp/sagecell
+  chmod g=wxs,o= /tmp/sagecell
 
   echo 'Extracting sage'
   su -l sageserver
@@ -94,11 +94,20 @@ if [ "$RC" != "" ]; then
    exit 1
 fi
 
-ssh $VMSSH <<EOF
-  # get the localhost in the known_hosts file
-  su -l sageserver -c 'ssh -oStrictHostKeyChecking=no sageworker@localhost echo hi'
+ssh $VMSSH -T <<EOF
   # make sure the config file is owned by the right person
-  chown -R sageserver.sageserver /home/sageserver/sage/devel/sagecell/config.py
+  chown sageserver.sageserver /home/sageserver/sage/devel/sagecell/config.py
+
+  # very bad: disable firewall and change permissions
+  chmod o+rx /home/sageserver
+  lokkit --disabled
+EOF
+
+ssh $VMSSH -t -t <<EOF
+  # get the localhost in the known_hosts file
+  su -l sageserver -c 'ssh -q -oStrictHostKeyChecking=no sageworker@localhost echo hi'
+  echo 'done'
+  exit
 EOF
 
 # don't shut down; just exit

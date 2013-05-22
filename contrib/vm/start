@@ -1,3 +1,4 @@
+#!/bin/sh
 
 VM=$1
 VMPORT=5457
