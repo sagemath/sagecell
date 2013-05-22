@@ -1,3 +1,24 @@
-virsh start sagecell
-virsh qemu-monitor-command sagecell --hmp 'hostfwd_add ::5456-:22'
 
+VM=$1
+VMPORT=5457
+
+# Start and install virtualbox guest additions
+STATUS=`virsh dominfo $VM | grep 'State:.*running'`
+if [ $? -ne 0 ]; then
+    virsh start $VM
+    if [ $? -ne 0 ]; then
+       echo "Failed to start virtual machine!"
+       exit 1
+    fi
+    STATUS="booting"
+    echo "Booting $VM"
+    sleep 2
+fi
+
+virsh qemu-monitor-command $VM --hmp "hostfwd_add ::$VMPORT-:22"
+STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $VMPORT echo "ready"`
+while [ "$STATUS" != "ready" ]; do
+    echo "Waiting for VM to start."
+    sleep 5
+    STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $VMPORT echo "ready"`
+done

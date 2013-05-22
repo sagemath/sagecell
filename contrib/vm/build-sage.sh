@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VM=sagecell
-VMPORT=5457
+./start $VM
 
 # vmm is:
 # Host vmm
@@ -11,7 +11,6 @@ VMPORT=5457
 #    NoHostAuthenticationForLocalhost yes
 
 
-
 VMSSH=vmm
 ### The Sage version
 SOURCE=$1
@@ -19,26 +18,6 @@ if [ -z $SOURCE ] || [ ! -f $SOURCE ] ; then
     echo "Cannot find Sage source archive $SOURCE."
     exit 1
 fi
-
-# Start and install virtualbox guest additions
-STATUS=`virsh dominfo $VM | grep 'State:.*running'`
-if [ $? -ne 0 ]; then
-    virsh start $VM
-    if [ $? -ne 0 ]; then
-       echo "Failed to start virtual machine!"
-       exit 1
-    fi
-    STATUS="booting"
-    echo "Booting virtual machine"
-fi
-sleep 2
-virsh qemu-monitor-command $VM --hmp "hostfwd_add ::$VMPORT-:22"
-STATUS=`ssh $VMSSH echo "ready"`
-while [ "$STATUS" != "ready" ]; do
-    echo "Waiting for VM to start."
-    sleep 10
-    STATUS=`ssh $VMSSH echo "ready"`
-done
 
 echo 'Syncing sage source'
 rsync -avv -e ssh $SOURCE $VMSSH:/home/sage-source.tar
@@ -53,7 +32,7 @@ ssh $VMSSH -T <<EOF | tee  install.log
   yum -y update
   yum clean all
 
-  echo 'Setting up accounts'
+  echo 'Resetting accounts'
   /usr/sbin/userdel -r sagecell
   /usr/sbin/userdel -r sageworker
   /usr/sbin/useradd sagecell
@@ -69,17 +48,17 @@ ssh $VMSSH -T <<EOF | tee  install.log
 
   #cd /etc/systemd/system/getty.target.wants
   #ln -sf /lib/systemd/system/sage@.service getty@tty8.service
-  chown -R sagecell.sagecell /home/sagecell/
 
-  echo 'setting up sage'
+
+  echo 'Extracting sage'
   su -l sagecell
   #set -v
-  cd
   tar xf /home/sage-source.tar
-  #rm -f sage-source.tar
   rm sage
   ln -s sage* sage
   cd sage
+
+  echo 'Compiling Sage'
   # export SAGE_ATLAS_ARCH=fast
   export SAGE_ATLAS_LIB=/usr/lib64/atlas/
   #export SAGE_FAT_BINARY="yes"
@@ -89,11 +68,16 @@ ssh $VMSSH -T <<EOF | tee  install.log
   ./sage <<EOFSAGE
      quit
 EOFSAGE
-  # install sagecell
+
+  echo 'Setting up temporary directory'
+  
+
+  echo 'Installing sagecell'
   rm -rf local/lib/python/site-packages/[iI]Python*
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
 EOF
+
 scp config.py $VMSSH:/home/sagecell/sage/devel/sagecell/config.py
 
 RC=`grep "Error building Sage" install.log` 
@@ -103,14 +87,22 @@ if [ "$RC" != "" ]; then
    exit 1
 fi
 
-sleep 5
 ssh $VMSSH <<EOF
+  # get the localhost in the known_hosts file
   su -l sagecell -c 'ssh -oStrictHostKeyChecking=no sageworker@localhost echo hi'
+  # make sure the config file is owned by the right person
   chown -R sagecell.sagecell /home/sagecell/sage/devel/sagecell/config.py
+EOF
+
+# don't shut down; just exit
+exit
+
+ssh $VMSSH -T <<EOF
   #dd if=/dev/zero of=/zerofile ; rm -f /zerofile
   #shutdown -h now
 EOF
-exit
+
+
 echo "Waiting for the guest addition installation to finish..."
 STATUS=`virsh dominfo $VM | grep 'State:.*running'`
 while [ "$STATUS" != "" ]; do

@@ -84,6 +84,8 @@ Summer Projects
     [X] sagecell server
     [X] sage worker account and ssh setup
     [X] tar up sage install so installing it doesn't involve recompiling
+    [ ] Make temporary directory writable by both the worker and the server (maybe just group-writeable)
+    [ ] Set up http port forward
     [ ] sage cell config
     [ ] Figure out permissions so that sageworker can execute sage
     [ ] Figure out appropriate firewall rules (lokkit --disabled to disable firewall)
