@@ -89,8 +89,20 @@ Summer Projects
     [X] Figure out permissions so that sageworker can execute sage
     [X] Set up http port forward
     [X] snapshots so I don't have to reinstall every single time.  Figure out how to make an image that is based on a single base image
-    [ ] Figure out appropriate firewall rules (lokkit --disabled to disable firewall)
-    [ ] permanent and temporary disks for database and tmp
+    [X] Figure out appropriate firewall rules (lokkit --disabled to disable firewall)
+    [X] permanent and temporary disks for database and tmp (leave tmp
+        alone, just mount permanent disk)
+    [X] diagnose and fix network problem when cloning:
+        http://adam.younglogic.com/2010/06/eth0-not-present-after-libvirt-clone/,
+        http://crashmag.net/correcting-the-eth0-mac-address-in-rhel-or-centos,
+        https://bugzilla.redhat.com/show_bug.cgi?id=756130,
+        Short fix: make a fixed mac address when generating the base image
+        and the clone.  This won't work once we need to make many
+        clones, though!  Then we'll have to explicitly change the mac
+        address for eth0 adapter, or somehow disable the check for mac
+        address (maybe it's enough to delete the mac line from the
+        ifcfg-eth0?)
+
     [ ] quotas
     [ ] immutable .ssh, .sage, etc. for sage worker
     [ ] confine the sage worker using selinux, if possible
@@ -98,6 +110,7 @@ Summer Projects
     [ ] Make ssh more secure: http://wiki.centos.org/HowTos/Network/SecuringSSH
     [ ] Polyinstantiated directories: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Security-Enhanced_Linux/polyinstantiated-directories.html
     [ ] use selinux: http://magazine.redhat.com/2008/04/17/fedora-9-and-summit-preview-confining-the-user-with-selinux/ http://fedoraproject.org/wiki/SELinux  http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html
+    [ ] use systemd or some other service to keep the cell server up
 
 Currently:
    * make-image: make an initial centos.img image
