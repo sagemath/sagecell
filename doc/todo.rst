@@ -84,23 +84,26 @@ Summer Projects
     [X] sagecell server
     [X] sage worker account and ssh setup
     [X] tar up sage install so installing it doesn't involve recompiling
-    [ ] Make temporary directory writable by both the worker and the server (maybe just group-writeable)
-    [ ] Set up http port forward
-    [ ] sage cell config
-    [ ] Figure out permissions so that sageworker can execute sage
+    [X] Make temporary directory writable by both the worker and the server (maybe just group-writeable)
+    [X] sage cell config
+    [X] Figure out permissions so that sageworker can execute sage
+    [X] Set up http port forward
+    [X] snapshots so I don't have to reinstall every single time.  Figure out how to make an image that is based on a single base image
     [ ] Figure out appropriate firewall rules (lokkit --disabled to disable firewall)
     [ ] permanent and temporary disks for database and tmp
     [ ] quotas
     [ ] immutable .ssh, .sage, etc. for sage worker
     [ ] confine the sage worker using selinux, if possible
-    [ ] snapshots so I don't have to reinstall every single time.  Figure out how to make an image that is based on a single base image
     [ ] Nginx
     [ ] Make ssh more secure: http://wiki.centos.org/HowTos/Network/SecuringSSH
+    [ ] Polyinstantiated directories: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Security-Enhanced_Linux/polyinstantiated-directories.html
+    [ ] use selinux: http://magazine.redhat.com/2008/04/17/fedora-9-and-summit-preview-confining-the-user-with-selinux/ http://fedoraproject.org/wiki/SELinux  http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html
 
 Currently:
    * make-image: make an initial centos.img image
    * make-clone: make a sagecell.img clone
    * build-sage.sh sage-5.9-built.tar: build sage on the sagecell VM
+
 
 
   * rate limiting for incoming computations and permalink requests, both total and by IP
