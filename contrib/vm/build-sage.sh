@@ -54,6 +54,13 @@ ssh $VMSSH -T <<EOF | tee  install.log
   restorecon -R /home/sageserver/.ssh
   restorecon -R /home/sageworker/.ssh
 
+  echo 'Making permanent mount'
+  mkdir /permanent
+  if ! grep -q "permanent" /etc/fstab; then
+     echo /dev/vdb /permanent ext4 defaults,noexec 1 2 >> /etc/fstab
+  fi
+  mount -a
+
   echo 'Making temporary directory'
   su -l sageserver
   mkdir /tmp/sagecell
@@ -83,10 +90,6 @@ EOFSAGE
   rm -rf local/lib/python/site-packages/[iI]Python*
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
-
-  # for some reason, the sage notebook is somehow getting corrupted
-  cd devel/sagenb
-  ../../sage setup.py develop
 
 EOF
 
