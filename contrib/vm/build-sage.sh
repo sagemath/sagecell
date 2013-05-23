@@ -83,6 +83,11 @@ EOFSAGE
   rm -rf local/lib/python/site-packages/[iI]Python*
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
+
+  # for some reason, the sage notebook is somehow getting corrupted
+  cd devel/sagenb
+  ../../sage setup.py develop
+
 EOF
 
 scp config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
@@ -100,7 +105,9 @@ ssh $VMSSH -T <<EOF
 
   # very bad: disable firewall and change permissions
   chmod o+rx /home/sageserver
-  lokkit --disabled
+  iptables -I INPUT 1 -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to sage cell server
+  iptables -I INPUT 1 -i lo -j ACCEPT # open up loopback for all traffic
+  /sbin/service iptables save
 EOF
 
 ssh $VMSSH -t -t <<EOF
