@@ -8,10 +8,10 @@ virsh undefine centos-vm
 
 virt-install --name centos-vm \
 --ram 8192 \
---network user,model=virtio \
+--network user,model=virtio,mac=52:54:00:1e:af:3e \
 --cpu host \
 --vcpus=14 \
---disk path=centos.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=20  \
+--disk path=centos.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=25  \
 --location mnt \
 --initrd-inject=sagecell-ks.cfg \
 --os-type linux \

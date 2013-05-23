@@ -1,0 +1,67 @@
+<domain type='kvm'>
+  <name>sagecell</name>
+  <uuid>66897a8d-fe55-406c-8bb1-f2a6f83c13fa</uuid>
+  <memory>8388608</memory>
+  <currentMemory>8388608</currentMemory>
+  <vcpu>14</vcpu>
+  <os>
+    <type arch='x86_64' machine='pc-1.0'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+    <pae/>
+  </features>
+  <cpu match='exact'>
+    <model>Opteron_G3</model>
+    <vendor>AMD</vendor>
+    <feature policy='require' name='aes'/>
+    <feature policy='require' name='skinit'/>
+    <feature policy='require' name='vme'/>
+    <feature policy='require' name='mmxext'/>
+    <feature policy='require' name='fxsr_opt'/>
+    <feature policy='require' name='cr8legacy'/>
+    <feature policy='require' name='ht'/>
+    <feature policy='require' name='3dnowprefetch'/>
+    <feature policy='require' name='ssse3'/>
+    <feature policy='require' name='wdt'/>
+    <feature policy='require' name='extapic'/>
+    <feature policy='require' name='pdpe1gb'/>
+    <feature policy='require' name='osvw'/>
+    <feature policy='require' name='sse4.1'/>
+    <feature policy='require' name='cmp_legacy'/>
+    <feature policy='require' name='sse4.2'/>
+  </cpu>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <emulator>/usr/bin/kvm</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='writeback'/>
+      <source file='/home/salvus/vm/images/persistent/grout/sagecell.img'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='writeback'/>
+      <source file='/home/salvus/vm/images/persistent/grout/permanent.img'/>
+      <target dev='vdb' bus='virtio'/>
+    </disk>
+    <interface type='user'>
+      <model type='virtio'/>
+      <mac address='52:54:00:1e:af:3e'/>
+    </interface>
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+    <input type='tablet' bus='usb'/>
+    <memballoon model='virtio'>
+    </memballoon>
+  </devices>
+</domain>
+

@@ -61,6 +61,9 @@ ssh $VMSSH -T <<EOF | tee  install.log
   fi
   mount -a
 
+  echo 'Setting quotas'
+  setquota -u sageworker 100000 120000 20000 30000 /
+
   echo 'Making temporary directory'
   su -l sageserver
   mkdir /tmp/sagecell

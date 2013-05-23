@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -v
 VM=$1
 VMPORT=5457
 
