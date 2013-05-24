@@ -51,7 +51,6 @@
     </disk>
     <interface type='user'>
       <model type='virtio'/>
-      <mac address='52:54:00:1e:af:3e'/>
     </interface>
     <serial type='pty'>
       <target port='0'/>

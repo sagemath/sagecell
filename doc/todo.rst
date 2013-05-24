@@ -96,13 +96,7 @@ Summer Projects
         http://adam.younglogic.com/2010/06/eth0-not-present-after-libvirt-clone/,
         http://crashmag.net/correcting-the-eth0-mac-address-in-rhel-or-centos,
         https://bugzilla.redhat.com/show_bug.cgi?id=756130,
-        Short fix: make a fixed mac address when generating the base image
-        and the clone.  This won't work once we need to make many
-        clones, though!  Then we'll have to explicitly change the mac
-        address for eth0 adapter, or somehow disable the check for mac
-        address (maybe it's enough to delete the mac line from the
-        ifcfg-eth0?)
-
+        We now delete the hardcoded mac address, and then delete the automatic generation of the eth0 rules.
     [ ] quotas
     [ ] immutable .ssh, .sage, etc. for sage worker
     [ ] confine the sage worker using selinux, if possible
