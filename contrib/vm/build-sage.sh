@@ -54,6 +54,11 @@ ssh $VMSSH -T <<EOF | tee  install.log
   restorecon -R /home/sageserver/.ssh
   restorecon -R /home/sageworker/.ssh
 
+  echo 'Setting up permissions for sage worker'
+  pushd /home/sageworker
+  chattr -R +i .ssh .bashrc .bash_profile .bash_logout
+  popd
+
   echo 'Making permanent mount'
   mkdir /permanent
   if ! grep -q "permanent" /etc/fstab; then
@@ -94,6 +99,7 @@ EOFSAGE
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
 
+
 EOF
 
 scp config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
@@ -109,8 +115,16 @@ ssh $VMSSH -T <<EOF
   # make sure the config file is owned by the right person
   chown sageserver.sageserver /home/sageserver/sage/devel/sagecell/config.py
 
-  # very bad: disable firewall and change permissions
+  # change permissions so sageworker can execute sage
   chmod o+rx /home/sageserver
+
+  # set the .sage and init.sage to be immutable.  We do this to prevent
+  # someone from making *everyone* execute code at the start of their sessions
+  su -l sageworker -c "/home/sageserver/sage/sage -c 'exit'"
+  touch /home/sageworker/.sage/init.sage
+  chattr +i /home/sageworker/.sage /home/sageworker/.sage/init.sage
+
+  # open up ports in firewall
   iptables -I INPUT 1 -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to sage cell server
   iptables -I INPUT 1 -i lo -j ACCEPT # open up loopback for all traffic
   /sbin/service iptables save
