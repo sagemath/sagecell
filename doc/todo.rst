@@ -97,7 +97,7 @@ Summer Projects
         http://crashmag.net/correcting-the-eth0-mac-address-in-rhel-or-centos,
         https://bugzilla.redhat.com/show_bug.cgi?id=756130,
         We now delete the hardcoded mac address, and then delete the automatic generation of the eth0 rules.
-    [ ] quotas
+    [X] quotas
     [ ] immutable .ssh, .sage, etc. for sage worker
     [ ] confine the sage worker using selinux, if possible
     [ ] Nginx
