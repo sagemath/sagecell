@@ -78,6 +78,13 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
 
+    import pid
+    pidfile_path = '/home/sageserver/sagecell.pid'
+    pid.check(pidfile_path)
+    pid.write(pidfile_path)
+
+
+
     application = SageCellServer()
     application.listen(args.port)
     try:
@@ -88,3 +95,6 @@ if __name__ == "__main__":
             application.km.shutdown()
         except KeyboardInterrupt:
             logging.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")
+    finally:
+        pid.remove(pidfile_path)
+        pid.write('/home/sageserver/kill.pid')
