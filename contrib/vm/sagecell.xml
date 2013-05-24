@@ -1,6 +1,5 @@
 <domain type='kvm'>
   <name>sagecell</name>
-  <uuid>66897a8d-fe55-406c-8bb1-f2a6f83c13fa</uuid>
   <memory>8388608</memory>
   <currentMemory>8388608</currentMemory>
   <vcpu>14</vcpu>
