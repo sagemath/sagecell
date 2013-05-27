@@ -99,6 +99,7 @@ Summer Projects
         We now delete the hardcoded mac address, and then delete the automatic generation of the eth0 rules.
     [X] quotas
     [X] immutable .ssh, .sage, etc. for sage worker
+    [X] clean tmp directory (added cron script using tmpwatch)
     [ ] use systemd or some other service to keep the cell server up
     [ ] confine the sage worker using selinux, if possible
     [ ] Nginx

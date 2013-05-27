@@ -69,6 +69,12 @@ ssh $VMSSH -T <<EOF | tee  install.log
   echo 'Setting quotas'
   setquota -u sageworker 1000000 1200000 20000 30000 /
 
+  echo 'Setting up tmpwatch'
+  cat > /etc/cron.d/sagecell-cleantmp << EOFCRON
+*/30 * * * * root /usr/sbin/tmpwatch 2h /tmp/sagecell 
+EOFCRON
+  restorecon -R /etc/cron.d
+
   echo 'Making temporary directory'
   su -l sageserver
   mkdir /tmp/sagecell
