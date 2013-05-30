@@ -40,7 +40,14 @@ Lower priority
 Interacts
 ---------
 * Port over William's interact implementation
+
+
 * Implement William's exercise decorator
+
+* control API:
+  - all we really need is an event system in place.   A way for
+    controls to invoke python callbacks
+
 * look into putting output in iframe to avoid all of the styling
   issues we've dealt with
 * Set up dependency management on python side: control updates are sent immediately on variable assignment.  This also allows us to easily track which controls got updated so they update only once, if wanted
@@ -101,6 +108,13 @@ Summer Projects
     [X] immutable .ssh, .sage, etc. for sage worker
     [X] clean tmp directory (added cron script using tmpwatch)
     [ ] use systemd or some other service to keep the cell server up
+        - we could use monit, which seems pretty standard:
+          http://mmonit.com/monit/
+        - we could just write our own script to ping every two
+          minutes, and maybe use upstart to monitor if the script is
+          up.  Exit the script with an error code when a ping fails,
+          and then restart the server when the monitoring script goes
+          down.
     [ ] confine the sage worker using selinux, if possible
     [ ] Nginx
     [ ] Make ssh more secure: http://wiki.centos.org/HowTos/Network/SecuringSSH

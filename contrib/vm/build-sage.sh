@@ -108,14 +108,15 @@ EOFSAGE
 
 EOF
 
-scp config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
-
 RC=`grep "Error building Sage" install.log` 
 if [ "$RC" != "" ]; then
    echo "Error building Sage!"
    #VBoxManage unregistervm $UUID --delete
    exit 1
 fi
+
+scp config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
+scp -R upstart $VMSSH:
 
 ssh $VMSSH -T <<EOF
   # make sure the config file is owned by the right person
@@ -134,6 +135,9 @@ ssh $VMSSH -T <<EOF
   iptables -I INPUT 1 -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to sage cell server
   iptables -I INPUT 1 -i lo -j ACCEPT # open up loopback for all traffic
   /sbin/service iptables save
+
+  cp upstart/* /etc/init/
+  restorecon -R /etc/init/
 EOF
 
 ssh $VMSSH -t -t <<EOF
