@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VM=sagecell
-./start $VM
+./vm/start $VM
 
 # vmm is:
 # Host vmm
@@ -47,7 +47,9 @@ ssh $VMSSH -T <<EOF | tee  install.log
   /usr/sbin/useradd sageworker --groups sagecell
 
   echo 'Setting up ssh keys'
-  su -l sageserver -c 'ssh-keygen -q -N "" -f /home/sageserver/.ssh/id_rsa'
+  if ! [ -f /home/sageserver/.ssh/id_rsa ]; then
+    su -l sageserver -c 'ssh-keygen -q -N "" -f /home/sageserver/.ssh/id_rsa'
+  fi
   su -l sageworker -c 'mkdir .ssh && chmod 700 .ssh'
   cp -r /home/sageserver/.ssh/id_rsa.pub /home/sageworker/.ssh/authorized_keys
   chown -R sageworker.sageworker /home/sageworker/
@@ -115,8 +117,8 @@ if [ "$RC" != "" ]; then
    exit 1
 fi
 
-scp config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
-scp -R upstart $VMSSH:
+scp vm/config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
+scp -r vm/upstart $VMSSH:
 
 ssh $VMSSH -T <<EOF
   # make sure the config file is owned by the right person

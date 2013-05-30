@@ -13,7 +13,7 @@ virt-install --name centos-vm \
 --vcpus=14 \
 --disk path=centos.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=25  \
 --location mnt \
---initrd-inject=sagecell-ks.cfg \
+--initrd-inject=vm/sagecell-ks.cfg \
 --os-type linux \
 --os-variant rhel6 \
 --accelerate \

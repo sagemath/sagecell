@@ -4,5 +4,5 @@ virsh destroy sagecell
 virsh undefine sagecell
 
 qemu-img create -b centos.img -f qcow2 sagecell.img
-virsh define sagecell.xml
+virsh define vm/sagecell.xml
 
