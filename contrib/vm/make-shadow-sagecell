@@ -1,8 +1,0 @@
-#!/bin/sh
-
-virsh destroy sagecell
-virsh undefine sagecell
-
-qemu-img create -b centos.img -f qcow2 sagecell.img
-virsh define vm/sagecell.xml
-

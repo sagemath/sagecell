@@ -2,9 +2,8 @@
 
 set -v
 VM=$1
-VMPORT=5457
+VMPORT=$2
 
-# Start and install virtualbox guest additions
 STATUS=`virsh dominfo $VM | grep 'State:.*running'`
 if [ $? -ne 0 ]; then
     virsh start $VM
@@ -18,7 +17,7 @@ if [ $? -ne 0 ]; then
 fi
 
 virsh qemu-monitor-command $VM --hmp "hostfwd_add ::$VMPORT-:22"
-virsh qemu-monitor-command $VM --hmp "hostfwd_add ::5459-:8888"
+virsh qemu-monitor-command $VM --hmp "hostfwd_add ::8$VMPORT-:8888"
 STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $VMPORT echo "ready"`
 while [ "$STATUS" != "ready" ]; do
     echo "Waiting for VM to start."

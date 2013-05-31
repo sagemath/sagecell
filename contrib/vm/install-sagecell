@@ -1,32 +1,25 @@
 #!/bin/sh
 
-VM=sagecell
-./vm/start-vm $VM
+VM=$1
+VMPORT=5457
+./vm/start-vm $VM $VMPORT
 
-# vmm is:
-# Host vmm
-#    User root
-#    HostName localhost
-#    Port 5457
-#    NoHostAuthenticationForLocalhost yes
-
-
-VMSSH=vmm
+VMSSH=root@localhost
 ### The Sage version
-SOURCE=$1
+SOURCE=$2
 if [ -z $SOURCE ] || [ ! -f $SOURCE ] ; then
     echo "Cannot find Sage source archive $SOURCE."
     exit 1
 fi
 
 echo 'Syncing sage source'
-rsync --progress -avv -e ssh $SOURCE $VMSSH:/home/sage-source.tar
+rsync --progress -avv -e "ssh -p $VMPORT" $SOURCE $VMSSH:/home/sage-source.tar
 
 #scp "$SCRIPTSDIR"/systemd-run-sage.service $VMSSH:/lib/systemd/system/sage@.service
 
 #scp "$SCRIPTSDIR"/sage-bash-profile $VMSSH:/home/sage/.bash_profile
 
-ssh $VMSSH -T <<EOF | tee  install.log
+ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   set -v
   echo 'Updating system'
   yum -y update
@@ -109,15 +102,14 @@ EOF
 RC=`grep "Error building Sage" install.log` 
 if [ "$RC" != "" ]; then
    echo "Error building Sage!"
-   #VBoxManage unregistervm $UUID --delete
    exit 1
 fi
 
-scp vm/vmfiles/config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
-scp vm/vmfiles/cron/* $VMSSH:/etc/cron.d/
-scp vm/vmfiles/upstart/* $VMSSH:/etc/init/
+scp -P $VMPORT vm/vmfiles/config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
+scp -P $VMPORT vm/vmfiles/cron/* $VMSSH:/etc/cron.d/
+scp -P $VMPORT vm/vmfiles/upstart/* $VMSSH:/etc/init/
 
-ssh $VMSSH -T <<EOF
+ssh -p $VMPORT $VMSSH -T <<EOF
   # make sure the config file is owned by the right person
   chown sageserver.sageserver /home/sageserver/sage/devel/sagecell/config.py
 
@@ -141,7 +133,7 @@ ssh $VMSSH -T <<EOF
 
 EOF
 
-ssh $VMSSH -t -t <<EOF
+ssh -p $VMPORT $VMSSH -t -t <<EOF
   # get the localhost in the known_hosts file
   su -l sageserver -c 'ssh -q -oStrictHostKeyChecking=no sageworker@localhost echo done'
   exit
@@ -150,19 +142,19 @@ EOF
 # don't shut down; just exit
 exit
 
-ssh $VMSSH -T <<EOF
+#ssh $VMSSH -T <<EOF
   #dd if=/dev/zero of=/zerofile ; rm -f /zerofile
   #shutdown -h now
-EOF
+#EOF
 
 
-echo "Waiting for the guest addition installation to finish..."
-STATUS=`virsh dominfo $VM | grep 'State:.*running'`
-while [ "$STATUS" != "" ]; do
-    date
-    sleep 10
-    STATUS=`virsh dominfo $VM | grep 'State:.*running'`
-done
+#echo "Waiting for the guest addition installation to finish..."
+#STATUS=`virsh dominfo $VM | grep 'State:.*running'`
+#while [ "$STATUS" != "" ]; do
+#    date
+#    sleep 10
+#    STATUS=`virsh dominfo $VM | grep 'State:.*running'`
+#done
 #if [ $? -ne 0 ]; then
 #   echo "Failed to wait for installation to finish!"
 #   exit 1
