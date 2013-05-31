@@ -3,6 +3,9 @@
 BASE=$1
 NAME=$2
 
+if virsh shutdown $BASE; then
+    sleep 10
+fi
 virsh destroy $NAME
 virsh undefine $NAME
 
