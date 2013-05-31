@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# ./mnt should point to the CentOS DVD
 rm centos.img
 qemu-img create -f qcow2 centos.img 20G
 
@@ -13,12 +14,12 @@ virt-install --name centos-vm \
 --vcpus=14 \
 --disk path=centos.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=25  \
 --location mnt \
---initrd-inject=vm/sagecell-ks.cfg \
+--initrd-inject=vm/base-centos.kickstart \
 --os-type linux \
 --os-variant rhel6 \
 --accelerate \
 --nographics \
 --noreboot \
---extra-args="cmdline ks=file:/sagecell-ks.cfg console=ttyS0"
+--extra-args="cmdline ks=file:/base-centos.kickstart console=ttyS0"
 #--noautoconsole \
 

@@ -43,11 +43,6 @@
       <source file='/home/salvus/vm/images/persistent/grout/sagecell.img'/>
       <target dev='vda' bus='virtio'/>
     </disk>
-    <disk type='file' device='disk'>
-      <driver name='qemu' type='qcow2' cache='writeback'/>
-      <source file='/home/salvus/vm/images/persistent/grout/permanent.img'/>
-      <target dev='vdb' bus='virtio'/>
-    </disk>
     <interface type='user'>
       <model type='virtio'/>
     </interface>

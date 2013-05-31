@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VM=sagecell
-./vm/start $VM
+./vm/start-vm $VM
 
 # vmm is:
 # Host vmm
@@ -61,12 +61,12 @@ ssh $VMSSH -T <<EOF | tee  install.log
   chattr -R +i .ssh .bashrc .bash_profile .bash_logout
   popd
 
-  echo 'Making permanent mount'
-  mkdir /permanent
-  if ! grep -q "permanent" /etc/fstab; then
-     echo /dev/vdb /permanent ext4 defaults,noexec 1 2 >> /etc/fstab
-  fi
-  mount -a
+  #echo 'Making permanent mount'
+  #mkdir /permanent
+  #if ! grep -q "permanent" /etc/fstab; then
+  #   echo /dev/vdb /permanent ext4 defaults,noexec 1 2 >> /etc/fstab
+  #fi
+  #mount -a
 
   echo 'Setting quotas'
   setquota -u sageworker 1000000 1200000 20000 30000 /
@@ -113,9 +113,9 @@ if [ "$RC" != "" ]; then
    exit 1
 fi
 
-scp vm/config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
-scp vm/cron/* $VMSSH:/etc/cron.d/
-scp vm/upstart/* $VMSSH:/etc/init/
+scp vm/vmfiles/config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
+scp vm/vmfiles/cron/* $VMSSH:/etc/cron.d/
+scp vm/vmfiles/upstart/* $VMSSH:/etc/init/
 
 ssh $VMSSH -T <<EOF
   # make sure the config file is owned by the right person
@@ -143,8 +143,7 @@ EOF
 
 ssh $VMSSH -t -t <<EOF
   # get the localhost in the known_hosts file
-  su -l sageserver -c 'ssh -q -oStrictHostKeyChecking=no sageworker@localhost echo hi'
-  echo 'done'
+  su -l sageserver -c 'ssh -q -oStrictHostKeyChecking=no sageworker@localhost echo done'
   exit
 EOF
 
