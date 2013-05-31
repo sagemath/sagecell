@@ -1,0 +1,18 @@
+#!/bin/sh
+ROOT=/home/sageserver/sage
+${ROOT}/sage ${ROOT}/devel/sagecell/contrib/sagecell-client/sagecell-service.py $1
+if [ $? -ne 0 ]
+ then
+   echo `date`
+   echo Error in server. Restarting...
+   /sbin/initctl stop sagecell
+   sleep 5
+   # kill everything just to make sure
+   su -s /bin/sh -c 'exec "$0" "$@"' sageserver -- kill -9 -1
+   sleep 5
+   /sbin/initctl start sagecell
+   echo Restarted
+   echo `date`
+   echo "************"
+   exit 1
+fi
