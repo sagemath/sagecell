@@ -96,7 +96,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     window.WebSocket = old_ws;
     */
     var that = this;
-    if (sagecell.kernels[k]) {
+    if (linked && sagecell.kernels[k]) {
         this.kernel = sagecell.kernels[k];
     } else {
         var old_ws = window.WebSocket;
@@ -104,15 +104,23 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         var old_console = window.console;
         var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
-        console = window.console || {};
+        window.console = window.console || {};
         console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
         window.WebSocket = old_ws;
+        this.kernel.start_channels = function() {
+            // wrap the IPython start_channels function, since it
+            // assumes that this.kernel_url is a relative url when it
+            // constructs the websocket URL
+            var absolute_kernel = this.kernel_url;
+            this.kernel_url = absolute_kernel.substr(sagecell.URLs.root.length);
+            $.proxy(IPython.Kernel.prototype.start_channels, this)();
+            this.kernel_url = absolute_kernel;
+        }
         this.kernel._kernel_started = function (json) {
             sagecell.log('kernel start callback: '+that.timer()+' ms.');
-            this.base_url = this.base_url.substr(sagecell.URLs.root.length);
             this._kernel_started = IPython.Kernel.prototype._kernel_started;
             this._kernel_started(json);
             sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
@@ -133,8 +141,11 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
                 ce("div", {"class": "sagecell_permalink"}, [
-                    ce("a", {"class": "sagecell_permalink_zip"}, ["Permalink"]), ", ",
-                    ce("a", {"class": "sagecell_permalink_query"}, ["Shortened Temporary Link"])
+                    ce("button", {"class": "sagecell_permalink_request"}, ["Share"]),
+                    ce("div", {"class": "sagecell_permalink_result"}, [
+                        ce("a", {"class": "sagecell_permalink_zip", title: "Link that will work on any Sage Cell server"}, ["Permalink"]), ce("br"),
+                        ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link"])
+                    ])
                 ]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
@@ -164,6 +175,8 @@ sagecell.Session = function (outputDiv, language, k, linked) {
                 that.interacts[i].disable();
             }
             $(that.output_blocks[null]).removeClass("sagecell_active");
+            data.kernel.shell_channel = {};
+            data.kernel.iopub_channel = {};
             sagecell.kernels[k] = null;
         }
     });
@@ -228,6 +241,9 @@ sagecell.Session.prototype.createPermalink = function (code) {
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
                 .attr("href", sagecell.URLs.root + "?z=" +
                 data.zip + "&lang=" + that.language);
+            var result = that.outputDiv.find("div.sagecell_permalink_result");
+            result.show();
+            that.outputDiv.find(".sagecell_permalink_request").off('click').click(function() { result.toggle()});
         });
 };
 
@@ -254,6 +270,9 @@ sagecell.Session.prototype.output = function(html, block_id) {
     // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
     var output_block=$(this.output_blocks[block_id]);
     if (block_id !== undefined && block_id !== null && this.replace_output[block_id]) {
+        // freeze output_block's size for a while
+        output_block.height(output_block.height());
+        setTimeout(function() {output_block.animate({'height': ''}, 'slow')}, 3000);
         output_block.empty();
         this.replace_output[block_id]=false;
     }
@@ -284,7 +303,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
                 this.files[files[j]] = 0;
             }
         }
-        var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
+        var filepath=this.kernel.kernel_url+'/files/';
         for (j in this.files) {
             //TODO: escape filenames and id
             html+='<a href="'+filepath+j+'?q='+this.files[j]+'" target="_blank">'+j+'</a> [Updated '+this.files[j]+' time(s)]<br>\n';
@@ -328,7 +347,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
         break;
 
     case "display_data":
-        var filepath=sagecell.URLs.root+this.kernel.kernel_url+'/files/';
+        var filepath=this.kernel.kernel_url+'/files/';
         // find any key of content that is in the display_handlers array and execute that handler
         // if none found, do the text/plain 
         var already_handled = false;

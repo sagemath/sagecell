@@ -30,7 +30,6 @@ Codebase
 * Change output model so that output of a request can be confined, and
   the browser knows where the output goes (instead of just trusting
   the python side to send an output id).  This would help with displaying errors, for example. (see https://github.com/sagemath/sagecell/issues/387)
-* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up. (See https://github.com/sagemath/sagecell/issues/389)
 * Automatically expire and restart idle workers.  See https://github.com/sagemath/sagecell/issues/391
 
 Permalink database
@@ -40,9 +39,7 @@ Permalink database
   * web side in Tornado, Go, or Node.js (for many simultaneous connections, but I suppose we could go back to flask/wsgi or something of that nature too)
   * database side in PostgreSQL (with propogation), Redis, Couchbase, Cassandra (Cassandra seems to fit the distributed, no-single-point-of-failure need)
   * Another possibility is to do the permalink server as a simple Google App Engine project.  William has lots of credit for this sort of thing.
-* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink) (see https://github.com/sagemath/sagecell/issues/350)
 * logging of all requests (separate from permalinks): 
-
   * python logging facility (load-test this)
   * straight to append-only file
   * to database?
@@ -52,12 +49,78 @@ Lower priority
 
 Interacts
 ---------
+* Port over William's interact implementation
+* Implement William's exercise decorator
+* look into putting output in iframe to avoid all of the styling
+  issues we've dealt with
 * Set up dependency management on python side: control updates are sent immediately on variable assignment.  This also allows us to easily track which controls got updated so they update only once, if wanted
 * explore javascript widgets
 * explore using bootstrap to lay out widgets (see William's design)
 * implement an html layout
 
+Slider('x+y') -> 
+
+@interact
+def update(slider):
+     pass
+register an update f.slider = x+y when x is changed
+register an update f.slider = x+y when y is changed
+
+@interact
+class interact:
+    update function
+
+    set function
+
+
+vs. my way:
+
+Slider('x+y') -> 
+
+the widget knows how to parse string expressions, and registers itself for updates.  It can also have a setting method
+
+With my way, updating a slider calls just the slider update function.  Williams way, updating a slider calls the whole control group update function
+
+With my way, the grouped variables are stored in an interactive namespace.  William's they are implicitly stored as locals of a function.   William's way is more implicit.
+
+Deployment
+----------
+
+* Use virt-install and a kickstart file to configure centos from
+  scratch to a running system:
+  http://www.cyberciti.biz/faq/kvm-virt-install-install-freebsd-centos-guest/
+  http://www.cyberciti.biz/faq/kvm-install-centos-redhat-using-kickstart-ks-cfg/
+* Look into ansible to configure an image
+
 
 Done
 ====
 * Set up multiple servers talking to the same database (possibly distributed) over the web
+* (Henry) permalinks only requested when wanted (hide div, requested and shown when you click on permalink) (see https://github.com/sagemath/sagecell/issues/350)
+* (Ira) pressing evaluate multiple times really fast hangs things.  When I press evaluate a second time, before a reply message comes back, something seems to be getting messed up. (See https://github.com/sagemath/sagecell/issues/389)
+
+
+Library of exercises
+====================
+
+%exercise
+title    = r"Find a vector"
+rank = randint(2,4)
+A        = random_matrix(QQ,5,algorithm='echelonizable', rank=rank,upper_bound=10)
+kernel = A.T.kernel()
+question = "Find a basis for the nullspace of $%s$.  Your answer should be a list of vectors (e.g., '[(1,2,3), (3,2,1)]' )"%latex(A)
+def check(a):
+    try:
+        a = sage_eval(a)
+    except:
+        return False, "There was an error parsing your answer. Your answer should be a list of vectors (e.g., '[(1,2,3), (3,2,1)]' )."
+    i = [vector(QQ,j) for j in a]
+    v = span(i)
+    if v.dimension()!=len(i):
+        return False, "Are your vectors linearly independent?"
+    elif v != kernel:
+        return False, "You are missing some vectors"
+    else:
+        return True, "Great job!"
+hints = ["The RREF is $%s$."%latex(A.rref())]
+hints.append(" ".join(hints)+"  The nullity is %d."%kernel.dimension())

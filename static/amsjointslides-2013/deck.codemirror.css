@@ -1,0 +1,69 @@
+.deck-container .slide {
+  font-weight: normal; 
+}
+.deck-container .slide .deck-codemirror-result {
+  border: 1px solid #ddd;
+  border-top: none;
+  padding: 10px;
+  font-family: monospace; 
+}
+.deck-container .CodeMirror {
+  font-family: monospace; 
+  border: 1px solid #ddd; 
+}
+.deck-container .slide .CodeMirror .button {
+  padding: 5px;
+  cursor: pointer;
+  background-color: #ddd;
+  position: relative;
+  float: right;
+  font-size: 11px;
+  line-height: 16px;
+  padding: 2px 6px;
+  margin-bottom: -20px;
+  margin-right: 20px;
+  border-radius: 4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  z-index: 100;
+  top: 8px; 
+}
+.deck-container .slide .CodeMirror .button:hover {
+  background-color: #eee; 
+}
+.deck-container .slide .CodeMirror .button.clear {
+  margin-right: 60px; 
+}
+.deck-container .slide .CodeMirror-scroll {
+  position: relative;
+  overflow-y: hidden;
+  overflow-x: auto;
+  width: 100%; 
+  background-color: white;
+}
+.deck-container .slide .CodeMirror-linenumbers {
+  color: #aaa;
+  text-align: left;
+  padding: .4em .2em .4em .4em; 
+}
+.deck-container .slide .CodeMirror-lines {
+  padding: .4em; 
+}
+.deck-container .slide .CodeMirror-focused .CodeMirror-cursor {
+  visibility: visible; 
+}
+.deck-container .slide span.CodeMirror-selected {
+  background: #ccc !important;
+  color: HighlightText !important; 
+}
+.deck-container .slide .CodeMirror-focused span.CodeMirror-selected {
+  background: Highlight !important; 
+}
+.deck-container .slide .CodeMirror-matchingbracket {
+  color: #0f0 !important; 
+}
+.deck-container .slide .CodeMirror-nonmatchingbracket {
+  color: #f22 !important; 
+}
+/*
+*/

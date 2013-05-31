@@ -163,6 +163,7 @@ from sagenb.misc.support import automatic_names
             def f(stream, ident, parent, *args, **kwargs):
                 kernel._publish_status(u'busy', parent)
                 md = kernel._make_metadata(parent['metadata'])
+                content = parent['content']
                 # Set the parent message of the display hook and out streams.
                 kernel.shell.displayhook.set_parent(parent)
                 kernel.shell.display_pub.set_parent(parent)
@@ -183,6 +184,19 @@ from sagenb.misc.support import automatic_names
                 reply_content[u'status'] = status
                 sys.stdout.flush()
                 sys.stderr.flush()
+
+                # this should be refactored probably to use existing IPython code
+                if reply_content['status'] == 'ok':
+                    reply_content[u'user_variables'] = \
+                                 kernel.shell.user_variables(content.get(u'user_variables', []))
+                    reply_content[u'user_expressions'] = \
+                                 kernel.shell.user_expressions(content.get(u'user_expressions', {}))
+                else:
+                    # If there was an error, don't even try to compute variables or
+                    # expressions
+                    reply_content[u'user_variables'] = {}
+                    reply_content[u'user_expressions'] = {}
+
                 if kernel._execute_sleep:
                     import time
                     time.sleep(kernel._execute_sleep)

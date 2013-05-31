@@ -1,0 +1,161 @@
+html { font-size: 62.5%; }
+/*Apply this class to some text to unlock the secrets of the third dimension!*/
+.inset { 
+  text-shadow:-2px -1px #666, 2px 1px #FFF;
+  /*text-shadow:#fff 0px 3px 0, #000 0 -3px 0 !important;*/
+line-height:3em; 
+/*background-color: lightgray;*/ 
+font-size:3em; font-weight:bold; color: gray;
+padding: 4em;
+opacity: 0.8}
+.alert {color: red; font-weight: bold;}
+ 
+.deck-container {
+	font-family: "Helvetica Neue", sans-serif;
+	//font-size:1.75em;
+	font-size:30pt;
+	background:#fff;
+  .large {font-size: 200%}
+  .small {font-size: 50%}
+	
+
+	.slide {
+		background:#fff;
+		td {padding: 1rem;}
+		th {text-decoration: underline; text-align: left !important;}
+		.canceled {text-decoration: line-through; color: lightgray;}
+		.centered { /* from http://blog.themeforest.net/tutorials/vertical-centering-with-css/ */
+		  position:absolute; top:0; bottom:0; 
+		  left:0; right:0;
+      margin:auto; height:20px;
+		  }
+    .right {margin-left: 50%}
+    .bevel {
+      text-shadow: 0 1px 0 #fff;
+    }
+     .author {
+          position: fixed; 
+          bottom:0; 
+          color: black !important;
+          padding-bottom: 10pt;
+          a {color: black !important;
+          }
+     }
+     .aligntop {text-valign: center;}
+
+		.sagecell {
+		    
+		    $fontsize: 2rem;
+		    font-size: $fontsize;
+		    /*
+		    .sagecell_sliderControl {
+			margin-left: 1em;
+			margin-right: 1em;
+		    }
+		    .sagecell_options {
+			font-size: $fontsize;
+		    }
+		    .sagecell_evalButton {
+			font-size: $fontsize;
+		    }
+*/
+		}
+
+		h1 {
+			color:#008;
+			font-size: 72pt;
+		}
+
+		h2 {
+			color:#00c;
+			border-bottom-color:#ccc;
+			font-size: 38pt;
+		}
+
+		h3 {
+			color:#888;
+		}
+
+		pre {
+			border-color:#ccc;
+		}
+
+		code {
+			color:#888;
+		}
+
+		blockquote {
+			font-size:2em;
+			font-style:italic;
+			padding:1em 2em;
+			color:#000;
+			border-left:5px solid #ccc;
+
+			p {
+				margin:0;
+			}
+
+			cite {
+				font-size:.5em;
+				font-style:normal;
+				font-weight:bold;
+				color:#888;
+			}
+		}
+
+		::-moz-selection{ background:#c00; color:#fff; }
+		::selection { background:#c00; color:#fff; }
+
+		.block {
+		    border: 1px solid;
+		    //margin: 20px;
+		    padding: 10px;
+		    border-radius: 5px;
+		}
+
+		a {
+			&, &:hover, &:focus, &:active, &:visited {
+				color:#00c;
+				text-decoration:none;
+			}
+
+			&:hover, &:focus {
+				text-decoration:underline;
+			}
+		}
+	}
+	
+	> .slide {
+		.deck-before, .deck-previous {
+			opacity:0.4;
+			
+			&:not(.deck-child-current) {
+				.deck-before, .deck-previous {
+					opacity:1;
+				}
+			}
+		}
+		
+		.deck-child-current {
+			opacity:1;
+		}
+	} 
+	
+	.deck-prev-link, .deck-next-link {
+	    display: none;
+	}
+	
+	.deck-status {
+		font-size:0.6666em;
+	}
+	
+	&.deck-menu {
+		.slide {
+			background:#eee;
+		}
+		
+		.deck-current, .no-touch & .slide:hover {
+			background:#ddf;
+		}
+	}
+}
