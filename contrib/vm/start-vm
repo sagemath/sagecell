@@ -1,8 +1,9 @@
 #!/bin/sh
 
-set -v
+#set -v
 VM=$1
-VMPORT=$2
+SSHPORT=$2
+WEBPORT=$3
 
 STATUS=`virsh dominfo $VM | grep 'State:.*running'`
 if [ $? -ne 0 ]; then
@@ -16,11 +17,11 @@ if [ $? -ne 0 ]; then
     sleep 2
 fi
 
-virsh qemu-monitor-command $VM --hmp "hostfwd_add ::$VMPORT-:22"
-virsh qemu-monitor-command $VM --hmp "hostfwd_add ::8$VMPORT-:8888"
-STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $VMPORT echo "ready"`
+virsh qemu-monitor-command $VM --hmp "hostfwd_add ::$SSHPORT-:22"
+virsh qemu-monitor-command $VM --hmp "hostfwd_add ::$WEBPORT-:8888"
+STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $SSHPORT echo "ready"`
 while [ "$STATUS" != "ready" ]; do
     echo "Waiting for VM to start."
     sleep 5
-    STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $VMPORT echo "ready"`
+    STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $SSHPORT echo "ready"`
 done

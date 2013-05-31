@@ -1,8 +1,9 @@
 #!/bin/sh
 
 VM=$1
-VMPORT=5457
-./vm/start-vm $VM $VMPORT
+VMPORT=2555
+WEBPORT=8555
+./vm/start-vm $VM $VMPORT $WEBPORT
 
 VMSSH=root@localhost
 ### The Sage version
