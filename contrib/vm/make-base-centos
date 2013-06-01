@@ -12,6 +12,11 @@ qemu-img create -f qcow2 $NAME.img ${SIZE}G
 virsh destroy $NAME
 virsh undefine $NAME
 
+# rootpassword is a file that looks like:
+# rootpw --iscrypted <CRYPTED PASSWORD>
+sed -e "/ROOTPASSWORD/r rootpassword" -e "/ROOTPASSWORD/d"  < vm/base-centos.kickstart-template > base-centos.kickstart
+chmod go-rwx base-centos.kickstart
+
 virt-install --name $NAME \
 --ram 8192 \
 --vcpus=14 \
@@ -24,7 +29,7 @@ virt-install --name $NAME \
 --nographics \
 --noreboot \
 --location $2 \
---initrd-inject=vm/base-centos.kickstart \
+--initrd-inject=base-centos.kickstart \
 --extra-args="cmdline ks=file:/base-centos.kickstart console=ttyS0"
 #--noautoconsole \
 

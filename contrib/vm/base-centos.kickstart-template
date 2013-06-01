@@ -11,8 +11,7 @@ timezone US/Pacific
 
 
 # Users
-#rootpw  --iscrypted #ROOTPW#
-rootpw sage
+ROOTPASSWORD
 
 # Network
 network --onboot=yes --device=eth0 --bootproto=dhcp --noipv6 --hostname=sagecell
