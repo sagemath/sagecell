@@ -612,6 +612,17 @@ diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
          ext = None
  
          # Tachyon resolution options
+@@ -1189,6 +1189,10 @@
+             f = open(filename + '.canvas3d', 'w')
+             f.write('[%s]' % ','.join(data))
+             f.close()
++            if EMBEDDED_MODE and EMBEDDED_MODE['frontend'] == 'sagecell':
++                msg={'application/x-canvas3d': filename + '.canvas3d'}
++                sys._sage_.display_message(msg)
++                sys._sage_.sent_files[filename + '.canvas3d'] = os.path.getmtime(filename + '.canvas3d')
+             ext = 'canvas3d'
+ 
+         if ext is None:
 diff --git a/sage/plot/plot3d/tachyon.py b/sage/plot/plot3d/tachyon.py
 --- a/sage/plot/plot3d/tachyon.py
 +++ b/sage/plot/plot3d/tachyon.py
