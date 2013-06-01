@@ -36,6 +36,7 @@ logvol / --fstype=ext4 --name=lv_root --vgname=vg_sagecell --grow --size=1024 --
 logvol swap --name=lv_swap --vgname=vg_sagecell --grow --size=4032 --maxsize=4032
 
 repo --name="myupdates" --baseurl=http://boxen.math.washington.edu/home/jason/CentOS/6.4/updates/x86_64
+repo --name=epel --baseurl=http://mirror.pnl.gov/epel/6/x86_64/
 
 #repo --name="CentOS"  --baseurl=file:///mnt/source --cost=100
 #repo --name="CentOS"  --baseurl=cdrom:sr0 --cost=100
@@ -56,6 +57,10 @@ poweroff
 @server-policy
 device-mapper-persistent-data
 policycoreutils-python # for semanage et. al.
+
+#EPEL
+epel-release
+nginx
 
 #extra packages Volker installs in the sage notebook server image
 kernel-headers
@@ -134,6 +139,7 @@ ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 /sbin/chkconfig --level=3 network on
 /sbin/chkconfig --level=3 crond on
 /sbin/chkconfig --level=3 sshd on
+/sbin/chkconfig --level=3 nginx on
 
 # turn off stuff thats not necessary
 #/sbin/chkconfig --level=3 rsyslogd off
