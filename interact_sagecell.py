@@ -111,6 +111,28 @@ def update_interact_msg(stream, ident, msg):
     sys._sage_.send_message(stream, 'sagenb.interact.update_reply',
       content={'status': 'ok'}, parent=msg, ident=ident)
 
+class AttrInteract(object):
+    def __init__(self, interact_id, function):
+        self.__dict__["interact_id"] = interact_id
+        self.__dict__["function"] = function
+    def __setattr__(self, name, value):
+        interact = globals()["__interacts"][self.interact_id]
+        if name not in interact["state"]:
+            raise AttributeError("Interact has no control '%s'" % (name,))
+        state = interact["state"].copy()
+        state[name] = value
+        sys._sage_.display_message({
+            "application/sage-interact-update": {
+                "interact_id": self.interact_id,
+                "control": name,
+                "value": interact["control"].unadapter(value)
+            },
+            "text/plain": "Sage Interact Update"
+        })
+        update_interact(self.interact_id, state)
+    def __call__(self, *args, **kwargs):
+        self.function(*args, **kwargs)
+
 import sys
 sys._sage_.register_handler("sagenb.interact.update_interact", update_interact_msg)
 
@@ -160,6 +182,8 @@ def interact_func(session, pub_socket):
         :rtype: function
         """
 
+        if type(f) is AttrInteract:
+            f = f.function
         if update is None: update = {}
         if layout is None: layout = {}
 
@@ -266,7 +290,7 @@ def interact_func(session, pub_socket):
                                   "state": dict(zip(names,[c.adapter(c.default, f.func_globals) for c in controls])),
                                   "globals": f.func_globals}
         adapted_f(__interacts[interact_id]["state"].copy())
-        return f
+        return AttrInteract(interact_id, f)
     return interact
 
 def safe_sage_eval(code, globs):
@@ -315,7 +339,15 @@ class InteractControl(object):
             this control (by default, the value is not changed)
         """
         return v
-
+    def unadapter(self, v):
+        """
+        Convert a value of the control (as passed to the function) to a value
+        which will be sent to the client.
+        
+        :arg v: an adapted value of the control in the context of the control
+        :returns: the value of this control as it will be sent to the client
+        """
+        return v
     def message(self):
         """
         Get a control configuration message for an
@@ -425,6 +457,9 @@ class ExpressionBox(InputBox):
             self.adapter = lambda x, globs: adapter(safe_sage_eval(x, globs), globs)
         else:
             self.adapter = lambda x, globs: safe_sage_eval(x, globs)
+
+    def unadapter(self, value):
+        return value if isinstance(value, basestring) else repr(value)
 
     def message(self):
         """
