@@ -56,10 +56,12 @@ poweroff
 @server-policy
 device-mapper-persistent-data
 policycoreutils-python # for semanage et. al.
+yum-cron
 
 #EPEL
 epel-release
 nginx
+octave
 
 #extra packages Volker installs in the sage notebook server image
 kernel-headers
@@ -139,6 +141,7 @@ ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 /sbin/chkconfig --level=3 crond on
 /sbin/chkconfig --level=3 sshd on
 /sbin/chkconfig --level=3 nginx on
+/sbin/chkconfig --level=3 yum-cron on
 
 # turn off stuff thats not necessary
 #/sbin/chkconfig --level=3 rsyslogd off
