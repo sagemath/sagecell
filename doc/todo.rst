@@ -108,28 +108,31 @@ Summer Projects
     [X] immutable .ssh, .sage, etc. for sage worker
     [X] clean tmp directory (added cron script using tmpwatch)
     [X] use systemd or some other service to keep the cell server up
-        - we could use monit, which seems pretty standard:
-          http://mmonit.com/monit/
-        - we could just write our own script to ping every two
-          minutes, and maybe use upstart to monitor if the script is
-          up.  Exit the script with an error code when a ping fails,
-          and then restart the server when the monitoring script goes
-          down.
-    [ ] confine the sage worker using selinux, if possible
-    [X] Nginx -- installed; need to set up haproxy to point to it
+        - Final solution: use systemd and a cron script that checks
+          every 2 minutes to make sure the website is still up.  This
+          is way less complicated than monit, at the cost of a
+          possible 2-minute downtime for a server.  If the server
+          crashes, it is immediately restarted.  We could make the
+          polling interval smaller.
+    [X] Nginx -- installed and haproxy points to it
+    [ ] Figure out better(?) database solution.
+        - benchmark the current tornado/sqlite permalink server solution.
+        - estimate the load we expect
+        - examine postgresql, couchbase, and cassandra for backend
+        - examine node, go, tornado for front end
+        - build centos-derived shadow vm for db server, probably
+          separate from sagecell exec servers
+    [ ] Test taking down a server; do clients automatically redirect
+        to other servers?  It seems that I wasn't being redirected
+        this last week when the server I was talking to went down
+    [ ] Better logging: log for web *and* service: where computations are coming from,
+          compute code
     [ ] Make ssh more secure: http://wiki.centos.org/HowTos/Network/SecuringSSH
     [ ] Polyinstantiated directories: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Security-Enhanced_Linux/polyinstantiated-directories.html
     [ ] use selinux: http://magazine.redhat.com/2008/04/17/fedora-9-and-summit-preview-confining-the-user-with-selinux/ http://fedoraproject.org/wiki/SELinux  http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html
 
-Currently:
-   * make-image: make an initial centos.img image
-   * make-clone: make a sagecell.img clone
-   * build-sage.sh sage-5.9-built.tar: build sage on the sagecell VM
-
-
 
   * rate limiting for incoming computations and permalink requests, both total and by IP
-
     * HAProxy (upgrade to 1.5dev): http://blog.serverfault.com/2010/08/26/1016491873/ or http://blog.exceliance.fr/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/ or https://code.google.com/p/haproxy-docs/wiki/rate_limit_sessions
     * iptables: http://www.debian-administration.org/articles/187 or http://penguinsecurity.net/wiki/index.php?title=The_iptables_Rate-Limiting_Module (for example)
   * load testing (ab, httperf, jmeter, our own multimechanize solution)
