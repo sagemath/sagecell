@@ -83,6 +83,9 @@ With my way, the grouped variables are stored in an interactive namespace.  Will
 
 Summer Projects
 ===============
+* new interacts, maybe based on William's system
+* string decorators
+* get sagecell patches into Sage
 * Configure and deploy CentOS images using SELinux, a cloud database,
   and nginx for static assets.  Kernels should be tied to different
   users.  Rate limits and request logging should be in place.  All
