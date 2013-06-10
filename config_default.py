@@ -25,7 +25,7 @@ permalink_server = {
 }
 
 max_kernel_timeout = 60*10 # 10 minutes, for interacts
-
+pid_file = 'sagecell.pid'
 computers = []
 
 _default_config = {"host": "localhost",
