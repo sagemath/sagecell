@@ -128,8 +128,21 @@ Summer Projects
     [ ] Test taking down a server; do clients automatically redirect
         to other servers?  It seems that I wasn't being redirected
         this last week when the server I was talking to went down
+    [ ] Add google analytics code to the sage cell root page 
     [ ] Better logging: log for web *and* service: where computations are coming from,
           compute code
+        - log to permalink server (requests made from server, so
+          should be fast; this means that logs are stored offsite from the untrusted images)
+          we could also just use a remote logging service; centos comes with nice logging: http://www.server-world.info/en/note?os=CentOS_6&p=rsyslog, http://blog.secaserver.com/2013/01/centos-6-install-remote-logging-server-rsyslog/ (log with python logging module: http://stackoverflow.com/questions/3968669/how-to-configure-logging-to-syslog-in-python), http://help.papertrailapp.com/kb/configuration/configuring-centralized-logging-from-python-apps
+        - make logging address configurable from the config file?
+        - log:
+           - where computations are coming from (embedding page URL or
+             requesting IP address if /service)
+           - type of computation (/service or normal evaluate; should
+             we also track interact changes?)
+           - date/time
+           - kernel id (this will track separate computations)
+           - code executed
     [ ] Make ssh more secure: http://wiki.centos.org/HowTos/Network/SecuringSSH
     [ ] Polyinstantiated directories: https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Security-Enhanced_Linux/polyinstantiated-directories.html
     [ ] use selinux: http://magazine.redhat.com/2008/04/17/fedora-9-and-summit-preview-confining-the-user-with-selinux/ http://fedoraproject.org/wiki/SELinux  http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html http://docs.fedoraproject.org/en-US/Fedora/18/html/Security_Guide/index.html
