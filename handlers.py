@@ -33,6 +33,7 @@ class RootHandler(tornado.web.RequestHandler):
     """
     @tornado.web.asynchronous
     def get(self):
+        logger.debug('request')
         db = self.application.db
         code = None
         language = None
