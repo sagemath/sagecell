@@ -97,9 +97,11 @@ def update_interact(interact_id, control_vals={}):
     interact_info = __interacts[interact_id]
     controls = interact_info["controls"]
     for name, value in control_vals.iteritems():
-        if controls[name].preserve_state:
-            controls[name].value = value
-    kwargs = {name: c.adapter(c.value) for name, c in controls.iteritems()}
+        controls[name].value = value
+    kwargs = {n: c.adapter(c.value) for n, c in controls.iteritems()}
+    for name, value in control_vals.iteritems():
+        if not controls[name].preserve_state:
+            controls[name].value = controls[name].default_value
     __interacts[interact_id]["function"](control_vals=kwargs)
 
 def update_interact_msg(stream, ident, msg):
@@ -126,14 +128,14 @@ class InteractProxy(object):
     def __getattr__(self, name):
         if name not in self.__interact["controls"]:
             raise AttributeError("Interact has no control '%s'" % (name,))
-        if insinstance(self.__interact["controls"][name].value, list):
+        if isinstance(self.__interact["controls"][name].value, list):
             return InteractProxy.ListProxy(self, name)
         return self.__interact["controls"][name].value
 
     def __call__(self, *args, **kwargs):
         return self.__function(*args, **kwargs)
 
-    def __update(self, cname, value, items={}):
+    def __update(self, name, items={}):
         msg = {
             "application/sage-interact-update": {
                 "interact_id": self.__interact_id,
@@ -144,7 +146,7 @@ class InteractProxy(object):
         }
         msg["application/sage-interact-update"].update(items)
         sys._sage_.display_message(msg)
-        update_interact(self.__interact_id, state)
+        update_interact(self.__interact_id)
 
     class ListProxy(object):
         def __init__(self, iproxy, name, index=[]):
@@ -535,8 +537,8 @@ class InputGrid(InteractControl):
         and returns an adapted value.  A nested list of these adapted elements
         is what is given to the main adapter function.
     """
-    def __init__(self, nrows=1, ncols=1, default=u'0', adapter=None, width=0,
-                 label=None, evaluate=True, adapter=None, element_adapter=None):
+    def __init__(self, nrows=1, ncols=1, default=u'0', width=0, label=None,
+                 evaluate=True, adapter=None, element_adapter=None):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
         self.width = int(width)
@@ -582,7 +584,7 @@ class InputGrid(InteractControl):
         elif not isinstance(value, (list, tuple)):
             return [[self.transform_elem(value) for _ in xrange(self.ncols)] for _ in xrange(self.nrows)]
         elif not all(isinstance(entry, (list, tuple)) for entry in value):
-            return [[self.transform_elem(value[i * self.ncols + j] for j in xrange(self.ncols)] for i in xrange(self.nrows)]
+            return [[self.transform_elem(value[i * self.ncols + j]) for j in xrange(self.ncols)] for i in xrange(self.nrows)]
         return [[self.transform_elem(v) for v in row] for row in value]
 
     transform_elem = InputBox.transform
@@ -725,7 +727,7 @@ class DiscreteSlider(InteractControl):
         :rtype: dict
         """
         return {'control_type':'slider',
-                'subtype': 'discrete_range' if self.range_slider else 'discrete'
+                'subtype': 'discrete_range' if self.range_slider else 'discrete',
                 'display_value':self.display_value,
                 'default': self.value,
                 'range':[0, len(self.values)-1],
@@ -793,7 +795,7 @@ class ContinuousSlider(InteractControl):
         return {'control_type':'slider',
                 'subtype': 'continuous_range' if self.range_slider else 'continuous',
                 'display_value':self.display_value,
-                'default':self.default_return,
+                'default':self.value,
                 'step':self.stepsize,
                 'range':[float(i) for i in self.interval],
                 'raw':True,
@@ -857,7 +859,7 @@ class MultiSlider(InteractControl):
                 for i, ival in enumerate(self.interval):
                     if len(ival) != 2 or ival[0] == ival[1]:
                         raise ValueError("invalid interval: %r" % (ival,))
-                    self.interval[i] = tuple(sorted([float(ival[0]), float(ival[1])))
+                    self.interval[i] = tuple(sorted([float(ival[0]), float(ival[1])]))
             elif len(interval) == 1 and len(interval[0]) == 2 and interval[0][0] != interval[0][1]:
                 self.interval = [tuple(sorted([float(interval[0][0]), float(interval[0][1])]))] * sliders
             else:
@@ -868,9 +870,9 @@ class MultiSlider(InteractControl):
             else:
                 self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.sliders else [250 for _ in self.interval]
             if len(stepsize) == self.sliders:
-                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval)]
+                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval))]
             elif len(stepsize) == 1:
-                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval)]
+                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval))]
             else:
                 self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval))]
 
@@ -930,25 +932,22 @@ class ColorSelector(InteractControl):
     """
 
     def __init__(self, default="#000000", hide_input=False, sage_color=True, label=None):
-        self.sage_color = sage_color
-        if self.sage_color:
-            try:
-                from sagenb.misc.misc import Color
-                self.sage_mode = True;
-            except:
-                self.sage_mode = False;
-        if self.sage_mode and self.sage_color:
-            if isinstance(default, Color):
-                self.default = default
-            elif isinstance(default, str):
-                self.default = Color(default)
-            else:
-                self.default = Color("#000000")
-        else:
-            self.default = default if isinstance(default,str) else "#000000"
-
+        try:
+            from sagenb.misc.misc import Color
+            self.Color = Color
+        except ImportError:
+            self.Color = None
+        self.sage_color = self.Color and sage_color
+        super(ColorSelector, self).__init__(default, self.Color if sage_color else None)
         self.hide_input = hide_input
         self.label = label
+
+    def transform(self, value):
+        if self.Color:
+            return self.Color(value).html_color()
+        if isinstance(value, basestring):
+            return value
+        return "#000000"
 
     def message(self):
         """
@@ -958,23 +957,13 @@ class ColorSelector(InteractControl):
         :returns: configuration message
         :rtype: dict
         """
-        self.return_value =  {'control_type':'color_selector',
-                              'hide_input': self.hide_input,
-                              'raw':False,
-                              'label':self.label}
-
-        if self.sage_mode and self.sage_color:
-            self.return_value["default"] = self.default.html_color()
-        else:
-            self.return_value["default"] = self.default
-        return self.return_value
-
-    def adapter(self, v, globs):
-        if self.sage_mode and self.sage_color:
-            from sagenb.misc.misc import Color
-            return Color(v)
-        else:
-            return v
+        return {
+            "control_type": "color_selector",
+            "default": self.value,
+            "hide_input": self.hide_input,
+            "raw": False,
+            "label": self.label
+        }
 
 class Button(InteractControl):
     """
@@ -989,14 +978,16 @@ class Button(InteractControl):
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     """
+
+    preserve_state = False
+
     def __init__(self, default="", value = "", text="Button", width="", label=None):
+        super(Button, self).__init__(value, lambda v: self.value if v else self.default_value)
         self.text = text
         self.width = width
         self.value = value
-        self.default = False
         self.default_value = default
         self.label = label
-        self.preserve_state = False
 
     def message(self):
         return {'control_type':'button',
@@ -1004,12 +995,6 @@ class Button(InteractControl):
                 'text':self.text,
                 'raw': True,
                 'label': self.label}
-
-    def adapter(self, v, globs):
-        if v:
-            return self.value
-        else:
-            return self.default_value
 
 class ButtonBar(InteractControl):
     """
@@ -1035,7 +1020,11 @@ class ButtonBar(InteractControl):
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     """
+
+    preserve_state = False
+
     def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=None):
+        super(ButtonBar, self).__init__(None, lambda v: self.default_value if v is None else self.values[int(v)])
         self.default = None
         self.default_value = default
         self.values = values[:]
@@ -1043,7 +1032,6 @@ class ButtonBar(InteractControl):
         self.ncols = ncols
         self.width = str(width)
         self.label = label
-        self.preserve_state=False
 
         # Assign button labels and values.
         self.value_labels=[str(v[1]) if isinstance(v,tuple) and
@@ -1095,12 +1083,6 @@ class ButtonBar(InteractControl):
                 'width': self.width,
                 'label': self.label}
 
-    def adapter(self,v, globs):
-        if v is None:
-            return self.default_value
-        else:
-            return self.values[int(v)]
-
 class HtmlBox(InteractControl):
     """
     An html box interact control
@@ -1110,7 +1092,7 @@ class HtmlBox(InteractControl):
         variable, and ``""`` (default) for no label.
     """
     def __init__(self, value="", label=""):
-        self.value = self.default = value;
+        super(HtmlBox, self).__init__(value)
         self.label = label;
     def message(self):
         """
@@ -1139,15 +1121,17 @@ class UpdateButton(InteractControl):
     :arg str label: the label of the control, ``None`` for the control's
         variable, and ``""`` (default) for no label.
     """
+
+    preserve_state = False
+
     def __init__(self, update=["*"], text="Update", value="", default="", width="", label=""):
+        super(UpdateButton, self).__init__(value, lambda v: self.value if v else self.default_value)
         self.vars = update
         self.text = text
         self.width = width
-        self.value = value
         self.default = False
         self.default_value = default
         self.label = label
-        self.preserve_state = False
 
     def message(self):
         return {'control_type':'button',
@@ -1164,7 +1148,6 @@ class UpdateButton(InteractControl):
 
     def boundVars(self):
         return self.vars
-
 
 def automatic_control(control, var=None):
     """
