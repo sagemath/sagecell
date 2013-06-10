@@ -6,7 +6,7 @@ Installation
 ============
 
 1. Make sure you have git; if you're on Ubuntu, you’ll also need the UUID dev package for ØMQ (`uuid-dev` on Ubuntu, `libuuid-devel` on Redhat).
-2. Compile Sage 5.9 (download it from http://www.sagemath.org/download-latest.html).
+2. Compile Sage 5.10.rc1 (download it from http://www.sagemath.org/download-latest.html).
 3. Delete the IPython installation in Sage: go to ``SAGE_ROOT/local/lib/python/site-packages/`` and delete the IPython directory and the ipython egg.
 4. Install ipython past commit ipython/ipython@0d4706f74b5b454c0a54026547a286caa786e6a4.  For example, you can do this::
 
