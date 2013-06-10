@@ -2,13 +2,13 @@
 # User Jason Grout <jason.grout@drake.edu>
 # Date 1311809242 25200
 # Node ID f67d7039d959b56d5b611b5979375b95dbe69398
-# Parent 0ecbbafefee2a58bfa776410b1788e38612f6a3b
+# Parent 70bf7bd97577936a031bc4845b6a27640af0c634
 [mq]: show.patch
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
 --- a/sage/misc/html.py
 +++ b/sage/misc/html.py
-@@ -180,13 +180,17 @@
+@@ -192,13 +192,17 @@
              s = s[j+7:] 
  
          from sage.misc.misc import EMBEDDED_MODE
@@ -28,13 +28,13 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
  
      def table(self, x, header = False):
          r"""
-@@ -284,13 +288,20 @@
-             </html>
+@@ -278,7 +282,14 @@
  
          """
--        print self.table_str(x, header=header)
+         from table import table
+-        print table(x, header_row=header)._html_()
 +        from sage.misc.misc import EMBEDDED_MODE
-+        output_string = self.table_str(x, header=header)
++        output_string = table(x, header_row=header)._html_()
 +        if EMBEDDED_MODE:
 +            if EMBEDDED_MODE['frontend']=='notebook':
 +                print "<html>"+output_string+"</html>"
@@ -42,55 +42,12 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 +                import sys
 +                sys._sage_messages.message_queue.display({'text/html':output_string})
  
-     def table_str(self, x, header):
-         import types
-         from sage.misc.all import latex
-         from itertools import cycle
--        ret = ""
-+        ret=[] # list of strings
-         if isinstance(x, types.GeneratorType):
-             x = list(x)
-         if isinstance(x, (list, tuple)):
-@@ -298,25 +309,25 @@
-             if rows > 0:
-                 # if the table has less then 100 rows, don't truncate the output in the notebook
-                 if rows <= 100:
--                    ret += "<html>\n<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>"
-+                    ret.append("<div class=\"notruncate\">\n<table class=\"table_form\">\n<tbody>")
-                 else:
--                    ret += "<html>\n<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>"
-+                    ret.append("<div class=\"truncate\">\n<table class=\"table_form\">\n<tbody>")
-                 
-                 if header is True:
-                     header=x[0]
-                     x = list(x[1:])
- 
-                 if header is not False:
--                    ret += "<tr>"
--                    ret += self._table_columns(header, True)
--                    ret += "</tr>"
-+                    ret.append("<tr>")
-+                    ret.append(self._table_columns(header, True))
-+                    ret.append("</tr>")
- 
-                 for row_class, row in zip(cycle(["row-a", "row-b"]), x):
--                    ret += "<tr class =\"%s\">" % row_class
--                    ret += self._table_columns(row, False)
--                    ret += "</tr>"
--                ret += "</tbody>\n</table>\n</div>\n</html>"
--        return ret
-+                    ret.append("<tr class =\"%s\">" % row_class)
-+                    ret.append(self._table_columns(row, False))
-+                    ret.append("</tr>")
-+                ret.append("</tbody>\n</table>\n</div>")
-+        return "".join(ret)
- 
-     def _table_columns(self, row, header=False):
+     def iframe(self, url, height=400, width=800):
          r"""
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -2105,7 +2105,8 @@
+@@ -2119,7 +2119,8 @@
      if pdflatex or (viewer == "pdf" and engine == "latex"):
          engine = "pdflatex"
      # notebook
@@ -100,7 +57,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          MathJax_okay = True
          for t in latex.mathjax_avoid_list():
              if s.find(t) != -1:
-@@ -2113,14 +2114,28 @@
+@@ -2127,14 +2128,28 @@
              if not MathJax_okay:
                  break
          if MathJax_okay:  # put comma at end of line below?
@@ -131,6 +88,97 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
          return
      # command line or notebook with viewer
      tmp = tmp_dir('sage_viewer')
+diff --git a/sage/misc/table.py b/sage/misc/table.py
+--- a/sage/misc/table.py
++++ b/sage/misc/table.py
+@@ -683,7 +683,7 @@
+         """
+         import types
+         from itertools import cycle
+-        ret = ""
++        ret = [] # list of strings
+         rows = self._rows
+         header_row = self._options['header_row']
+         if self._options['frame']:
+@@ -694,28 +694,28 @@
+         if len(rows) > 0:
+             # If the table has < 100 rows, don't truncate the output in the notebook
+             if len(rows) <= 100:
+-                ret += "<html>\n<div class=\"notruncate\">\n<table %s class=\"table_form\">\n<tbody>" % frame
++                ret.append("<div class=\"notruncate\">\n<table %s class=\"table_form\">\n<tbody>" % frame)
+             else:
+-                ret += "<html>\n<div class=\"truncate\">\n<table %s class=\"table_form\">\n<tbody>" % frame
++                ret.append("<div class=\"truncate\">\n<table %s class=\"table_form\">\n<tbody>" % frame)
+ 
+             # First row:
+             if header_row:
+-                ret += "<tr>"
+-                ret += self._html_table_row(rows[0], header=header_row)
+-                ret += "</tr>"
++                ret.append("<tr>")
++                ret.extend(self._html_table_row(rows[0], header=header_row))
++                ret.append("</tr>")
+                 rows = rows[1:]
+ 
+             # Other rows:
+             for row_class, row in zip(cycle(["row-a", "row-b"]), rows):
+-                ret += "<tr class =\"%s\">" % row_class
+-                ret += self._html_table_row(row, header=False)
+-                ret += "</tr>"
+-            ret += "</tbody>\n</table>\n</div>\n</html>"
+-        return ret
++                ret.append("<tr class =\"%s\">" % row_class)
++                ret.extend(self._html_table_row(row, header=False))
++                ret.append("</tr>")
++            ret.append("</tbody>\n</table>\n</div>")
++        return "".join(ret)
+ 
+     def _html_table_row(self, row, header=False):
+         r"""
+-        Return a string of the items of a list as one row of an HTML table. Used by
++        Return a list of strings of the items of a list as one row of an HTML table. Used by
+         the :meth:`_html_` method.
+ 
+         INPUTS:
+@@ -733,7 +733,7 @@
+         EXAMPLES::
+ 
+             sage: T = table([['a', 'bb', 'ccccc'], [10, -12, 0], [1, 2, 3]])
+-            sage: print T._html_table_row(['a', 2, '$x$'])
++            sage: T._html_table_row(['a', 2, '$x$'])
+             <td>a</td>
+             <td><script type="math/tex">2</script></td>
+             <td><script type="math/tex">x</script></td>
+@@ -755,22 +755,22 @@
+         else:
+             first_column_tag = column_tag
+ 
+-        ret = ""
++        ret = [] # list of strings
+         # First entry of row:
+         entry = row[0]
+         if isinstance(entry, Graphics):
+-            ret += first_column_tag % entry.show(linkmode = True)
++            ret.append(first_column_tag % entry.show(linkmode = True))
+         elif isinstance(entry, str):
+-            ret += first_column_tag % math_parse(entry)
++            ret.append(first_column_tag % math_parse(entry))
+         else:
+-            ret += first_column_tag % ('<script type="math/tex">%s</script>' % latex(entry))
++            ret.append(first_column_tag % ('<script type="math/tex">%s</script>' % latex(entry)))
+ 
+         # Other entries:
+         for column in xrange(1,len(row)):
+             if isinstance(row[column], Graphics):
+-                ret += column_tag % row[column].show(linkmode = True)
++                ret.append(column_tag % row[column].show(linkmode = True))
+             elif isinstance(row[column], str):
+-                ret += column_tag % math_parse(row[column])
++                ret.append(column_tag % math_parse(row[column]))
+             else:
+-                ret += column_tag % ('<script type="math/tex">%s</script>' % latex(row[column]))
++                ret.append(column_tag % ('<script type="math/tex">%s</script>' % latex(row[column])))
+         return ret
 diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 --- a/sage/plot/animate.py
 +++ b/sage/plot/animate.py
@@ -180,12 +228,12 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1754,17 +1754,27 @@
+@@ -1784,17 +1784,27 @@
  
          # This option should not be passed on to save().
          linkmode = kwds.pop('linkmode', False)
 -
-         if sage.plot.plot.DOCTEST_MODE:
+         if sage.doctest.DOCTEST_MODE:
              kwds.pop('filename', None)
              self.save(DOCTEST_MODE_FILE, **kwds)
 -        elif sage.plot.plot.EMBEDDED_MODE:
@@ -197,7 +245,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 -                return "<img src='cell://%s'>" % kwds['filename']
 +            import sys
 +            if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
-+                import json #TODO: be smart about which json
++                import json
 +                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
 +                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
 +
@@ -213,7 +261,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
          else:
              kwds.setdefault('filename', tmp_filename(ext='.png'))
              self.save(**kwds)
-@@ -2607,42 +2617,47 @@
+@@ -2651,42 +2661,47 @@
          options.update(kwds)
          dpi = options.pop('dpi')
          transparent = options.pop('transparent')
@@ -290,7 +338,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
  
  
  class GraphicsArray(SageObject):
-@@ -3002,11 +3017,18 @@
+@@ -3046,11 +3061,18 @@
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
              return
@@ -315,21 +363,24 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 diff --git a/sage/plot/plot.py b/sage/plot/plot.py
 --- a/sage/plot/plot.py
 +++ b/sage/plot/plot.py
-@@ -352,7 +352,6 @@
- ## going to be used.
+@@ -359,10 +359,6 @@
  
- #DEFAULT_FIGSIZE=(6, 3.70820393249937)
--from sage.misc.misc import EMBEDDED_MODE
- DOCTEST_MODE = False
  import sage.misc.misc
  from sage.misc.misc import srange
+-
+-# Code elsewhere relies on a module-level EMBEDDED_MODE variable
+-from sage.misc.misc import EMBEDDED_MODE
+-
+ from sage.misc.randstate import current_randstate #for plot adaptive refinement
+ from math import sin, cos, pi #for polar_plot
+ 
 diff --git a/sage/plot/plot3d/base.pyx b/sage/plot/plot3d/base.pyx
 --- a/sage/plot/plot3d/base.pyx
 +++ b/sage/plot/plot3d/base.pyx
 @@ -1078,6 +1078,7 @@
  
-         from sage.plot.plot import DOCTEST_MODE
          from sage.misc.misc import EMBEDDED_MODE
+         from sage.doctest import DOCTEST_MODE
 +        import sys
          ext = None
  
