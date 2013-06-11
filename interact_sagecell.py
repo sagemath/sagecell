@@ -152,7 +152,7 @@ class InteractProxy(object):
         def __init__(self, iproxy, name, index=[]):
             self.iproxy = iproxy
             self.name = name
-            self.control = self.iproxy.__interact["controls"][self.name]
+            self.control = self.iproxy._InteractProxy__interact["controls"][self.name]
             self.list = self.control.value
             self.index = index[:]
             for i in self.index:
@@ -160,7 +160,7 @@ class InteractProxy(object):
 
         def __getitem__(self, index):
             if isinstance(self.list[index], list):
-                return ListProxy(self.iproxy, self.name, self.index + [index])
+                return InteractProxy.ListProxy(self.iproxy, self.name, self.index + [int(index)])
             return self.list[index]
 
         def __setitem__(self, index, value):
@@ -168,14 +168,21 @@ class InteractProxy(object):
                 raise TypeError("object does not support slice assignment")
             if isinstance(self.list[index], list):
                 raise TypeError("object does not support item assignment")
+            index = int(index)
             self.list[index] = self.control.transform_elem(value, index)
-            self.iproxy.__update(self.name, {
+            self.iproxy._InteractProxy__update(self.name, {
                 "value": self.list[index],
                 "index": self.index + [index]
             })
 
+        def __repr__(self):
+            return "[%s]" % (", ".join(repr(e) for e in self.list),)
+
 import sys
-sys._sage_.register_handler("sagenb.interact.update_interact", update_interact_msg)
+try:
+    sys._sage_.register_handler("sagenb.interact.update_interact", update_interact_msg)
+except AttributeError:
+    pass
 
 def interact_func(session, pub_socket):
     """
@@ -469,7 +476,7 @@ class InputBox(InteractControl):
                 'keypress': self.keypress,
                 'label':self.label}
 
-    def transform(self, value, i=None):
+    def transform(self, value):
         return unicode(value if isinstance(value, basestring) else repr(value))
 
 class ExpressionBox(InputBox):
@@ -479,7 +486,7 @@ class ExpressionBox(InputBox):
         called on it to get a string, which is then the default input.
     :arg int width: character width of the input box.
     :arg int height: character height of the input box. If this is greater than
-        one, an HTML textarea will be rendered, while if it is less than one,
+        one, an HTML textarea will be rendered, while if it is less than one,x
         an input box form element will be rendered.
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
@@ -490,12 +497,12 @@ class ExpressionBox(InputBox):
         should return something that is then passed into the interact
         function as the value of the control.
     """
-    def __init__(self, default=u"", label=None, width=0, height=1, adapter=None):
+    def __init__(self, default=u"0", label=None, width=0, height=1, adapter=None):
         if adapter is not None:
-            adapter = lambda x: adapter(safe_sage_eval(x, self.globs))
+            full_adapter = lambda x: adapter(safe_sage_eval(x, self.globals))
         else:
-            adapter = lambda x: safe_sage_eval(x, self.globs)
-        super(ExpressionBox, self).__init__(default, label, width, height, adapter=adapter)
+            full_adapter = lambda x: safe_sage_eval(x, self.globals)
+        super(ExpressionBox, self).__init__(default, label, width, height, adapter=full_adapter)
 
     def message(self):
         """
@@ -546,19 +553,19 @@ class InputGrid(InteractControl):
         self.evaluate = evaluate
         if self.evaluate:
             if element_adapter is not None:
-                self.element_adapter = lambda x: element_adapter(safe_sage_eval(x, self.globs))
+                self.element_adapter = lambda x: element_adapter(safe_sage_eval(x, self.globals))
             else:
-                self.element_adapter = lambda x: safe_sage_eval(x, self.globs)
+                self.element_adapter = lambda x: safe_sage_eval(x, self.globals)
         else:
             if element_adapter is not None:
                 self.element_adapter = element_adapter
             else:
                 self.element_adapter = lambda value: value
         if adapter is None:
-            adapter = lambda x: [[self.element_adapter(i) for i in xi] for xi in x]
+            full_adapter = lambda x: [[self.element_adapter(i) for i in xi] for xi in x]
         else:
-            adapter = lambda x: adapter([[self.element_adapter(i) for i in xi] for xi in x])
-        super(InputGrid, self).__init__(default, adapter)
+            full_adapter = lambda x: adapter([[self.element_adapter(i) for i in xi] for xi in x])
+        super(InputGrid, self).__init__(default, full_adapter)
 
     def message(self):
         """
@@ -587,31 +594,32 @@ class InputGrid(InteractControl):
             return [[self.transform_elem(value[i * self.ncols + j]) for j in xrange(self.ncols)] for i in xrange(self.nrows)]
         return [[self.transform_elem(v) for v in row] for row in value]
 
-    transform_elem = InputBox.transform
+    def transform_elem(self, value, i=None):
+        return unicode(value if isinstance(value, basestring) else repr(value))
 
 class Selector(InteractControl):
     """
     A selector interact control
 
-    :arg int default: initially selected item in the list of values
     :arg list values: list of values from which the user can select. A value can
         also be represented as a tuple of the form ``(value, label)``, where the
         value is the name of the variable and the label is the text displayed to
         the user.
+    :arg int default: initially selected item in the list of values
     :arg string selector_type: Type of selector. Currently supported options
         are "button" (Buttons), "radio" (Radio buttons), and "list"
         (Dropdown list), with "list" being the default. If "list" is used,
         ``ncols`` and ``nrows`` will be ignored. If "radio" is used, ``width``
         will be ignored.
-    :arg int ncols: number of columns of selectable objects. If this is given,
-        it must cleanly divide the number of objects, else this value will be
-        set to the number of objects and ``nrows`` will be set to 1.
     :arg int nrows: number of rows of selectable objects. If this is given, it
         must cleanly divide the number of objects, else this value will be set
         to 1 and ``ncols`` will be set to the number of objects. If both
         ``ncols`` and ``nrows`` are given, ``nrows * ncols`` must equal the
         number of objects, else ``nrows`` will be set to 1 and ``ncols`` will
         be set to the number of objects.
+    :arg int ncols: number of columns of selectable objects. If this is given,
+        it must cleanly divide the number of objects, else this value will be
+        set to the number of objects and ``nrows`` will be set to 1.
     :arg string width: CSS width of each button. This should be specified in
         px or em.
     :arg str label: the label of the control, ``""`` for no label, and
@@ -634,7 +642,8 @@ class Selector(InteractControl):
             self.value_labels = [unicode(v[1]) for v in values]
         else:
             self.values = values[:]
-            self.value_labels = [unicode[v] for v in self.values]
+            self.value_labels = [unicode(v) for v in self.values]
+        default = 0 if default is None else self.values.index(default)
         super(Selector, self).__init__(default, self.values.__getitem__)
         # If not using a dropdown list,
         # check/set rows and columns for layout.
@@ -685,7 +694,7 @@ class Selector(InteractControl):
                 'label':self.label}
 
     def transform(self, value):
-        return 0 if value is None else self.values.index(value)
+        return int(constrain_to_range(value, 0, len(self.values) - 1))
 
 class DiscreteSlider(InteractControl):
     """
@@ -713,6 +722,11 @@ class DiscreteSlider(InteractControl):
         if len(self.values) < 2:
             raise ValueError("discrete slider must have at least 2 values")
         self.range_slider = range_slider
+        if self.range_slider:
+            default = (0, len(self.values) - 1) if default is None else \
+                [closest_index(self.values, default[i]) for i in (0, 1)]
+        else:
+            default = closest_index(self.values, default)
         super(DiscreteSlider, self).__init__(default, \
             lambda v: tuple(self.values[i] for i in v) if self.range_slider else self.values[v])
         self.display_value = display_value
@@ -736,23 +750,10 @@ class DiscreteSlider(InteractControl):
                 'raw':True,
                 'label':self.label}
 
-    def closest_index(self, value, i=None):
-        if value == None:
-            return 0
-        values = self.values if i is None else self.values[i]
-        try:
-            return values.index(value)
-        except ValueError:
-            try:
-                return min(xrange(len(values)), key=lambda i: abs(value - values[i]))
-            except TypeError:
-                return 0
-
     def transform(self, value):
         if self.range_slider:
-            return (0, len(self.values) - 1) if value is None else \
-                    tuple(sorted(self.closest_index(value[i]) for i in (0, 1)))
-        return closest_index(value)
+            return tuple(sorted(int(constrain_to_range(value[i], 0, len(self.values) - 1)) for i in (0, 1)))
+        return int(constrain_to_range(value, 0, len(self.values) - 1))
 
 class ContinuousSlider(InteractControl):
     """
@@ -760,15 +761,15 @@ class ContinuousSlider(InteractControl):
 
     The slider value moves between a range of numbers.
 
+    :arg tuple interval: range of the slider, in the form ``(min, max)``
     :arg int default: initial value of the slider; if ``None``, the
         slider defaults to its minimum
-    :arg tuple interval: range of the slider, in the form ``(min, max)``
     :arg int steps: number of steps the slider should have between min and max
     :arg Number stepsize: size of step for the slider. If both step and stepsize are specified, stepsize takes precedence so long as it is valid.
-    :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
-    :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
+    :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
+    :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
     
     Note that while "number of steps" and/or "stepsize" can be specified for the slider, this is to enable snapping, rather than a restriction on the slider's values. The only restrictions placed on the values of the slider are the endpoints of its range.
     """
@@ -804,18 +805,9 @@ class ContinuousSlider(InteractControl):
     def transform(self, value):
         if self.range_slider:
             if isinstance(value, (list, tuple)) and len(value) == 2:
-                value = sorted(value)
-                for i in (0, 1):
-                    if not (self.interval[0] <= value[i] <= self.interval[1]):
-                        value[i] = self.interval[i]
-                    value[i] = float(value[i])
-                return tuple(value)
+                return tuple(sorted(float(constrain_to_range(value[i], self.interval[0], self.interval[1])) for i in (0, 1)))
             return self.interval
-        if value is None or value < self.interval[0]:
-            return self.interval[0]
-        if value > self.interval[1]:
-            return self.interval[1]
-        return float(value)
+        return float(constrain_to_range(value, self.interval[0], self.interval[1]))
 
 class MultiSlider(InteractControl):
     """
@@ -823,11 +815,11 @@ class MultiSlider(InteractControl):
 
     Defines a bank of vertical sliders (either discrete or continuous sliders, but not both in the same control).
 
-    :arg string slider_type: type of sliders to generate. Currently, only "continuous" and "discrete" are valid, and other input defaults to "continuous."
     :arg int sliders: Number of sliders to generate
-    :arg list default: Default value of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
     :arg list values: Values for each value slider in a multi-dimensional list for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1, .. ,slider_n_val_n]]. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to contain the same values, the outer list only needs to contain that one list of values.
     :arg list interval: Intervals for each continuous slider in a list of tuples of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot be set if value sliders are specified. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to have the same interval, the list only needs to contain that one tuple.
+    :arg string slider_type: type of sliders to generate. Currently, only "continuous" and "discrete" are valid, and other input defaults to "continuous."
+    :arg list default: Default value of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
     :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
     :arg list steps: List of numbers representing the number of steps for each continuous slider. Note that (as in the case of the regular continuous slider), specifying a valid stepsize will always take precedence over any specification of number of steps, valid or not. The length of this list should be equivalent to the number of sliders, but if all sliders are to have the same number of steps, the list only neesd to contain that one value.
     :arg bool display_values: toggles whether the slider values sould be displayed (default = True)
@@ -837,44 +829,45 @@ class MultiSlider(InteractControl):
 
     def __init__(self, sliders=1, values=[[0,1]], interval=[(0,1)], slider_type="continuous",  default=None, stepsize=[0], steps=[250], display_values=True, label=None):
         from types import GeneratorType
+        self.number = int(sliders)
         self.slider_type = slider_type
         self.display_values = display_values
         self.label = label
         if self.slider_type == "discrete":
             self.stepsize = 1
-            if len(values) == sliders:
+            if len(values) == self.number:
                 self.values = values[:]
                 for i, v in enumerate(self.values):
                     if isinstance(v, GeneratorType):
                         self.values[i] = take(10000, i)
             elif len(values) == 1 and len(values[0]) >= 2:
-                self.values = [values[0][:]] * sliders
+                self.values = [values[0][:]] * self.number
             else:
-                self.values = [[0,1]] * sliders
-            super(MultiSlider, self).__init__(default, lambda v: [self.values[i][v[i]] for i in len(v)])
+                self.values = [[0,1]] * self.number
+            super(MultiSlider, self).__init__(default, lambda v: [self.values[i][v[i]] for i in xrange(self.number)])
         else:
             self.slider_type = "continuous"
-            if len(interval) == sliders:
+            if len(interval) == self.number:
                 self.interval = list(interval)
                 for i, ival in enumerate(self.interval):
                     if len(ival) != 2 or ival[0] == ival[1]:
                         raise ValueError("invalid interval: %r" % (ival,))
                     self.interval[i] = tuple(sorted([float(ival[0]), float(ival[1])]))
             elif len(interval) == 1 and len(interval[0]) == 2 and interval[0][0] != interval[0][1]:
-                self.interval = [tuple(sorted([float(interval[0][0]), float(interval[0][1])]))] * sliders
+                self.interval = [tuple(sorted([float(interval[0][0]), float(interval[0][1])]))] * self.number
             else:
-                self.interval = [(0, 1)] * sliders
+                self.interval = [(0, 1)] * self.number
             super(MultiSlider, self).__init__(default)
             if len(steps) == 1:
-                self.steps = [steps[0]] * self.sliders if steps[0] > 0 else [250] * self.sliders
+                self.steps = [steps[0]] * self.number if steps[0] > 0 else [250] * self.number
             else:
-                self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.sliders else [250 for _ in self.interval]
-            if len(stepsize) == self.sliders:
-                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval))]
+                self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.number else [250 for _ in self.interval]
+            if len(stepsize) == self.number:
+                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(self.number)]
             elif len(stepsize) == 1:
-                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval))]
+                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(self.number)]
             else:
-                self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(len(self.interval))]
+                self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.number]
 
     def message(self):
         """
@@ -887,32 +880,27 @@ class MultiSlider(InteractControl):
         return_message = {'control_type':'multi_slider',
                           'subtype':self.slider_type,
                           'display_values':self.display_values,
-                          'sliders': len(self.values),
-                          'range':self.interval,
-                          'step':self.stepsize,
+                          'sliders': self.number,
                           'raw':True,
                           'label':self.label,
                           'default':self.value}
         if self.slider_type == "discrete":
             return_message["values"] = [[repr(v) for v in val] for val in self.values]
+        else:
+            return_message["range"] = self.interval
+            return_message["step"] = self.stepsize
         return return_message
 
-    closest_index = DiscreteSlider.closest_index
-
     def transform(self, value):
-        if isinstance(value, (list, tuple)) and len(default) == len(self.values):
+        if isinstance(value, (list, tuple)) and len(value) == self.number:
             return [self.transform_elem(v, i) for i, v in enumerate(value)]
         else:
-            return [self.transform_elem(value, i) for i in xrange(len(self.values))]
+            return [self.transform_elem(value, i) for i in xrange(self.number)]
 
     def transform_elem(self, value, index):
         if self.slider_type == "discrete":
-            return self.closest_index(value, index)
-        if value is None or value < self.intervals[index][0]:
-            return self.intervals[index][0]
-        if value > self.intervals[index][1]:
-            return self.intervals[index][1]
-        return float(value)
+            return closest_index(self.values, value, index)
+        return float(constrain_to_range(value, self.interval[index][0], self.interval[index][1]))
 
 class ColorSelector(InteractControl):
     """
@@ -1140,12 +1128,6 @@ class UpdateButton(InteractControl):
                 'raw': True,
                 'label': self.label}
 
-    def adapter(self, v, globs):
-        if v:
-            return self.value
-        else:
-            return self.default_value
-
     def boundVars(self):
         return self.vars
 
@@ -1239,6 +1221,25 @@ def automatic_control(control, var=None):
     
     return C
 
+def closest_index(values, value, i=None):
+    if value == None:
+        return 0
+    values = values if i is None else values[i]
+    try:
+        return values.index(value)
+    except ValueError:
+        try:
+            return min(xrange(len(values)), key=lambda i: abs(value - values[i]))
+        except TypeError:
+            return 0
+
+def constrain_to_range(v, rmin, rmax):
+    if v is None or v < rmin:
+        return rmin
+    if v > rmax:
+        return rmax
+    return v
+
 def take(n, iterable):
     """
     Return the first n elements of an iterator as a list.
@@ -1264,29 +1265,6 @@ def flatten(listOfLists):
     from itertools import chain
     return chain.from_iterable(listOfLists)
 
-
-def default_to_index(values, default):
-    """
-    From sage notebook's interact.py file
-    """
-    # determine the best choice of index into the list of values
-    # for the user-selected default. 
-    if default is None:
-        index = 0
-    else:
-        try:
-            i = values.index(default)
-        except ValueError:
-            # here no index matches -- which is best?
-            try:
-                v = [(abs(default - val), j) for j,val in enumerate(values)]
-                m = min(v)
-                i = m[1]
-            except TypeError: # abs not defined on everything, so give up
-                i = 0
-        index = i
-    return index
-
 imports = {"Checkbox": Checkbox, "InputBox": InputBox,
            "ExpressionBox": ExpressionBox, "InputGrid": InputGrid,
            "Selector": Selector, "DiscreteSlider": DiscreteSlider,
@@ -1294,4 +1272,3 @@ imports = {"Checkbox": Checkbox, "InputBox": InputBox,
            "ColorSelector": ColorSelector, "Selector": Selector,
            "Button": Button, "ButtonBar": ButtonBar, "HtmlBox": HtmlBox,
            "UpdateButton": UpdateButton}
-

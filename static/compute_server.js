@@ -20,6 +20,7 @@
 var undefined;
 var ce = sagecell.util.createElement;
 var throttle = sagecell.util.throttle;
+var interacts = {};
 
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
@@ -137,7 +138,6 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         }
         this.kernel.start(IPython.utils.uuid());
     }
-    this.output_blocks = {};
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
                 ce("div", {"class": "sagecell_permalink"}, [
@@ -147,7 +147,8 @@ sagecell.Session = function (outputDiv, language, k, linked) {
                         ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link"])
                     ])
                 ]),
-            this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
+            this.
+            output_block = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {"src": sagecell.URLs.spinner,
                         "alt": "Loading", "class": "sagecell_spinner"})
             ]),
@@ -174,7 +175,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
-            $(that.output_blocks[null]).removeClass("sagecell_active");
+            $(that.output_block).removeClass("sagecell_active");
             data.kernel.shell_channel = {};
             data.kernel.iopub_channel = {};
             sagecell.kernels[k] = null;
@@ -261,14 +262,16 @@ sagecell.Session.prototype.appendMsg = function(msg, text) {
 sagecell.Session.prototype.last_output = function(block_id) {
     if (this.replace_output[block_id]) {
         return undefined;
+    } else if (block_id === null) {
+        return $(this.output_block);
     } else {
-        return $(this.output_blocks[block_id]).children().last()
+        return $(interacts[block_id].output_block).children().last()
     }
 }
 
 sagecell.Session.prototype.output = function(html, block_id) {
     // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
-    var output_block=$(this.output_blocks[block_id]);
+    var output_block=$(block_id === null ? this.output_block : interacts[block_id].output_block);
     if (block_id !== undefined && block_id !== null && this.replace_output[block_id]) {
         // freeze output_block's size for a while
         output_block.height(output_block.height());
@@ -323,7 +326,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
     case "stream":
         // First, see if we should consolidate this output with the previous output <pre>
         // this reaches into the inner workings of output
-        var last_output = this.last_output(block_id)
+        var last_output = this.last_output(block_id);
         if (last_output && last_output.hasClass("sagecell_" + content.name)) {
             // passing in an empty html string will actually return the last child of the output region
             var html = "";
@@ -375,7 +378,13 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
 
 // dispatch table on mime type
 sagecell.Session.prototype.display_handlers = {
-    'application/sage-interact': function(data, block_id, filepath) {this.interacts.push(new sagecell.InteractCell(this, data, block_id));}
+    'application/sage-interact': function (data, block_id) {
+        this.interacts.push(interacts[data.new_interact_id] = new sagecell.InteractCell(this, data, block_id));
+    },
+    'application/sage-interact-update': function (data) {
+        this.replace_output[data.interact_id] = true;
+        interacts[data.interact_id].updateControl(data);
+    }
     ,'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); }
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
     ,'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);}
@@ -393,7 +402,6 @@ sagecell.Session.prototype.display_handlers = {
     }
     ,'application/sage-interact-variable': function(data, block_id, filepath) {this.update_variable(data.namespace, data.variable, data.control);}
 }
-
 
 sagecell.Session.prototype.register_control = function(namespace, variable, control) {
     if (this.namespaces[namespace] === undefined) {
@@ -644,7 +652,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 cells[locs[row][col]] = td;
             } else {
                 td = ce("td", {"class": "sagecell_interactOutput"});
-                this.session.output_blocks[this.interact_id] = td;
+                this.output_block = td;
             }
             tr.appendChild(td);
         }
@@ -658,8 +666,8 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 var tr = ce("tr");
                 var row = this.layout[loc][i];
                 for (var j = 0; j < row.length; j++) {
-                     var varname = this.layout[loc][i][j];
-                     var varcontrol = this.controls[varname];
+                    var varname = this.layout[loc][i][j];
+                    var varcontrol = this.controls[varname];
                     var id = this.interact_id + "_" + varname;
                     var right = ce("td", {"class": "sagecell_interactcontrolcell"}, [
                         varcontrol.rendered(id)
@@ -686,9 +694,15 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     this.session.output(table, parent_block);
 }
 
+sagecell.InteractCell.prototype.updateControl = function (data) {
+    if (this.controls[data.control].update) {
+        this.controls[data.control].update(data.value, data.index);
+    }
+}
+
 sagecell.InteractCell.prototype.disable = function () {
     for (var name in this.controls) {
-        if (this.controls.hasOwnProperty(name)) {
+        if (this.controls.hasOwnProperty(name) && this.controls[name].disable) {
             this.controls[name].disable();
         }
     }
@@ -704,8 +718,8 @@ sagecell.InteractData.InteractControl = function () {
 
 sagecell.InteractData.Button = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.Button.prototype.rendered = function() {
-    this.button = ce("button", {}, [this.control.text]);
+sagecell.InteractData.Button.prototype.rendered = function(id) {
+    this.button = ce("button", {"id": id}, [this.control.text]);
     this.button.style.width = this.control.width;
     var that = this;
     $(this.button).click(function () {
@@ -733,7 +747,7 @@ sagecell.InteractData.Button.prototype.disable = function () {
 
 sagecell.InteractData.ButtonBar = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.ButtonBar.prototype.rendered = function () {
+sagecell.InteractData.ButtonBar.prototype.rendered = function (id) {
     var table = ce("table", {"style": "width: auto;"});
     var i = -1;
     this.buttons = $();
@@ -754,6 +768,7 @@ sagecell.InteractData.ButtonBar.prototype.rendered = function () {
         }
         table.appendChild(tr);
     }
+    this.buttons.first().attr("id", id);
     this.index = null;
     this.buttons.button();
     return table;
@@ -775,8 +790,8 @@ sagecell.InteractData.ButtonBar.prototype.disable = function () {
 
 sagecell.InteractData.Checkbox = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.Checkbox.prototype.rendered = function () {
-    this.input = ce("input", {"type": "checkbox"});
+sagecell.InteractData.Checkbox.prototype.rendered = function (id) {
+    this.input = ce("input", {"type": "checkbox", "id": id});
     this.input.checked = this.control["default"];
     return this.input;
 }
@@ -789,6 +804,10 @@ sagecell.InteractData.Checkbox.prototype.json_value = function () {
     return this.input.checked;
 }
 
+sagecell.InteractData.Checkbox.prototype.update = function (value) {
+    this.input.checked = value;
+}
+
 sagecell.InteractData.Checkbox.prototype.disable = function () {
     this.input.disabled = true;
 }
@@ -796,19 +815,19 @@ sagecell.InteractData.Checkbox.prototype.disable = function () {
 sagecell.InteractData.ColorSelector = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.ColorSelector.prototype.rendered = function () {
-    var selector = ce("span", {"class": "sagecell_colorSelector"});
+    this.selector = ce("span", {"class": "sagecell_colorSelector"});
     var text = document.createTextNode(this.control["default"]);
-    this.span = ce("span", {}, [selector]);
+    this.span = ce("span", {}, [this.selector]);
     if (!this.control.hide_input) {
-        selector.style.marginRight = "10px";
+        this.selector.style.marginRight = "10px";
         this.span.appendChild(text);
     }
-    selector.style.backgroundColor = this.control["default"];
+    this.selector.style.backgroundColor = this.control["default"];
     var that = this;
-    $(selector).ColorPicker({
+    $(this.selector).ColorPicker({
         "color": this.control["default"],
         "onChange": function (hsb, hex, rgb, el) {
-            text.nodeValue = that.color = selector.style.backgroundColor = "#" + hex;
+            text.nodeValue = that.color = that.selector.style.backgroundColor = "#" + hex;
         },
         "onHide": function () {
             $(that.span).change();
@@ -823,6 +842,10 @@ sagecell.InteractData.ColorSelector.prototype.changeHandlers = function() {
 
 sagecell.InteractData.ColorSelector.prototype.json_value = function() {
     return this.color;
+}
+
+sagecell.InteractData.ColorSelector.prototype.update = function (value) {
+    $(this.selector).ColorPickerSetColor(value);
 }
 
 sagecell.InteractData.ColorSelector.prototype.disable = function () {
@@ -846,11 +869,9 @@ sagecell.InteractData.HtmlBox.prototype.json_value = function() {
     return null;
 }
 
-sagecell.InteractData.HtmlBox.prototype.disable = function () {}
-
 sagecell.InteractData.InputBox = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.InputBox.prototype.rendered = function () {
+sagecell.InteractData.InputBox.prototype.rendered = function (id) {
     if (this.control.subtype === "textarea") {
         this.textbox = ce("textarea",
             {"rows": this.control.height, "cols": this.control.width});
@@ -860,6 +881,7 @@ sagecell.InteractData.InputBox.prototype.rendered = function () {
             {"size": this.control.width,  "autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
     }
     this.textbox.value = this.control["default"];
+    this.textbox.id = id;
     if (this.control.evaluate) {
         this.textbox.style.fontFamily = "monospace";
     }
@@ -877,13 +899,17 @@ sagecell.InteractData.InputBox.prototype.json_value = function () {
     return this.textbox.value;
 }
 
+sagecell.InteractData.InputBox.prototype.update = function (value) {
+    this.textbox.value = value;
+}
+
 sagecell.InteractData.InputBox.prototype.disable = function () {
     this.textbox.disabled = true;
 }
 
 sagecell.InteractData.InputGrid = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.InputGrid.prototype.rendered = function () {
+sagecell.InteractData.InputGrid.prototype.rendered = function (id) {
     this.textboxes = $();
     var table = ce("table", {"style": "width: auto;"});
     for (var row = 0; row < this.control.nrows; row++) {
@@ -900,6 +926,7 @@ sagecell.InteractData.InputGrid.prototype.rendered = function () {
         }
         table.appendChild(tr);
     }
+    this.textboxes.attr("id", id);
     return table;
 }
 
@@ -917,6 +944,10 @@ sagecell.InteractData.InputGrid.prototype.json_value = function () {
         value.push(rowlist);
     }
     return value;
+}
+
+sagecell.InteractData.InputGrid.prototype.update = function (value, index) {
+    this.textboxes[index[0] * this.control.ncols + index[1]].value = value;
 }
 
 sagecell.InteractData.InputGrid.prototype.disable = function () {
@@ -940,6 +971,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
         slider.style.margin = "1em 0.5em 1em 0.8em";
         column.appendChild(slider);
         var that = this;
+        console.log(this.control);
         if (this.control.subtype === "continuous") {
             var textbox = ce("input", {"class": "sagecell_interactValueBox", "type": "number", 
                                        "min": this.control.range[i][0], "max": this.control.range[i][1]});
@@ -1004,6 +1036,12 @@ sagecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
 sagecell.InteractData.MultiSlider.prototype.json_value = function () {
     return this.values;
 }
+
+sagecell.InteractData.MultiSlider.prototype.update = function (value, index) {
+    $(this.sliders[index]).value(this.control.subtype === "continuous" ?
+        Math.round((value - this.control.range[index][0]) / this.control.step[index]) : value);
+}
+
 sagecell.InteractData.MultiSlider.prototype.disable = function () {
     this.sliders.slider("option", "disabled", true);
     this.value_boxes.attr("disabled", true);
@@ -1011,7 +1049,7 @@ sagecell.InteractData.MultiSlider.prototype.disable = function () {
 
 sagecell.InteractData.Selector = sagecell.InteractData.InteractControl();
 
-sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
+sagecell.InteractData.Selector.prototype.rendered = function (id) {
     var that = this;
     if (this.control.subtype === "list") {
         var select = ce("select");
@@ -1024,6 +1062,7 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
             $(event.target).trigger("changedone");
         });
         select.style.width = this.control.width;
+        select.id = id;
         this.changing = select;
         return select;
     } else if (this.control.subtype === "radio" || this.control.subtype === "button") {
@@ -1033,13 +1072,13 @@ sagecell.InteractData.Selector.prototype.rendered = function (control_id) {
         for (var row = 0; row < this.control.nrows; row++) {
             var tr = ce("tr");
             for (var col = 0; col < this.control.ncols; col++) {
-                var id = control_id + "_" + (++i);
-                var option = ce("input", {"type": "radio", "name": control_id, "id": id});
+                var radio_id = id + "_" + (++i);
+                var option = ce("input", {"type": "radio", "name": id, "id": radio_id});
                 if (i === this.control["default"]) {
                     option.checked = true;
                     this.value = i;
                 }
-                var label = ce("label", {"for": id}, [this.control.value_labels[i]]);
+                var label = ce("label", {"for": radio_id}, [this.control.value_labels[i]]);
                 label.style.width = this.control.width;
                 $(option).change(function (i) {
                     return function (event) {
@@ -1067,6 +1106,16 @@ sagecell.InteractData.Selector.prototype.json_value = function () {
     return this.value;
 }
 
+sagecell.InteractData.Selector.prototype.update = function (value) {
+    if (this.control.subtype === "list") {
+        this.changing.selectedIndex = value;
+    } else {
+        this.changing[value].checked = true;
+        this.changing.button("refresh");
+    }
+    this.value = value;
+}
+
 sagecell.InteractData.Selector.prototype.disable = function () {
     if (this.control.subtype === "list") {
         this.changing.disabled = true;
@@ -1074,7 +1123,7 @@ sagecell.InteractData.Selector.prototype.disable = function () {
         this.changing.attr("disabled", true);
     } else {
         this.changing.button("option", "disabled", true);
-    }   
+    }
 }
 
 sagecell.InteractData.Slider = sagecell.InteractData.InteractControl();
@@ -1224,6 +1273,14 @@ sagecell.InteractData.Slider.prototype.json_value = function () {
         return this.values;
     } else {
         return this.value;
+    }
+}
+
+sagecell.InteractData.Slider.prototype.update = function (value) {
+    if (this.continuous) {
+        $(this.slider).slider("option", (this.range ? "values" : "value"), value);
+    } else {
+        $(this.slider).slider((this.range ? "values" : "value"), value);
     }
 }
 
