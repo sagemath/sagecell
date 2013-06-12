@@ -597,6 +597,10 @@ sagecell.InteractCell = function (session, data, parent_block) {
 sagecell.InteractCell.prototype.bindChange = function () {
     var that = this;
     var handler = function (event, ui) {
+        if (that.controls[event.data.name].ignoreNext > 0) {
+            that.controls[event.data.name].ignoreNext--;
+            return;
+        }
         $(that.rows[event.data.name]).addClass("sagecell_dirtyControl");
         if (that.update[event.data.name]) {
             var msg_dict = {'interact_id': that.interact_id, 'control_vals': {}};
@@ -696,6 +700,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
 
 sagecell.InteractCell.prototype.updateControl = function (data) {
     if (this.controls[data.control].update) {
+        this.controls[data.control].ignoreNext = this.controls[data.control].eventCount;
         this.controls[data.control].update(data.value, data.index);
     }
 }
@@ -713,6 +718,7 @@ sagecell.InteractData = {};
 sagecell.InteractData.InteractControl = function () {
     return function (control) {
         this.control = control;
+        this.eventCount = this.ignoreNext = 0;
     }
 }
 
@@ -966,6 +972,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
     this.sliders = $();
     this.value_boxes = $();
     this.values = this.control["default"].slice();
+    this.eventCount = 1;
     for (var i = 0; i < this.control.sliders; i++) {
         var column = ce("div");
         column.style.width = "50px";
@@ -1002,7 +1009,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
             that.value_boxes = that.value_boxes.add(textbox);
             column.appendChild(textbox);
         } else {
-            var span = ce("span", {}, [this.values[i].toString()]);
+            var span = ce("span", {}, [this.control.values[i][this.values[i]].toString()]);
             span.style.fontFamily = "monospace";
             span.style.display = this.control.display_values ? "" : "none";
             that.value_boxes = that.value_boxes.add(span);
@@ -1025,8 +1032,8 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
                           "value": this.control["default"][i],
                           "min": this.control.range[i][0],
                           "max": this.control.range[i][1],
-                          "step": this.control.step[i],
-                          "slide": slide_handler});
+                          "step": this.control.step[i]});
+        $(slider).on("slide", slide_handler);
         this.sliders = this.sliders.add(slider);
         div.appendChild(column);
     }
@@ -1042,8 +1049,8 @@ sagecell.InteractData.MultiSlider.prototype.json_value = function () {
 }
 
 sagecell.InteractData.MultiSlider.prototype.update = function (value, index) {
-    $(this.sliders[index]).value(this.control.subtype === "continuous" ?
-        Math.round((value - this.control.range[index][0]) / this.control.step[index]) : value);
+    $(this.sliders[index]).slider("option", "value", value);
+    $(this.sliders[index]).trigger("slide", {"value": value});
 }
 
 sagecell.InteractData.MultiSlider.prototype.disable = function () {
@@ -1139,6 +1146,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                  this.control.subtype === "continuous_range";
     var container = ce("span", {"class": "sagecell_sliderContainer"});
     this.value_boxes = $();
+    this.eventCount = this.range ? 2 : 1;
     container.style.whitespace = "nowrap";
     this.slider = ce("span", {"class": "sagecell_sliderControl"});
     container.appendChild(this.slider);
@@ -1150,7 +1158,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                    "max": this.control.range[1],
                                    "step": this.control.step,
                                    "range": true,
-                                   "values": this.values,});
+                                   "values": this.values});
             var min_text = ce("input", {"class": "sagecell_interactValueBox", "type": "number",
                                         "value": this.values[0].toString(), "min": this.control.range[0],
                                         "max": this.control.range[1], "step": this.control.step});
@@ -1281,11 +1289,10 @@ sagecell.InteractData.Slider.prototype.json_value = function () {
 }
 
 sagecell.InteractData.Slider.prototype.update = function (value) {
-    if (this.continuous) {
-        $(this.slider).slider("option", (this.range ? "values" : "value"), value);
-    } else {
-        $(this.slider).slider((this.range ? "values" : "value"), value);
-    }
+    $(this.slider).slider("option", (this.range ? "values" : "value"), value);
+    var ui = {};
+    ui[this.range ? "values" : "value"] = value;
+    $(this.slider).trigger("slide", ui);
 }
 
 sagecell.InteractData.Slider.prototype.disable = function () {

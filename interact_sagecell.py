@@ -122,6 +122,8 @@ class InteractProxy(object):
             return super(InteractProxy, self).__setattr__(name, value)
         if name not in self.__interact["controls"]:
             raise AttributeError("Interact has no control '%s'" % (name,))
+        if isinstance(self.__interact["controls"][name].value, list):
+            raise TypeError("object does not support item assignment")
         self.__interact["controls"][name].value = value
         self.__update(name)
 
@@ -834,6 +836,10 @@ class MultiSlider(InteractControl):
         self.slider_type = slider_type
         self.display_values = display_values
         self.label = label
+        if not isinstance(default, (list, tuple)):
+            default = [default]
+        if len(default) == 1:
+            default *= self.number
         if self.slider_type == "discrete":
             self.stepsize = 1
             if len(values) == self.number:
@@ -845,6 +851,8 @@ class MultiSlider(InteractControl):
                 self.values = [values[0][:]] * self.number
             else:
                 self.values = [[0,1]] * self.number
+            self.interval = [(0, len(self.values[i]) - 1) for i in xrange(self.number)]
+            default = [closest_index(self.values[i], d) for i, d in enumerate(default)]
             super(MultiSlider, self).__init__(default, lambda v: [self.values[i][v[i]] for i in xrange(self.number)])
         else:
             self.slider_type = "continuous"
@@ -884,12 +892,11 @@ class MultiSlider(InteractControl):
                           'sliders': self.number,
                           'raw':True,
                           'label':self.label,
-                          'default':self.value}
+                          'default':self.value,
+                          'range': self.interval,
+                          'step': self.stepsize}
         if self.slider_type == "discrete":
             return_message["values"] = [[repr(v) for v in val] for val in self.values]
-        else:
-            return_message["range"] = self.interval
-            return_message["step"] = self.stepsize
         return return_message
 
     def transform(self, value):
@@ -900,8 +907,9 @@ class MultiSlider(InteractControl):
 
     def transform_elem(self, value, index):
         if self.slider_type == "discrete":
-            return closest_index(self.values, value, index)
-        return float(constrain_to_range(value, self.interval[index][0], self.interval[index][1]))
+            return int(constrain_to_range(value, 0, len(self.values[index]) - 1))
+        else:
+            return float(constrain_to_range(value, self.interval[index][0], self.interval[index][1]))
 
 class ColorSelector(InteractControl):
     """
