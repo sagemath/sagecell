@@ -71,7 +71,6 @@ if (sagecell.log === undefined) {
         };
     }(typeof console === "undefined" ? function() {} : $.proxy(console.log, console)));
 }
-sagecell.interacts = {};
 // Various utility functions for the Single Cell Server
 sagecell.util = {
     "createElement": function (type, attrs, children) {

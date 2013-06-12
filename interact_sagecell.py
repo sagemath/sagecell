@@ -99,9 +99,9 @@ def update_interact(interact_id, control_vals={}):
     for name, value in control_vals.iteritems():
         controls[name].value = value
     kwargs = {n: c.adapter(c.value) for n, c in controls.iteritems()}
-    for name, value in control_vals.iteritems():
-        if not controls[name].preserve_state:
-            controls[name].value = controls[name].default_value
+    for control in controls.itervalues():
+        if not control.preserve_state:
+            control.reset()
     __interacts[interact_id]["function"](control_vals=kwargs)
 
 def update_interact_msg(stream, ident, msg):
@@ -399,6 +399,7 @@ class InteractControl(object):
         :arg value: the value to transform
         :returns: the transformed value to be stored
         """
+        return value
 
 class Checkbox(InteractControl):
     """
@@ -969,12 +970,12 @@ class Button(InteractControl):
 
     preserve_state = False
 
-    def __init__(self, default="", value = "", text="Button", width="", label=None):
-        super(Button, self).__init__(value, lambda v: self.value if v else self.default_value)
+    def __init__(self, default="", value ="", text="Button", width="", label=None):
+        super(Button, self).__init__(False, lambda v: self.clicked_value if v else self.default_value)
         self.text = text
         self.width = width
-        self.value = value
         self.default_value = default
+        self.clicked_value = value
         self.label = label
 
     def message(self):
@@ -983,6 +984,12 @@ class Button(InteractControl):
                 'text':self.text,
                 'raw': True,
                 'label': self.label}
+
+    def transform(self, value):
+        return bool(value)
+
+    def reset(self):
+        self.value = False
 
 class ButtonBar(InteractControl):
     """
@@ -1013,7 +1020,6 @@ class ButtonBar(InteractControl):
 
     def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=None):
         super(ButtonBar, self).__init__(None, lambda v: self.default_value if v is None else self.values[int(v)])
-        self.default = None
         self.default_value = default
         self.values = values[:]
         self.nrows = nrows
@@ -1071,6 +1077,12 @@ class ButtonBar(InteractControl):
                 'width': self.width,
                 'label': self.label}
 
+    def transform(self, value):
+        return None if value is None else constrain_to_range(int(value), 0, len(self.values) - 1)
+
+    def reset(self):
+        self.value = None
+
 class HtmlBox(InteractControl):
     """
     An html box interact control
@@ -1094,7 +1106,10 @@ class HtmlBox(InteractControl):
                 'value': self.value,
                 'label': self.label}
 
-class UpdateButton(InteractControl):
+    def transform(self, value):
+        return unicode(value)
+
+class UpdateButton(Button):
     """
     An update button interact control
     
@@ -1110,23 +1125,9 @@ class UpdateButton(InteractControl):
         variable, and ``""`` (default) for no label.
     """
 
-    preserve_state = False
-
     def __init__(self, update=["*"], text="Update", value="", default="", width="", label=""):
-        super(UpdateButton, self).__init__(value, lambda v: self.value if v else self.default_value)
+        super(UpdateButton, self).__init__(default, value, text, width, label)
         self.vars = update
-        self.text = text
-        self.width = width
-        self.default = False
-        self.default_value = default
-        self.label = label
-
-    def message(self):
-        return {'control_type':'button',
-                'width':self.width,
-                'text':self.text,
-                'raw': True,
-                'label': self.label}
 
     def boundVars(self):
         return self.vars

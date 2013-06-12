@@ -603,7 +603,7 @@ sagecell.InteractCell.prototype.bindChange = function () {
             for (var name in that.controls) {
                 if (that.controls.hasOwnProperty(name) &&
                         that.update[event.data.name].indexOf(name) !== -1) {
-                    msg_dict['control_vals'][name]=that.controls[name].json_value(ui)
+                    msg_dict['control_vals'][name] = that.controls[name].json_value(ui);
                     $(that.rows[name]).removeClass("sagecell_dirtyControl");
                 }
             }
@@ -826,7 +826,7 @@ sagecell.InteractData.ColorSelector.prototype.rendered = function () {
     var that = this;
     $(this.selector).ColorPicker({
         "color": this.control["default"],
-        "onChange": function (hsb, hex, rgb, el) {
+        "onChange": this.change = function (hsb, hex, rgb, el) {
             text.nodeValue = that.color = that.selector.style.backgroundColor = "#" + hex;
         },
         "onHide": function () {
@@ -846,6 +846,7 @@ sagecell.InteractData.ColorSelector.prototype.json_value = function() {
 
 sagecell.InteractData.ColorSelector.prototype.update = function (value) {
     $(this.selector).ColorPickerSetColor(value);
+    this.change(undefined, value.substr(1));
 }
 
 sagecell.InteractData.ColorSelector.prototype.disable = function () {
@@ -867,6 +868,10 @@ sagecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
 
 sagecell.InteractData.HtmlBox.prototype.json_value = function() {
     return null;
+}
+
+sagecell.InteractData.HtmlBox.prototype.update = function (value) {
+    $(this.div).html(value);
 }
 
 sagecell.InteractData.InputBox = sagecell.InteractData.InteractControl();
@@ -971,7 +976,6 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
         slider.style.margin = "1em 0.5em 1em 0.8em";
         column.appendChild(slider);
         var that = this;
-        console.log(this.control);
         if (this.control.subtype === "continuous") {
             var textbox = ce("input", {"class": "sagecell_interactValueBox", "type": "number", 
                                        "min": this.control.range[i][0], "max": this.control.range[i][1]});
