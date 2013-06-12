@@ -144,7 +144,8 @@ sagecell.Session = function (outputDiv, language, k, linked) {
                     ce("button", {"class": "sagecell_permalink_request"}, ["Share"]),
                     ce("div", {"class": "sagecell_permalink_result"}, [
                         ce("a", {"class": "sagecell_permalink_zip", title: "Link that will work on any Sage Cell server"}, ["Permalink"]), ce("br"),
-                        ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link"])
+                        ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link", ce("br"),
+                        ce("img", {"class": "sagecell_permalink_qrcode", title: "QR code that will only work on this server"}, [])])
                     ])
                 ]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
@@ -235,12 +236,15 @@ sagecell.Session.prototype.createPermalink = function (code) {
         function (data) {
             data = JSON.parse(data);
             sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
+            var query = sagecell.URLs.root + "?q=" + data.query;
+            var zip = sagecell.URLs.root + "?z=" + data.zip + "&lang=" + that.language
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
-                .attr("href", sagecell.URLs.root + "?q=" + data.query);
+                .attr("href", query);
             // TODO: eventually use the client to zip this using javascript
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
-                .attr("href", sagecell.URLs.root + "?z=" +
-                data.zip + "&lang=" + that.language);
+                .attr("href", zip);
+            that.outputDiv.find("div.sagecell_permalink img.sagecell_permalink_qrcode")
+                .attr("src", "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl="+query);
             var result = that.outputDiv.find("div.sagecell_permalink_result");
             result.show();
             that.outputDiv.find(".sagecell_permalink_request").off('click').click(function() { result.toggle()});

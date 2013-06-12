@@ -59,8 +59,12 @@
 */
 
 
-.sagecell_output, .sagecell_input {
+.sagecell_input {
     overflow: hidden;
+    padding-right: 2px;
+}
+
+.sagecell_output {
     padding-right: 2px;
 }
 
@@ -80,7 +84,8 @@
     padding-right: 5px;
     text-align: right;
     right: 0;
-    z-index: 1;
+    z-index: 100;
+    box-shadow: 10px 10px 5px #888888;
     background-color: #fff;
     border: 2px solid #000;
     padding: 5px;
