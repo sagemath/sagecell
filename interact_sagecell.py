@@ -171,7 +171,7 @@ class InteractProxy(object):
             if isinstance(self.list[index], list):
                 raise TypeError("object does not support item assignment")
             index = int(index)
-            self.list[index] = self.control.transform_elem(value, index)
+            self.list[index] = self.control.constrain_elem(value, index)
             self.iproxy._InteractProxy__update(self.name, {
                 "value": self.list[index],
                 "index": self.index + [index]
@@ -380,7 +380,7 @@ class InteractControl(object):
         self.adapter = adapter if adapter is not None else lambda value: value
 
     def __setattr__(self, name, value):
-        super(InteractControl, self).__setattr__(name, self.transform(value) if name == "value" else value)
+        super(InteractControl, self).__setattr__(name, self.constrain(value) if name == "value" else value)
 
     def message(self):
         """
@@ -392,14 +392,14 @@ class InteractControl(object):
         """
         raise NotImplementedError
 
-    def transform(self, value):
+    def constrain(self, value):
         """
         A function that is called on each value to which the control is set.
         This is called once, whenever the value is set, and may be overriden
         by a decendant of this class.
         
-        :arg value: the value to transform
-        :returns: the transformed value to be stored
+        :arg value: the value to constrain
+        :returns: the constrained value to be stored
         """
         return value
 
@@ -433,7 +433,7 @@ class Checkbox(InteractControl):
                 'raw':self.raw,
                 'label':self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         return bool(value)
 
 class InputBox(InteractControl):
@@ -479,7 +479,7 @@ class InputBox(InteractControl):
                 'keypress': self.keypress,
                 'label':self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         return unicode(value if isinstance(value, basestring) else repr(value))
 
 class ExpressionBox(InputBox):
@@ -587,17 +587,17 @@ class InputGrid(InteractControl):
                 'evaluate': self.evaluate,
                 'label': self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         from types import GeneratorType
         if isinstance(value, GeneratorType):
-            return [[self.transform_elem(value.next()) for _ in xrange(self.ncols)] for _ in xrange(self.nrows)]
+            return [[self.constrain_elem(value.next()) for _ in xrange(self.ncols)] for _ in xrange(self.nrows)]
         elif not isinstance(value, (list, tuple)):
-            return [[self.transform_elem(value) for _ in xrange(self.ncols)] for _ in xrange(self.nrows)]
+            return [[self.constrain_elem(value) for _ in xrange(self.ncols)] for _ in xrange(self.nrows)]
         elif not all(isinstance(entry, (list, tuple)) for entry in value):
-            return [[self.transform_elem(value[i * self.ncols + j]) for j in xrange(self.ncols)] for i in xrange(self.nrows)]
-        return [[self.transform_elem(v) for v in row] for row in value]
+            return [[self.constrain_elem(value[i * self.ncols + j]) for j in xrange(self.ncols)] for i in xrange(self.nrows)]
+        return [[self.constrain_elem(v) for v in row] for row in value]
 
-    def transform_elem(self, value, i=None):
+    def constrain_elem(self, value, i=None):
         return unicode(value if isinstance(value, basestring) else repr(value))
 
 class Selector(InteractControl):
@@ -696,7 +696,7 @@ class Selector(InteractControl):
                 'width': self.width,
                 'label':self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         return int(constrain_to_range(value, 0, len(self.values) - 1))
 
 class DiscreteSlider(InteractControl):
@@ -753,7 +753,7 @@ class DiscreteSlider(InteractControl):
                 'raw':True,
                 'label':self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         if self.range_slider:
             return tuple(sorted(int(constrain_to_range(value[i], 0, len(self.values) - 1)) for i in (0, 1)))
         return int(constrain_to_range(value, 0, len(self.values) - 1))
@@ -805,7 +805,7 @@ class ContinuousSlider(InteractControl):
                 'raw':True,
                 'label':self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         if self.range_slider:
             if isinstance(value, (list, tuple)) and len(value) == 2:
                 return tuple(sorted(float(constrain_to_range(value[i], self.interval[0], self.interval[1])) for i in (0, 1)))
@@ -899,13 +899,13 @@ class MultiSlider(InteractControl):
             return_message["values"] = [[repr(v) for v in val] for val in self.values]
         return return_message
 
-    def transform(self, value):
+    def constrain(self, value):
         if isinstance(value, (list, tuple)) and len(value) == self.number:
-            return [self.transform_elem(v, i) for i, v in enumerate(value)]
+            return [self.constrain_elem(v, i) for i, v in enumerate(value)]
         else:
-            return [self.transform_elem(value, i) for i in xrange(self.number)]
+            return [self.constrain_elem(value, i) for i in xrange(self.number)]
 
-    def transform_elem(self, value, index):
+    def constrain_elem(self, value, index):
         if self.slider_type == "discrete":
             return int(constrain_to_range(value, 0, len(self.values[index]) - 1))
         else:
@@ -939,7 +939,7 @@ class ColorSelector(InteractControl):
         self.hide_input = hide_input
         self.label = label
 
-    def transform(self, value):
+    def constrain(self, value):
         if self.Color:
             return self.Color(value).html_color()
         if isinstance(value, basestring):
@@ -993,7 +993,7 @@ class Button(InteractControl):
                 'raw': True,
                 'label': self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         return bool(value)
 
     def reset(self):
@@ -1085,7 +1085,7 @@ class ButtonBar(InteractControl):
                 'width': self.width,
                 'label': self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         return None if value is None else constrain_to_range(int(value), 0, len(self.values) - 1)
 
     def reset(self):
@@ -1114,7 +1114,7 @@ class HtmlBox(InteractControl):
                 'value': self.value,
                 'label': self.label}
 
-    def transform(self, value):
+    def constrain(self, value):
         return unicode(value)
 
 class UpdateButton(Button):
@@ -1216,13 +1216,13 @@ def automatic_control(control, var=None):
                 default_value = control.list()
                 default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
                 C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=lambda x, globs: parent(control)(x))
+                              default = default_value, adapter=parent(control))
             elif is_Vector(control):
                 default_value = [control.list()]
                 nrows = 1
                 ncols = len(control)
                 C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=lambda x, globs: parent(control)(x[0]))
+                              default = default_value, adapter=lambda x: parent(control)(x[0]))
             elif isinstance(control, Color):
                 C = ColorSelector(default = control, label = label)
         except:
@@ -1230,10 +1230,9 @@ def automatic_control(control, var=None):
     
     return C
 
-def closest_index(values, value, i=None):
+def closest_index(values, value):
     if value == None:
         return 0
-    values = values if i is None else values[i]
     try:
         return values.index(value)
     except ValueError:
