@@ -1,0 +1,23 @@
+set -v
+REMOTE=$1
+REMOTESERVER=`echo $1 | cut -f1 -d':'`
+REMOTEDIR=`echo $1 | cut -f2 -d':'`
+SERVERPREFIX=$2
+RSYNC="rsync --progress --archive --verbose --sparse --compress --protect-args --human-readable --recursive -e ssh"
+virsh shutdown sagecell
+sleep 10
+$RSYNC centos.img $REMOTE/centos.img
+$RSYNC sagecell.img $REMOTE/sagecell.img
+$RSYNC vm/ $REMOTE/vm/
+ssh $REMOTESERVER -T <<EOF
+  cd $REMOTEDIR
+  for i in 0 1; do
+   echo Setting up server $i
+   export SERVER=$SERVERPREFIX$i
+   vm/make-shadow-vm sagecell $SERVER
+   virsh start $SERVER
+   vm/forward-port $SERVER 888$i 8888
+   vm/forward-port $SERVER 889$i 8889
+   sleep 30 # so it can come up before doing the next one
+  done
+EOF
