@@ -5,5 +5,7 @@ vm/make-base-centos centos mnt
 vm/make-shadow-vm centos sagecell
 vm/install-sagecell sagecell sage-5.9-built.tar
 virsh shutdown sagecell
-vm/deploy
+
+vm/deploy server jason@combinat.math.washington.edu /fastscratch/jason/sagecellvm 888 889
+vm/deploy server grout@localhost /home/grout/images/deploy 888 889
 
