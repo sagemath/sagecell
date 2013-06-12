@@ -95,6 +95,8 @@ EOFSAGE
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-05-20.spkg
   cd /home/sageserver/sage/devel/sagecell/
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
   git pull origin master
   git remote add jason https://github.com/jasongrout/sagecell.git
   git pull jason vm
@@ -126,7 +128,7 @@ ssh -p $VMPORT $VMSSH -T <<EOF
 
   # set the .sage and init.sage to be immutable.  We do this to prevent
   # someone from making *everyone* execute code at the start of their sessions
-  su -l sageworker -c "/home/sageserver/sage/sage -c 'exit'"
+  su -l sageworker -c "echo 'DihedralGroup(4).cayley_graph()' | /home/sageserver/sage/sage"
   touch /home/sageworker/.sage/init.sage
   chattr +i /home/sageworker/.sage /home/sageworker/.sage/init.sage
 
