@@ -533,7 +533,7 @@ class IOPubSockJSHandler(IOPubHandler):
     def _output_message(self, message):
         self.callback("%s/iopub,%s" % (self.kernel_id, self._json_msg(message)))
 
-class FileHandler(tornado.web.StaticFileHandler):
+class FileHandler(StaticHandler):
     """
     Files handler
     
