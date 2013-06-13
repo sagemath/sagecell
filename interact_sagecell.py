@@ -102,7 +102,10 @@ def update_interact(interact_id, control_vals={}):
     for control in controls.itervalues():
         if not control.preserve_state:
             control.reset()
-    __interacts[interact_id]["function"](control_vals=kwargs)
+    if not __interacts[interact_id]["updating"]:
+        __interacts[interact_id]["updating"] = True
+        __interacts[interact_id]["function"](control_vals=kwargs)
+        __interacts[interact_id]["updating"] = False
 
 def update_interact_msg(stream, ident, msg):
     interact_id = msg['content']['interact_id']
@@ -337,11 +340,17 @@ def interact_func(session, pub_socket):
                 returned=f(**control_vals)
             return returned
         # update global __interacts
-        __interacts[interact_id] = {"function": adapted_f, "controls": dict(zip(names, controls))}
+        __interacts[interact_id] = {
+            "function": adapted_f,
+            "controls": dict(zip(names, controls)),
+            "updating": False
+        }
         for c in controls:
             c.globals = f.func_globals
+        proxy = InteractProxy(interact_id, f)
+        f.func_globals[f.func_name] = proxy
         update_interact(interact_id)
-        return InteractProxy(interact_id, f)
+        return proxy
     return interact
 
 def safe_sage_eval(code, globs):
