@@ -85,7 +85,7 @@ $(jmol-js): $(jmol-sage)
 	rm -f $(jmol)
 	ln -s $(jmol-sage) $(jmol)
 
-$(tos-static): $(tos)
+$(tos-static): $(tos-default)
 	@[ -e $(tos) ] && cp $(tos) $(tos-static) || cp $(tos-default) $(tos-static)
 
 $(sockjs-client):
