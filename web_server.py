@@ -78,7 +78,6 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
 
-    import pid
     import lockfile
     from lockfile.pidlockfile import PIDLockFile
     config = misc.Config()
