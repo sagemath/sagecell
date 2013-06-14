@@ -79,14 +79,29 @@ if __name__ == "__main__":
     logger.info("starting tornado web server")
 
     import pid
+    import lockfile
+    from lockfile.pidlockfile import PIDLockFile
     config = misc.Config()
     pidfile_path = config.get_config('pid_file')
-    pid.check(pidfile_path)
-    pid.write(pidfile_path)
-
-    application = SageCellServer()
-    application.listen(args.port)
+    pidlock = PIDLockFile(pidfile_path)
+    if pidlock.is_locked():
+        # try killing the process that has the lock
+        pid = pidlock.read_pid()
+        logger.info("Killing PID %d"%pid)
+        try:
+            os.kill(pid, 9)
+        except OSError, (code, text):
+            import errno
+            if code != errno.ESRCH:
+                raise
+            else:
+                # process doesn't exist anymore
+                logger.info("Old process %d already gone"%pid)
+                pidlock.break_lock()
     try:
+        pidlock.acquire(timeout=10)
+        application = SageCellServer()
+        application.listen(args.port)
         application.ioloop.start()
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt, so I'm shutting down.")
@@ -95,5 +110,4 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             logging.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")
     finally:
-        pid.remove(pidfile_path)
-        #pid.write('/home/sageserver/kill.pid')
+        pidlock.release()
