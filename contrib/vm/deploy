@@ -1,0 +1,32 @@
+set -v
+SERVERPREFIX=$1
+REMOTESERVER=$2
+REMOTEDIR=$3
+SAGECELLPORTPREFIX=$4
+STATICPORTPREFIX=$5
+#SSHPORTPREFIX=$6
+VIRSH="virsh --connect qemu:///session"
+RSYNC="rsync --progress --archive --verbose --sparse --compress --protect-args --human-readable --recursive -e ssh"
+$VIRSH shutdown sagecell
+sleep 10
+$RSYNC centos.img $REMOTESERVER:$REMOTEDIR/centos.img
+$RSYNC sagecell.img $REMOTESERVER:$REMOTEDIR/sagecell.img
+$RSYNC vm/ $REMOTESERVER:$REMOTEDIR/vm/
+ssh $REMOTESERVER -T <<EOF
+  set -v
+  cd $REMOTEDIR
+  for i in 0 1 2; do
+    echo Setting up server \$i
+    export SERVER=$SERVERPREFIX\$i
+    #export SERVER=server\$i
+    vm/make-shadow-vm sagecell \$SERVER
+    $VIRSH start \$SERVER
+    sleep 5
+    #vm/forward-port \$SERVER $SSHPORTPREFIX\$i 22
+    vm/forward-port \$SERVER $SAGECELLPORTPREFIX\$i 8888
+    vm/forward-port \$SERVER $STATICPORTPREFIX\$i 8889
+    sleep 30 # so it can come up before doing the next one
+  done
+EOF
+
+#vm/deploy server localhost /home/grout/images/deploy 888 889
