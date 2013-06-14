@@ -93,7 +93,7 @@ EOFSAGE
   echo 'Installing sagecell'
   rm -rf local/lib/python/site-packages/[iI]Python*
   ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
-  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-06-13-sage-5.10.rc1.spkg
+  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-06-13.spkg
   cd /home/sageserver/sage/devel/sagecell/
   git config --global user.email "you@example.com"
   git config --global user.name "Your Name"
