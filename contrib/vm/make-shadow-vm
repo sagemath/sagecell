@@ -3,14 +3,14 @@
 BASE=$1
 NAME=$2
 
-if virsh shutdown $BASE; then
+if virsh --connect qemu:///session shutdown $BASE; then
     sleep 10
 fi
-virsh destroy $NAME
-virsh undefine $NAME
+virsh --connect qemu:///session destroy $NAME
+virsh --connect qemu:///session undefine $NAME
 
 qemu-img create -b $BASE.img -f qcow2 $NAME.img
-virt-install \
+virt-install --connect qemu:///session \
  --name $NAME \
  --ram 8192 \
  --vcpus=4 \
