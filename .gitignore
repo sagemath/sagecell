@@ -5,6 +5,7 @@ tests/multimechanize/results/
 sqlite.db
 config.py
 templates/tos.html
+static/tos.html
 
 # generated web files
 submodules/jsmin-bin

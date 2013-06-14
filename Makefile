@@ -10,6 +10,9 @@ jmol           = static/jmol
 jmol-js        = $(jmol)/appletweb/Jmol.js
 jquery         = static/jquery.min.js
 jquery-ui      = static/jquery-ui/js/jquery-ui-1.10.2.custom.min.js
+tos-default    = templates/tos_default.html
+tos            = templates/tos.html
+tos-static     = static/tos.html
 sagecell       = static/sagecell.js
 sagecell-css   = static/sagecell.css
 sockjs-client  = static/sockjs.js
@@ -40,9 +43,10 @@ jquery-url     = http://code.jquery.com/jquery-1.7.2.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
 
-all: submodules $(jquery) $(all-min-js) $(all-min-css)
+all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static)
 
-.PHONY: submodules
+.PHONY: submodules $(tos-static)
+
 submodules:
 	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
 
@@ -80,6 +84,9 @@ $(jsmin-bin):  $(jsmin)
 $(jmol-js): $(jmol-sage)
 	rm -f $(jmol)
 	ln -s $(jmol-sage) $(jmol)
+
+$(tos-static): $(tos)
+	@[ -e $(tos) ] && cp $(tos) $(tos-static) || cp $(tos-default) $(tos-static)
 
 $(sockjs-client):
 	python -c "import urllib; urllib.urlretrieve('$(sockjs-url)', '$(sockjs-client)')"

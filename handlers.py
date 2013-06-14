@@ -173,9 +173,7 @@ KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
 class TOSHandler(tornado.web.RequestHandler):
     """Handler for ``/tos.html``"""
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "tos.html")
-    if not os.path.exists(path):
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "tos_default.html")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "tos.html")
     with open(path) as f:
         tos_html = f.read()
         tos_json = json.dumps(tos_html)
@@ -234,7 +232,7 @@ class ServiceHandler(tornado.web.RequestHandler):
         if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
             self.get_argument("accepted_tos", "false") != "true":
             self.write("""When evaluating code, you must acknowledge your acceptance
-of the terms of service at /tos.html by passing the parameter or cookie
+of the terms of service at /static/tos.html by passing the parameter or cookie
 accepted_tos=true\n""")
             self.set_status(403)
             self.finish()
