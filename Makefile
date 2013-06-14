@@ -1,4 +1,5 @@
 wrap-jquery    = ./wrap-jquery
+fix-wrap       = ./fix-wrap.py
 all-css        = static/all.css
 all-js         = static/all.js
 all-min-css    = static/all.min.css
@@ -68,7 +69,7 @@ $(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
             $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
-	sed -i 's/+ ++a/+(++a)/' $(wrap-js) # JSMin minimizes this expression incorrectly
+	python $(fix-wrap) $(wrap-js)
 
 $(all-min-css): $(codemirror-css) $(sagecell-css)
 	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
