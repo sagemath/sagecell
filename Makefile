@@ -1,5 +1,5 @@
 wrap-jquery    = ./wrap-jquery
-fix-wrap       = ./fix-wrap.py
+fix-js       = ./fix-js.py
 all-css        = static/all.css
 all-js         = static/all.js
 all-min-css    = static/all.min.css
@@ -74,7 +74,7 @@ $(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
             $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
-	python $(fix-wrap) $(wrap-js)
+	python $(fix-js) $(wrap-js)
 
 $(all-min-css): $(codemirror-css) $(sagecell-css)
 	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
