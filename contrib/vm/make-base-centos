@@ -1,0 +1,35 @@
+#!/bin/sh
+
+# ./make-base-centos NAME LOCATION_OF_ISO_MOUNT
+
+NAME=$1
+LOCATION=$2
+SIZE=25
+
+rm $NAME.img
+qemu-img create -f qcow2 $NAME.img ${SIZE}G
+
+virsh destroy $NAME
+virsh undefine $NAME
+
+# rootpassword is a file that looks like:
+# rootpw --iscrypted <CRYPTED PASSWORD>
+sed -e "/ROOTPASSWORD/r rootpassword" -e "/ROOTPASSWORD/d"  < vm/base-centos.kickstart-template > base-centos.kickstart
+chmod go-rwx base-centos.kickstart
+
+virt-install --name $NAME \
+--ram 8192 \
+--vcpus=14 \
+--network user,model=virtio \
+--cpu host \
+--disk path=$NAME.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=$SIZE  \
+--os-type linux \
+--os-variant rhel6 \
+--accelerate \
+--nographics \
+--noreboot \
+--location $2 \
+--initrd-inject=base-centos.kickstart \
+--extra-args="cmdline ks=file:/base-centos.kickstart console=ttyS0"
+#--noautoconsole \
+

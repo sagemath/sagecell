@@ -42,6 +42,7 @@ ip-kernel      = $(ip-js)/kernel.js
 jquery-url     = http://code.jquery.com/jquery-1.7.2.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
+canvas3d       = $(sage-root)/devel/sagenb/sagenb/data/sage/js/canvas3d_lib.js
 
 all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static)
 
@@ -63,9 +64,9 @@ $(codemirror-cat): $(codemirror) $(cm-python-mode) \
 	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
 	    $(cm-runmode) $(cm-colorize) > $(codemirror-cat)
 
-$(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) \
+$(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(codemirror-cat) $(jmol-js) $(ip-namespace) $(wrap-js) > $(all-js)
+	cat $(codemirror-cat) $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 

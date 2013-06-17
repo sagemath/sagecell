@@ -144,7 +144,8 @@ sagecell.Session = function (outputDiv, language, k, linked) {
                     ce("button", {"class": "sagecell_permalink_request"}, ["Share"]),
                     ce("div", {"class": "sagecell_permalink_result"}, [
                         ce("a", {"class": "sagecell_permalink_zip", title: "Link that will work on any Sage Cell server"}, ["Permalink"]), ce("br"),
-                        ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link"])
+                        ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link", ce("br"),
+                        ce("img", {"class": "sagecell_permalink_qrcode", title: "QR code that will only work on this server"}, [])])
                     ])
                 ]),
             this.output_blocks[null] = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
@@ -235,12 +236,15 @@ sagecell.Session.prototype.createPermalink = function (code) {
         function (data) {
             data = JSON.parse(data);
             sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
+            var query = sagecell.URLs.root + "?q=" + data.query;
+            var zip = sagecell.URLs.root + "?z=" + data.zip + "&lang=" + that.language
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
-                .attr("href", sagecell.URLs.root + "?q=" + data.query);
+                .attr("href", query);
             // TODO: eventually use the client to zip this using javascript
             that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
-                .attr("href", sagecell.URLs.root + "?z=" +
-                data.zip + "&lang=" + that.language);
+                .attr("href", zip);
+            that.outputDiv.find("div.sagecell_permalink img.sagecell_permalink_qrcode")
+                .attr("src", "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl="+query);
             var result = that.outputDiv.find("div.sagecell_permalink_result");
             result.show();
             that.outputDiv.find(".sagecell_permalink_request").off('click').click(function() { result.toggle()});
@@ -380,8 +384,30 @@ sagecell.Session.prototype.display_handlers = {
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
     ,'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);}
     ,'application/x-jmol': function(data, block_id, filepath) {
-        jmolSetDocument(false); 
+        jmolSetDocument(false);
         this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+data+'";\n script SCRIPT;\n'),block_id); }
+    ,"application/x-canvas3d": function (data, block_id, filepath) {
+        var div = this.output(document.createElement("div"), block_id);
+        var old_cw = [window.hasOwnProperty("cell_writer"), window.cell_writer],
+            old_tr = [window.hasOwnProperty("translations"), window.translations];
+        window.cell_writer = {"write": function (html) {
+            div.html(html);
+        }};
+        var text = "Sorry, but you need a browser that supports the &lt;canvas&gt; tag.";
+        window.translations = {};
+        window.translations[text] = text;
+        canvas3d.viewer(filepath + data);
+        if (old_cw[0]) {
+            window.cell_writer = old_cw[1];
+        } else {
+            delete window.cell_writer;
+        }
+        if (old_tr[0]) {
+            window.translations = old_tr[1];
+        } else {
+            delete window.translations;
+        }
+    }
     ,'application/sage-interact-control': function(data, block_id, filepath) {
         var that=this;
         var control_class = sagecell.interact_controls[data.control_type];
