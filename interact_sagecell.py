@@ -103,10 +103,7 @@ def update_interact(interact_id, control_vals={}, changed=None):
         if not control.preserve_state:
             control.reset()
     __interacts[interact_id]["proxy"]._changed = map(str, changed or [])
-    if not __interacts[interact_id]["updating"]:
-        __interacts[interact_id]["updating"] = True
-        __interacts[interact_id]["function"](control_vals=kwargs)
-        __interacts[interact_id]["updating"] = False
+    __interacts[interact_id]["function"](control_vals=kwargs)
 
 def update_interact_msg(stream, ident, msg):
     interact_id = msg['content']['interact_id']
@@ -121,6 +118,7 @@ class InteractProxy(object):
         self.__interact_id = interact_id
         self.__interact = globals()["__interacts"][self.__interact_id]
         self.__function = function
+        self.__changed = []
 
     def __setattr__(self, name, value):
         if name.startswith("_"):
@@ -138,12 +136,13 @@ class InteractProxy(object):
                 },
                 "text/plain": "New interact control %s" % (name,)
             })
-            update_interact(self.__interact_id, changed=[name])
+            if name not in self.__changed:
+                self.__changed.append(name)
             return
         if isinstance(self.__interact["controls"][name].value, list):
             raise TypeError("object does not support item assignment")
         self.__interact["controls"][name].value = value
-        self.__update(name)
+        self.__send_update(name)
     def __dir__(self):
         return list(self.__interact["controls"].iterkeys())
 
@@ -163,12 +162,13 @@ class InteractProxy(object):
             },
             "text/plain": "Deleting interact control %s" % (name,)
         })
-        update_interact(self.__interact_id, changed=[name])
+        if name not in self.__changed:
+            self.__changed.append(name)
 
     def __call__(self, *args, **kwargs):
         return self.__function(*args, **kwargs)
 
-    def __update(self, name, items={}):
+    def __send_update(self, name, items={}):
         msg = {
             "application/sage-interact-update": {
                 "interact_id": self.__interact_id,
@@ -179,7 +179,12 @@ class InteractProxy(object):
         }
         msg["application/sage-interact-update"].update(items)
         sys._sage_.display_message(msg)
-        update_interact(self.__interact_id, changed=[name])
+        if name not in self.__changed:
+            self.__changed.append(name)
+
+    def _update(self):
+        update_interact(self.__interact_id, changed=self.__changed)
+        self.__changed = []
 
     class ListProxy(object):
         def __init__(self, iproxy, name, index=[]):
@@ -203,7 +208,7 @@ class InteractProxy(object):
                 raise TypeError("object does not support item assignment")
             index = int(index)
             self.list[index] = self.control.constrain_elem(value, index)
-            self.iproxy._InteractProxy__update(self.name, {
+            self.iproxy._InteractProxy__send_update(self.name, {
                 "value": self.list[index],
                 "index": self.index + [index]
             })
@@ -380,8 +385,7 @@ def interact_func(session, pub_socket):
         # update global __interacts
         __interacts[interact_id] = {
             "function": adapted_f,
-            "controls": dict(zip(names, controls)),
-            "updating": False
+            "controls": dict(zip(names, controls))
         }
         for c in controls:
             c.globals = f.func_globals
