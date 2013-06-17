@@ -146,10 +146,9 @@ def decorator_defaults(func):
         (3, 4)
         my_fun
     """
-    from inspect import isfunction
     @wraps(func)
     def my_wrap(*args,**kwargs):
-        if len(kwargs)==0 and len(args)==1 and isfunction(args[0]):
+        if len(kwargs)==0 and len(args)==1 and callable(func):
             # call without parentheses
             return func(*args)
         else:

@@ -265,9 +265,8 @@ def interact_func(session, pub_socket):
         :returns: the original function
         :rtype: function
         """
-
         if isinstance(f, InteractProxy):
-            f = f.__function
+            f = f._InteractProxy__function
         if update is None: update = {}
         if layout is None: layout = {}
 
@@ -1240,7 +1239,7 @@ def automatic_control(control, var=None):
         if len(control) == 2:
             C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), label = label)
         elif len(control) == 3:
-            C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), stepsize = control[2], label = label)
+            C = DiscreteSlider(default=default_value, values=range(control[0], control[1] + control[2], control[2]), label=label)
         else:
             values=list(control)
             C = DiscreteSlider(default = default_value, values = values, label = label)
