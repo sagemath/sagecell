@@ -384,6 +384,14 @@ sagecell.Session.prototype.display_handlers = {
     'application/sage-interact-update': function (data) {
         this.replace_output[data.interact_id] = true;
         interacts[data.interact_id].updateControl(data);
+    },
+    'application/sage-interact-new-control': function (data) {
+        this.replace_output[data.interact_id] = true;
+        interacts[data.interact_id].newControl(data);
+    },
+    'application/sage-interact-del-control': function (data) {
+        this.replace_output[data.interact_id] = true;
+        interacts[data.interact_id].delControl(data);
     }
     ,'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); }
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
@@ -594,7 +602,24 @@ sagecell.InteractCell = function (session, data, parent_block) {
     this.bindChange();
 }
 
-sagecell.InteractCell.prototype.bindChange = function () {
+sagecell.InteractCell.prototype.newControl = function (data) {
+    this.controls[data.name] = new sagecell.InteractData.control_types[data.control.control_type](data.control);
+    var tr = ce("tr");
+    this.appendControl(data.name, tr);
+    this.bindChange(data.name);
+    this.update[data.name] = [data.name];
+    this.cells["top_center"].firstChild.appendChild(tr);
+}
+
+sagecell.InteractCell.prototype.delControl = function (data) {
+    delete this.controls[data.name];
+    var tr = this.rows[data.name][0].parentNode;
+    tr.parentNode.removeChild(tr);
+    delete this.rows[data.name];
+    delete this.update[data.name];
+}
+
+sagecell.InteractCell.prototype.bindChange = function (cname) {
     var that = this;
     var handler = function (event, ui) {
         if (that.controls[event.data.name].ignoreNext > 0) {
@@ -619,17 +644,47 @@ sagecell.InteractCell.prototype.bindChange = function () {
                                       callbacks);
         }
     };
-    for (var name in this.controls) {
-        if (this.controls.hasOwnProperty(name)) {
-            var events = this.controls[name].changeHandlers();
-            for (var e in events) {
-                if (events.hasOwnProperty(e)) {
-                    $(events[e]).on(e, {"name": name}, handler);
+    if (cname === undefined) {
+        for (var name in this.controls) {
+            if (this.controls.hasOwnProperty(name)) {
+                var events = this.controls[name].changeHandlers();
+                for (var e in events) {
+                    if (events.hasOwnProperty(e)) {
+                        $(events[e]).on(e, {"name": name}, handler);
+                    }
                 }
+            }
+        }
+    } else {
+        var events = this.controls[cname].changeHandlers();
+        for (var e in events) {
+            if (events.hasOwnProperty(e)) {
+                $(events[e]).on(e, {"name": cname}, handler);
             }
         }
     }
 };
+
+sagecell.InteractCell.prototype.appendControl = function (varname, tr) {
+    var varcontrol = this.controls[varname];
+    var id = this.interact_id + "_" + varname;
+    var right = ce("td", {"class": "sagecell_interactcontrolcell"}, [
+        varcontrol.rendered(id)
+    ]);
+    if (varcontrol.control.label !== "") {
+        var left = ce("td", {"class": "sagecell_interactcontrollabelcell"}, [
+            ce("label", {"for": id, "title": varname}, [
+                varcontrol.control.label || varname
+            ])
+        ]);
+        tr.appendChild(left);
+        this.rows[varname] = [left, right];                                
+    } else {
+        right.setAttribute("colspan", "2");
+        this.rows[varname] = [right];
+    }
+    tr.appendChild(right);
+}
 
 sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     /*
@@ -642,7 +697,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
       <td colspan='2'>{{control html code}}</td>
 
      */
-    var cells = {};
+    this.cells = {};
     var locs = [["top_left",    "top_center",    "top_right"   ],
                 ["left",        null,            "right"       ],
                 ["bottom_left", "bottom_center", "bottom_right"]];
@@ -653,7 +708,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             var td;
             if (locs[row][col]) {
                 td = ce("td", {"class": "sagecell_interactContainer"});
-                cells[locs[row][col]] = td;
+                this.cells[locs[row][col]] = td;
             } else {
                 td = ce("td", {"class": "sagecell_interactOutput"});
                 this.output_block = td;
@@ -670,29 +725,11 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 var tr = ce("tr");
                 var row = this.layout[loc][i];
                 for (var j = 0; j < row.length; j++) {
-                    var varname = this.layout[loc][i][j];
-                    var varcontrol = this.controls[varname];
-                    var id = this.interact_id + "_" + varname;
-                    var right = ce("td", {"class": "sagecell_interactcontrolcell"}, [
-                        varcontrol.rendered(id)
-                    ]);
-                    if (varcontrol.control.label !== "") {
-                        var left = ce("td", {"class": "sagecell_interactcontrollabelcell"}, [
-                            ce("label", {"for": id, "title": varname}, [
-                                varcontrol.control.label || varname
-                            ])
-                        ]);
-                        tr.appendChild(left);
-                        this.rows[varname] = [left, right];                                
-                    } else {
-                        right.setAttribute("colspan", "2");
-                        this.rows[varname] = [right];
-                    }
-                    tr.appendChild(right);
+                    this.appendControl(this.layout[loc][i][j], tr);
                 }
                 table2.appendChild(tr);
             }
-            cells[loc].appendChild(table2);
+            this.cells[loc].appendChild(table2);
         }
     }
     this.session.output(table, parent_block);

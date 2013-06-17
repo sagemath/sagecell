@@ -122,13 +122,28 @@ class InteractProxy(object):
 
     def __setattr__(self, name, value):
         if name.startswith("_InteractProxy__"):
-            return super(InteractProxy, self).__setattr__(name, value)
+            super(InteractProxy, self).__setattr__(name, value)
+            return
         if name not in self.__interact["controls"]:
-            raise AttributeError("Interact has no control '%s'" % (name,))
+            control = automatic_control(value, var=name)
+            self.__interact["controls"][name] = control
+            control.globals = self.__function.func_globals
+            sys._sage_.display_message({
+                "application/sage-interact-new-control": {
+                    "interact_id": self.__interact_id,
+                    "name": name,
+                    "control": control.message()
+                },
+                "text/plain": "New interact control %s" % (name,)
+            })
+            update_interact(self.__interact_id)
+            return
         if isinstance(self.__interact["controls"][name].value, list):
             raise TypeError("object does not support item assignment")
         self.__interact["controls"][name].value = value
         self.__update(name)
+    def __dir__(self):
+        return list(self.__interact["controls"].iterkeys())
 
     def __getattr__(self, name):
         if name not in self.__interact["controls"]:
@@ -136,6 +151,17 @@ class InteractProxy(object):
         if isinstance(self.__interact["controls"][name].value, list):
             return InteractProxy.ListProxy(self, name)
         return self.__interact["controls"][name].value
+
+    def __delattr__(self, name):
+        del self.__interact["controls"][name]
+        sys._sage_.display_message({
+            "application/sage-interact-del-control": {
+                "interact_id": self.__interact_id,
+                "name": name
+            },
+            "text/plain": "Deleting interact control %s" % (name,)
+        })
+        update_interact(self.__interact_id)
 
     def __call__(self, *args, **kwargs):
         return self.__function(*args, **kwargs)
@@ -179,6 +205,9 @@ class InteractProxy(object):
                 "value": self.list[index],
                 "index": self.index + [index]
             })
+
+        def __len__(self):
+            return len(self.list)
 
         def __repr__(self):
             return "[%s]" % (", ".join(repr(e) for e in self.list),)
@@ -235,7 +264,7 @@ def interact_func(session, pub_socket):
         :rtype: function
         """
 
-        if type(f) is InteractProxy:
+        if isinstance(f, InteractProxy):
             f = f.__function
         if update is None: update = {}
         if layout is None: layout = {}
