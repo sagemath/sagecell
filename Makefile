@@ -1,4 +1,3 @@
-wrap-jquery    = ./wrap-jquery
 fix-js       = ./fix-js.py
 all-css        = static/all.css
 all-js         = static/all.js
@@ -70,10 +69,10 @@ $(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) $(canvas3d)\
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
-$(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
-            $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
+$(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
+            $(colorpicker)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
-	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
+	    $(colorpicker) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
 $(all-min-css): $(codemirror-css) $(sagecell-css)
