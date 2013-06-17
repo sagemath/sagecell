@@ -281,10 +281,17 @@ def interact_func(session, pub_socket):
 
         import inspect
         (args, varargs, varkw, defaults) = inspect.getargspec(f)
+        if args is None:
+            args = []
+        if defaults is None:
+            defaults = []
+        if len(args) > len(defaults):
+            pass_proxy = True
+            args = args[1:]
+        else:
+            pass_proxy = False
         if len(names) != len(controls) or any(a in names for a in args):
             raise ValueError("duplicate argument in interact definition")
-        if defaults is None:
-            defaults=[]
         n=len(args)-len(defaults)
         controls = zip(args, [None] * n + list(defaults)) + controls
         names=[n for n,_ in controls]
@@ -366,8 +373,9 @@ def interact_func(session, pub_socket):
         sys._sage_.display_message(msg)
         sys._sage_.kernel_timeout = float("inf")
         def adapted_f(control_vals):
+            args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
             with session_metadata({'interact_id': interact_id}):
-                returned=f(**control_vals)
+                returned=f(*args, **control_vals)
             return returned
         # update global __interacts
         __interacts[interact_id] = {
