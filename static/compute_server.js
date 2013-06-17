@@ -181,7 +181,6 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             sagecell.kernels[k] = null;
         }
     });
-    this.replace_output = {};
     this.lock_output = false;
     this.files = {};
     this.eventHandlers = {};
@@ -260,25 +259,23 @@ sagecell.Session.prototype.appendMsg = function(msg, text) {
 };
 
 sagecell.Session.prototype.last_output = function(block_id) {
-    if (this.replace_output[block_id]) {
-        return undefined;
-    } else if (block_id === null) {
-        return $(this.output_block);
-    } else {
-        return $(interacts[block_id].output_block).children().last()
-    }
+    var block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
+    var last = block.children().last();
+    return (last.length === 0 ? undefined : last);
+}
+
+sagecell.Session.prototype.clear = function (block_id) {
+    var output_block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
+    output_block.height(output_block.height());
+    setTimeout(function () {
+        output_block.animate({"height": ""}, "slow");
+    }, 3000);
+    output_block.empty();
 }
 
 sagecell.Session.prototype.output = function(html, block_id) {
     // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
     var output_block=$(block_id === null ? this.output_block : interacts[block_id].output_block);
-    if (block_id !== undefined && block_id !== null && this.replace_output[block_id]) {
-        // freeze output_block's size for a while
-        output_block.height(output_block.height());
-        setTimeout(function() {output_block.animate({'height': ''}, 'slow')}, 3000);
-        output_block.empty();
-        this.replace_output[block_id]=false;
-    }
     return output_block.append(html).children().last();
 };
 
@@ -382,16 +379,16 @@ sagecell.Session.prototype.display_handlers = {
         this.interacts.push(interacts[data.new_interact_id] = new sagecell.InteractCell(this, data, block_id));
     },
     'application/sage-interact-update': function (data) {
-        this.replace_output[data.interact_id] = true;
         interacts[data.interact_id].updateControl(data);
     },
     'application/sage-interact-new-control': function (data) {
-        this.replace_output[data.interact_id] = true;
         interacts[data.interact_id].newControl(data);
     },
     'application/sage-interact-del-control': function (data) {
-        this.replace_output[data.interact_id] = true;
         interacts[data.interact_id].delControl(data);
+    },
+    'application/sage-clear': function (data, block_id) {
+        this.clear(block_id);
     }
     ,'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); }
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
@@ -558,7 +555,6 @@ sagecell.InteractControls.OutputRegion.prototype.create = function (data, block_
 
 sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, variable, control_id) {
     var that = this;
-    this.session.replace_output[this.control_id] = true;
     this.message_number += 1;
     var msg_number = this.message_number;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
@@ -645,7 +641,6 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
                     $(that.rows[name]).removeClass("sagecell_dirtyControl");
                 }
             }
-            that.session.replace_output[that.interact_id] = true;
             var callbacks = {"output": $.proxy(that.session.handle_output, that.session),
                              "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)};
 

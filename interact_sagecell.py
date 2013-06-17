@@ -380,6 +380,7 @@ def interact_func(session, pub_socket):
         def adapted_f(control_vals):
             args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
             with session_metadata({'interact_id': interact_id}):
+                sys._sage_.clear()
                 returned=f(*args, **control_vals)
             return returned
         # update global __interacts
