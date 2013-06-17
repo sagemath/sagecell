@@ -591,6 +591,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
     this.update = data.update;
     this.layout = data.layout;
     this.msg_id = data.msg_id;
+    this.changed = [];
 
     var controls = data.controls;
     for (var name in controls) {
@@ -626,9 +627,17 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
             that.controls[event.data.name].ignoreNext--;
             return;
         }
+        if (that.changed.indexOf(event.data.name) === -1) {
+            that.changed.push(event.data.name);
+        }
         $(that.rows[event.data.name]).addClass("sagecell_dirtyControl");
         if (that.update[event.data.name]) {
-            var msg_dict = {'interact_id': that.interact_id, 'control_vals': {}};
+            var msg_dict = {
+                "interact_id": that.interact_id,
+                "control_vals": {},
+                "changed": that.changed
+            };
+            that.changed = [];
             for (var name in that.controls) {
                 if (that.controls.hasOwnProperty(name) &&
                         that.update[event.data.name].indexOf(name) !== -1) {

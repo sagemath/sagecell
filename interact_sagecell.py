@@ -93,7 +93,7 @@ from misc import session_metadata, decorator_defaults
 
 __interacts={}
 
-def update_interact(interact_id, control_vals={}):
+def update_interact(interact_id, control_vals={}, changed=None):
     interact_info = __interacts[interact_id]
     controls = interact_info["controls"]
     for name, value in control_vals.iteritems():
@@ -102,6 +102,7 @@ def update_interact(interact_id, control_vals={}):
     for control in controls.itervalues():
         if not control.preserve_state:
             control.reset()
+    __interacts[interact_id]["proxy"]._changed = map(str, changed or [])
     if not __interacts[interact_id]["updating"]:
         __interacts[interact_id]["updating"] = True
         __interacts[interact_id]["function"](control_vals=kwargs)
@@ -110,7 +111,8 @@ def update_interact(interact_id, control_vals={}):
 def update_interact_msg(stream, ident, msg):
     interact_id = msg['content']['interact_id']
     control_vals = msg['content']['control_vals']
-    update_interact(interact_id, control_vals)
+    changed = msg['content']['changed']
+    update_interact(interact_id, control_vals, changed)
     sys._sage_.send_message(stream, 'sagenb.interact.update_reply',
       content={'status': 'ok'}, parent=msg, ident=ident)
 
@@ -121,7 +123,7 @@ class InteractProxy(object):
         self.__function = function
 
     def __setattr__(self, name, value):
-        if name.startswith("_InteractProxy__"):
+        if name.startswith("_"):
             super(InteractProxy, self).__setattr__(name, value)
             return
         if name not in self.__interact["controls"]:
@@ -136,7 +138,7 @@ class InteractProxy(object):
                 },
                 "text/plain": "New interact control %s" % (name,)
             })
-            update_interact(self.__interact_id)
+            update_interact(self.__interact_id, changed=[name])
             return
         if isinstance(self.__interact["controls"][name].value, list):
             raise TypeError("object does not support item assignment")
@@ -161,7 +163,7 @@ class InteractProxy(object):
             },
             "text/plain": "Deleting interact control %s" % (name,)
         })
-        update_interact(self.__interact_id)
+        update_interact(self.__interact_id, changed=[name])
 
     def __call__(self, *args, **kwargs):
         return self.__function(*args, **kwargs)
@@ -177,7 +179,7 @@ class InteractProxy(object):
         }
         msg["application/sage-interact-update"].update(items)
         sys._sage_.display_message(msg)
-        update_interact(self.__interact_id)
+        update_interact(self.__interact_id, changed=[name])
 
     class ListProxy(object):
         def __init__(self, iproxy, name, index=[]):
@@ -291,7 +293,7 @@ def interact_func(session, pub_socket):
         nameset = set(names)
 
         for n,c in zip(names, controls):
-            if n.startswith("__"):
+            if n.startswith("_"):
                 raise ValueError("invalid control name: %s" % (n,))
             # Check for update button controls
             if isinstance(c, UpdateButton):
@@ -377,7 +379,7 @@ def interact_func(session, pub_socket):
         for c in controls:
             c.globals = f.func_globals
         proxy = InteractProxy(interact_id, f)
-        f.func_globals[f.func_name] = proxy
+        f.func_globals[f.func_name] = __interacts[interact_id]["proxy"] = proxy
         update_interact(interact_id)
         return proxy
     return interact
