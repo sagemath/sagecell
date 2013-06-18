@@ -94,23 +94,42 @@ class KernelHandler(tornado.web.RequestHandler):
     """
     @tornado.web.asynchronous
     @gen.engine
-    def post(self):
-        timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
-        proto = self.request.protocol.replace("http", "ws", 1)
-        host = self.request.host
-        ws_url = "%s://%s/" % (proto, host)
-        km = self.application.km
-        
-        logger.info("Starting session: %s"%timer)
-        kernel_id = yield gen.Task(km.new_session_async)
-        data = {"ws_url": ws_url, "kernel_id": kernel_id}
+    def post(self, *args, **kwargs):
+        method = self.get_argument("method", "POST")
+        if method == "DELETE":
+            self.delete(*args, **kwargs)
+        elif method == "OPTIONS":
+            self.options(*args, **kwargs)
+        else:
+            timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
+            proto = self.request.protocol.replace("http", "ws", 1)
+            host = self.request.host
+            ws_url = "%s://%s/" % (proto, host)
+            km = self.application.km
+            logger.info("Starting session: %s"%timer)
+            kernel_id = yield gen.Task(km.new_session_async)
+            data = {"ws_url": ws_url, "kernel_id": kernel_id}
+            self.write(self.permissions(data))
+            self.finish()
+
+    def delete(self, kernel_id):
+        self.application.km.end_session(kernel_id)
+        self.permissions()
+        self.finish()
+
+    def options(self, kernel_id):
+        logger.info("options kernel: %s",kernel_id)
+        self.permissions()
+        self.finish()
+
+    def permissions(self, data=None):
         if "frame" not in self.request.arguments:
             self.set_header("Access-Control-Allow-Origin", "*");
+            self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
         else:
             data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
-        self.write(data)
-        self.finish()
+        return data
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
@@ -123,14 +142,18 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
     def on_message(self, message):
         prefix, message = message.split(",", 1)
         kernel, channel = prefix.split("/")
-        if kernel not in self.channels:
-            application = self.session.handler.application
-            self.channels[kernel] = \
-                {"shell": ShellSockJSHandler(kernel, self.send, application),
-                 "iopub": IOPubSockJSHandler(kernel, self.send, application)}
-            self.channels[kernel]["shell"].open(kernel)
-            self.channels[kernel]["iopub"].open(kernel)
-        self.channels[kernel][channel].on_message(message)
+        try:
+            if kernel not in self.channels:
+                application = self.session.handler.application
+                self.channels[kernel] = \
+                    {"shell": ShellSockJSHandler(kernel, self.send, application),
+                     "iopub": IOPubSockJSHandler(kernel, self.send, application)}
+                self.channels[kernel]["shell"].open(kernel)
+                self.channels[kernel]["iopub"].open(kernel)
+            self.channels[kernel][channel].on_message(message)
+        except KeyError:
+            logger.info("Message sent to deleted kernel: %s"%kernel)
+            pass # Ignore messages to nonexistant or killed kernels
 
     def on_close(self):
         for channel in self.channels.itervalues():
@@ -194,7 +217,6 @@ class ServiceHandler(tornado.web.RequestHandler):
                     loop.add_callback(self.finish_request)
             self.shell_handler.msg_from_kernel_callbacks.append(done)
             self.timeout_request = loop.add_timeout(time.time()+default_timeout, self.finish_request)
-            
             exec_message = {"parent_header": {},
                             "header": {"msg_id": str(uuid.uuid4()),
                                        "username": "",
@@ -209,12 +231,9 @@ class ServiceHandler(tornado.web.RequestHandler):
                                         },
                             "metadata": {}
                             }
-            
             self.shell_handler.on_message(jsonapi.dumps(exec_message))
-        
+
     def finish_request(self):
-        self.shell_handler.shell_stream.flush()
-        self.iopub_handler.iopub_stream.flush()
         try: # in case kernel has already been killed
             self.application.km.end_session(self.kernel_id)
         except:
@@ -283,18 +302,21 @@ class ShellHandler(ZMQStreamHandler):
     """
     def open(self, kernel_id):
         super(ShellHandler, self).open(kernel_id)
+        self.kill_kernel = False
         self.shell_stream = self.km.create_shell_stream(self.kernel_id)
         self.shell_stream.on_recv(self._on_zmq_reply)
         self.msg_to_kernel_callbacks.append(self._request_timeout)
         self.msg_from_kernel_callbacks.append(self._reset_timeout)
 
     def _request_timeout(self, msg):
-        if msg["header"]["msg_type"] == "execute_request":
+        if msg["header"]["msg_type"] in ("execute_request", "sagenb.interact.update_interact"):
+            msg["content"].setdefault("user_expressions",{})
             msg["content"]["user_expressions"]["_sagecell_timeout"] = \
                 "float('inf')" if msg["content"].get("linked", False) else "sys._sage_.kernel_timeout"
 
     def _reset_timeout(self, msg):
-        if msg["msg_type"] == "execute_reply":
+        if msg["header"]["msg_type"] in ("execute_reply",
+                                         "sagenb.interact.update_interact_reply"):
             try:
                 timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0))
             except:
@@ -302,24 +324,38 @@ class ShellHandler(ZMQStreamHandler):
 
             if timeout > self.kernel_timeout:
                 timeout = self.kernel_timeout
-            if timeout <= 0.0: # kill the kernel before the heartbeat is able to
-                self.km.end_session(self.kernel_id)
+            if timeout <= 0.0 and self.km._kernels[self.kernel_id]["executing"] == 1:
+                # kill the kernel before the heartbeat is able to
+                self.kill_kernel = True
             else:
                 self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
-                self.km._kernels[self.kernel_id]["executing"] = False
+                self.km._kernels[self.kernel_id]["executing"] -= 1
         
     def on_message(self, message):
         if self.km._kernels.get(self.kernel_id) is not None:
             msg = jsonapi.loads(message)
             for f in self.msg_to_kernel_callbacks:
                 f(msg)
-            self.km._kernels[self.kernel_id]["executing"] = True
+            self.km._kernels[self.kernel_id]["executing"] += 1
             self.session.send(self.shell_stream, msg)
 
     def on_close(self):
         if self.shell_stream is not None and not self.shell_stream.closed():
             self.shell_stream.close()
         super(ShellHandler, self).on_close()
+
+    def _on_zmq_reply(self, msg_list):
+        """
+        After receiving a kernel's final execute_reply, immediately kill the kernel
+        and send that status to the client (rather than waiting for the message to
+        be sent after the heartbeat fails. This prevents the user from attempting to
+        execute code in a kernel between the time that the kernel is killed
+        and the time that the browser receives the "kernel killed" message.
+        """
+        super(ShellHandler, self)._on_zmq_reply(msg_list)
+        if self.kill_kernel:
+            self.shell_stream.flush()
+            self.km._kernels[self.kernel_id]["kill"]()
 
 class IOPubHandler(ZMQStreamHandler):
     """
@@ -340,6 +376,7 @@ class IOPubHandler(ZMQStreamHandler):
 
         self.iopub_stream = self.km.create_iopub_stream(self.kernel_id)
         self.iopub_stream.on_recv(self._on_zmq_reply)
+        self.km._kernels[kernel_id]["kill"] = self.kernel_died
 
         self.hb_stream = self.km.create_hb_stream(self.kernel_id)
         self.start_hb(self.kernel_died)
@@ -369,7 +406,9 @@ class IOPubHandler(ZMQStreamHandler):
             def ping_or_dead():
                 self.hb_stream.flush()
                 try:
-                    if not self.km._kernels[self.kernel_id]["executing"]:
+                    if self.km._kernels[self.kernel_id]["executing"] == 0:
+                        # only kill the kernel after all pending
+                        # execute requests have finished
                         timeout = self.km._kernels[self.kernel_id]["timeout"]
 
                         if time.time() > timeout:
@@ -423,6 +462,7 @@ class IOPubHandler(ZMQStreamHandler):
 
     def kernel_died(self):
         try: # in case kernel has already been killed
+            self.iopub_stream.flush()
             self.application.km.end_session(self.kernel_id)
         except:
             pass
@@ -437,9 +477,6 @@ class ShellServiceHandler(ShellHandler):
     def __init__(self, application):
         self.application = application
 
-    def open(self, kernel_id):
-        super(ShellServiceHandler, self).open(kernel_id)
-
     def _output_message(self, message):
         pass
 
@@ -453,7 +490,7 @@ class IOPubServiceHandler(IOPubHandler):
         self.streams = defaultdict(unicode)
 
     def _output_message(self, msg):
-        if msg["msg_type"] == "stream":
+        if msg["header"]["msg_type"] == "stream":
             self.streams[msg["content"]["name"]] += msg["content"]["data"]
 
 class ShellWebHandler(ShellHandler, tornado.websocket.WebSocketHandler):
@@ -496,7 +533,7 @@ class IOPubSockJSHandler(IOPubHandler):
     def _output_message(self, message):
         self.callback("%s/iopub,%s" % (self.kernel_id, self._json_msg(message)))
 
-class FileHandler(tornado.web.StaticFileHandler):
+class FileHandler(StaticHandler):
     """
     Files handler
     

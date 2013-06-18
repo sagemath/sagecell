@@ -5,6 +5,8 @@ body {
 }
 
 #sagecell_main {
+    /* This is so that an interact that changes size
+       doesn't cause the browser to scroll everything up and down */
     margin-bottom: 80%;
 }
 

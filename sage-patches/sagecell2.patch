@@ -1,12 +1,12 @@
 # HG changeset patch
 # User Jason Grout <jason.grout@drake.edu>
-# Parent 50e5b9945b4898388c742c901fca2a17799bece5
+# Parent 1af3b52d0285d846e390324ebe48792350d2ec3c
 Changes for Sage Cell Server 2.0
 
 diff --git a/sage/misc/html.py b/sage/misc/html.py
 --- a/sage/misc/html.py
 +++ b/sage/misc/html.py
-@@ -186,7 +186,7 @@
+@@ -198,7 +198,7 @@
                  return ''
              elif EMBEDDED_MODE['frontend']=='sagecell':
                  import sys
@@ -15,19 +15,19 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
                  return ''
          else:
              return ''
-@@ -295,7 +295,7 @@
+@@ -289,7 +289,7 @@
                  print "<html>"+output_string+"</html>"
              elif EMBEDDED_MODE['frontend']=='sagecell':
                  import sys
 -                sys._sage_messages.message_queue.display({'text/html':output_string})
 +                sys._sage_.display_message({'text/plain': 'html snippet', 'text/html': output_string})
  
-     def table_str(self, x, header):
-         import types
+     def iframe(self, url, height=400, width=800):
+         r"""
 diff --git a/sage/misc/latex.py b/sage/misc/latex.py
 --- a/sage/misc/latex.py
 +++ b/sage/misc/latex.py
-@@ -2118,7 +2118,7 @@
+@@ -2132,7 +2132,7 @@
              if misc.EMBEDDED_MODE['frontend']=='sagecell':
                  mathexpr=mathjax_expr.replace('<html>','').replace('</html>','')
                  import sys
@@ -36,7 +36,7 @@ diff --git a/sage/misc/latex.py b/sage/misc/latex.py
              else:
                  print mathjax_expr
          else:
-@@ -2129,11 +2129,7 @@
+@@ -2143,11 +2143,7 @@
                  debug=debug, engine=engine)
              if misc.EMBEDDED_MODE['frontend']=='sagecell':
                  import sys
@@ -70,13 +70,13 @@ diff --git a/sage/plot/animate.py b/sage/plot/animate.py
 diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 --- a/sage/plot/graphics.py
 +++ b/sage/plot/graphics.py
-@@ -1761,18 +1761,17 @@
+@@ -1791,18 +1791,17 @@
              kwds.setdefault('filename', graphics_filename())
              filename=kwds['filename']
              self.save(**kwds)
 -            import sys
              if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':
--                import json #TODO: be smart about which json
+-                import json
 -                sys._sage_upload_file_pipe.send_bytes(json.dumps([filename]))
 -                sys._sage_upload_file_pipe.recv_bytes() # confirmation upload happened
 +                import sys
@@ -94,7 +94,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
                  else:
                      html("<img src='cell://%s'>"%filename)
          else:
-@@ -3022,12 +3021,10 @@
+@@ -3066,12 +3065,10 @@
          if sage.misc.misc.EMBEDDED_MODE:
              self.save(filename, dpi=dpi, figsize=self._figsize, axes = axes, **args)
              if sage.misc.misc.EMBEDDED_MODE['frontend']=='sagecell':

@@ -1,3 +1,17 @@
+#########################################################################################
+#       Copyright (C) 2012 Jason Grout, Ira Hanson, Alex Kramer                         #
+#                                                                                       #
+#  Distributed under the terms of the GNU General Public License (GPL), version 2+      #
+#                                                                                       #
+#                  http://www.gnu.org/licenses/                                         #
+#########################################################################################
+
+# the only reason this file is distributed under GPLv2+ is because it
+# imports functions from Sage GPLv2+ code.  The actual code in this
+# file is under the modified BSD license, which means that if the Sage
+# imports are replaced with BSD-compatible functions, this file can be
+# distributed under the modified BSD license.
+
 """
 Interacts
 
