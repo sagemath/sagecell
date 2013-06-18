@@ -146,7 +146,13 @@ class InteractProxy(object):
         self.__interact["controls"][name].value = value
         self.__send_update(name)
     def __dir__(self):
-        return list(self.__interact["controls"].iterkeys())
+        items = self.__interact["controls"].keys()
+        for a in self.__dict__:
+            if a.startswith("_") and not a.startswith("_InteractProxy__"):
+                items.append(a)
+        items.append("_update")
+        items.sort()
+        return items
 
     def __getattr__(self, name):
         if name not in self.__interact["controls"]:
