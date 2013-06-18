@@ -233,9 +233,9 @@ from sagenb.misc.support import automatic_names
         user_ns = ka.kernel.shell.user_ns
         # TODO: maybe we don't want to cut down the flush interval?
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
-        def clear():
+        def clear(changed=None):
             sys._sage_.display_message({
-                "application/sage-clear": {},
+                "application/sage-clear": {"changed": changed},
                 "text/plain": "Clear display"
             })
         sys._sage_.clear = clear

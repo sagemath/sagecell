@@ -264,13 +264,18 @@ sagecell.Session.prototype.last_output = function(block_id) {
     return (last.length === 0 ? undefined : last);
 }
 
-sagecell.Session.prototype.clear = function (block_id) {
+sagecell.Session.prototype.clear = function (block_id, changed) {
     var output_block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
     output_block.height(output_block.height());
     setTimeout(function () {
         output_block.animate({"height": ""}, "slow");
     }, 3000);
     output_block.empty();
+    if (changed) {
+        for (var i = 0; i < changed.length; i++) {
+            $(interacts[block_id].rows[changed[i]]).removeClass("sagecell_dirtyControl");
+        }
+    }
 }
 
 sagecell.Session.prototype.output = function(html, block_id) {
@@ -388,7 +393,7 @@ sagecell.Session.prototype.display_handlers = {
         interacts[data.interact_id].delControl(data);
     },
     'application/sage-clear': function (data, block_id) {
-        this.clear(block_id);
+        this.clear(block_id, data.changed);
     }
     ,'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); }
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
@@ -584,7 +589,6 @@ sagecell.InteractCell = function (session, data, parent_block) {
     this.function_code = data.function_code;
     this.controls = {};
     this.session = session;
-    this.update = data.update;
     this.layout = data.layout;
     this.msg_id = data.msg_id;
     this.changed = [];
@@ -604,8 +608,8 @@ sagecell.InteractCell.prototype.newControl = function (data) {
     var tr = ce("tr");
     this.appendControl(data.name, tr);
     this.bindChange(data.name);
-    this.update[data.name] = [data.name];
     this.cells["top_center"].firstChild.appendChild(tr);
+    $(this.rows[data.name]).addClass("sagecell_dirtyControl");
 }
 
 sagecell.InteractCell.prototype.delControl = function (data) {
@@ -613,7 +617,6 @@ sagecell.InteractCell.prototype.delControl = function (data) {
     var tr = this.rows[data.name][0].parentNode;
     tr.parentNode.removeChild(tr);
     delete this.rows[data.name];
-    delete this.update[data.name];
 }
 
 sagecell.InteractCell.prototype.bindChange = function (cname) {
@@ -626,27 +629,19 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
         if (that.changed.indexOf(event.data.name) === -1) {
             that.changed.push(event.data.name);
         }
-        $(that.rows[event.data.name]).addClass("sagecell_dirtyControl");
-        if (that.update[event.data.name]) {
-            var msg_dict = {
-                "interact_id": that.interact_id,
-                "control_vals": {},
-                "changed": that.changed
-            };
-            that.changed = [];
-            for (var name in that.controls) {
-                if (that.controls.hasOwnProperty(name) &&
-                        that.update[event.data.name].indexOf(name) !== -1) {
-                    msg_dict['control_vals'][name] = that.controls[name].json_value(ui);
-                    $(that.rows[name]).removeClass("sagecell_dirtyControl");
-                }
-            }
-            var callbacks = {"output": $.proxy(that.session.handle_output, that.session),
-                             "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)};
-
-            that.session.send_message('sagenb.interact.update_interact', msg_dict,
-                                      callbacks);
+        var msg_dict = {
+            "interact_id": that.interact_id,
+            "name": event.data.name,
+            "value": that.controls[event.data.name].json_value(ui)
+        };
+        if (that.controls[event.data.name].dirty_update) {
+            $(that.rows[event.data.name]).addClass("sagecell_dirtyControl");
         }
+        var callbacks = {
+            "output": $.proxy(that.session.handle_output, that.session),
+            "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)
+        };
+        that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
     };
     if (cname === undefined) {
         for (var name in this.controls) {
@@ -743,6 +738,7 @@ sagecell.InteractCell.prototype.updateControl = function (data) {
     if (this.controls[data.control].update) {
         this.controls[data.control].ignoreNext = this.controls[data.control].eventCount;
         this.controls[data.control].update(data.value, data.index);
+        $(this.rows[data.control]).addClass("sagecell_dirtyControl");
     }
 }
 
@@ -759,6 +755,7 @@ sagecell.InteractData = {};
 sagecell.InteractData.InteractControl = function () {
     return function (control) {
         this.control = control;
+        this.dirty_update = !this.control.update;
         this.eventCount = this.ignoreNext = 0;
     }
 }

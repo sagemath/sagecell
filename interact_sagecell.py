@@ -93,23 +93,24 @@ from misc import session_metadata, decorator_defaults
 
 __interacts={}
 
-def update_interact(interact_id, control_vals={}, changed=None):
+def update_interact(interact_id, name=None, value=None):
     interact_info = __interacts[interact_id]
     controls = interact_info["controls"]
-    for name, value in control_vals.iteritems():
+    proxy = interact_info["proxy"]
+    if name is not None:
         controls[name].value = value
-    kwargs = {n: c.adapter(c.value) for n, c in controls.iteritems()}
-    for control in controls.itervalues():
-        if not control.preserve_state:
-            control.reset()
-    __interacts[interact_id]["proxy"]._changed = map(str, changed or [])
-    __interacts[interact_id]["function"](control_vals=kwargs)
+        if name not in proxy._changed:
+            proxy._changed.append(str(name))
+    if name is None or controls[name].update:
+        kwargs = {n: c.adapter(c.value) for n, c in controls.iteritems()}
+        interact_info["function"](control_vals=kwargs)
+        for c in controls.itervalues():
+            c.reset()
+        proxy._changed = []
 
 def update_interact_msg(stream, ident, msg):
-    interact_id = msg['content']['interact_id']
-    control_vals = msg['content']['control_vals']
-    changed = msg['content']['changed']
-    update_interact(interact_id, control_vals, changed)
+    content = msg["content"]
+    update_interact(content["interact_id"], content["name"], content["value"])
     sys._sage_.send_message(stream, 'sagenb.interact.update_reply',
       content={'status': 'ok'}, parent=msg, ident=ident)
 
@@ -118,7 +119,7 @@ class InteractProxy(object):
         self.__interact_id = interact_id
         self.__interact = globals()["__interacts"][self.__interact_id]
         self.__function = function
-        self.__changed = []
+        self._changed = self.__interact["controls"].keys()
 
     def __setattr__(self, name, value):
         if name.startswith("_"):
@@ -136,8 +137,8 @@ class InteractProxy(object):
                 },
                 "text/plain": "New interact control %s" % (name,)
             })
-            if name not in self.__changed:
-                self.__changed.append(name)
+            if name not in self._changed:
+                self._changed.append(name)
             return
         if isinstance(self.__interact["controls"][name].value, list):
             raise TypeError("object does not support item assignment")
@@ -162,8 +163,8 @@ class InteractProxy(object):
             },
             "text/plain": "Deleting interact control %s" % (name,)
         })
-        if name not in self.__changed:
-            self.__changed.append(name)
+        if name not in self._changed:
+            self._changed.append(name)
 
     def __call__(self, *args, **kwargs):
         return self.__function(*args, **kwargs)
@@ -179,12 +180,11 @@ class InteractProxy(object):
         }
         msg["application/sage-interact-update"].update(items)
         sys._sage_.display_message(msg)
-        if name not in self.__changed:
-            self.__changed.append(name)
+        if name not in self._changed:
+            self._changed.append(name)
 
     def _update(self):
-        update_interact(self.__interact_id, changed=self.__changed)
-        self.__changed = []
+        update_interact(self.__interact_id)
 
     class ListProxy(object):
         def __init__(self, iproxy, name, index=[]):
@@ -212,6 +212,8 @@ class InteractProxy(object):
                 "value": self.list[index],
                 "index": self.index + [index]
             })
+            if self.name not in self.iproxy._changed:
+                self.iproxy._changed.append(self.name)
 
         def __len__(self):
             return len(self.list)
@@ -272,7 +274,7 @@ def interact_func(session, pub_socket):
         """
         if isinstance(f, InteractProxy):
             f = f._InteractProxy__function
-        if update is None: update = {}
+        update = set(update) if update is not None else set()
         if layout is None: layout = {}
 
         if isinstance(controls,(list,tuple)):
@@ -299,37 +301,19 @@ def interact_func(session, pub_socket):
             raise ValueError("duplicate argument in interact definition")
         n=len(args)-len(defaults)
         controls = zip(args, [None] * n + list(defaults)) + controls
-        names=[n for n,_ in controls]
-        controls=[automatic_control(c, var=n) for n,c in controls]
+        names = [c[0] for c in controls]
+        controls = {n: automatic_control(c, var=n) for n, c in controls}
         nameset = set(names)
 
-        for n,c in zip(names, controls):
+        for n, c in controls.iteritems():
             if n.startswith("_"):
                 raise ValueError("invalid control name: %s" % (n,))
-            # Check for update button controls
             if isinstance(c, UpdateButton):
-                update[n] = c.boundVars()
-
-        if update:
-            # sanitize input
-            for key,value in update.items():
-                # note: we are modifying the dictionary below, so we want
-                # to get all the items first
-                if key not in nameset:
-                    # Test if the updating variable is defined
-                    raise ValueError("%s is not an interacted variable."%repr(change))
-                # make the values unique, and make sure the control updates itself
-                value = set(value)
-                value.add(key)
-                if "*" in value:
-                    # include all controls
-                    value = nameset
-                elif value-nameset:
-                    raise ValueError("Update variables %s are not interact variables."%repr(list(value-nameset)))
-                update[key]=list(value)
-        else:
-            update = dict((n,[n]) for n in names)
-
+                update.add(n)
+        if len(update) == 0:
+            update = names
+        for n in update:
+            controls[n].update = True
         if isinstance(layout, (list, tuple)):
             layout = {'top_center': layout}
 
@@ -370,28 +354,36 @@ def interact_func(session, pub_socket):
             layout["top_center"] = [[n] for n in names]
 
         interact_id=str(uuid.uuid4())
-        msg = {"application/sage-interact": {"new_interact_id": interact_id,
-                                             "controls": dict(zip(names, (control.message() for control in controls))),
-                                             "layout": layout,
-                                             "update": update},
-               "text/plain": "Sage Interact"}
+        msgs = {n: c.message() for n, c in controls.iteritems()}
+        for n, m in msgs.iteritems():
+            m["label"] = controls[n].label
+            m["update"] = controls[n].update
+        msg = {
+            "application/sage-interact": {
+                "new_interact_id": interact_id,
+                "controls": msgs,
+                "layout": layout
+            },
+            "text/plain": "Sage Interact"
+        }
         sys._sage_.display_message(msg)
         sys._sage_.kernel_timeout = float("inf")
         def adapted_f(control_vals):
             args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
             with session_metadata({'interact_id': interact_id}):
-                sys._sage_.clear()
+                sys._sage_.clear(__interacts[interact_id]["proxy"]._changed)
                 returned=f(*args, **control_vals)
             return returned
         # update global __interacts
         __interacts[interact_id] = {
             "function": adapted_f,
-            "controls": dict(zip(names, controls))
+            "controls": controls,
+            "update": update
         }
-        for c in controls:
+        for n, c in controls.iteritems():
             c.globals = f.func_globals
         proxy = InteractProxy(interact_id, f)
-        f.func_globals[f.func_name] = __interacts[interact_id]["proxy"] = proxy
+        __interacts[interact_id]["proxy"] = proxy
         update_interact(interact_id)
         return proxy
     return interact
@@ -424,11 +416,10 @@ class InteractControl(object):
         time the interact is evaluated. This function should take one argument
         (the value) and return a value that will be passed to the function.
     """
-
-    preserve_state = True
     
     def __init__(self, default, adapter=None):
         self.value = default
+        self.update = False
         self.adapter = adapter if adapter is not None else lambda value: value
 
     def __setattr__(self, name, value):
@@ -455,6 +446,12 @@ class InteractControl(object):
         """
         return value
 
+    def reset(self):
+        """
+        This method is called after every interact update.
+        """
+        pass
+
 class Checkbox(InteractControl):
     """
     A checkbox control
@@ -480,10 +477,11 @@ class Checkbox(InteractControl):
         :returns: configuration message
         :rtype: dict
         """
-        return {'control_type':'checkbox',
-                'default':self.value,
-                'raw':self.raw,
-                'label':self.label}
+        return {
+            'control_type':'checkbox',
+            'default':self.value,
+            'raw':self.raw
+        }
 
     def constrain(self, value):
         return bool(value)
@@ -528,8 +526,7 @@ class InputBox(InteractControl):
                 'width':self.width,
                 'height':self.height,
                 'evaluate': False,
-                'keypress': self.keypress,
-                'label':self.label}
+                'keypress': self.keypress}
 
     def constrain(self, value):
         return unicode(value if isinstance(value, basestring) else repr(value))
@@ -573,8 +570,7 @@ class ExpressionBox(InputBox):
                 "width": self.width,
                 "height": self.height,
                 "evaluate": True,
-                "keypress": False,
-                "label": self.label}
+                "keypress": False}
 
 class InputGrid(InteractControl):
     """
@@ -636,8 +632,7 @@ class InputGrid(InteractControl):
                 'default': self.value,
                 'width':self.width,
                 'raw': True,
-                'evaluate': self.evaluate,
-                'label': self.label}
+                'evaluate': self.evaluate}
 
     def constrain(self, value):
         from types import GeneratorType
@@ -745,8 +740,7 @@ class Selector(InteractControl):
                 'nrows': int(self.nrows) if self.nrows is not None else None,
                 'ncols': int(self.ncols) if self.ncols is not None else None,
                 'raw': True,
-                'width': self.width,
-                'label':self.label}
+                'width': self.width}
 
     def constrain(self, value):
         return int(constrain_to_range(value, 0, len(self.values) - 1))
@@ -802,8 +796,7 @@ class DiscreteSlider(InteractControl):
                 'range':[0, len(self.values)-1],
                 'values':[repr(i) for i in self.values],
                 'step':1,
-                'raw':True,
-                'label':self.label}
+                'raw':True}
 
     def constrain(self, value):
         if self.range_slider:
@@ -854,8 +847,7 @@ class ContinuousSlider(InteractControl):
                 'default':self.value,
                 'step':self.stepsize,
                 'range':[float(i) for i in self.interval],
-                'raw':True,
-                'label':self.label}
+                'raw':True}
 
     def constrain(self, value):
         if self.range_slider:
@@ -943,7 +935,6 @@ class MultiSlider(InteractControl):
                           'display_values':self.display_values,
                           'sliders': self.number,
                           'raw':True,
-                          'label':self.label,
                           'default':self.value,
                           'range': self.interval,
                           'step': self.stepsize}
@@ -1010,8 +1001,7 @@ class ColorSelector(InteractControl):
             "control_type": "color_selector",
             "default": self.value,
             "hide_input": self.hide_input,
-            "raw": False,
-            "label": self.label
+            "raw": False
         }
 
 class Button(InteractControl):
@@ -1028,8 +1018,6 @@ class Button(InteractControl):
         a default value (None) of the control's variable.
     """
 
-    preserve_state = False
-
     def __init__(self, default="", value ="", text="Button", width="", label=None):
         super(Button, self).__init__(False, lambda v: self.clicked_value if v else self.default_value)
         self.text = text
@@ -1042,8 +1030,7 @@ class Button(InteractControl):
         return {'control_type':'button',
                 'width':self.width,
                 'text':self.text,
-                'raw': True,
-                'label': self.label}
+                'raw': True,}
 
     def constrain(self, value):
         return bool(value)
@@ -1075,8 +1062,6 @@ class ButtonBar(InteractControl):
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     """
-
-    preserve_state = False
 
     def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=None):
         super(ButtonBar, self).__init__(None, lambda v: self.default_value if v is None else self.values[int(v)])
@@ -1134,8 +1119,7 @@ class ButtonBar(InteractControl):
                 'nrows': self.nrows,
                 'ncols': self.ncols,
                 'raw': True,
-                'width': self.width,
-                'label': self.label}
+                'width': self.width,}
 
     def constrain(self, value):
         return None if value is None else constrain_to_range(int(value), 0, len(self.values) - 1)
@@ -1163,8 +1147,7 @@ class HtmlBox(InteractControl):
         :rtype: dict
         """
         return {'control_type': 'html_box',
-                'value': self.value,
-                'label': self.label}
+                'value': self.value,}
 
     def constrain(self, value):
         return unicode(value)
@@ -1185,12 +1168,8 @@ class UpdateButton(Button):
         variable, and ``""`` (default) for no label.
     """
 
-    def __init__(self, update=["*"], text="Update", value="", default="", width="", label=""):
+    def __init__(self, text="Update", value="", default="", width="", label=""):
         super(UpdateButton, self).__init__(default, value, text, width, label)
-        self.vars = update
-
-    def boundVars(self):
-        return self.vars
 
 def automatic_control(control, var=None):
     """
