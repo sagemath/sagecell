@@ -129,6 +129,7 @@ class InteractProxy(object):
             control = automatic_control(value, var=name)
             self.__interact["controls"][name] = control
             control.globals = self.__function.func_globals
+            control.update = True
             sys._sage_.display_message({
                 "application/sage-interact-new-control": {
                     "interact_id": self.__interact_id,
