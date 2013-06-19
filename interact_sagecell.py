@@ -130,11 +130,13 @@ class InteractProxy(object):
             self.__interact["controls"][name] = control
             control.globals = self.__function.func_globals
             control.update = True
+            msg = control.message()
+            msg["label"] = control.label if control.label is not None else name
             sys._sage_.display_message({
                 "application/sage-interact-new-control": {
                     "interact_id": self.__interact_id,
                     "name": name,
-                    "control": control.message()
+                    "control": msg
                 },
                 "text/plain": "New interact control %s" % (name,)
             })
@@ -282,8 +284,6 @@ def interact_func(session, pub_socket):
         if isinstance(f, InteractProxy):
             f = f._InteractProxy__function
         update = set(update) if update is not None else set()
-        if layout is None: layout = {}
-
         if isinstance(controls,(list,tuple)):
             controls=list(controls)
             for i,name in enumerate(controls):
@@ -321,49 +321,26 @@ def interact_func(session, pub_socket):
             update = names
         for n in update:
             controls[n].update = True
-        if isinstance(layout, (list, tuple)):
-            layout = {'top_center': layout}
-
-        if layout:
-            # sanitize input
-            layout_values = set(["top_left","top_right","top_center","right","left","bottom_left","bottom_right","bottom_center", "top", "bottom"])
-            sanitized_layout = {}
-            previous_vars = []
-
-            for key,value in layout.items():
-                error_vars = []
-
-                if key in layout_values:
-                    if key in ("top", "bottom"):
-                        oldkey=key
-                        key+="_center"
-                        if key in layout:
-                            raise ValueError("Cannot have both %s and %s specified"%(oldkey,key))
-                else:
-                    raise ValueError("%s is an incorrect layout key. Possible options are %s"%(repr(k), layout_values))
-                if not isinstance(value[0], (list, tuple)):
-                    value = [value]
-            
-                if ["*"] in value:
-                    value = [[n] for n in names]
-                elif set(flatten(value))-nameset:
-                    raise ValueError("Layout variables %s are not interact variables."%repr(list(set(flatten(value))-nameset)))
-                for varlist in value:
-                    for var in varlist:
-                        if var in previous_vars:
-                            error_vars.append(var);
-                    if error_vars:
-                        raise ValueError("Layout variables %s are repeated in '%s'."%(repr(error_vars),key))
-                    previous_vars.extend(varlist)
-                sanitized_layout[key] = value
-                layout = sanitized_layout
+        if layout is None:
+            layout = [[(n, 1)] for n in names] + [["_output"]]
         else:
-            layout["top_center"] = [[n] for n in names]
-
+            placed = set()
+            for r in layout:
+                for i, c in enumerate(r):
+                    if not isinstance(c, (list, tuple)):
+                        c = (c, 1)
+                    r[i] = c = (c[0], int(c[1]))
+                    if c[0] is not None:
+                        if c[0] in placed:
+                            raise ValueError("duplicate item %s in layout" % (c[0],))
+                        placed.add(c[0])
+            layout.extend([(n, 1)] for n in names if n not in placed)
+            if "_output" not in placed:
+                layout.append([("_output", 1)])
         interact_id=str(uuid.uuid4())
         msgs = {n: c.message() for n, c in controls.iteritems()}
         for n, m in msgs.iteritems():
-            m["label"] = controls[n].label
+            m["label"] = controls[n].label if controls[n].label is not None else n
             m["update"] = controls[n].update
         msg = {
             "application/sage-interact": {
@@ -424,8 +401,9 @@ class InteractControl(object):
         (the value) and return a value that will be passed to the function.
     """
     
-    def __init__(self, default, adapter=None):
+    def __init__(self, default, label, adapter=None):
         self.value = default
+        self.label = label
         self.update = False
         self.adapter = adapter if adapter is not None else lambda value: value
 
@@ -473,8 +451,7 @@ class Checkbox(InteractControl):
     """
     def __init__(self, default=True, label=None, raw=True):
         self.raw=raw
-        self.label=label
-        super(Checkbox, self).__init__(default)
+        super(Checkbox, self).__init__(default, label)
 
     def message(self):
         """
@@ -509,11 +486,10 @@ class InputBox(InteractControl):
         any key, rather than when the user presses Enter or unfocuses the textbox
     """
     def __init__(self, default=u"", label=None, width=0, height=1, keypress=False, adapter=None):
-        super(InputBox, self).__init__(default, adapter)
+        super(InputBox, self).__init__(default, label, adapter)
         self.width=int(width)
         self.height=int(height)
         self.keypress = keypress
-        self.label=label
         if self.height > 1:
             self.subtype = "textarea"
         else:
@@ -602,12 +578,11 @@ class InputGrid(InteractControl):
         and returns an adapted value.  A nested list of these adapted elements
         is what is given to the main adapter function.
     """
-    def __init__(self, nrows=1, ncols=1, default=u'0', width=0, label=None,
+    def __init__(self, nrows=1, ncols=1, default=u'0', width=5, label=None,
                  evaluate=True, adapter=None, element_adapter=None):
         self.nrows = int(nrows)
         self.ncols = int(ncols)
         self.width = int(width)
-        self.label = label
         self.evaluate = evaluate
         if self.evaluate:
             if element_adapter is not None:
@@ -623,7 +598,7 @@ class InputGrid(InteractControl):
             full_adapter = lambda x: [[self.element_adapter(i) for i in xi] for xi in x]
         else:
             full_adapter = lambda x: adapter([[self.element_adapter(i) for i in xi] for xi in x])
-        super(InputGrid, self).__init__(default, full_adapter)
+        super(InputGrid, self).__init__(default, label, full_adapter)
 
     def message(self):
         """
@@ -688,7 +663,6 @@ class Selector(InteractControl):
         self.nrows=nrows
         self.ncols=ncols
         self.width=str(width)
-        self.label=label
         if self.selector_type != "button" and self.selector_type != "radio":
             self.selector_type = "list"
         if len(values) == 0:
@@ -701,7 +675,7 @@ class Selector(InteractControl):
             self.values = values[:]
             self.value_labels = [unicode(v) for v in self.values]
         default = 0 if default is None else self.values.index(default)
-        super(Selector, self).__init__(default, self.values.__getitem__)
+        super(Selector, self).__init__(default, label, self.values.__getitem__)
         # If not using a dropdown list,
         # check/set rows and columns for layout.
         if self.selector_type != "list":
@@ -783,10 +757,9 @@ class DiscreteSlider(InteractControl):
                 [closest_index(self.values, default[i]) for i in (0, 1)]
         else:
             default = closest_index(self.values, default)
-        super(DiscreteSlider, self).__init__(default, \
+        super(DiscreteSlider, self).__init__(default, label, \
             lambda v: tuple(self.values[i] for i in v) if self.range_slider else self.values[v])
         self.display_value = display_value
-        self.label=label
 
     def message(self):
         """
@@ -835,10 +808,9 @@ class ContinuousSlider(InteractControl):
         if len(interval) != 2 or interval[0] == interval[1]:
             raise ValueError("invalid interval: %r" % (interval,))
         self.interval = tuple(sorted((float(interval[0]), float(interval[1]))))
-        super(ContinuousSlider, self).__init__(default, adapter)
+        super(ContinuousSlider, self).__init__(default, label, adapter)
         self.steps = int(steps) if steps > 0 else 250
         self.stepsize = float(stepsize if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0] else float(self.interval[1] - self.interval[0]) / self.steps)
-        self.label = label
 
     def message(self):
         """
@@ -886,7 +858,6 @@ class MultiSlider(InteractControl):
         self.number = int(sliders)
         self.slider_type = slider_type
         self.display_values = display_values
-        self.label = label
         if not isinstance(default, (list, tuple)):
             default = [default]
         if len(default) == 1:
@@ -904,7 +875,7 @@ class MultiSlider(InteractControl):
                 self.values = [[0,1]] * self.number
             self.interval = [(0, len(self.values[i]) - 1) for i in xrange(self.number)]
             default = [closest_index(self.values[i], d) for i, d in enumerate(default)]
-            super(MultiSlider, self).__init__(default, lambda v: [self.values[i][v[i]] for i in xrange(self.number)])
+            super(MultiSlider, self).__init__(default, label, lambda v: [self.values[i][v[i]] for i in xrange(self.number)])
         else:
             self.slider_type = "continuous"
             if len(interval) == self.number:
@@ -917,7 +888,7 @@ class MultiSlider(InteractControl):
                 self.interval = [tuple(sorted([float(interval[0][0]), float(interval[0][1])]))] * self.number
             else:
                 self.interval = [(0, 1)] * self.number
-            super(MultiSlider, self).__init__(default)
+            super(MultiSlider, self).__init__(default, label)
             if len(steps) == 1:
                 self.steps = [steps[0]] * self.number if steps[0] > 0 else [250] * self.number
             else:
@@ -985,9 +956,8 @@ class ColorSelector(InteractControl):
         except ImportError:
             self.Color = None
         self.sage_color = self.Color and sage_color
-        super(ColorSelector, self).__init__(default, self.Color if sage_color else None)
+        super(ColorSelector, self).__init__(default, label, self.Color if sage_color else None)
         self.hide_input = hide_input
-        self.label = label
 
     def constrain(self, value):
         if self.Color:
@@ -1026,12 +996,11 @@ class Button(InteractControl):
     """
 
     def __init__(self, default="", value ="", text="Button", width="", label=None):
-        super(Button, self).__init__(False, lambda v: self.clicked_value if v else self.default_value)
+        super(Button, self).__init__(False, label, lambda v: self.clicked_value if v else self.default_value)
         self.text = text
         self.width = width
         self.default_value = default
         self.clicked_value = value
-        self.label = label
 
     def message(self):
         return {'control_type':'button',
@@ -1071,13 +1040,12 @@ class ButtonBar(InteractControl):
     """
 
     def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=None):
-        super(ButtonBar, self).__init__(None, lambda v: self.default_value if v is None else self.values[int(v)])
+        super(ButtonBar, self).__init__(None, label, lambda v: self.default_value if v is None else self.values[int(v)])
         self.default_value = default
         self.values = values[:]
         self.nrows = nrows
         self.ncols = ncols
         self.width = str(width)
-        self.label = label
 
         # Assign button labels and values.
         self.value_labels=[str(v[1]) if isinstance(v,tuple) and
@@ -1143,8 +1111,8 @@ class HtmlBox(InteractControl):
         variable, and ``""`` (default) for no label.
     """
     def __init__(self, value="", label=""):
-        super(HtmlBox, self).__init__(value)
-        self.label = label;
+        super(HtmlBox, self).__init__(value, label)
+
     def message(self):
         """
         Get an html box control configuration message for an
