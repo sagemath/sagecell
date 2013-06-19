@@ -198,8 +198,9 @@
     min-width: 11ex;
 }
 
-.sagecell_interactControlCell.sagecell_dirtyControl {
-    border-color: red;
+.sagecell_dirtyControl {
+    box-shadow: 0px 0px 6px 2px #d00;
+    border-radius: 2px;
 }
 
 .sagecell_commands, .sagecell .ui-widget .sagecell_commands {

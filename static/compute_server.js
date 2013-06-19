@@ -605,8 +605,8 @@ sagecell.InteractCell = function (session, data, parent_block) {
 
 sagecell.InteractCell.prototype.newControl = function (data) {
     this.controls[data.name] = new sagecell.InteractData.control_types[data.control.control_type](data.control);
-    this.bindChange(data.name);
     this.placeControl(data.name);
+    this.bindChange(data.name);
     $(this.cells[data.name]).addClass("sagecell_dirtyControl");
 }
 
@@ -1010,7 +1010,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
                 "type": "number", 
                 "min": this.control.range[i][0],
                 "max": this.control.range[i][1],
-                "pattern": "-?\\d*\\.?\\d*"
+                "step": "any"
             });
             textbox.value = this.values[i].toString();
             textbox.size = textbox.value.length + 1;
@@ -1191,8 +1191,7 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                 "value": this.values[0].toString(),
                 "min": this.control.range[0],
                 "max": this.control.range[1],
-                "step": this.control.step,
-                "pattern": "-?\\d*\\.?\\d*"
+                "step": "any"
             });
             var max_text = min_text.cloneNode();
             max_text.value = this.values[1].toString();
@@ -1249,9 +1248,14 @@ sagecell.InteractData.Slider.prototype.rendered = function () {
                                    "max": this.control.range[1],
                                    "step": this.control.step,
                                    "value": this.value});
-            var textbox = ce("input", {"class": "sagecell_interactValueBox", "type": "number",
-                                       "value": this.value.toString(), "min": this.control.range[0],
-                                       "max": this.control.range[1], "step": this.control.step});
+            var textbox = ce("input", {
+                "class": "sagecell_interactValueBox",
+                "type": "number",
+                "value": this.value.toString(),
+                "min": this.control.range[0],
+                "max": this.control.range[1],
+                "step": "any"
+            });
             textbox.size = textbox.value.length + 1;
             $(this.slider).on("slide", function (event, ui) {
                 textbox.value = (that.value = ui.value).toString();
