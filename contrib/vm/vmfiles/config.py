@@ -26,7 +26,7 @@ permalink_server = {
     'db_config': {'uri': 'sqlite:///sqlite.db'}
 }
 
-max_kernel_timeout = 60*10 # 10 minutes, for interacts
+max_kernel_timeout = 60*90 # 90 minutes, for interacts
 pid_file='/home/sageserver/sagecell.pid'
 
 computers = []
