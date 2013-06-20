@@ -404,10 +404,12 @@ sagecell.initCell = (function (sagecellInfo, k) {
     temp = this.renderEditor(editor, inputLocation, collapse);
     editor = temp[0];
     editorData = temp[1];
+    editorData.sagecell = sagecellInfo;
     inputLocation.find(".sagecell_editorToggle input").change(function () {
         temp = sagecell.toggleEditor(editor, editorData, inputLocation);
         editor = temp[0];
         editorData = temp[1];
+        editorData.sagecell = sagecellInfo;
     });
     inputLocation.find(".sagecell_advancedTitle").click(function () {
         inputLocation.find(".sagecell_advancedFields").slideToggle();
@@ -511,6 +513,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         var code = textArea.val();
         var language = langSelect[0].value;
         var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
+        sagecellInfo.session = session;
         session.execute(code);
         outputLocation.find(".sagecell_permalink_request").click(function() {session.createPermalink(code, language);});
         sagecell.last_session[evt.data.id] = session;
@@ -750,26 +753,43 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         }
         var langSelect = inputLocation.find(".sagecell_language select");
         var mode = langSelect[0].value;
-        editorData = CodeMirror.fromTextArea(
-            commands.get(0),
-            {mode: sagecell.modes[mode],
-             viewportMargin: Infinity,
-             indentUnit: 4,
-             tabMode: "shift",
-             lineNumbers: true,
-             matchBrackets: true,
-             readOnly: readOnly,
-             extraKeys: {
-                 "Tab": "indentMore",
-                 "Shift-Tab": "indentLess",
-                 "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
-             },
-             onKeyEvent: function (editor, event) {
-                 editor.save();
+        CodeMirror.commands.autocomplete = function (cm) {
+            CodeMirror.showHint(cm, function (cm, callback) {
+                if (cm.sagecell && cm.sagecell.session.kernel.running) {
+                    var cur = cm.getCursor();
+                    cm.sagecell.session.kernel.complete(cm.getLine(cur.line), cur.ch, {
+                        "complete_reply": function (comp) {
+                            callback({
+                                "list": comp.matches,
+                                "from": CodeMirror.Pos(cur.line, cur.ch - comp.matched_text.length),
+                                "to": cur
+                            });
+                        }
+                    });
+                }
+            }, {"async": true});
+        }
+        editorData = CodeMirror.fromTextArea(commands.get(0), {
+            mode: sagecell.modes[mode],
+            viewportMargin: Infinity,
+            indentUnit: 4,
+            tabMode: "shift",
+            lineNumbers: true,
+            matchBrackets: true,
+            readOnly: readOnly,
+            extraKeys: {
+                "Tab": "indentMore",
+                "Shift-Tab": "indentLess",
+                "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */},
+                "Ctrl-Space": "autocomplete"
+            },
+            onKeyEvent: function (editor, event) {
+                editor.save();
                  if (event.type === "keyup" && event.which === 13 && event.shiftKey) {
                     inputLocation.find(".sagecell_evalButton").click();
                 }
-            }});
+            }
+        });
         $(accordion).on("accordionactivate", function () {
             editorData.refresh();
         });
