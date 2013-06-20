@@ -1375,7 +1375,7 @@ sagecell.InteractData.control_types = {
     "slider": sagecell.InteractData.Slider
 };
 
-sagecell.MultiSockJS = function (url) {
+sagecell.MultiSockJS = function (url, prefix) {
     sagecell.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
     if (!sagecell.MultiSockJS.channels) {
         sagecell.MultiSockJS.channels = {};
@@ -1404,7 +1404,7 @@ sagecell.MultiSockJS = function (url) {
             }
         }
     }
-    this.prefix = url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1];
+    this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1] : prefix;
     sagecell.MultiSockJS.channels[this.prefix] = this;
     this.init_socket();
 }

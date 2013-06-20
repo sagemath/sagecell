@@ -56,6 +56,7 @@ sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
 sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.cell = sagecell.URLs.root + "sagecell.html";
+sagecell.URLs.completion = sagecell.URLs.root + "complete";
 sagecell.URLs.terms = sagecell.URLs.root + "tos.html";
 sagecell.URLs.cookie = sagecell.URLs.root + "static/set_cookie.html";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
@@ -753,9 +754,12 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         }
         var langSelect = inputLocation.find(".sagecell_language select");
         var mode = langSelect[0].value;
+        var callbacks = {};
         CodeMirror.commands.autocomplete = function (cm) {
             CodeMirror.showHint(cm, function (cm, callback) {
-                if (cm.sagecell.session && cm.sagecell.session.kernel.running) {
+                var cur = cm.getCursor();
+                if (cm.sagecell.session && cm.sagecell.session.linked &&
+                        cm.sagecell.session.kernel.shell_channel.send) {
                     var cur = cm.getCursor();
                     cm.sagecell.session.kernel.complete(cm.getLine(cur.line), cur.ch, {
                         "complete_reply": function (comp) {
@@ -766,6 +770,42 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                             });
                         }
                     });
+                } else {
+                    var send_msg = function () {
+                        var msg_id = IPython.utils.uuid();
+                        callbacks[msg_id] = [callback, cur];
+                        sagecell.completer.send(JSON.stringify({
+                            "header": {
+                                "msg_id": msg_id,
+                                "username": "",
+                                "session": IPython.utils.uuid(),
+                                "msg_type": "complete_request"
+                            },
+                            "parent_header": {},
+                            "content": {
+                                "text": "",
+                                "line": cm.getLine(cur.line),
+                                "cursor_pos": cur.ch
+                            },
+                            "metadata": {}
+                        }));
+                    };
+                    if (sagecell.completer === undefined) {
+                        sagecell.completer = new sagecell.MultiSockJS(null, "complete/shell");
+                        sagecell.completer.onmessage = function (event) {
+                            var data = JSON.parse(event.data);
+                            var cb = callbacks[data.parent_header.msg_id];
+                            delete callbacks[data.parent_header.msg_id];
+                            cb[0]({
+                                "list": data.content.matches,
+                                "from": CodeMirror.Pos(cb[1].line, cb[1].ch - data.content.matched_text.length),
+                                "to": cb[1]
+                            });
+                        }
+                        sagecell.completer.onopen = send_msg;
+                    } else {
+                        send_msg();
+                    }
                 }
             }, {"async": true});
         }
