@@ -755,7 +755,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         var mode = langSelect[0].value;
         CodeMirror.commands.autocomplete = function (cm) {
             CodeMirror.showHint(cm, function (cm, callback) {
-                if (cm.sagecell && cm.sagecell.session.kernel.running) {
+                if (cm.sagecell.session && cm.sagecell.session.kernel.running) {
                     var cur = cm.getCursor();
                     cm.sagecell.session.kernel.complete(cm.getLine(cur.line), cur.ch, {
                         "complete_reply": function (comp) {
@@ -778,10 +778,16 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
             matchBrackets: true,
             readOnly: readOnly,
             extraKeys: {
-                "Tab": "indentMore",
+                "Tab": function (editor) {
+                    var cur = editor.getCursor();
+                    if (editor.getLine(cur.line).substr(0, cur.ch).match(/^ *$/)) {
+                        CodeMirror.commands.indentMore(editor);
+                    } else {
+                        CodeMirror.commands.autocomplete(editor);
+                    }
+                },
                 "Shift-Tab": "indentLess",
-                "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */},
-                "Ctrl-Space": "autocomplete"
+                "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
             },
             onKeyEvent: function (editor, event) {
                 editor.save();
