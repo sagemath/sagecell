@@ -714,6 +714,94 @@ sagecell.restoreInputForm = function (sagecellInfo) {
     moved.remove();
 };
 
+var makeMsg = function (msg_type, content) {
+    return {
+        "header": {
+            "msg_id": IPython.utils.uuid(),
+            "session": IPython.utils.uuid(),
+            "msg_type": msg_type,
+            "username": ""
+        },
+        "content": content,
+        "parent_header": {},
+        "metadata": {}
+    }
+};
+
+var callbacks = {};
+var completerMsg = function (msg, callback) {
+    var sendMsg = function () {
+        callbacks[msg.header.msg_id] = callback;
+        sagecell.completer.send(JSON.stringify(msg));
+    };
+    if (sagecell.completer === undefined) {
+        sagecell.completer = new sagecell.MultiSockJS(null, "complete/shell");
+        sagecell.completer.onmessage = function (event) {
+            var data = JSON.parse(event.data);
+            var cb = callbacks[data.parent_header.msg_id];
+            delete callbacks[data.parent_header.msg_id];
+            cb(data)
+        }
+        sagecell.completer.onopen = sendMsg;
+    } else {
+        sendMsg();
+    }
+};
+
+var showInfo = function (data) {
+    var info = data.content;
+    if (!info.found) {
+        return;
+    }
+    var d;
+    if (info.source === null) {
+        var def = ce("code");
+        def.innerHTML = IPython.utils.fixConsole(info.definition);
+        d = ce("div", {}, [
+            ce("div", {}, [
+                ce("strong", {}, "File: "), ce("code", {}, info.file)]),
+            ce("div", {}, [ce("strong", {}, "Type: "), ce("code", {}, info.base_class)]),
+            ce("div", {}, [ce("strong", {}, "Definition: "), def]),
+            ce("pre", {}, info.docstring)
+        ]);
+    } else {
+        d = ce("pre", {"class": "cm-s-default"});
+        CodeMirror.runMode(info.source, "python", d);
+    }
+    $(d).dialog({
+        "title": info.name,
+        "width": 800,
+        "height": 500,
+        "appendTo": $(".sagecell")
+    });
+}
+
+var requestInfo = function (cm) {
+    var cur = cm.getCursor();
+    var line = cm.getLine(cur.line).substr(0, cur.ch);
+    var detail = (cur.ch > 1 && line[cur.ch - 2] === "?") ? 1 : 0;
+    var oname = line.match(/([a-z_][a-z_\d.]*)\?\??$/i);
+    if (oname === null) {
+        return;
+    }
+    var kernel = sagecell.kernels[cm.k];
+    if (kernel && kernel.session.linked && kernel.shell_channel.send) {
+        var msg = kernel._get_msg("object_info_request", {
+            "oname": oname[1],
+            "detail_level": detail
+        })
+        kernel.shell_channel.send(JSON.stringify(msg));
+        kernel.set_callbacks_for_msg(msg.header.msg_id, {
+            "object_info_reply": showInfo
+        });
+    } else {
+        completerMsg(makeMsg("object_info_request", {
+            "oname": oname[1],
+            "detail_level": detail
+        }), showInfo);
+    }
+}
+
 sagecell.renderEditor = function (editor, inputLocation, collapse) {
     var commands = inputLocation.find(".sagecell_commands");
     var editorData;
@@ -754,13 +842,11 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         }
         var langSelect = inputLocation.find(".sagecell_language select");
         var mode = langSelect[0].value;
-        var callbacks = {};
         CodeMirror.commands.autocomplete = function (cm) {
             CodeMirror.showHint(cm, function (cm, callback) {
                 var cur = cm.getCursor();
                 var kernel = sagecell.kernels[cm.k];
                 if (kernel && kernel.session.linked && kernel.shell_channel.send) {
-                    var cur = cm.getCursor();
                     kernel.complete(cm.getLine(cur.line), cur.ch, {
                         "complete_reply": function (comp) {
                             callback({
@@ -771,44 +857,20 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                         }
                     });
                 } else {
-                    var send_msg = function () {
-                        var msg_id = IPython.utils.uuid();
-                        callbacks[msg_id] = [callback, cur];
-                        sagecell.completer.send(JSON.stringify({
-                            "header": {
-                                "msg_id": msg_id,
-                                "username": "",
-                                "session": IPython.utils.uuid(),
-                                "msg_type": "complete_request"
-                            },
-                            "parent_header": {},
-                            "content": {
-                                "text": "",
-                                "line": cm.getLine(cur.line),
-                                "cursor_pos": cur.ch
-                            },
-                            "metadata": {}
-                        }));
-                    };
-                    if (sagecell.completer === undefined) {
-                        sagecell.completer = new sagecell.MultiSockJS(null, "complete/shell");
-                        sagecell.completer.onmessage = function (event) {
-                            var data = JSON.parse(event.data);
-                            var cb = callbacks[data.parent_header.msg_id];
-                            delete callbacks[data.parent_header.msg_id];
-                            cb[0]({
-                                "list": data.content.matches,
-                                "from": CodeMirror.Pos(cb[1].line, cb[1].ch - data.content.matched_text.length),
-                                "to": cb[1]
-                            });
-                        }
-                        sagecell.completer.onopen = send_msg;
-                    } else {
-                        send_msg();
-                    }
+                    completerMsg(makeMsg("complete_request", {
+                        "text": "",
+                        "line": cm.getLine(cur.line),
+                        "cursor_pos": cur.ch
+                    }), function (data) {
+                        callback({
+                            "list": data.content.matches,
+                            "from": CodeMirror.Pos(cur.line, cur.ch - data.content.matched_text.length),
+                            "to": cur
+                        });
+                    });
                 }
             }, {"async": true});
-        }
+        };
         editorData = CodeMirror.fromTextArea(commands.get(0), {
             mode: sagecell.modes[mode],
             viewportMargin: Infinity,
@@ -820,7 +882,10 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
             extraKeys: {
                 "Tab": function (editor) {
                     var cur = editor.getCursor();
-                    if (editor.getLine(cur.line).substr(0, cur.ch).match(/^ *$/)) {
+                    var line = editor.getLine(cur.line).substr(0, cur.ch);
+                    if (cur.ch > 0 && line[cur.ch - 1] === "?") {
+                        requestInfo(editor);
+                    } else if (line.match(/^ *$/)) {
                         CodeMirror.commands.indentMore(editor);
                     } else {
                         CodeMirror.commands.autocomplete(editor);

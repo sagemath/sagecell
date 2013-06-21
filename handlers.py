@@ -155,7 +155,7 @@ class Completer(object):
     def on_recv(self, msg):
         msg = self.session.feed_identities(msg)[1]
         msg = self.session.unserialize(msg)
-        if len(msg["content"]["matched_text"]) == 0:
+        if msg["header"]["msg_type"] == "complete_reply" and len(msg["content"]["matched_text"]) == 0:
             msg["content"]["matches"] = []
         msg_id = msg["parent_header"]["msg_id"]
         kc = self.waiting.pop(msg_id)
@@ -177,7 +177,7 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
             application = self.session.handler.application
             if kernel == "complete":
                 message = jsonapi.loads(message)
-                if message["header"]["msg_type"] == "complete_request":
+                if message["header"]["msg_type"] in ("complete_request", "object_info_request"):
                     application.completer.registerRequest(self, message)
             elif kernel not in self.channels:
                 self.channels[kernel] = \
