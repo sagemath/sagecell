@@ -405,12 +405,12 @@ sagecell.initCell = (function (sagecellInfo, k) {
     temp = this.renderEditor(editor, inputLocation, collapse);
     editor = temp[0];
     editorData = temp[1];
-    editorData.sagecell = sagecellInfo;
+    editorData.k = k;
     inputLocation.find(".sagecell_editorToggle input").change(function () {
         temp = sagecell.toggleEditor(editor, editorData, inputLocation);
         editor = temp[0];
         editorData = temp[1];
-        editorData.sagecell = sagecellInfo;
+        editorData.k = k;
     });
     inputLocation.find(".sagecell_advancedTitle").click(function () {
         inputLocation.find(".sagecell_advancedFields").slideToggle();
@@ -758,10 +758,10 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         CodeMirror.commands.autocomplete = function (cm) {
             CodeMirror.showHint(cm, function (cm, callback) {
                 var cur = cm.getCursor();
-                if (cm.sagecell.session && cm.sagecell.session.linked &&
-                        cm.sagecell.session.kernel.shell_channel.send) {
+                var kernel = sagecell.kernels[cm.k];
+                if (kernel && kernel.session.linked && kernel.shell_channel.send) {
                     var cur = cm.getCursor();
-                    cm.sagecell.session.kernel.complete(cm.getLine(cur.line), cur.ch, {
+                    kernel.complete(cm.getLine(cur.line), cur.ch, {
                         "complete_reply": function (comp) {
                             callback({
                                 "list": comp.matches,

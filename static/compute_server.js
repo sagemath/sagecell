@@ -108,6 +108,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         window.console = window.console || {};
         console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
+        this.kernel.session = this;
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
         window.WebSocket = old_ws;
