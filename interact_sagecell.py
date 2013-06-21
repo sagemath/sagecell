@@ -322,7 +322,7 @@ def interact_func(session, pub_socket):
         for n in update:
             controls[n].update = True
         if layout is None:
-            layout = [[(n, 1)] for n in names] + [["_output"]]
+            layout = [[(n, 1)] for n in names] + [[("_output", 1)]]
         else:
             placed = set()
             for r in layout:
