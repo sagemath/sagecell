@@ -3,7 +3,7 @@
 doc/_build/*
 tests/multimechanize/results/
 sqlite.db
-config.py
+/config.py
 
 # generated web files
 submodules/jsmin-bin
