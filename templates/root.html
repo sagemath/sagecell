@@ -9,6 +9,9 @@
 <title>Sage Cell Server</title>
     <script src="{{ static_url('embedded_sagecell.js') }}"></script>
     <script>$(function() {sagecell.init()})</script>
+<link rel="stylesheet" href="{{ static_url('widgets.css') }}">
+<script src="{{ static_url('widgets.js') }}"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
   </head>
   <body id="sagecell_main">
     <link rel="stylesheet" href="{{ static_url('root.css') }}">
@@ -27,8 +30,7 @@ $(function () {
                            callback: function() {$('#sagecell').find(".CodeMirror").get(0).CodeMirror.focus();}});
 
 });
-</script>
+    </script>
 
-
-    </body>
+  </body>
 </html>

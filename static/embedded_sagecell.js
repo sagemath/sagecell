@@ -699,9 +699,11 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
              matchBrackets: true,
              readOnly: readOnly,
              extraKeys: {
-                 "Tab": "indentMore",
-                 "Shift-Tab": "indentLess",
-                 "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
+                 "Tab": "indentMore"
+                 ,"Shift-Tab": "indentLess"
+                 ,"Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
+                 ,'Ctrl-,': false
+                 ,'Ctrl-.': false
              },
              onKeyEvent: function (editor, event) {
                  editor.save();
@@ -709,6 +711,8 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     inputLocation.find(".sagecell_evalButton").click();
                 }
             }});
+        window.cm_widget.init(editorData, inputLocation);
+        window.cm_widget.parseWidgets(editorData);
         $(accordion).on("accordionchange", function () {
             editorData.refresh();
         });

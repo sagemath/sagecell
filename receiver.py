@@ -235,6 +235,8 @@ from sagenb.misc.support import automatic_names
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
         if self.sage_mode:
             ka.kernel.shell.extension_manager.load_extension('sage.misc.sage_extension')
+            #logging.debug(str(ka.kernel.shell.input_splitter.transforms))
+            ka.kernel.shell.extension_manager.load_extension('widgets')
             user_ns.update(self.sage_dict)
             sage_code = """
 # Ensure unique random state after forking

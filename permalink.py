@@ -25,15 +25,15 @@ class PermalinkHandler(tornado.web.RequestHandler):
         args = self.request.arguments
         retval = {"query": None, "zip": None}
         if "code" in args:
-            code = ("".join(args["code"])).encode('utf8')
+            code = ("".join(args["code"]))
             language = "".join(args.get("language", ["sage"]))
         else:
             self.send_error(400)
             return
 
         import zlib, base64
-        retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code.encode('utf8')))
-        retval["query"] = yield gen.Task(self.application.db.new_exec_msg, code, language)
+        retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code))
+        retval["query"] = yield gen.Task(self.application.db.new_exec_msg, code.decode('utf8'), language)
 
         if "frame" not in args:
             self.set_header("Access-Control-Allow-Origin", "*");

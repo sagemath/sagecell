@@ -1,0 +1,53 @@
+.widget {
+    border: 1px solid;
+    display: inline-block;
+}
+.widget-templates {display:none}
+.tablewidget table {border-collapse: collapse}
+.tablewidget input {
+    margin: 0;
+    border:0px}
+.tablewidget table td {
+    border: 1px solid lightgrey;
+    padding:0px;
+    margin:0px;
+}
+.tablewidget input {
+    border: 0px;
+    text-align: right;
+}
+#content {border: 1px solid}
+.CodeMirror {
+  border: 1px solid #eee;
+  height: 18em;
+}
+.CodeMirror-scroll {
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.CodeMirror div.CodeMirror-cursor {
+  background-color:pink;
+  width:1ex;
+  z-index: 0;
+}
+
+/* For graph editor */
+rect {
+  fill: none;
+  pointer-events: all;
+}
+
+.node {
+  fill: #000;
+}
+
+.cursor {
+  fill: none;
+  stroke: brown;
+  pointer-events: none;
+}
+
+.link {
+  stroke: #999;
+}
