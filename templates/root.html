@@ -9,6 +9,9 @@
 <title>Sage Cell Server</title>
     <script src="{{ static_url('embedded_sagecell.js') }}"></script>
     <script>$(function() {sagecell.init()})</script>
+<link rel="stylesheet" href="{{ static_url('widgets.css') }}">
+<script src="{{ static_url('widgets.js') }}"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
   </head>
   <body id="sagecell_main">
     <link rel="stylesheet" href="{{ static_url('root.css') }}">
@@ -29,16 +32,5 @@ $(function () {
 });
     </script>
 
-<link rel="stylesheet" href="{{ static_url('widgets.css') }}">
-<script src="{{ static_url('widgets.js') }}"></script>
-<script src="http://d3js.org/d3.v3.min.js"></script>
-
-
-</head>
-  <body id="sagecell_main">
-    <h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
-    Type some Sage code below and press Evaluate.
-    <div id="sagecell"></div>
-    <a href="{{ static_url('about.html') }}" id="sagecell_about">About Sage Cell Server</a>
   </body>
 </html>
