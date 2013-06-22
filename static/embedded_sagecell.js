@@ -55,6 +55,9 @@ sagecell.URLs = {};
 sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
 sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
 sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
+sagecell.URLs.cell = sagecell.URLs.root + "sagecell.html";
+sagecell.URLs.terms = sagecell.URLs.root + "tos.html";
+sagecell.URLs.cookie = sagecell.URLs.root + "static/set_cookie.html";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
@@ -128,7 +131,7 @@ sagecell.util = {
 };
 
 var ce = sagecell.util.createElement;
-
+var deferred_eval = [];
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
         return;
@@ -154,7 +157,7 @@ sagecell.init = function (callback) {
     sagecell.last_session = {};
 
     // many stylesheets that have been smashed together into all.min.css
-    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.8.21.custom.css",
+    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.10.2.custom.min.css",
                        sagecell.URLs.root + "static/colorpicker/css/colorpicker.css",
                        sagecell.URLs.root + "static/all.min.css"]
     for (var i = 0; i < stylesheets.length; i++) {
@@ -184,7 +187,7 @@ processEnvironments: false},\n\
     // Preload images
     new Image().src = sagecell.URLs.sage_logo;
     new Image().src = sagecell.URLs.spinner;
-    sagecell.sendRequest("GET", sagecell.URLs.root + "sagecell.html", {},
+    sagecell.sendRequest("GET", sagecell.URLs.cell, {},
         function (data) {
             $(function () {
                 sagecell.body = data;
@@ -382,6 +385,10 @@ sagecell.makeSagecell = function (args, k) {
     return settings;
 };
 
+
+var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
+var accepted_tos = false;
+
 sagecell.initCell = (function (sagecellInfo, k) {
     var inputLocation = $(sagecellInfo.inputLocation);
     var outputLocation = $(sagecellInfo.outputLocation);
@@ -490,7 +497,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         inputLocation.find(".sagecell_fileList").empty();
         return false;
     });
-    sagecellInfo.submit = function (evt) {
+    var startEvaluation = function (evt) {
         if (sagecell.last_session[evt.data.id]) {
             sagecell.last_session[evt.data.id].kernel.kill();
             if (replaceOutput) {
@@ -507,6 +514,56 @@ sagecell.initCell = (function (sagecellInfo, k) {
         outputLocation.find(".sagecell_permalink_request").click(function() {session.createPermalink(code, language);});
         sagecell.last_session[evt.data.id] = session;
         outputLocation.find(".sagecell_output_elements").show();
+    };
+    sagecellInfo.submit = function (evt) {
+        if (!isXDomain && document.cookie.split(";").indexOf("accepted_tos=true") !== -1) {
+            accepted_tos = true;
+        }
+        if (accepted_tos || sagecellInfo.requires_tos === false) {
+            startEvaluation(evt);
+            return false;
+        }
+        deferred_eval.push([startEvaluation, evt]);
+        if (deferred_eval.length === 1) {
+            sagecell.sendRequest("POST", sagecell.URLs.terms, {}, function (data) {
+                if (data.length === 0) {
+                    accepted_tos = true;
+                    startEvaluation(evt);
+                } else {
+                    var terms = $(document.createElement("div"));
+                    terms.html(data);
+                    terms.dialog({
+                        "modal": true,
+                        "height": 400,
+                        "width": 600,
+                        "appendTo": inputLocation,
+                        "title": "Terms of Service",
+                        "buttons": {
+                            "Accept": function () {
+                                $(this).dialog("close");
+                                accepted_tos = true;
+                                if (isXDomain) {
+                                    var iframe = sagecell.util.createElement("iframe",
+                                        {"src": sagecell.URLs.cookie + "?rand=" + Math.random()});
+                                    window.addEventListener("message", function listen(event) {
+                                        document.body.removeChild(iframe);
+                                        window.removeEventListener("message", listen);
+                                    });
+                                    iframe.style.display = "none";
+                                    document.body.appendChild(iframe);
+                                }
+                                for (var i = 0; i < deferred_eval.length; i++) {
+                                    deferred_eval[i][0](deferred_eval[i][1]);
+                                }
+                            },
+                            "Cancel": function () {
+                                $(this).dialog("close");
+                            }
+                        }
+                    });
+                }
+            });
+        }
         // return false to make *sure* any containing form doesn't submit
         return false;
     };
@@ -534,10 +591,12 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         }
     }
     var xhr = new XMLHttpRequest();
-    var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
     var fd = undefined;
     if (method === "GET") {
         data.rand = Math.random().toString();
+    }
+    if (method === "POST" && accepted_tos) {
+        data.accepted_tos = "true";
     }
     // Format parameters to send as a string or a FormData object
     if (window.FormData && method !== "GET") {
@@ -568,6 +627,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     if (window.FormData || !(isXDomain || hasFiles)) {
         // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
+        xhr.withCredentials = true;
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 /* DONE */ && callback) {
                 callback(xhr.responseText);
@@ -580,7 +640,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
     } else if (method === "GET") {
         // Use JSONP to send cross-domain GET requests
         url += (url.indexOf("?") === -1 ? "?" : "&") + "callback=?";
-        $.getJSON(url, data, callback);
+        $.getJSON(url, callback);
     } else {
         // Use a form submission to send POST requests
         // Methods such as DELETE and OPTIONS will be sent as POST instead
@@ -708,7 +768,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     inputLocation.find(".sagecell_evalButton").click();
                 }
             }});
-        $(accordion).on("accordionchange", function () {
+        $(accordion).on("accordionactivate", function () {
             editorData.refresh();
         });
     }

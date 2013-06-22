@@ -58,6 +58,9 @@
 }
 */
 
+.sagecell .ui-dialog-content {
+    font-size: 80%;
+}
 
 .sagecell_input {
     overflow: hidden;

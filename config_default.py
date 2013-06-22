@@ -12,6 +12,8 @@ if sage == "":
     else:
         # assume both the web server and the untrusted workers have sage in their paths
         sage = "sage"
+# Require the user to accept terms of service before evaluation
+requires_tos = True
 
 db = "sqlalchemy"
 db_config = {"uri": "sqlite:///sqlite.db"}
