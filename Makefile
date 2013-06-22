@@ -11,6 +11,7 @@ jquery         = static/jquery.min.js
 jquery-ui      = static/jquery-ui/js/jquery-ui-1.8.21.custom.min.js
 sagecell       = static/sagecell.js
 sagecell-css   = static/sagecell.css
+embed-css      = static/sagecell_embed.css
 sockjs-client  = static/sockjs.js
 codemirror-cat = static/codemirror.js
 codemirror-css = submodules/codemirror/lib/codemirror.css
@@ -40,7 +41,7 @@ sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
 canvas3d       = $(sage-root)/devel/sagenb/sagenb/data/sage/js/canvas3d_lib.js
 
-all: submodules $(jquery) $(all-min-js) $(all-min-css)
+all: submodules $(jquery) $(all-min-js) $(all-min-css) $(embed-css)
 
 .PHONY: submodules
 submodules:
@@ -84,3 +85,6 @@ $(jmol-js): $(jmol-sage)
 
 $(sockjs-client):
 	python -c "import urllib; urllib.urlretrieve('$(sockjs-url)', '$(sockjs-client)')"
+
+$(embed-css): $(sagecell-css)
+	sed -e 's/;/ !important;/g' < $(sagecell-css) > $(embed-css)

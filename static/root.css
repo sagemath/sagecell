@@ -39,6 +39,6 @@ ol.sagecell_toc ol {
     font-size: 80%;
 }
 
-.CodeMirror {
+#sagecell .CodeMirror {
     height: 14em;
 }

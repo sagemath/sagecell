@@ -32,20 +32,20 @@
     vertical-align: middle;
 }
 
-.error, .stderr {
+.sagecell .error, .sagecell .stderr {
     color: red;
 }
 
-.colorpicker {
+.sagecell .colorpicker {
     z-index: 10;
 }
 
-.CodeMirror {
+.sagecell .CodeMirror {
     border: 1px solid;
     height: auto;
 }
 
-.CodeMirror-scroll {
+.sagecell .CodeMirror-scroll {
     overflow-y: hidden;
     overflow-x: auto;
     min-height: 3em;
