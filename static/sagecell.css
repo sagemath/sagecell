@@ -40,31 +40,17 @@
     z-index: 10;
 }
 
-/*.CodeMirror {
+.CodeMirror {
     border: 1px solid;
     height: auto;
 }
 
 .CodeMirror-scroll {
-    overflow-y: auto;
-    overflow-x: auto;
-    max-height: 15em;
-    min-height: 5em;
-}
-*/
-/* resizable */
-/* 
-.CodeMirror {
-    height: auto;
-    min-height: 10ex;
-    max-height: 60ex;
-}
-.CodeMirror-scroll {
-    overflow-x: auto;
     overflow-y: hidden;
+    overflow-x: auto;
+    min-height: 3em;
+    max-height: 14em;
 }
-*/
-
 
 .sagecell_input {
     overflow: hidden;
