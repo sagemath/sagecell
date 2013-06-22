@@ -6,10 +6,31 @@
     <meta name="description" content="A simple, embeddable interface for the Sage mathematics software">
     <link rel="icon" href="{{ static_url('favicon.ico') }}">
     <link rel="stylesheet" href="{{ static_url('root.css') }}">
-    <title>Sage Cell Server</title>
     <script src="{{ static_url('jquery.min.js') }}"></script>
+<title>Sage Cell Server</title>
     <script src="{{ static_url('embedded_sagecell.js') }}"></script>
-    <script>
+    <script>$(function() {sagecell.init()})</script>
+  </head>
+  <body id="sagecell_main">
+<style>
+.CodeMirror {
+    border: 1px solid;
+    height: auto;
+}
+
+.CodeMirror-scroll {
+    overflow-y: hidden;
+    overflow-x: auto;
+    max-height: 30em;
+    min-height: 10em;
+}
+</style>
+
+<h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
+    Type some Sage code below and press Evaluate.
+    <div id="sagecell"></div>
+    <a href="{{ static_url('about.html') }}" id="sagecell_about" target="_blank">About Sage Cell Server</a>
+<script>
 $(function () {
     sagecell.makeSagecell({inputLocation: '#sagecell',
                            languages: sagecell.allLanguages
@@ -20,12 +41,8 @@ $(function () {
                            callback: function() {$('#sagecell').find(".CodeMirror").get(0).CodeMirror.focus();}});
 
 });
-    </script>
-  </head>
-  <body id="sagecell_main">
-    <h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
-    Type some Sage code below and press Evaluate.
-    <div id="sagecell"></div>
-    <a href="{{ static_url('about.html') }}" id="sagecell_about" target="_blank">About Sage Cell Server</a>
-  </body>
+</script>
+
+
+    </body>
 </html>

@@ -40,11 +40,18 @@
     z-index: 10;
 }
 
-.CodeMirror {
+/*.CodeMirror {
     border: 1px solid;
-    height: 200px;
+    height: auto;
 }
 
+.CodeMirror-scroll {
+    overflow-y: auto;
+    overflow-x: auto;
+    max-height: 15em;
+    min-height: 5em;
+}
+*/
 /* resizable */
 /* 
 .CodeMirror {

@@ -56,7 +56,12 @@
         cell.  In that case, you might also include the following code
         after the above in order to fix the Sage cell styles.
       </p>
-      <pre data-lang="text/html">&lt;link rel="stylesheet" type="text/css" href="https://sagecell.sagemath.org/static/sagecell_embed.css"></pre>
+     <pre data-lang="text/html">&lt;link rel="stylesheet" type="text/css" href="http://sagecell.sagemath.org/static/sagecell_embed.css"></pre>
+      <p>If you want the Sage cell to automatically expand to fit available content, you can also include the following:</p>
+      <pre data-lang="text/html">&lt;style type="text/css">
+.CodeMirror { height: auto; }
+.CodeMirror-scroll { overflow-y: hidden; overflow-x: auto; }
+</style></pre>
       </li>
       <li>
         Include code in the body of the page. The code is wrapped in
@@ -66,6 +71,7 @@
   &lt;script type="text/x-sage"&gt;1+2&lt;/script&gt;
 &lt;/div&gt;</pre>
       </li>
+      
     </ol>
     There are <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">lots of options</a>
     controlling how cells are embedded, including:

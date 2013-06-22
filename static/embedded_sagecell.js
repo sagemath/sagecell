@@ -692,6 +692,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         editorData = CodeMirror.fromTextArea(
             commands.get(0),
             {mode: sagecell.modes[mode],
+             viewportMargin: Infinity,
              indentUnit: 4,
              tabMode: "shift",
              lineNumbers: true,
