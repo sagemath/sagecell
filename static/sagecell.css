@@ -3,8 +3,7 @@
 }
 
 .sagecell_sliderControl {
-    display: inline-block;
-    width: 15.0em;
+    max-width: 50em;
     margin-right: 1.0em;
     margin-left: 1.0em;
 }
@@ -18,7 +17,7 @@
     display: inline-block;
     margin-right: 0.5em;
     margin-left: 0.5em;
-    margin-top: 1.25em;
+    margin-top: 0.25em;
 }
 
 .sagecell_colorSelector {
@@ -148,8 +147,9 @@
 .sagecell_interactValueBox {
     border: 1px solid transparent;
     background-color: transparent;
-    vertical-align: top;
+    vertical-align: baseline;
     font-family: monospace;  /* Required since dynamic input box size is determined by monospaced fonts */
+    max-width: 10ex;
 }
 
 .sagecell_interactValueBox:hover {
@@ -160,33 +160,49 @@
     border-color: gray;
 }
 
-.sagecell_interactControls {
-    border-spacing: 0px 2px;
-    width: auto;
+.sagecell_interactControlCell {
+    display: inline-table;
+    vertical-align: top;
+    min-width: 300px;
 }
 
-.sagecell_interactControls .sagecell_interactcontrollabelcell {
+.sagecell_interactControlLabel {
+    display: table-cell;
     text-align: right !important;
+    vertical-align: top !important;
     padding-right: 0.5ex !important;
     padding-top: 0.6ex !important;
     padding-bottom: 0.6ex !important;
-    border-width: thin 0px thin thin;
-    border-style: solid;
-    border-color: transparent;
+    min-width: 5ex;
 }
 
-.sagecell_interactControls .sagecell_interactcontrolcell {
-    border-width: thin thin thin 0px;
-    border-style: solid;
-    border-color: transparent;
+.sagecell_interactControl {
+    display: table-cell;
+    width: 100%;
+    height: 100%;
+    padding: 1ex;
 }
 
 .sagecell_sliderContainer {
-    white-space: nowrap;
+    display: table;
+    width: 100%;
+    height: 100%;
+    max-width: 500px;
 }
 
-.sagecell_interactControls > tr > td.sagecell_dirtyControl {
-    border-color: red;
+.sagecell_sliderContainer > div:first-child {
+    display: table-cell;
+    width: 100%;
+}
+
+.sagecell_sliderContainer > div:first-child + div {
+    display: table-cell;
+    min-width: 11ex;
+}
+
+.sagecell_dirtyControl {
+    box-shadow: 0px 0px 6px 2px #d00;
+    border-radius: 2px;
 }
 
 .sagecell_commands, .sagecell .ui-widget .sagecell_commands {

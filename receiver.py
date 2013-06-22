@@ -225,9 +225,9 @@ from sagenb.misc.support import automatic_names
             if key not in msg_types:
                 ka.kernel.shell_handlers[key] = handler_wrapper(key, handler)
         _sage_.register_handler = register_handler
-	def send_message(stream, msg_type, content, parent, **kwargs):
-		ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
-	_sage_.send_message = send_message
+        def send_message(stream, msg_type, content, parent, **kwargs):
+            ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
+        _sage_.send_message = send_message
 
         sys._sage_ = _sage_
         # maybe should use prepare_user_module from IPython's interactive shell
@@ -240,6 +240,12 @@ from sagenb.misc.support import automatic_names
         sys._sage_.namespace = user_ns
         # TODO: maybe we don't want to cut down the flush interval?
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
+        def clear(changed=None):
+            sys._sage_.display_message({
+                "application/sage-clear": {"changed": changed},
+                "text/plain": "Clear display"
+            })
+        sys._sage_.clear = clear
         if self.sage_mode:
             ka.kernel.shell.extension_manager.load_extension('sage.misc.sage_extension')
             user_ns.update(self.sage_dict)
