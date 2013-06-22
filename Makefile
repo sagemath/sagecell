@@ -50,7 +50,9 @@ $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
 $(all-min-js): $(jsmin-bin) $(all-js)
-	$(jsmin-bin) < $(all-js) > $(all-min-js)
+        # jsmin seems to corrupt Codemirror 3.14.0
+        cp $(all-js) $(all-min-js)
+	#$(jsmin-bin) < $(all-js) > $(all-min-js)
 
 $(codemirror-cat): $(codemirror) $(cm-python-mode) \
            $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
