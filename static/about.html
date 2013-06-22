@@ -50,13 +50,14 @@
 &lt;script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
 &lt;script&gt;sagecell.makeSagecell({"inputLocation": ".sage"});&lt;/script&gt;</pre>
       <p>
-        If you are embedding into a webpage with lots of styling
-        (like a blog, or a deck.js presentation), there might be
-        conflicts between the page styling and the styles for the Sage
-        cell.  In that case, you might also include the following code
-        after the above in order to fix the Sage cell styles.
+        If you are embedding into a webpage with lots of styling (like
+        a blog, or a deck.js presentation), there might be conflicts
+        between the page styling and the styles for the Sage cell.  If
+        you notice that the Sage cell is not looking normal, you might
+        also include the following code after the above in order to
+        fix the Sage cell styles.
       </p>
-      <pre data-lang="text/html">&lt;link rel="stylesheet" type="text/css" href="https://sagecell.sagemath.org/static/sagecell_embed.css"></pre>
+     <pre data-lang="text/html">&lt;link rel="stylesheet" type="text/css" href="http://sagecell.sagemath.org/static/sagecell_embed.css"></pre>
       </li>
       <li>
         Include code in the body of the page. The code is wrapped in
@@ -66,6 +67,7 @@
   &lt;script type="text/x-sage"&gt;1+2&lt;/script&gt;
 &lt;/div&gt;</pre>
       </li>
+      
     </ol>
     There are <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">lots of options</a>
     controlling how cells are embedded, including:
@@ -105,7 +107,7 @@
     // Make *any* div with class 'compute' a Sage cell
     sagecell.makeSagecell({inputLocation: 'div.compute',
                            evalButtonText: 'Evaluate'});
-});
+    });
     &lt;/script&gt;
   &lt;/head&gt;
   &lt;body&gt;

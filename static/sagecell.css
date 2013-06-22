@@ -32,32 +32,29 @@
     vertical-align: middle;
 }
 
-.error, .stderr {
+.sagecell .error, .sagecell .stderr {
     color: red;
 }
 
-.colorpicker {
+.sagecell .colorpicker {
     z-index: 10;
 }
 
-.CodeMirror {
+.sagecell .CodeMirror {
     border: 1px solid;
-    height: 200px;
-}
-
-/* resizable */
-/* 
-.CodeMirror {
     height: auto;
-    min-height: 10ex;
-    max-height: 60ex;
 }
-.CodeMirror-scroll {
-    overflow-x: auto;
-    overflow-y: hidden;
-}
-*/
 
+.sagecell .CodeMirror-scroll {
+    overflow-y: hidden;
+    overflow-x: auto;
+    min-height: 3em;
+    max-height: 14em;
+}
+
+.sagecell .ui-dialog-content {
+    font-size: 80%;
+}
 
 .sagecell_input {
     overflow: hidden;
