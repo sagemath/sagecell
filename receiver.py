@@ -232,9 +232,11 @@ from sagenb.misc.support import automatic_names
         sys._sage_ = _sage_
         # maybe should use prepare_user_module from IPython's interactive shell
         from namespace import InstrumentedNamespace
-        logging.debug(ka.kernel.shell.user_global_ns)
+        logging.debug('namespace check:')
+        logging.debug(ka.kernel.shell.user_global_ns is ka.kernel.shell.user_ns)
         user_ns = InstrumentedNamespace(ka.kernel.shell.user_module.__dict__)
         ka.kernel.shell.user_module.__dict__ = user_ns
+        ka.kernel.shell.user_ns = user_ns
         sys._sage_.namespace = user_ns
         # TODO: maybe we don't want to cut down the flush interval?
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
