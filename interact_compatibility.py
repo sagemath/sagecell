@@ -520,8 +520,11 @@ imports = {"slider": slider, "range_slider": range_slider,
 
 
 
-#######
+#################
 
+# The following code is from https://github.com/sagemath/cloud/blob/master/sage_salvus.py
+# copyright William Stein, distributed under the GPL v2+
+# it doesn't quite work yet.
 
 ##########################################################
 # A "%exercise" cell mode -- a first step toward
@@ -751,3 +754,6 @@ def closure(code):
     c._f = salvus.namespace[fname]
     del salvus.namespace[fname]
     return c
+#######################
+## end salvus code
+#######################
