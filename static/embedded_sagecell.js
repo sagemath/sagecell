@@ -74,7 +74,6 @@ if (sagecell.log === undefined) {
         };
     }(typeof console === "undefined" ? function() {} : $.proxy(console.log, console)));
 }
-
 // Various utility functions for the Single Cell Server
 sagecell.util = {
     "createElement": function (type, attrs, children) {
@@ -499,7 +498,9 @@ sagecell.initCell = (function (sagecellInfo, k) {
     });
     var startEvaluation = function (evt) {
         if (sagecell.last_session[evt.data.id]) {
-            sagecell.last_session[evt.data.id].kernel.kill();
+            if (!sagecell.last_session[evt.data.id].linked) {
+                sagecell.last_session[evt.data.id].kernel.kill();
+            }
             if (replaceOutput) {
                 $(sagecell.last_session[evt.data.id].session_container).remove();
             }
