@@ -173,9 +173,13 @@ KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
 class TOSHandler(tornado.web.RequestHandler):
     """Handler for ``/tos.html``"""
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "tos.html")
-    with open(path) as f:
-        tos_html = f.read()
+    if config.get_config("requires_tos"):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "tos.html")
+        with open(path) as f:
+            tos_html = f.read()
+            tos_json = json.dumps(tos_html)
+    else:
+        tos_html = "No Terms of Service Required"
         tos_json = json.dumps(tos_html)
     
     def post(self):
