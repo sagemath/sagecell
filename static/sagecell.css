@@ -205,7 +205,8 @@
 }
 
 .sagecell_dirtyControl {
-    box-shadow: 0px 0px 6px 2px #d00;
+    box-shadow: 0px 0px 2px 1px #c00;
+    transition: box-shadow 1s;
     border-radius: 2px;
 }
 
