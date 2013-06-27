@@ -322,21 +322,29 @@ def interact_func(session, pub_socket):
         for n in update:
             controls[n].update = True
         if layout is None:
-            layout = [[(n, 1)] for n in names] + [[("_output", 1)]]
-        else:
-            placed = set()
-            for r in layout:
-                for i, c in enumerate(r):
-                    if not isinstance(c, (list, tuple)):
-                        c = (c, 1)
-                    r[i] = c = (c[0], int(c[1]))
-                    if c[0] is not None:
-                        if c[0] in placed:
-                            raise ValueError("duplicate item %s in layout" % (c[0],))
-                        placed.add(c[0])
-            layout.extend([(n, 1)] for n in names if n not in placed)
-            if "_output" not in placed:
-                layout.append([("_output", 1)])
+            layout = [[(n, 1)] for n in names]
+        elif isinstance(layout, dict):
+            rows = []
+            rows.extend(layout.get("top", []))
+            # TODO: implement left/right
+            rows.append([("_output",1)])
+            rows.extend(layout.get("bottom", []))
+            layout = rows
+
+        placed = set()
+        for r in layout:
+            for i, c in enumerate(r):
+                if not isinstance(c, (list, tuple)):
+                    c = (c, 1)
+                r[i] = c = (c[0], int(c[1]))
+                if c[0] is not None:
+                    if c[0] in placed:
+                        raise ValueError("duplicate item %s in layout" % (c[0],))
+                    placed.add(c[0])
+        layout.extend([(n, 1)] for n in names if n not in placed)
+        if "_output" not in placed:
+            layout.append([("_output", 1)])
+
         interact_id=str(uuid.uuid4())
         msgs = {n: c.message() for n, c in controls.iteritems()}
         for n, m in msgs.iteritems():
