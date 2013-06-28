@@ -1,0 +1,47 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Sage Cell Server</title>
+    <!-- Use the sage cell test server -->
+    <script src="https://mthyme.com:9880/static/jquery.min.js"></script>
+    <script src="https://mthyme.com:9880/static/embedded_sagecell.js"></script>
+    <script>$(function () {sagecell.makeSagecell({inputLocation:  '.sage'});});</script>
+  </head>
+  <body>
+  <h1>Test Interacts</h1>
+
+  <ol>
+
+    <li>From <a href="http://interact.sagemath.org/node/65">http://interact.sagemath.org/node/65</a>:
+    <div class="sage"><script type="text/x-sage">
+from scipy import misc
+import urllib
+@interact
+def choose_file(file='http://www.itbhuglobal.org/chronicle/732-Hubble2.png'):
+    global A,U,S,V
+    urllib.urlretrieve(file, 'image.png')
+    image=misc.imread('image.png',flatten=True)
+    A = matrix(image)
+    matrix_plot(A, colorbar=True)
+    U,S,V = A.SVD()
+
+    @interact
+    def svd_image(n=slider([1..min(A.ncols(), A.nrows())], default=5)):
+        A_approx = U[:,:n]*S[:n,:n]*V.H[:n,:]
+        html("Rank $%d$ approximation of the image with matrix $A$"%n)
+        html(r"$\lVert A-A_{%d} \rVert_2=%s$"%(n,(A-A_approx).norm(2)))
+        opts={'frame':False,'figsize':5}
+        html.table([[matrix_plot(A,colorbar=True,title='Original',vmin=0,vmax=255, **opts), 
+                     matrix_plot(A_approx,title='Compressed',vmin=0,vmax=255, **opts),
+                     matrix_plot(A-A_approx,title='Difference',colorbar=True,cmap='RdBu',vmin=-128,vmax=128,**opts)]])
+</script></div>
+
+
+
+
+
+</ol>
+</body>
+</html>
