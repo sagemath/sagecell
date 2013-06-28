@@ -460,12 +460,12 @@ def input_grid(nrows, ncols, default=None, label=None, to_value=None, width=4, t
     if type is str:
         evaluate = False
     elif type is not None:
-        element_adapter = lambda x, globs: type(x)
+        element_adapter = lambda x: type(x)
 
     if to_value is None:
         adapter=None
     else:
-        adapter=lambda x,globs: to_value(x)
+        adapter=lambda x: to_value(x)
 
     return InputGrid(nrows=nrows, ncols=ncols, width=width,
                      default=default, label=label, adapter=adapter,
