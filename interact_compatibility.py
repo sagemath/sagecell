@@ -259,7 +259,7 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         return InputBox(default=default, label=label, width=width, height=height, keypress=False)
     else:
         return ExpressionBox(default=default, label=label, width=width, height=height,
-            adapter=(lambda x, globs: type(x)) if type is not None else None)
+            adapter=(lambda x: type(x)) if type is not None else None)
 
 def color_selector(default=(0,0,1), label=None,
                  widget='colorpicker', hide_box=False):
