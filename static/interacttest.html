@@ -1,0 +1,2846 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Sage Cell Server</title>
+    <!-- Use the sage cell test server -->
+<script type="text/javascript" src="https://sagecell.sagemath.org/static/jquery.min.js"></script>
+<script type="text/javascript" src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
+
+    <script>$(function () {sagecell.makeSagecell({inputLocation:  '.sage'});});</script>
+  </head>
+  <body>
+  <h1>Test Interacts</h1>
+
+  <ol>
+
+    <li>One line example
+    <div class="sage">1+2</div>
+
+    <li>From <a href="http://interact.sagemath.org/node/65">http://interact.sagemath.org/node/65</a>:
+    <div class="sage"><script type="text/x-sage">
+from scipy import misc
+import urllib
+@interact
+def choose_file(file='http://www.itbhuglobal.org/chronicle/732-Hubble2.png'):
+    global A,U,S,V
+    urllib.urlretrieve(file, 'image.png')
+    image=misc.imread('image.png',flatten=True)
+    A = matrix(image)
+    matrix_plot(A, colorbar=True)
+    U,S,V = A.SVD()
+
+    @interact
+    def svd_image(n=slider([1..min(A.ncols(), A.nrows())], default=5)):
+        A_approx = U[:,:n]*S[:n,:n]*V.H[:n,:]
+        html("Rank $%d$ approximation of the image with matrix $A$"%n)
+        html(r"$\lVert A-A_{%d} \rVert_2=%s$"%(n,(A-A_approx).norm(2)))
+        opts={'frame':False,'figsize':5}
+        html.table([[matrix_plot(A,colorbar=True,title='Original',vmin=0,vmax=255, **opts), 
+                     matrix_plot(A_approx,title='Compressed',vmin=0,vmax=255, **opts),
+                     matrix_plot(A-A_approx,title='Difference',colorbar=True,cmap='RdBu',vmin=-128,vmax=128,**opts)]])
+</script></div>
+
+
+
+def muk_plot(m0,k):  
+    """
+    Return a plot of the binomial fractal measure mu_k
+    associated to m0, 1-m0, and k.   
+    """
+    k = int(k)
+    m0 = float(m0)
+    m1 = float(1 - m0)
+    assert m0 > 0 and m1 > 0, "both must be positive"
+    v = [(0,0)]
+    t = 0
+    two = int(2)
+    delta = float(1/2^k)
+    multiplier = float(2^k)
+    for i in [0..2^k-1]:
+        t = i * delta
+        phi1 = i.str(two).count("1")
+        phi0 = k - phi1
+        y = m0^(phi0)*m1^(phi1)*multiplier
+        v.append((t,y))
+        v.append((t+delta,y))
+    return v
+
+html("<h1>Mandelbrot's Fractal Binomial Measure</h1>")
+
+@interact
+def _(mu0=slider(0.0001,0.999,default=0.3), k=slider([1..14],default=3), thickness=slider([0.1,0.2,..,1.0],default=1.0)):
+    v = muk_plot(mu0,k)
+    line(v,thickness=thickness).show(xmin=0, xmax=1, ymin=0,
+figsize=[8,3])
+
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+## Created by Niles Johnson
+##
+## http://www.nilesjohnson.net
+##
+##
+load('https://raw.github.com/jasongrout/hopf_fibrations/master/hopf.pyx')
+load('https://raw.github.com/jasongrout/hopf_fibrations/master/hopf_animate.sage')
+
+
+def base_circle(po, numpts=24):
+    return BaseLatitude(numpts/30,0,2*pi,po=po,input_type='sph')
+    
+@interact
+def hopf_fibers(tilt=slider(0,pi,default=.587*pi,label="Tilt from vertical axis"), 
+                angle=slider(0,2*pi,default=1.41*pi, label="Rotation around vertical axis"),
+                quality=checkbox(default=False,label="High quality (much slower)"), 
+                img_size=input_box(default=500,label="Imgage Size (pixels)")):
+    axis_az = angle
+    axis_po = pi/2
+    rot_alpha = tilt
+    circles = [base_circle(po,num) for po,num in [(.5*pi/2,20), (1.5*pi/2,20)]]
+    points = []
+    for c in circles:
+        c.set_rotation((1,axis_az,axis_po), rot_alpha)
+        points += c.points()
+    draw_frame(points, n=0, high_quality=quality, resolution=img_size, only_show=True)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+import numpy as np
+
+plts=[]
+ranges=[]
+@interact 
+def _(v0=slider(srange(0.001,1,0.002)+srange(1,30.001,0.1)),theta0=slider(srange(-90,90,1),default=0)):
+    global plts
+    var('v,theta,x,y')
+    R=0.2
+    h0=2
+    V=vector( [ (v^2-cos(theta))/v,-sin(theta)-R*v^2,v*cos(theta),v*sin(theta)])
+    theta0=theta0/180*pi
+    sol=desolve_odeint(V,[theta0,v0,0,h0],srange(0,31,0.01),[theta,v,x,y])
+    sol[sol[:,3]>=0]
+    s=sol[sol[:,3]>=0]
+    x1,y1=sol[sol[:,3]>=0][-1][2:4]
+    x2,y2=sol[sol[:,3]<0][0][2:4]
+    cur_dist=x1-y1/((y2-y1)/(x2-x1))
+    if ranges:
+        old_max=sorted(ranges,key=lambda x:x[3])[-1][3]
+    else:
+        old_max=0
+    
+    ranges.append([v0,theta0, R, cur_dist])
+    new_max=sorted(ranges,key=lambda x:x[3])[-1][3]
+    if new_max>old_max:
+        print "NEW Record!, maximum:",new_max,"(",old_max,")", "  at: ",sorted(ranges,key=lambda x:x[3])[-1][:3]
+    else:
+        print "Try again to beat:",new_max," (",cur_dist ,")"   
+    
+    plts.append( line(zip(s[:,2],s[:,3]),figsize=(9,6),color='gray',aspect_ratio=1) )
+    plt_last=line(zip(s[:,2],s[:,3]),figsize=(9,6),color='red',aspect_ratio=1)
+    a=0.2+v0/10
+    arw=arrow( [0,h0],[a*cos(theta0),h0+a*sin(theta0)],zorder=10)
+    show(sum(plts)+plt_last+arw)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+#Created by J.K. Denny at Mercer University
+import matplotlib
+@interact
+def doit(xmin=-4,xmax=4,y1=-4,y2=4,nolab=('show labels?',True),xlab=('x labels',True),ylab=('y labels',True),minor=('dashed minor axes',True)):
+    if xlab:
+        xlabels=[xmin+i for i in range(0,xmax-xmin+1)]
+    else:
+        xlabels=[]
+    if ylab:
+        ylabels=[y1+i for i in range(0,y2-y1+1)]  
+    else:
+        ylabels=[]
+    p=plot(0,(x,xmin,xmax),ymin=y1,ymax=y2,ticks=[xlabels,ylabels],color='black')
+    if minor:
+        for x0 in xlabels:
+            p+=line([[x0,y1],[x0,y2]],linestyle='--',color='gray')
+        for y0 in ylabels:
+            p+=line([[xmin,y0],[xmax,y0]],linestyle='--',color='gray')
+    if nolab:
+        show(p)
+        html('Click on link below to download PDF version.')
+        p.save("graph.pdf")
+    else:
+        p.show(tick_formatter=(matplotlib.ticker.NullFormatter(),matplotlib.ticker.NullFormatter()))
+        html('Click on link below to download PDF version.')
+        p.save("graph.pdf",tick_formatter=(matplotlib.ticker.NullFormatter(),matplotlib.ticker.NullFormatter()))
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+import numpy as np 
+def bin_poly_roots(Nmax = 10000,rank = 24,rand=True):
+    all = CartesianProduct(*tuple([[-1,1]]*(rank+1)))
+    N=all.cardinality()
+    if Nmax >N:
+        Nmax=N
+    zera = np.empty((Nmax*rank),dtype=np.complex)
+    
+    for n,comb in enumerate(all):
+        if n == Nmax:
+            break
+        if rand:
+            poly_coeffs = 2*np.random.randint(0,2,size=(rank+1))-1
+        else:
+            poly_coeffs = comb
+        zera[n*rank:(n+1)*rank] =  np.poly1d(poly_coeffs).r
+    return zera    
+@interact
+def _(nmax=[1000,5000,10000,20000,50000,100000],rank=slider(1,30,1,default=24)):
+    print 'Calculating roots, it will take approx.',nmax/500,'seconds'
+    print 'Total number of polynomials:',2**(rank+1), "we will take randomly",nmax
+    Rts = bin_poly_roots(Nmax=nmax,rank = 24)
+    plt = point( zip(np.real(Rts),np.imag(Rts)),size=1 )
+    
+    @interact 
+    def _(nmax2=slider(0,10000,100,default=0)):
+        
+        if nmax2==0:
+            print "Drawing roots of random polynommials"
+            plt.show(figsize=5)
+        else:
+            print 'Calculating first ',nmax2,'roots, it will take approx.',int(nmax2/500),'seconds'
+            Rts2 = bin_poly_roots(Nmax=nmax2,rank = 24,rand=False)
+            print "Drawing roots of ordered polynommials."
+            plt2 = point( zip(np.real(Rts2),np.imag(Rts2)),size=1,color='red' ,figsize=4)
+            (plt+plt2).show(figsize=5)
+        @interact 
+        def density_plot(bins=[0,40,100,200],vmax=(0.3,10,0.1)):
+                if bins==0:
+                    print "set nonzero bins to see a density of roots"
+                else:
+                    H, xedges, yedges  = np.histogram2d(np.real(Rts),np.imag(Rts),bins=(int(bins),int(bins)),range=[[-1.7, 1.7], [-1.7, 1.7]],normed=True)
+                    matrix_plot(np.log(H),cmap='jet',vmax=vmax,figsize=5).show()
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+@interact
+def diffie_hellman(bits=slider(8, 513, 4, 8, 'Number of bits', False),
+    button=selector(["Show new example"],label='',buttons=True)):
+    maxp = 2 ^ bits
+    p = random_prime(maxp)
+    k = GF(p)
+    if bits > 100:
+        g = k(2)
+    else:
+        g = k.multiplicative_generator()
+    a = ZZ.random_element(10, maxp)
+    b = ZZ.random_element(10, maxp)
+
+    html("""
+<style>
+.gamodp, .gbmodp {
+color:#000;
+padding:5px
+}
+.gamodp {
+background:#846FD8
+}
+.gbmodp {
+background:#FFFC73
+}
+.dhsame {
+color:#000;
+font-weight:bold
+}
+</style>
+<h2 style="color:#000;font-family:Arial, Helvetica, sans-serif">%s-Bit Diffie-Hellman Key Exchange</h2>
+<ol style="color:#000;font-family:Arial, Helvetica, sans-serif">
+<li>Alice and Bob agree to use the prime number p = %s and base g = %s.</li>
+<li>Alice chooses the secret integer a = %s, then sends Bob (<span class="gamodp">g<sup>a</sup> mod p</span>):<br/>%s<sup>%s</sup> mod %s = <span class="gamodp">%s</span>.</li>
+<li>Bob chooses the secret integer b=%s, then sends Alice (<span class="gbmodp">g<sup>b</sup> mod p</span>):<br/>%s<sup>%s</sup> mod %s = <span class="gbmodp">%s</span>.</li>
+<li>Alice computes (<span class="gbmodp">g<sup>b</sup> mod p</span>)<sup>a</sup> mod p:<br/>%s<sup>%s</sup> mod %s = <span class="dhsame">%s</span>.</li>
+<li>Bob computes (<span class="gamodp">g<sup>a</sup> mod p</span>)<sup>b</sup> mod p:<br/>%s<sup>%s</sup> mod %s = <span class="dhsame">%s</span>.</li>
+</ol>
+    """ % (bits, p, g, a, g, a, p, (g^a), b, g, b, p, (g^b), (g^b), a, p,
+       (g^ b)^a, g^a, b, p, (g^a)^b))
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+"""Ham creates an interact in sage which lets the user input two non-intersecting polygons as ordered pairs 
+and also specify an error bound. A line is generated to approximate the line which simultaneously bisects both areas
+ of the polygons. This is displayed graphically with the equation of the line as well as the quality of the approximation
+  of both bisections."""
+
+
+#### Max and Min methods
+
+def find_ymax(ls1, ls2):
+    """Given two lists of 2-tuples, ls1 and ls2, outputs the largest y-coordinate."""
+    Q=[]
+    W=[]
+    for i in range(len(ls1)):
+        g=ls1[i]
+        Q.append(g[1])
+    for i in range(len(ls2)):
+        g=ls2[i]
+        W.append(g[1])
+    ymax1 = max(Q)
+    ymax2 = max(W)
+    return max([ymax1, ymax2])      
+    
+def find_ymin(ls1, ls2):
+    """Given a list of 2-tuples, ls1 and ls2, outputs the smallest y-coordinate"""   
+    Q=[]
+    W=[]
+    for i in range(len(ls1)):
+        g=ls1[i]
+        Q.append(g[1])
+    for i in range(len(ls2)):
+        g=ls2[i]
+        W.append(g[1])
+    ymin1 = min(Q)
+    ymin2 = min(W)
+    return min(ymin1, ymin2)       
+    
+def find_xmax(ls1, ls2):
+    """Given a list of 2-tuples, ls1 and ls2, outputs the largest x-coordinate"""
+    Q=[]
+    W=[]
+    for i in range(len(ls1)):
+        g=ls1[i]
+        Q.append(g[0])
+    for i in range(len(ls2)):
+        g=ls2[i]
+        W.append(g[0])
+    xmax1 = max(Q)
+    xmax2 = max(W)
+    return max(xmax1, xmax2)               
+    
+def find_xmin(ls1, ls2):
+    """Given a list of 2-tuples, ls1 and ls2, outputs the smallest x-coordinate"""
+    Q=[]
+    W=[]
+    for i in range(len(ls1)):
+        g=ls1[i]
+        Q.append(g[0])
+    for i in range(len(ls2)):
+        g=ls2[i]
+        W.append(g[0])
+    xmin1 = min(Q)
+    xmin2 = min(W)
+    return min(xmin1, xmin2)   
+    
+def max_list(ls1, ls2):
+    """Given two lists of 2-tuples, ls1 and ls2, outputs the length of the larger of the two lists."""
+    S=[]
+    R=[]
+    for i in range(0,len(ls1)):
+        for z in ls1[i]:
+            S.append(z)
+    newS = S[0:len(S):2]
+    for i in range(0,len(ls2)):
+        for z in ls2[i]:
+            R.append(z)
+    newR = R[0:len(R):2]
+    m=max(newR)
+    n=max(newS)
+    return max(m,n)
+    
+def min_list(ls1, ls2):
+    """Given two lists of tuples, ls1 and ls2, outputs the length of the smaller of the two lists."""
+    S=[]
+    R=[]
+    for i in range(0,len(ls1)):
+        for z in ls1[i]:
+            S.append(z)
+    newS = S[0:len(S):2]
+    for i in range(0,len(ls2)):
+        for z in ls2[i]:
+            R.append(z)
+    newR = R[0:len(R):2]
+    m=min(newR)
+    n=min(newS)
+    return min(m,n)
+
+#### Line Construction and Methods
+    
+def draw_line(pt1, pt2):
+    """Given two 2-tuple points, pt1 and pt2, outputs a line as a 3-tuple for ax+by=c.""" 
+    if pt2[0]-pt1[0] != 0:
+        m = (pt2[1] - pt1[1])/(pt2[0]- pt1[0])
+        b = pt1[1] -m*(pt1[0])
+        newline = line()
+        newline.a = -m
+        newline.b = 1
+        newline.c = b
+        return newline
+    else:
+        m = (pt2[0] - pt1[0])/(pt2[1]- pt1[1])
+        b = pt1[0] - m*(pt1[1])
+        newline = line()
+        newline.a = 1
+        newline.b = -m
+        newline.c = b
+        return newline
+
+
+    def give(self):
+        """Converts a line to a list [a,b,c] for ax + by = x."""
+        ls = [self.a, self.b, self.c]
+        return ls
+ 
+ 
+    ####Polygon Class       
+    
+class pgon:
+    def __init__(self, list_vertices = []):
+        self.vertex_list = list_vertices
+        self.area = self.PArea()        
+        self.xcent = self.cent_x()
+        self.ycent = self.cent_y()
+        self.centroid = (self.xcent, self.ycent)
+    
+    def PArea(self):
+        """Computes area of polygon given a list of vertices."""
+        S=[]
+        for i in range(0,len(self.vertex_list)):
+            for z in self.vertex_list[i]:
+                S.append(z)
+        A=0
+        for i in range(0,len(S),2):
+            if i < len(S)-2:
+                A= A + S[i]*S[i+3] - S[i+2]*S[i+1]
+            else:
+                A= A + S[i]*S[1] - S[0]*S[i+1]
+        return abs((1/2)*A)
+
+
+    def new_pgon(self, current_line):
+        """Takes as input a line and creates a new polygon from the intersects. Outputs a list."""
+        Q=[]
+        if current_line.b==0:
+           for i in range(len(self.vertex_list)):
+               if i < len(self.vertex_list)-1:
+                    #does_intersect returns intersection if it exists
+                    r = self.does_intersect(self.vertex_list[i],self.vertex_list[i+1],current_line)
+                    if r != None: # meaning there exists intersection
+                        Q.append(r)
+                    g=self.vertex_list[i+1]
+                    if g[0] <= current_line.c:
+                        Q.append(g)
+               if i == len(self.vertex_list)-1:
+                   r= self.does_intersect(self.vertex_list[i],self.vertex_list[0],current_line)
+                   if r!= None:
+                       Q.append(r)
+                   g=self.vertex_list[0]
+                   if g[1] < current_line.c:
+                       Q.append(g)
+           N = pgon(Q)          
+           return N
+        else:
+            for i in range(len(self.vertex_list)):
+                if i < len(self.vertex_list)-1:        
+                      #does_intersect returns intersection if it exists
+                    r = self.does_intersect(self.vertex_list[i+1],self.vertex_list[i],current_line)
+                    if r != None: # meaning there exists intersection
+                        Q.append(r)
+                    g=self.vertex_list[i+1] 
+                    if g[1] < -(current_line.a/current_line.b)*g[0]+(current_line.c/current_line.b):
+                        Q.append(g)
+                if i == len(self.vertex_list)-1:
+                    r = self.does_intersect(self.vertex_list[0],self.vertex_list[i],current_line)
+                    if r!= None:
+                        Q.append(r)
+                    g=self.vertex_list[0]
+                    if g[1] < -(current_line.a/current_line.b)*g[0]+(current_line.c/current_line.b):
+                        Q.append(g)
+            N = pgon(Q)          
+            return N
+
+    def cent_x(self):
+        """Takes a list of Pgon vertices and finds the x-centroid"""
+        S=[]
+        for i in range(0,len(self.vertex_list)):
+            for z in self.vertex_list[i]:
+                S.append(z)
+        B=self.area
+        if B==0:
+            return
+        A=0
+        for i in range(0,len(S),2):
+            if i < len(S)-2:
+                A= A + (S[i]+S[i+2])*(S[i]*S[i+3] - S[i+2]*S[i+1])
+            else:
+                A= A + (S[i]+S[0])*(S[i]*S[1] - S[0]*S[i+1])
+        return (1/(6*B))*A
+    
+    def cent_y(self):
+        """Takes a list of polygon vertices and finds the y-centroid"""
+        S=[]
+        for i in range(0,len(self.vertex_list)):
+            for z in self.vertex_list[i]:
+                S.append(z)
+        B=self.area
+        if B==0:
+            return
+        A=0
+        for i in range(0,len(S),2):
+            if i < len(S)-2:
+                A= A + (S[i+1]+S[i+3])*(S[i]*S[i+3] - S[i+2]*S[i+1])
+            else:
+                A= A + (S[i+1]+S[1])*(S[i]*S[1] - S[0]*S[i+1])
+        return (1/(6*B))*A
+
+    def does_intersect(self, pt1,pt2,current_line):  
+        """Determines if two lines intersect. Returns point of intersection."""
+        line1=line(pt1,pt2).give()  ###.give() returns a list! [a,b,c]
+        line2=current_line.give()
+        m=matrix([line1,line2])
+        x0=m.solve_right(m)[0,2]
+        y0=m.solve_right(m)[1,2]
+        if pt1[0]!=pt2[0]:
+            if pt1[0]>=pt2[0]:
+                if pt2[0] <= x0 and pt1[0] >= x0:
+                    return (x0,y0)
+            if pt1[0]<= pt2[0]:
+                if pt1[0] <= x0 and pt2[0] >= x0:
+                    return (x0,y0)
+        else:
+            if pt1[1] <= pt2[1]:
+                if pt2[1] >= y0 and pt1[1] <= y0:
+                    return (x0,y0)
+            if pt1[1] >= pt2[1]:
+                if pt1[1] >= y0 and pt2[1] <= y0:
+                    return (x0,y0)
+        
+
+class line:
+    def __init__(self, p1 = (0,0), p2 = (0,0) ):
+        if p2[0]-p1[0]==0:
+            self.a=1
+            self.b=0
+            self.c=p1[0]
+        else:
+            d = ( (p2[1] - p1[1]) / (p2[0] - p1[0]) )
+            self.a = -d
+            self.b = 1 
+            self.c = p1[1] - (d*p1[0])
+
+    def give(self):
+        ls = [self.a, self.b, self.c]
+        return ls
+
+class hamline:
+    def __init__(self, xmin, xmax, ymin, ymax, resolution, polygons, HALF_AREA): 
+        self.steps = int(1/resolution)  #Pass in resolution as a percent (meaning less than 1)!
+        self.resolution = resolution
+        self.xmin = xmin
+        self.xmax = xmax
+        self.ymin = ymin
+        self.ymax = ymax
+        self.polygons = polygons #pass this in a list of two pgons
+        self.HALF_AREA = HALF_AREA
+        self.found = False
+        self.areaLine = self.find_line()
+        self.topSearch = False
+
+    def __repr__(self):
+        print "%sy + %sx = %s"%(self.a, self.b, self.c)
+        return "[%s, %s, %s]"%(self.a, self.b, self.c)
+
+
+    ###This returns a line:
+    def find_line(self):    
+        steps = self.steps
+        xmax = self.xmax
+        xmin = self.xmin
+        ymax = self.ymax
+        ymin = self.ymin
+
+        ###These are all just points stored as tuples
+        corner1 = (xmax, ymax)
+        corner2 = (xmax, ymin)
+        corner3 = (xmin, ymin)
+        corner4 = (xmin, ymax)
+        divis = [0..steps]
+        comps = [] #as in components
+        yrange = ymax-ymin
+        xrange = xmax-xmin
+        
+        ###The thing is that all of our lines that we are going to use will be generated
+
+        ###Generate points along the line
+        ### leftline_points etc are lists of 2-tuples
+        leftline_points = []
+        rightline_points = []
+        topline_points = []
+        bottomline_points = []
+        ####Note: As implemented, we divide the region into step by step components.
+        ####    In a case where xrange >> yrange or vice versa, this could be a problem
+        ####    I suggest doing component wise entry of steps in the input box
+        for i in divis:
+            leftline_points.append( (xmin, (i*(yrange/steps) + ymin)) )
+            rightline_points.append( (xmax, (i*(yrange/steps) + ymin)) )
+            topline_points.append( ( (i*(xrange/steps) + xmin), ymax) )
+            bottomline_points.append( ( (i*(xrange/steps) + xmin), ymin) )
+        ####    Post-cond: we have all our points from which to make our lovely lines!
+        ####    Check the lines from leftline to rightline
+        for i in leftline_points:
+            for j in rightline_points:
+                connect = line(i,j)
+                #We have the set of two pgons. Those are invariant. New pgons get generated. Find areas of those:
+                # Each pgon has a vertex_list that can create a new pgon
+                # newpgon takes a vertex_list and a line
+                Poly1 = self.polygons[0].vertex_list
+                Poly2 = self.polygons[1].vertex_list
+                P1 = pgon(Poly1)
+                P2 = pgon(Poly2)
+                P1_intersect = P1.new_pgon(connect) ## these are new polygons, created by line
+                P2_intersect = P2.new_pgon(connect)
+                ALP1= P1_intersect.area
+                AP1 = P1.area
+                ALP2 = P2_intersect.area
+                AP2 = P2.area
+                #This is assuming that the new pgons both appear below the line
+                if not( (P1_intersect.area==0) or (P2_intersect.area ==0) ) and not( (P1_intersect.area == P1.area) or (P2_intersect.area == P2.area) ):
+                    if ( (ALP1/AP1 < self.resolution + 1/2) and (ALP1/AP1 > 1/2 - self.resolution) ):
+                        if  ( (ALP2/AP2 < self.resolution + 1/2 ) and (ALP2/AP2 > - self.resolution + 1/2) ):
+                            self.found = True
+                            return connect
+        if (not self.found):
+            self.topSearch = True
+            for i in topline_points:
+                for j in bottomline_points:
+                    connect = line(i,j)
+                #We have the set of two pgons. Those are invariant. New pgons get generated. #Find areas of those:
+                # Each pgon has a vertex_list that can create a new pgon
+                # newpgon takes a vertex_list and a line
+                    Poly1 = self.polygons[0].vertex_list
+                    Poly2 = self.polygons[1].vertex_list
+                    P1 = pgon(Poly1)
+                    P2 = pgon(Poly2)
+                    P1_intersect = P1.new_pgon(connect)
+                    P2_intersect = P2.new_pgon(connect)
+                    ALP1= P1_intersect.area
+                    AP1 = P1.area
+                    ALP2 = P2_intersect.area
+                    AP2 = P2.area
+                #This is assuming that the new pgons both appear below the line
+                    if not( (P1_intersect.area==0) or (P2_intersect.area ==0) ) and not( (P1_intersect.area == P1.area) or (P2_intersect.area == P2.area) ):
+                        if ( (ALP1/AP1 < self.resolution + 1/2) and (ALP1/AP1 > 1/2 - self.resolution) ):
+                            if  ( (ALP2/AP2 < self.resolution + 1/2 ) and (ALP2/AP2 > - self.resolution + 1/2) ):
+                                self.found = True
+                                return connect
+        if (not self.found):
+            Poly1 = self.polygons[0].vertex_list
+            Poly2 = self.polygons[1].vertex_list
+            P1 = pgon(Poly1)
+            P2 = pgon(Poly2)
+            C1= P1.centroid
+            C2 = P2.centroid
+            return line(C1, C2)
+        
+@interact
+def f(vertices=input_box("(1,-2) (2,2) (4,-1)  (6,5)  (-1,2)",
+              "Vertices P1 (separated by spaces)", type=str),
+     clr=color_selector(Color('purple'), widget='jpicker'), vertices2=input_box("(-1,-1) (-2,-2)  (-5,-1/2)   (-5,-8) (-4,-3)  (-3,-7) (-5/2,-2) (-2,-6) (0,-1)",
+              "Vertices P2 (separated by spaces)", type=str),
+     clr2=color_selector(Color('red'), widget='jpicker'), error=slider(0,.5,default=.2)):
+    
+    
+    v = sage_eval('['+vertices.replace(')','),')+']')    
+    v2 = sage_eval('['+vertices2.replace(')','),')+']')
+    
+    """Debugging"""
+    #P1Plot = polygon(v, color=clr) 
+    #P2Plot = polygon(v2, color=clr2)
+    #show(P1Plot + P2Plot)
+ 
+    #### Storing the information from the vertices inputed into two shapes.
+      
+    shape1 = pgon(v)
+    shape2 = pgon(v2)
+        
+    ####Areas of initial polygons.
+    
+    A1= shape1.area
+    Half_A1=A1/2
+    A2= shape2.area
+    Half_A2= A2/2
+    
+    
+    #### Centroids of polygons and connecting line.
+    C1= shape1.centroid
+    C2= shape2.centroid
+    CLine = line(C1, C2)    
+    L= CLine
+    m1= max_list(v,v2)
+    n1=min_list(v,v2)
+    
+    ####Form a new polygon from intersecting original with centroid line.
+    CP1=shape1.new_pgon(L)
+    CP2=shape2.new_pgon(L)
+    
+     
+    ####Areas of bottom polygons obtained from the centroid line.
+    
+    CA1=float(CP1.PArea())
+    CA2=float(CP2.PArea())
+    bottom = CA1 + CA2
+    top = (A1-CA1) + (A2-CA2)
+    HALF_AREA = (A1 +A2)/2.0 
+    resolution = error
+    
+    ####Calculate the x and y max of the polygon vertice sets. To be used for constructing the plot.
+    
+    ymax = find_ymax(v, v2)
+    ymin = find_ymin(v, v2)
+    xmax = find_xmax(v, v2)
+    xmin = find_xmin(v, v2)
+
+    ####Create hamline, then given hamline defines the new polygons below the hamline.
+    
+    poly_list = [shape1, shape2]
+    ham = hamline(xmin, xmax, ymin, ymax, resolution, poly_list, HALF_AREA)
+    areaCutLine = ham.areaLine 
+    if (areaCutLine) != None:
+        L2 = areaCutLine.give()
+    else:
+        P1Plot = polygon(v, color=clr) 
+        P2Plot = polygon(v2, color=clr2)
+        CLinePlot = plot(-(L.a/L.b)*x+L.c/L.b,n1-1,m1+1, thickness=.3, color='black') 
+        show(P1Plot + P2Plot + CLinePlot)
+        print 'Self-intersecting polygons not allowed.'
+        return
+        #import sys
+        #sys.exit ("Your Polygon Has a Self Intersection.")
+    NP1=shape1.new_pgon(ham.areaLine)
+    NP2=shape2.new_pgon(ham.areaLine)
+    
+   
+    ####Areas of the newly formed bottom polygons.   
+  
+    BA1=float(NP1.PArea())
+    BA2=float(NP2.PArea())
+    bottom = BA1 + BA2
+    top = (A1-BA1) + (A2-BA2)
+    HALF_AREA = (bottom + top)/2.0
+  
+   
+    ####Polygons and lines to be plotted.
+  
+    P1Plot = polygon(v, color=clr) 
+    P2Plot = polygon(v2, color=clr2)
+    CLinePlot = plot(-(L.a/L.b)*x+L.c/L.b,n1,m1, thickness=.3, color='black') 
+    if -(L2[0]/L2[1])*xmax+L2[2]/L2[1] > ymax:
+        HAMLINEPlot= plot(-(L2[0]/L2[1])*x+L2[2]/L2[1],( ymin - (L2[2]/L2[1]) ) / (-L2[0]/L2[1] ),( ymax - (L2[2]/L2[1]) ) / (-L2[0]/L2[1] ), thickness=2, color='black')
+    else:
+        HAMLINEPlot= plot(-(L2[0]/L2[1])*x+L2[2]/L2[1],n1,m1, thickness=2, color='black')
+    if NP1.vertex_list:
+        P1BPLOT = polygon(NP1.vertex_list, color= 'green')
+    else:
+        print 'No Bottom Found for P1, check for self-intersection or change error.'
+        show(P1Plot+ P2Plot)
+        return
+    if NP2.vertex_list:
+        P2BPLOT = polygon(NP2.vertex_list, color= 'yellow')
+    else:
+        print 'No Bottom Found for P2, check for self-intersection or change error.'
+        show(P1Plot+ P2Plot)
+        return
+    #### Displayed Graph and Quality of Approximation Printouts  
+    
+    show( 'The line: y=%s results in P1 error= %s and P2 error = %s'%((-(L2[0]/L2[1])*x+L2[2]/L2[1]),(round(.5 -(BA1)/A1, 3)),(round(.5-(BA2)/A2, 3))) ) 
+    show(HAMLINEPlot + P1Plot+ P2Plot +P1BPLOT + P2BPLOT)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+var('r phi z')
+var('x y',domain='real')
+var('z')
+@interact
+def rozwiniecie_okregu(n=slider(range(1,10)+range(10,100,10),default=3),x0=slider(srange(0,1,0.01),default=0),viewer=['tachyon','jmol']):
+        
+    expr=sqrt(1-z**2).taylor(z,x0,n)
+    myabs = lambda x:sqrt(x.real()**2+y.imag()**2)
+
+    poly=myabs(expr.subs({z:x+I*y}))
+    poly_polar=poly.subs({x:x0+r*cos(phi),y:r*sin(phi)})
+    transx0=(x0+r*cos(phi),r*sin(phi),z)
+    trans=(r*cos(phi),r*sin(phi),z)
+ 
+    rmax=1.5
+    r1=2*x0-1.0
+    r2=1.0
+    
+    for zval in [-1.5,1.5]:
+        try:
+            rmax=(expr+zval).find_root(r2,r2+0.5)
+            rmax=rmax-x0
+        except:
+            pass
+                    
+    surf=plot3d(poly_polar,(r,0,rmax),(phi,0,2*pi),adaptive=False,plot_points=(20,120),viewer='jmol',figsize=5,transformation=transx0)
+    
+    surf2=plot3d(sqrt(sqrt(4*r**4*sin(phi)**2*cos(phi)**2 + (r**2*sin(phi)**2 - r**2*cos(phi)**2 +
+1)**2)),(r,0,1.5),(phi,0,2*pi),adaptive=False,plot_points=(20,120),viewer='jmol',color='green',opacity=0.5,transformation=trans)
+    
+    semicirc=parametric_plot3d( (x,0,sqrt(1-x**2)),(x,-1,1),thickness=10,color='red')
+    pkt=point( [(x0,0,sqrt(1-x0**2))],size=30,color='brown')
+    (semicirc+surf+surf2+pkt).show(viewer=viewer)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+#T is in degrees Celsius and A and B are from derived from atmospheric 
+# conditions to be A = 218 Wm^2 and B = 1.90 W/m^2C
+# The value of C to be 10^7J/2.0 
+
+# I use some variables as I wanted to test the new symbolic support
+var('t Q gamma')
+
+ai = 0.35; af = 0.7
+A = 218.0
+B = 1.9
+# effective heat capacity.
+C = 10^7/2.0
+
+# solved for T at equilibrium
+T = function('T',t)
+
+# the co-albedo is a function of T
+ap(T) = ai + 0.5*(af-ai)*(1 + tanh(gamma*T))
+
+# eq 2.36
+bal_eq = C*diff(T,t) == -A - B*T + Q*ap
+
+# solve for steady state
+q_eq = solve(bal_eq.rhs() == 0,Q)[0].rhs()
+
+@interact
+def coalbedo(gamma_value=(0,1,.1)):
+    # this is the ap and Q plot. 
+    
+   
+    aplot = plot(ap.substitute(gamma=gamma_value),(T,-50,50),legend_label='$a_p$',figsize=5)
+    qplot = plot(q_eq.substitute(gamma=gamma_value),(T,-40,40),color="cyan",legend_label='$Q$',figsize=2)
+    ga = graphics_array([qplot,aplot])
+    ga.show()
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/74<div class="sage"><script type="text/x-sage">
+
+A = random_matrix(RDF,4,min=.1, max=.9)
+B = random_matrix(RDF,4,2,min=.1, max=.9)
+m = hmm.DiscreteHiddenMarkovModel(A, B, [.2,.1,.1,.6])
+print m
+print 'Log Likelihood:', m.log_likelihood([0,1,0,1,0,1])
+print 'Viterbi:', m.viterbi([1,1,0,1])
+print 'Baum-Welch:', m.baum_welch([1,1,0,1])
+print '20 Samples:', m.sample(20)
+print m
+m.graph().show()
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/73<div class="sage"><script type="text/x-sage">
+
+@interact
+def mandel_plot(expo = slider(-10,10,0.1,2), \
+      iterations=slider(1,100,1,30), \
+      zoom_x = range_slider(-2,2,0.01,(-2,1)), \
+      zoom_y = range_slider(-2,2,0.01,(-1.5,1.5))):
+    var('z c')
+    f(z,c) = z^expo + c
+    ff_m = fast_callable(f, vars=[z,c], domain=CDF)     
+    
+    def mandel(z):
+      c = z
+      for i in range(iterations):
+         z = ff_m(z,c)
+         if abs(z) > 2:
+            return z
+      return z
+    print 'z <- z^%s + c' % expo    
+        
+    p=complex_plot(mandel, zoom_x,zoom_y, plot_points=200, dpi=100)
+    p.show(frame=True, aspect_ratio=1)
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/60<div class="sage"><script type="text/x-sage">
+
+@interact
+def _(A=matrix(RDF,2,2,[3,2,-4,3]), angle=slider(0,2*pi,default=3*pi/4)):
+    opts = {'figsize': 3}
+    vnorm = vector(RDF, [cos(angle), sin(angle)])
+    e1,e2=identity_matrix(2).columns()
+    U,S,V = A.SVD()
+    v1,v2 = V.columns()
+    s1,s2 = list(S.diagonal())
+    u1,u2 = U.columns()
+    p1=circle((0,0),1,**opts)
+    p1+=plot(vnorm,color='green')
+    p1+=plot(v1,color='red')+plot(v2,color='blue')
+
+    p2 = circle((0,0),1, **opts)
+    p2+=plot(V.H*vnorm,color='green')
+    p2+=plot(V.H*v1,color='red')
+    p2+=plot(V.H*v2,color='blue')
+
+    p3 = ellipse((0,0), s1,s2, **opts)
+    p3 += plot(S*V.H*v1, color='red')
+    p3 += plot(S*V.H*v2, color='blue')
+    p3+= plot(S*V.H*vnorm, color='green')
+
+    # we multiply by the sign of the y-coordinate
+    # because arccos has a range of 0 to pi
+    # we need to handle rotations that go from 0 to 2pi
+    rotation = arccos(u1*vector([1,0])/u1.norm())*sign(u1[1])
+
+    p4=ellipse((0,0), s1,s2,angle=rotation, **opts)
+    p4 += plot(U*S*V.H*v1, color='red')
+    p4 += plot(U*S*V.H*v2, color='blue')
+    p4+= plot(U*S*V.H*vnorm, color='green')
+    html("$A=U\Sigma V^*$")
+    html("$%s = %s %s %s$"%(tuple(map(latex, [A,U,S,V.H]))))
+
+    html.table([[p4,p3,p2,p1], ['$$U\Sigma V^* x$$', '$$\Sigma V^* x$$', '$$V^*x$$', '$$x$$']])
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/27<div class="sage"><script type="text/x-sage">
+
+@interact
+def matrix_induced_norm(A=matrix(QQ,2,[1,2,0,2]),p=slider(1,20,1,default=2,label="$p$"),infinity=("$p=\infty$", False),angle=slider(0,2*pi)):
+    if infinity:
+        n = Infinity
+        p = '\infty'
+    else:
+        n = Integer(p) # bug if p is a raw int
+    vector_on_circle = [vector([cos(t),sin(t)]) for t in [0,pi/64,..,2*pi]]
+    v=vector([cos(angle), sin(angle)])
+    u=(A*v/v.norm(n)).n()
+    orig_unit_ball = [vect/vect.norm(n) for vect in vector_on_circle]
+    unit_vectors = [A*vect/vect.norm(n) for vect in vector_on_circle]
+    html(r"<b>$\lVert A\vec v\rVert_{%(p)s} = \lVert %(u)s\rVert_{%(p)s} = %(unorm)s$</b>"%{'u':u, 'unorm': u.norm(n), 'p': p})
+    p=line(unit_vectors)
+    p+=polygon(unit_vectors, color='lightblue')
+    
+    p+=polygon(orig_unit_ball, color='lightgreen', alpha=0.7)
+    p+=line(orig_unit_ball, color='green', linestyle='--')
+    p+=plot(v/v.norm(n), color='green')
+    
+    p+=plot(u)
+    show(p)
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/43<div class="sage"><script type="text/x-sage">
+
+@interact
+def rozwiniecie_okregu(n=slider(range(1,10)+range(10,100,10)+range(100,1000,100),default=3),x0=slider(srange(0,1,0.01),default=0)):
+    if n>40:
+        print "It might take some time..."
+    pol=(sqrt(1-x^2).taylor(x,x0,n))
+    poly=pol.polynomial(CDF)
+    plt1=complex_plot(abs( sqrt(1-x^2)) -1 ,(-2,2),(-2,2),plot_points=100,figsize=4) 
+    plt2=complex_plot(abs(pol)-1 ,(-2,2),(-2,2),plot_points=100,figsize=4)
+    if n<5:
+        show(poly)
+    circ=circle((x0,0),1-x0,zorder=10,color='yellow')
+    pkt=point([(x0,0)],zorder=10,size=10,color='yellow')
+    html.table([[plt1,plt2+circ+pkt]])
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/45<div class="sage"><script type="text/x-sage">
+
+@interact
+def demo(g=sin(x),a=0,b=pi,n=slider(0,20,1,6),method=selector(['Left', 'Right', 'Midpoint', 'Trapezoid'],
+        nrows=1, label="Method"),fillcurve=('Fill area under curve',False)):
+    var('k')
+    f(x)=g
+    dx = (b-a)/n
+    pts = [a+i*dx for i in range(0,n+1)]
+
+    p=Graphics()
+    if method=='Left':
+        for i in range(0,n):
+            h=f(pts[i])
+            p+=polygon([(pts[i],0),(pts[i],h),(pts[i+1],h),(pts[i+1],0)],fill=False)
+        approx=dx*add([f(pts[i]) for i in range(0,n)])
+    if method=='Right':
+        for i in range(0,n):
+            h=f(pts[i+1])
+            p+=polygon([(pts[i],0),(pts[i],h),(pts[i+1],h),(pts[i+1],0)],fill=False)
+        approx=dx*add([f(pts[i]) for i in range(1,n+1)])
+    if method=='Midpoint':
+        midpts=[a+1/2*dx+i*dx for i in range(0,n+1)]
+        for i in range(0,n):
+            h=f(midpts[i])
+            p+=polygon([(pts[i],0),(pts[i],h),(pts[i+1],h),(pts[i+1],0)],fill=False)
+        approx=dx*add([f(midpts[i]) for i in range(0,n)])
+    if method=='Trapezoid':
+        for i in range(0,n):
+            p+=polygon([(pts[i],0),(pts[i],f(pts[i])),(pts[i+1],f(pts[i+1])),(pts[i+1],0)],fill=False)
+        approx=dx*add([(f(pts[i])+f(pts[i+1]))/2 for i in range(0,n)])
+            
+
+    p+=plot(f(x),(x,a,b),color='red',fill=fillcurve)
+    show(p)
+    actual=integral(f(x),x,a,b).n()
+    approx=approx.n()
+    html(r'$\int_{%s}^{%s} f(x)\, dx = %s$' % (latex(a) , latex(b),actual))
+    html(method +' Approximation = %s'% approx)
+    html('Error = %s'% abs(actual-approx))
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/44<div class="sage"><script type="text/x-sage">
+
+var('k n')
+@interact 
+def _(x0=slider(0,1,0.1),n=slider(range(1,10)+range(10,40,10) ,default=2)):
+   # f= Piecewise([[(0,.5),x], [(0.5,1),2*x^2]], x)
+    f= Piecewise([[(0,.49),1+0*x], [(0.49,1),0.499+sqrt(0.25-(x-0.5)^2)]], x)
+   # f(x)=sin(3*x)
+    Bnf=[]
+    for k in range(n+1):    
+       Bnf.append( (f(k*1/n).n()*binomial(n,k)*x^k*(1-x)^(n-k)) )
+    if hasattr(f,'intervals'):
+        fplt=f.plot(figsize=4,aspect_ratio=1)
+        f=f.which_function(x0)
+    else:
+        fplt=plot(f(x),(x,0,1),figsize=4,aspect_ratio=1)
+    g=plot( sum(Bnf) , (x,0,1),color='red' ) + fplt
+    g2=f.taylor(x,x0,n).plot(0,1,color='red',ymin=0.5)+ fplt
+    html.table([['Bernstein',' Taylor at %0.2f'%x0],[g,g2]])
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/39<div class="sage"><script type="text/x-sage">
+
+@interact
+def _(A=matrix(RDF,3,3,[8,2,0,1,7,3,1,1,7])/10,x0=("$(R,C,I)_0$",vector([50,30,20]))):
+    html("<h1>State values over time</h1>")
+    land_use = [A^i*x0.n() for i in range(20)]
+    residential, commercial, industrial = zip(*land_use)
+    p=line(enumerate(residential),color='red',legend_label='Residential',thickness=3)
+    p+=line(enumerate(commercial),color='green',legend_label='Commercial',thickness=3)
+    p+=line(enumerate(industrial),legend_label='Industrial',thickness=3)
+    show(p)
+    evals,evecs = A.change_ring(QQ).eigenmatrix_right()
+    evals = evals.diagonal()
+    N = sum(x0)
+    html.table([(eval,evec, (evec/sum(evec)*N) if sum(evec)!=0 else evec) for eval,evec in zip(evals,evecs.columns()) if evec!=0], header=["Eigenvalue", "Eigenvector", "Normalized Eigenvector"])
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/32<div class="sage"><script type="text/x-sage">
+
+var('x,y,t')
+F=vector([x^2,-x*y])
+r=vector([2*cos(t), 2*sin(t)])
+tstart=0
+tend=2*pi
+
+vector_field_bounds = ((x,-2,2), (y,-2,2))
+
+@interact
+def _f(F=vector([x^2,-x*y]), r=vector([2*cos(t), 2*sin(t)]), time=vector([0,2*pi])):
+    tstart, tend = time
+    # Let's make a function right off to evaluate an integral over this curve.
+    def line_integral(integrand):
+        return RR(numerical_integral((integrand).subs(x=r[0], y=r[1]), tstart, tend)[0])
+    
+    dr=diff(r,t)
+    dW=F(x=r[0], y=r[1])*dr # Multiplying two vectors together gives the dot product
+    W=line_integral(dW)
+    
+    # TABLE
+    html.table([
+    [r"$\vec F(x,y)$", F],
+    [r"$\vec r(t)$", r],
+    [r"$t$ range", (t, tstart, tend)],
+    [r"$\vec F(\vec r(t))$", F(x=r[0], y=r[1])],
+    [r"$dW=\vec F \cdot d\vec r$", dW],
+    [r"$W=\int dW=\int \vec F \cdot d\vec r$", W]
+    ])
+    
+    # PLOT
+    p=plot_vector_field(F, *vector_field_bounds)
+    p+= parametric_plot(r, (t, tstart, tend),thickness=3)
+    for i in srange(tstart, tend, (tend-tstart)/18):
+        p += arrow(r(t=i), (r+ .5*dr)(t=i),color='red')
+    show(p, aspect_ratio=1)
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/2<div class="sage"><script type="text/x-sage">
+
+def muk_plot(m0,k):  
+    """
+    Return a plot of the binomial fractal measure mu_k
+    associated to m0, 1-m0, and k.   
+    """
+    k = int(k)
+    m0 = float(m0)
+    m1 = float(1 - m0)
+    assert m0 > 0 and m1 > 0, "both must be positive"
+    v = [(0,0)]
+    t = 0
+    two = int(2)
+    delta = float(1/2^k)
+    multiplier = float(2^k)
+    for i in [0..2^k-1]:
+        t = i * delta
+        phi1 = i.str(two).count("1")
+        phi0 = k - phi1
+        y = m0^(phi0)*m1^(phi1)*multiplier
+        v.append((t,y))
+        v.append((t+delta,y))
+    return v
+
+html("<h1>Mandelbrot's Fractal Binomial Measure</h1>")
+
+@interact
+def _(mu0=slider(0.0001,0.999,default=0.3), k=slider([1..14],default=3), thickness=slider([0.1,0.2,..,1.0],default=1.0)):
+    v = muk_plot(mu0,k)
+    line(v,thickness=thickness).show(xmin=0, xmax=1, ymin=0, figsize=[8,3])
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/32<div class="sage"><script type="text/x-sage">
+
+var('x,y,t')
+F=vector([x^2,-x*y])
+r=vector([2*cos(t), 2*sin(t)])
+tstart=0
+tend=2*pi
+
+vector_field_bounds = ((x,-2,2), (y,-2,2))
+
+@interact
+def _f(F=vector([x^2,-x*y]), r=vector([2*cos(t), 2*sin(t)]), time=vector([0,2*pi])):
+    tstart, tend = time
+    # Let's make a function right off to evaluate an integral over this curve.
+    def line_integral(integrand):
+        return RR(numerical_integral((integrand).subs(x=r[0], y=r[1]), tstart, tend)[0])
+    
+    dr=diff(r,t)
+    dW=F(x=r[0], y=r[1])*dr # Multiplying two vectors together gives the dot product
+    W=line_integral(dW)
+    
+    # TABLE
+    html.table([
+    [r"$\vec F(x,y)$", F],
+    [r"$\vec r(t)$", r],
+    [r"$t$ range", (t, tstart, tend)],
+    [r"$\vec F(\vec r(t))$", F(x=r[0], y=r[1])],
+    [r"$dW=\vec F \cdot d\vec r$", dW],
+    [r"$W=\int dW=\int \vec F \cdot d\vec r$", W]
+    ])
+    
+    # PLOT
+    p=plot_vector_field(F, *vector_field_bounds)
+    p+= parametric_plot(r, (t, tstart, tend),thickness=3)
+    for i in srange(tstart, tend, (tend-tstart)/18):
+        p += arrow(r(t=i), (r+ .5*dr)(t=i),color='red')
+    show(p, aspect_ratio=1)
+
+</script></div></li>
+<li>http://interact.sagemath.org/node/15<div class="sage"><script type="text/x-sage">
+
+@interact
+def f(n=(0,10,1)):
+    for x in range(n):
+        interact(f)
+    else:
+        print ''
+
+</script></div></li>
+<li>http://wiki.sagemath.org/interact/algebra<div class="sage"><script type="text/x-sage">
+
+@interact
+def gfan_browse(p1 = input_box('x^3+y^2',type = str, label='polynomial 1: '), p2 = input_box('y^3+z^2',type = str, label='polynomial 2: '), p3 = input_box('z^3+x^2',type = str, label='polynomial 3: ')):
+    R.<x,y,z> = PolynomialRing(QQ,3)
+    i1 = ideal(R(p1),R(p2),R(p3))
+    gf1 = i1.groebner_fan()
+    testr = gf1.render()    
+    html('Groebner fan of the ideal generated by: ' + str(p1) + ', ' + str(p2) + ', ' + str(p3))
+    show(testr, axes = False, figsize=[8,8*(3^(.5))/2])
+
+</script></div></li>
+<li>http://wiki.sagemath.org/interact/algebra<div class="sage"><script type="text/x-sage">
+
+def proj4_to_3(gfanobj, poly4):
+    fpoints = poly4.vertices()
+    tpoints = [gfanobj._embed_tetra(q) for q in fpoints]
+    adj_data = poly4.vertex_adjacencies()
+    edges = []
+    for adj in adj_data:
+        for vert in adj[1]:
+            if vert > adj[0]:
+                edges.append([tpoints[adj[0]],tpoints[vert]])
+    return edges, tpoints
+
+from sage.plot.plot3d.index_face_set import IndexFaceSet
+
+def render_solid(poly, color = 'blue', opacity = .5):
+    tri_faces = poly.triangulated_facial_incidences()
+    from sage.plot.plot3d.index_face_set import IndexFaceSet
+    return IndexFaceSet([q[1] for q in tri_faces], poly.vertices(), enclosed = True, color = color, opacity = opacity)
+
+def render3d(a_gf, color_fan = True, verbose = False, highlights = 'all'):
+    g_cones = [q.groebner_cone() for q in a_gf.reduced_groebner_bases()]
+    g_cones_facets = [q.facets() for q in g_cones]
+    g_cones_ieqs = [a_gf._cone_to_ieq(q) for q in g_cones_facets]
+    # Now the cones are intersected with a plane:
+    cone_info = [ieq_to_vert(q,linearities=[[1,-1,-1,-1,-1]]) for q in g_cones_ieqs]
+    if verbose:
+        for x in cone_info:
+            print x.ieqs() + [[1,1,0,0,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1]]
+            print x.linearities()
+            print ""
+    cone_info = [Polyhedron(ieqs = x.ieqs() + [[1,1,0,0,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1]], linearities = x.linearities()) for x in cone_info]
+
+    if color_fan == True:
+        #using fixed color scheme
+        color_list = []
+        our_vars = list(a_gf.ring().gens())
+        degs = [[max(q.degree(avar) for q in b) for avar in our_vars] for b in a_gf.reduced_groebner_bases()]
+        maxdegs = [max(float(q[i]) for q in degs) for i in range(len(our_vars))]
+        color_list = [[b[0]/maxdegs[0],b[1]/maxdegs[1],(b[2]+b[3])/(maxdegs[2]+maxdegs[3])] for b in degs]
+        color_list = [tuple(c[i]/max(c) for i in range(3)) for c in color_list] 
+        faces = []     
+    if highlights == 'all':
+        highlights = range(len(cone_info))
+
+    all_lines = []
+    i = 0
+    for cone_data in cone_info:
+        # cone_data is a Polyhedron.
+        try:
+            pdata = proj4_to_3(a_gf,cone_data)
+            cone_lines = pdata[0]
+            cone_verts = pdata[1]
+            if color_fan == True:       
+                if i in highlights:
+                    faces.append(render_solid(Polyhedron(vertices = cone_verts), color = color_list[i]))
+                i = i + 1
+        except:
+            print cone_data._rays
+            raise RuntimeError
+        for a_line in cone_lines:
+            all_lines.append(a_line)
+    if faces == []: 
+        faceadds = Graphics()
+    else:
+        faceadds = sum(faces)
+    return sum([line3d(a_line) for a_line in all_lines]) + faceadds
+R4.<w,x,y,z> = PolynomialRing(QQ,4)
+temp_id = R4.ideal([w^3-x^2, x^3-y^21, y^3-w^2, z - x^2])
+temp_gf4 = temp_id.groebner_fan()
+temp_gf4_rbs = temp_gf4.reduced_groebner_bases()
+gbdict = dict([['w^3-x^2, x^3-y^2, y^3-w^2, z - x^2',(temp_gf4,temp_gf4_rbs)]])
+@interact
+def Groebner_fan_browser(bsel = slider(0,100,.1,0,label='Individual basis selection', display_value = False), ideal_gens = input_box(default = 'w^3-x^2, x^3-y^2, y^3-w^2, z - x^2', type = str, label = "Ideal generators"), showall = checkbox(True, "Show me them all"), showbases = checkbox(False, "Show highlighted basis")):
+    html('<h3>Groebner fan 3D browser</h3> Enter 4 polynomials in the variables w,x,y,z<BR> <em>This may take forever if you are overambitious</em>')
+    R4.<w,x,y,z> = PolynomialRing(QQ,4)
+    if ideal_gens not in gbdict:
+        id_gens = R4.ideal(list(ideal_gens.split(',')))
+        print id_gens
+        gf4 = id_gens.groebner_fan()
+        gf4rbs = gf4.reduced_groebner_bases()
+        gbdict[ideal_gens] = (gf4,gf4rbs)
+    else:
+        gf4 = gbdict[ideal_gens][0]
+        gf4rbs = gbdict[ideal_gens][1]
+    bnumbers = len(gf4rbs)
+    b_select = [int(bsel*bnumbers/100.0)]
+    if showall: b_select = range(bnumbers)
+    if showbases:
+        for b in b_select:
+            show(gf4rbs[b])
+    show(render3d(gf4, highlights = b_select), frame = False)
+
+</script></div></li>
+<li>http://wiki.sagemath.org/interact/algebra<div class="sage"><script type="text/x-sage">
+
+from sage.interfaces.phc import phc
+zringA.<z0,z1,z2,z3,z4,z5,a,b> = PolynomialRing(QQ,8)
+cyclic6 = [z0 + z1 + z2 + z3 + z4 + z5+a,
+ z0*z1 + z1*z2 + z2*z3 + z3*z4 + z4*z5 + z5*z0,
+ z0*z1*z2 + z1*z2*z3 + z2*z3*z4 + z3*z4*z5 + z4*z5*z0 + z5*z0*z1,
+ z0*z1*z2*z3 + z1*z2*z3*z4 + z2*z3*z4*z5 + z3*z4*z5*z0 + z4*z5*z0*z1 
+ + z5*z0*z1*z2,
+ z0*z1*z2*z3*z4 + z1*z2*z3*z4*z5 + z2*z3*z4*z5*z0 + z3*z4*z5*z0*z1 
+ + z4*z5*z0*z1*z2 + z5*z0*z1*z2*z3,
+ z0*z1*z2*z3*z4*z5 - b]
+zring.<z0,z1,z2,z3,z4,z5> = PolynomialRing(QQ,6)
+z1 = [zring(x.subs({a:1/10, b:1/10})) for x in cyclic6]
+s1 = phc.blackbox(z1,zring)
+s1sas = s1.save_as_start(start_filename = DATA + 's1phc')
+cstate = [open(DATA + 's1phc').read()]
+def def_cyclic(ain, bin):
+    eqs = [zring(x.subs({a:ain, b:bin})) for x in cyclic6]
+    return eqs
+slines2d = []
+mpts = []
+@interact
+def tbp_tracker(show_eqs = checkbox(False),a = slider(-1,1,1/100,1/100), b = slider(-1,1,1/100,1/100), h_c_skew = slider(0,.1,.001,0.0, label='Homotopy skew'), scale = slider([2.0^x for x in srange(.1,4,.025)],default = 2^1.6)):
+    z_pt = phc._path_track_file(start_filename_or_string = cstate[-1], polys = def_cyclic(a,b), input_ring = zring, c_skew = h_c_skew)
+    cstate.append(open(z_pt).read())
+    z_pp = phc._parse_path_file(z_pt)
+    hue_v = len(cstate)/(len(cstate)+1)
+    znames = ['z0','z1','z2','z3','z4','z5']
+    for a_sol in z_pp:
+        for z in znames:
+            mpts.append(point([a_sol[0][z].real(), a_sol[0][z].imag()], hue=hue_v,pointsize=3))
+            mpts.append(point([a_sol[-1][z].real(), a_sol[-1][z].imag()], hue=hue_v,pointsize=3))
+    for a_sol in z_pp:
+        zlines = [[] for q in znames]
+        for data in a_sol:
+            for i in range(len(znames)):
+                zn = znames[i]
+                zlines[i].append([data[zn].real(), data[zn].imag()])
+        for zl in zlines:
+            slines2d.append(line(zl, thickness = .5))
+    show(sum(slines2d)+sum(mpts), figsize = [5,5], xmin = -scale, xmax=scale, ymin=-scale,ymax=scale, axes = false)
+    if show_eqs:
+        pols = def_cyclic(a,b)
+        for i in range(len(pols)):
+            show(pols[i])
+
+</script></div></li>
+<li>http://wiki.sagemath.org/interact/calculus<div class="sage"><script type="text/x-sage">
+
+def bisect_method(f, a, b, eps):
+    try:
+        f = f._fast_float_(f.variables()[0])
+    except AttributeError:
+        pass
+    intervals = [(a,b)]
+    two = float(2); eps = float(eps)
+    while True:
+        c = (a+b)/two
+        fa = f(a); fb = f(b); fc = f(c)
+        if abs(fc) < eps: return c, intervals
+        if fa*fc < 0:
+            a, b = a, c
+        elif fc*fb < 0:
+            a, b = c, b
+        else:
+            raise ValueError, "f must have a sign change in the interval (%s,%s)"%(a,b)
+        intervals.append((a,b))
+html("<h1>Double Precision Root Finding Using Bisection</h1>")
+@interact
+def _(f = cos(x) - x, a = float(0), b = float(1), eps=(-3,(-16..-1))):
+     eps = 10^eps
+     print "eps = %s"%float(eps)
+     try:
+         time c, intervals = bisect_method(f, a, b, eps)
+     except ValueError:
+         print "f must have opposite sign at the endpoints of the interval"
+         show(plot(f, a, b, color='red'), xmin=a, xmax=b)
+     else:
+         print "root =", c
+         print "f(c) = %r"%f(c)
+         print "iterations =", len(intervals)
+         P = plot(f, a, b, color='red')
+         h = (P.ymax() - P.ymin())/ (1.5*len(intervals))
+         L = sum(line([(c,h*i), (d,h*i)]) for i, (c,d) in enumerate(intervals) )
+         L += sum(line([(c,h*i-h/4), (c,h*i+h/4)]) for i, (c,d) in enumerate(intervals) )
+         L += sum(line([(d,h*i-h/4), (d,h*i+h/4)]) for i, (c,d) in enumerate(intervals) )
+         show(P + L, xmin=a, xmax=b)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+def newton_method(f, c, eps, maxiter=100):
+    x = f.variables()[0]
+    fprime = f.derivative(x)
+    try:
+        g = f._fast_float_(x)
+        gprime = fprime._fast_float_(x)
+    except AttributeError:
+        g = f; gprime = fprime
+    iterates = [c]
+    for i in xrange(maxiter):
+       fc = g(c)
+       if abs(fc) < eps: return c, iterates
+       c = c - fc/gprime(c)
+       iterates.append(c)
+    return c, iterates
+    
+var('x')    
+html("<h1>Double Precision Root Finding Using Newton's Method</h1>")
+@interact
+def _(f = x^2 - 2, c = float(0.5), eps=(-3,(-16..-1)), interval=float(0.5)):
+     eps = 10^(eps)
+     print "eps = %s"%float(eps)
+     time z, iterates = newton_method(f, c, eps)
+     print "root =", z
+     print "f(c) = %r"%f(x=z)
+     n = len(iterates)
+     print "iterations =", n
+     html(iterates)
+     P = plot(f, (x,z-interval, z+interval), rgbcolor='blue')
+     h = P.ymax(); j = P.ymin()
+     L = sum(point((w,(n-1-float(i))/n*h), rgbcolor=(float(i)/n,0.2,0.3), pointsize=10) + \
+             line([(w,h),(w,j)],rgbcolor='black',thickness=0.2) for i,w in enumerate(iterates))
+     show(P + L, xmin=z-interval, xmax=z+interval)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+@interact
+def _(q1=(-1,(-3,3)), q2=(-2,(-3,3)),
+      cmap=['autumn', 'bone', 'cool', 'copper', 'gray', 'hot', 'hsv',
+           'jet', 'pink', 'prism', 'spring', 'summer', 'winter']):
+     x,y = var('x,y')
+     f = q1/sqrt((x+1)^2 + y^2) + q2/sqrt((x-1)^2+(y+0.5)^2)
+     C = contour_plot(f, (x,-2,2), (y,-2,2), plot_points=30, contours=15, cmap=cmap)
+     show(C, figsize=3, aspect_ratio=1)
+     show(plot3d(f, (x,-2,2), (y,-2,2)), figsize=5, viewer='tachyon')
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+html('<h2>Tangent line grapher</h2>')
+@interact
+def tangent_line(f = input_box(default=sin(x)), xbegin = slider(0,10,1/10,0), xend = slider(0,10,1/10,10), x0 = slider(0, 1, 1/100, 1/2)):
+    prange = [xbegin, xend]
+    x0i = xbegin + x0*(xend-xbegin)
+    var('x')
+    df = diff(f)
+    tanf = f(x0i) + df(x0i)*(x-x0i)
+    fplot = plot(f, prange[0], prange[1])
+    print 'Tangent line is y = ' + tanf._repr_()
+    tanplot = plot(tanf, prange[0], prange[1], rgbcolor = (1,0,0))
+    fmax = f.find_maximum_on_interval(prange[0], prange[1])[0]
+    fmin = f.find_minimum_on_interval(prange[0], prange[1])[0]
+    show(fplot + tanplot, xmin = prange[0], xmax = prange[1], ymax = fmax, ymin = fmin)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+var('x')
+@interact
+def midpoint(n = slider(1,100,1,4), f = input_box(default = "x^2", type = str), start = input_box(default = "0", type = str), end = input_box(default = "1", type = str)):
+    a = N(start)
+    b = N(end)
+    func = sage_eval(f, locals={'x':x})
+    dx = (b-a)/n
+    midxs = [q*dx+dx/2 + a for q in range(n)]
+    midys = [func(x_val) for x_val in midxs]
+    rects = Graphics()
+    for q in range(n):
+        xm = midxs[q]
+        ym = midys[q]
+        rects = rects + line([[xm-dx/2,0],[xm-dx/2,ym],[xm+dx/2,ym],[xm+dx/2,0]], rgbcolor = (1,0,0)) + point((xm,ym), rgbcolor = (1,0,0))
+    min_y = find_minimum_on_interval(func,a,b)[0]
+    max_y = find_maximum_on_interval(func,a,b)[0]
+    html('<h3>Numerical integrals with the midpoint rule</h3>')
+    html('$\int_{a}^{b}{f(x) dx} {\\approx} \sum_i{f(x_i) \Delta x}$')
+    print "\n\nSage numerical answer: " + str(integral_numerical(func,a,b,max_points = 200)[0])
+    print "Midpoint estimated answer: " + str(RDF(dx*sum([midys[q] for q in range(n)])))
+    show(plot(func,a,b) + rects, xmin = a, xmax = b, ymin = min_y, ymax = max_y)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+# by Nick Alexander (based on the work of Marshall Hampton)
+
+var('x')
+@interact
+def midpoint(f = input_box(default = sin(x^2) + 2, type = SR),
+    interval=range_slider(0, 10, 1, default=(0, 4), label="Interval"),
+    number_of_subdivisions = slider(1, 20, 1, default=4, label="Number of boxes"),
+    endpoint_rule = selector(['Midpoint', 'Left', 'Right', 'Upper', 'Lower'], nrows=1, label="Endpoint rule")):
+
+    a, b = map(QQ, interval)
+    t = sage.calculus.calculus.var('t')
+    func = fast_callable(f(x=t), RDF, vars=[t])
+    dx = ZZ(b-a)/ZZ(number_of_subdivisions)
+   
+    xs = []
+    ys = []
+    for q in range(number_of_subdivisions):
+        if endpoint_rule == 'Left':
+            xs.append(q*dx + a)
+        elif endpoint_rule == 'Midpoint':
+            xs.append(q*dx + a + dx/2)
+        elif endpoint_rule == 'Right':
+            xs.append(q*dx + a + dx)
+        elif endpoint_rule == 'Upper':
+            x = find_maximum_on_interval(func, q*dx + a, q*dx + dx + a)[1]
+            xs.append(x)
+        elif endpoint_rule == 'Lower':
+            x = find_minimum_on_interval(func, q*dx + a, q*dx + dx + a)[1]
+            xs.append(x)
+    ys = [ func(x) for x in xs ]
+         
+    rects = Graphics()
+    for q in range(number_of_subdivisions):
+        xm = q*dx + dx/2 + a
+        x = xs[q]
+        y = ys[q]
+        rects += line([[xm-dx/2,0],[xm-dx/2,y],[xm+dx/2,y],[xm+dx/2,0]], rgbcolor = (1,0,0))
+        rects += point((x, y), rgbcolor = (1,0,0))
+    min_y = min(0, find_minimum_on_interval(func,a,b)[0])
+    max_y = max(0, find_maximum_on_interval(func,a,b)[0])
+
+    # html('<h3>Numerical integrals with the midpoint rule</h3>')
+    show(plot(func,a,b) + rects, xmin = a, xmax = b, ymin = min_y, ymax = max_y)
+    
+    def cap(x):
+        # print only a few digits of precision
+        if x < 1e-4:
+            return 0
+        return RealField(20)(x)
+    sum_html = "%s \cdot \\left[ %s \\right]" % (dx, ' + '.join([ "f(%s)" % cap(i) for i in xs ]))
+    num_html = "%s \cdot \\left[ %s \\right]" % (dx, ' + '.join([ str(cap(i)) for i in ys ]))
+    
+    numerical_answer = integral_numerical(func,a,b,max_points = 200)[0]
+    estimated_answer = dx * sum([ ys[q] for q in range(number_of_subdivisions)])
+
+    html(r'''
+    <div class="math">
+    \begin{align*}
+      \int_{a}^{b} {f(x) \, dx} & = %s \\\
+      \sum_{i=1}^{%s} {f(x_i) \, \Delta x}
+      & = %s \\\
+      & = %s \\\
+      & = %s .
+    \end{align*}
+    </div>
+    ''' % (numerical_answer, number_of_subdivisions, sum_html, num_html, estimated_answer))
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+@interact
+def para(n1 = slider(1,5,1,default = 2), n2 = slider(1,5,1,default = 3), a1 = slider(1,10,1/10,6/5), a2 = slider(1,10,1/10,6), b = slider(0,2,1/50,0)):
+    var('t')
+    html('$r=' + latex(b+sin(a1*t)^n1 + cos(a2*t)^n2)+'$')
+    p = parametric_plot((cos(t)*(b+sin(a1*t)^n1 + cos(a2*t)^n2), sin(t)*(b+sin(a1*t)^n1 + cos(a2*t)^n2)), (t,0, 20*pi), plot_points = 1024, rgbcolor = (0,0,0))
+    show(p, figsize = [5,5], xmin = -2-b, xmax = 2+b, ymin = -2-b, ymax = 2+b, axes = False)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+x = var('x')
+@interact
+def _(f=sin(x), g=cos(x), xrange=input_box((0,1)), yrange='auto', a=1,
+      action=selector(['f', 'df/dx', 'int f', 'num f', 'den f', '1/f', 'finv',
+                       'f+a', 'f-a', 'f*a', 'f/a', 'f^a', 'f(x+a)', 'f(x*a)',
+                       'f+g', 'f-g', 'f*g', 'f/g', 'f(g)'],
+             width=15, nrows=5, label="h = "),
+      do_plot = ("Draw Plots", True)):
+    try:
+        f = SR(f); g = SR(g); a = SR(a)
+    except TypeError, msg:
+        print msg[-200:]
+        print "Unable to make sense of f,g, or a as symbolic expressions."
+        return
+    if not (isinstance(xrange, tuple) and len(xrange) == 2):
+          xrange = (0,1)
+    h = 0; lbl = ''
+    if action == 'f':
+        h = f
+        lbl = 'f'
+    elif action == 'df/dx':
+        h = f.derivative(x)
+        lbl = '\\frac{df}{dx}'
+    elif action == 'int f':
+        h = f.integrate(x)
+        lbl = '\\int f dx'
+    elif action == 'num f':
+        h = f.numerator()
+        lbl = '\\text{numer(f)}'
+    elif action == 'den f':
+        h = f.denominator()
+        lbl = '\\text{denom(f)}'
+    elif action == '1/f':
+        h = 1/f
+        lbl = '\\frac{1}{f}'
+    elif action == 'finv':
+        h = solve(f == var('y'), x)[0].rhs()
+        lbl = 'f^{-1}(y)'
+    elif action == 'f+a':
+        h = f+a
+        lbl = 'f + a'
+    elif action == 'f-a':
+        h = f-a
+        lbl = 'f - a'
+    elif action == 'f*a':
+        h = f*a
+        lbl = 'f \\times a'
+    elif action == 'f/a':
+        h = f/a
+        lbl = '\\frac{f}{a}'
+    elif action == 'f^a':
+        h = f^a
+        lbl = 'f^a'
+    elif action == 'f^a':
+        h = f^a
+        lbl = 'f^a'
+    elif action == 'f(x+a)':
+        h = f(x+a)
+        lbl = 'f(x+a)'
+    elif action == 'f(x*a)':
+        h = f(x*a)
+        lbl = 'f(xa)'
+    elif action == 'f+g':
+        h = f+g
+        lbl = 'f + g'
+    elif action == 'f-g':
+        h = f-g
+        lbl = 'f - g'
+    elif action == 'f*g':
+        h = f*g
+        lbl = 'f \\times g'
+    elif action == 'f/g':
+        h = f/g
+        lbl = '\\frac{f}{g}'
+    elif action == 'f(g)':
+        h = f(g)
+        lbl = 'f(g)'
+    html('<center><font color="red">$f = %s$</font></center>'%latex(f))
+    html('<center><font color="green">$g = %s$</font></center>'%latex(g))
+    html('<center><font color="blue"><b>$h = %s = %s$</b></font></center>'%(lbl, latex(h)))
+    if do_plot:
+        P = plot(f, xrange, color='red', thickness=2) +  \
+            plot(g, xrange, color='green', thickness=2) + \
+            plot(h, xrange, color='blue', thickness=2)
+        if yrange == 'auto':
+            show(P, xmin=xrange[0], xmax=xrange[1])
+        else:
+            yrange = sage_eval(yrange)
+            show(P, xmin=xrange[0], xmax=xrange[1], ymin=yrange[0], ymax=yrange[1])
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+# ideas from 'A simple tangent line grapher' by Marshall Hampton
+# http://wiki.sagemath.org/interact
+
+State = Data = None   # globals to allow incremental changes in interaction data
+
+@interact
+def newtraph(f = input_box(default=8*sin(x)*exp(-x)-1, label='f(x)'), 
+             xmin = input_box(default=0), 
+             xmax = input_box(default=4*pi), 
+             x0 = input_box(default=3, label='x0'),
+             show_calcs = ("Show Calcs",True),
+             step = ['Next','Prev', 'Reset'] ):
+    global State, Data
+    state = [f,xmin,xmax,x0,show_calcs]
+    if (state != State) or (step == 'Reset'):   # when any of the controls change
+        Data = [ 1 ]                            # reset the plot
+        State = state
+    elif step == 'Next':
+        N, = Data
+        Data = [ N+1 ]
+    elif step == 'Prev':
+        N, = Data
+        if N > 1:
+            Data = [ N-1 ]
+    N, = Data
+    df = diff(f)
+
+    theplot = plot( f, xmin, xmax )
+    theplot += text( '\n$x_0$', (x0,0), rgbcolor=(1,0,0),
+                     vertical_alignment="bottom" if f(x0) < 0 else "top" )
+    theplot += points( [(x0,0)], rgbcolor=(1,0,0) )
+
+    Trace = []
+    def Err( msg, Trace=Trace ):
+        Trace.append( '<font color="red"><b>Error: %s!!</b></font>' % (msg,) )
+    def Disp( s, color="blue", Trace=Trace ):
+        Trace.append( """<font color="%s">$ %s $</font>""" % (color,s,) )
+
+    Disp( """f(x) = %s""" % (latex(f),) )
+    Disp( """f'(x) = %s""" % (latex(df),) )
+
+    stop = False
+    is_inf = False
+    xi = x0
+    for i in range(N):
+        fi = RR(f(xi))
+        fpi = RR(df(xi))
+
+        theplot += points( [(xi,fi)], rgbcolor=(1,0,0) )
+        theplot += line( [(xi,0),(xi,fi)], linestyle=':', rgbcolor=(1,0,0) ) # vert dotted line
+        Disp( """i = %d""" % (i,) )
+        Disp( """~~~~x_{%d} = %.4g""" % (i,xi) )
+        Disp( """~~~~f(x_{%d}) = %.4g""" % (i,fi) )
+        Disp( """~~~~f'(x_{%d}) = %.4g""" % (i,fpi) )
+
+        if fpi == 0.0:
+            Err( 'Derivative is 0 at iteration %d' % (i+1,) )
+            is_inf = True
+            show_calcs = True
+        else:
+            xip1 = xi - fi/fpi
+            Disp( r"""~~~~x_{%d} = %.4g - ({%.4g})/({%.4g}) = %.4g""" % (i+1,xi,fi,fpi,xip1) )
+            if abs(xip1) > 10*(xmax-xmin):
+                Err( 'Derivative is too close to 0!' )
+                is_inf = True
+                show_calcs = True
+            elif not ((xmin - 0.5*(xmax-xmin)) <= xip1 <= (xmax + 0.5*(xmax-xmin))):
+                Err( 'x value out of range; probable divergence!' )
+                stop = True
+                show_calcs = True
+ 
+        if is_inf:
+            xl = xi - 0.05*(xmax-xmin)
+            xr = xi + 0.05*(xmax-xmin)
+            yl = yr = fi
+        else:
+            xl = min(xi,xip1) - 0.01*(xmax-xmin)
+            xr = max(xi,xip1) + 0.01*(xmax-xmin)
+            yl = -(xip1-xl)*fpi
+            yr = (xr-xip1)*fpi
+            theplot += text( '\n$x_{%d}$' % (i+1,), (xip1,0), rgbcolor=(1,0,0),
+                             vertical_alignment="bottom" if f(xip1) < 0 else "top" )
+            theplot += points( [(xip1,0)], rgbcolor=(1,0,0) )
+
+        theplot += line( [(xl,yl),(xr,yr)], rgbcolor=(1,0,0) )  # tangent
+
+        if stop or is_inf:
+            break
+        epsa = 100.0*abs((xip1-xi)/xip1)
+        nsf = 2 - log(2.0*epsa)/log(10.0)
+        Disp( r"""~~~~~~~~\epsilon_a = \left|(%.4g - %.4g)/%.4g\right|\times100\%% = %.4g \%%""" % (xip1,xi,xip1,epsa) )
+        Disp( r"""~~~~~~~~num.~sig.~fig. \approx %.2g""" % (nsf,) )
+        xi = xip1
+
+    show( theplot, xmin=xmin, xmax=xmax )
+    if show_calcs:
+        for t in Trace:
+            html( t )
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+var('u v')
+# polar coordinates
+#(x,y)=(u*cos(v),u*sin(v)); (u_range,v_range)=([0..6],[0..2*pi,step=pi/12])
+
+# weird example
+(x,y)=(u^2-v^2,u*v+cos(u*v)); (u_range,v_range)=([-5..5],[-5..5])
+
+thickness=4
+square_length=.05
+
+from sage.ext.fast_eval import fast_float
+from functools import partial
+@interact
+def trans(x=input_box(x, label="x",type=SR),
+         y=input_box(y, label="y",type=SR),
+         u_percent=slider(0,1,0.05,label="<font color='red'>u</font>", default=.7),
+         v_percent=slider(0,1,0.05,label="<font color='blue'>v</font>", default=.7),
+         t_val=slider(0,10,0.2,6, label="Length"),
+         u_range=input_box(u_range, label="u lines"),
+         v_range=input_box(v_range, label="v lines")):
+
+    x(u,v)=x
+    y(u,v)=y
+    u_val = min(u_range)+(max(u_range)-min(u_range))*u_percent
+    v_val = min(v_range)+(max(v_range)-min(v_range))*v_percent
+    t_min = -t_val
+    t_max = t_val
+    uvplot=sum([parametric_plot((i,v), (v,t_min,t_max), color='red',axes_labels=['u','v'],figsize=[5,5]) for i in u_range])
+    uvplot+=sum([parametric_plot((u,i), (u,t_min,t_max), color='blue',axes_labels=['u','v']) for i in v_range])
+    uvplot+=parametric_plot((u,v_val), (u,t_min,t_max), rgbcolor=(0,0,1), linestyle='-',thickness=thickness)
+    uvplot+=parametric_plot((u_val, v), (v,t_min,t_max),rgbcolor=(1,0,0), linestyle='-',thickness=thickness)
+    pt=vector([u_val,v_val])
+    du=vector([(t_max-t_min)*square_length,0])
+    dv=vector([0,(t_max-t_min)*square_length])
+    uvplot+=polygon([pt,pt+dv,pt+du+dv,pt+du],color='purple',alpha=0.7)
+    uvplot+=line([pt,pt+dv,pt+du+dv,pt+du],color='green')
+
+    T(u,v)=(x,y)
+    xuv = fast_float(x,'u','v')
+    yuv = fast_float(y,'u','v')
+    xvu = fast_float(x,'v','u')
+    yvu = fast_float(y,'v','u')
+    xyplot=sum([parametric_plot((partial(xuv,i),partial(yuv,i)), (v,t_min,t_max), color='red', axes_labels=['x','y'],figsize=[5,5]) for i in u_range])
+    xyplot+=sum([parametric_plot((partial(xvu,i),partial(yvu,i)), (u,t_min,t_max), color='blue') for i in v_range])
+    xyplot+=parametric_plot((partial(xuv,u_val),partial(yuv,u_val)),(v,t_min,t_max),color='red', linestyle='-',thickness=thickness)
+    xyplot+=parametric_plot((partial(xvu,v_val),partial(yvu,v_val)), (u,t_min,t_max), color='blue', linestyle='-',thickness=thickness)
+    jacobian=abs(T.diff().det()).simplify_full()
+    t_vals=[0..1,step=t_val*.01]
+    vertices=[(x(*c),y(*c)) for c in [pt+t*dv for t in t_vals]]
+    vertices+=[(x(*c),y(*c)) for c in [pt+dv+t*du for t in t_vals]]
+    vertices+=[(x(*c),y(*c)) for c in [pt+(1-t)*dv+du for t in t_vals]]
+    vertices+=[(x(*c),y(*c)) for c in [pt+(1-t)*du for t in t_vals]]
+    xyplot+=polygon(vertices,color='purple',alpha=0.7)
+    xyplot+=line(vertices,color='green')
+    html("$T(u,v)=%s$"%(latex(T(u,v))))
+    html("Jacobian: $%s$"%latex(jacobian(u,v)))
+    html("A very small region in $xy$ plane is approximately %0.4g times the size of the corresponding region in the $uv$ plane"%jacobian(u_val,v_val).n())
+    html.table([[uvplot,xyplot]])
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+var('x')
+x0  = 0
+f   = sin(x)*e^(-x)
+p   = plot(f,-1,5, thickness=2)
+dot = point((x0,f(x0)),pointsize=80,rgbcolor=(1,0,0))
+@interact
+def _(order=(1..12)):
+    ft = f.taylor(x,x0,order)
+    pt = plot(ft,-1, 5, color='green', thickness=2)
+    html('$f(x)\;=\;%s$'%latex(f))
+    html('$\hat{f}(x;%s)\;=\;%s+\mathcal{O}(x^{%s})$'%(x0,latex(ft),order+1))
+    show(dot + p + pt, ymin = -.5, ymax = 1)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+html("<h2>Limits: <i>ε-δ</i></h2>")
+html("This allows you to estimate which values of <i>δ</i> guarantee that <i>f</i> is within <i>ε</i> units of a limit.")
+html("<ul><li>Modify the value of <i>f</i> to choose a function.</li>")
+html("<li>Modify the value of <i>a</i> to change the <i>x</i>-value where the limit is being estimated.</li>")
+html("<li>Modify the value of <i>L</i> to change your guess of the limit.</li>")
+html("<li>Modify the values of <i>δ</i> and <i>ε</i> to modify the rectangle.</li></ul>")
+html("If the blue curve passes through the pink boxes, your values for <i>δ</i> and/or <i>ε</i> are probably wrong.")
+@interact
+def delta_epsilon(f = input_box(default=(x^2-x)/(x-1)), a=input_box(default=1), L = input_box(default=1), delta=input_box(label="δ",default=0.1), epsilon=input_box(label="ε",default=0.1), xm=input_box(label="<i>x</i><sub>min</sub>",default=-1), xM=input_box(label="<i>x</i><sub>max</sub>",default=4)):
+    f_left_plot = plot(f,xm,a-delta/3,thickness=2)
+    f_right_plot = plot(f,a+delta/3,xM,thickness=2)
+    epsilon_line_1 = line([(xm,L-epsilon),(xM,L-epsilon)], rgbcolor=(0.5,0.5,0.5),linestyle='--')
+    epsilon_line_2 = line([(xm,L+epsilon),(xM,L+epsilon)], rgbcolor=(0.5,0.5,0.5),linestyle='--')
+    ym = min(f_right_plot.ymin(),f_left_plot.ymin())
+    yM = max(f_right_plot.ymax(),f_left_plot.ymax())
+    bad_region_1 = polygon([(a-delta,L+epsilon),(a-delta,yM),(a+delta,yM),(a+delta,L+epsilon)], rgbcolor=(1,0.6,0.6))
+    bad_region_2 = polygon([(a-delta,L-epsilon),(a-delta,ym),(a+delta,ym),(a+delta,L-epsilon)], rgbcolor=(1,0.6,0.6))
+    aL_point = point((a,L),rgbcolor=(1,0,0),pointsize=20)
+    delta_line_1 = line([(a-delta,ym),(a-delta,yM)],rgbcolor=(0.5,0.5,0.5),linestyle='--')
+    delta_line_2 = line([(a+delta,ym),(a+delta,yM)],rgbcolor=(0.5,0.5,0.5),linestyle='--')
+    (f_left_plot +f_right_plot +epsilon_line_1 +epsilon_line_2 +delta_line_1 +delta_line_2 +aL_point +bad_region_1 +bad_region_2).show(xmin=xm,xmax=xM)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+x=var('x')
+@interact
+def _(x = slider(-7/10,7/10,1/20,1/2)):
+    html('<h3>A graphical illustration of $\lim_{x -> 0} \sin(x)/x =1$</h3>')
+    html('Below is the unit circle, so the length of the <font color=red>red line</font> is |sin(x)|')
+    html('and the length of the <font color=blue>blue line</font> is |tan(x)| where x is the length of the arc.') 
+    html('From the picture, we see that |sin(x)| $\le$ |x| $\le$ |tan(x)|.')
+    html('It follows easily from this that cos(x) $\le$ sin(x)/x $\le$ 1 when x is near 0.')
+    html('As $\lim_{x ->0} \cos(x) =1$, we conclude that $\lim_{x -> 0} \sin(x)/x =1$.')
+    if not (x == 0):
+        pretty_print("sin(x)/x = "+str(sin(float(x))/float(x)))
+    elif x == 0:
+        pretty_print("The limit of sin(x)/x as x tends to 0 is 1.")
+    C=circle((0,0),1, rgbcolor='black')
+    mvp = (cos(x),sin(x));tpt = (1, tan(x))
+    p1 = point(mvp, pointsize=30, rgbcolor='red'); p2 = point((1,0), pointsize=30, rgbcolor='red')
+    line1 = line([(0,0),tpt], rgbcolor='black'); line2 = line([(cos(x),0),mvp], rgbcolor='red') 
+    line3 = line([(0,0),(1,0)], rgbcolor='black'); line4 = line([(1,0),tpt], rgbcolor='blue')
+    result = C+p1+p2+line1+line2+line3+line4
+    result.show(aspect_ratio=1, figsize=[3,3], axes=False)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+var('x,y,z')
+quadrics = {'Ellipsoid':x^2+y^2+z^2-1,'Elliptic paraboloid':x^2+y^2-z,'Hyperbolic paraboloid':x^2-y^2-z, '1-Sheeted Hyperboloid':x^2+y^2-z^2-1,'2-Sheeted Hyperboloid':x^2-y^2-z^2-1, 'Cone':x^2+y^2-z^2}
+@interact
+def quads(q = selector(quadrics.keys()), a = slider(0,5,1/2,default = 1)):
+    f = quadrics[q].subs({x:x*a^(1/2)})
+    if a==0 or q=='Cone': html('<center>$'+latex(f)+' \ $'+ '(degenerate)</center>')
+    else: html('<center>$'+latex(f)+'$ </center>')
+    p = implicit_plot3d(f,(x,-2,2),(y,-2,2),(z,-2,2), plot_points = 75)
+    show(p)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+from sage.plot.plot3d.platonic import index_face_set
+def cuboid(v1,v2,**kwds):
+    """
+    Cuboid defined by corner points v1 and v2.
+    """
+    ptlist = []
+    for vi in (v1,v2):
+        for vj in (v1,v2):
+            for vk in (v1,v2):
+                ptlist.append([vi[0],vj[1],vk[2]])
+    f_incs = [[0, 2, 6, 4], [0, 1, 3, 2], [0, 1, 5, 4], [1, 3, 7, 5], [2, 3, 7, 6], [4, 5, 7, 6]]
+    
+    if 'aspect_ratio' not in kwds:
+        kwds['aspect_ratio'] = [1,1,1]
+    return index_face_set(f_incs,ptlist,enclosed = True, **kwds)
+var('x,y')
+R16 = RealField(16)
+npi = RDF(pi)
+sin,cos = math.sin,math.cos 
+html("<h1>The midpoint rule for a function of two variables</h1>")
+@interact
+def midpoint2d(func = input_box('y*sin(x)/x+sin(y)',type=str,label='function of x and y'), nx = slider(2,20,1,3,label='x subdivisions'), ny = slider(2,20,1,3,label='y subdivisions'), x_start = slider(-10,10,.1,0), x_end = slider(-10,10,.1,3*npi), y_start= slider(-10,10,.1,0), y_end= slider(-10,10,.1,3*npi)):
+    f = sage_eval('lambda x,y: ' + func)
+    delx = (x_end - x_start)/nx
+    dely = (y_end - y_start)/ny
+    xvals = [RDF(x_start + (i+1.0/2)*delx) for i in range(nx)]
+    yvals = [RDF(y_start + (i+1.0/2)*dely) for i in range(ny)]
+    num_approx = 0
+    cubs = []
+    darea = delx*dely
+    for xv in xvals:
+        for yv in yvals:
+            num_approx += f(xv,yv)*darea
+            cubs.append(cuboid([xv-delx/2,yv-dely/2,0],[xv+delx/2,yv+dely/2,f(xv,yv)], opacity = .5, rgbcolor = (1,0,0)))
+    html("$$\int_{"+str(R16(y_start))+"}^{"+str(R16(y_end))+"} "+ "\int_{"+str(R16(x_start))+"}^{"+str(R16(x_end))+"} "+func+"\ dx \ dy$$")
+    html('<p style="text-align: center;">Numerical approximation: ' + str(num_approx)+'</p>')
+    p1 = plot3d(f,(x,x_start,x_end),(y,y_start,y_end))
+    show(p1+sum(cubs))
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+import scipy
+import numpy
+from scipy.special.orthogonal import p_roots, t_roots, u_roots
+from scipy.integrate import quad, trapz, simps
+from sage.ext.fast_eval import fast_float
+from numpy import linspace
+show_weight_graph=False
+#  'Hermite': {'w': e**(-x**2), 'xmin': -numpy.inf, 'xmax': numpy.inf, 'func': h_roots},
+#  'Laguerre': {'w': e**(-x), 'xmin': 0, 'xmax': numpy.inf, 'func': l_roots},
+
+methods = {'Legendre': {'w': 1, 'xmin': -1, 'xmax': 1, 'func': p_roots},
+     'Chebyshev': {'w': 1/sqrt(1-x**2), 'xmin': -1, 'xmax': 1, 'func': t_roots},
+     'Chebyshev2': {'w': sqrt(1-x**2), 'xmin': -1, 'xmax': 1, 'func': u_roots},
+     'Trapezoid': {'w': 1, 'xmin': -1, 'xmax': 1, 
+        'func': lambda n: (linspace(-1r,1,n), numpy.array([1.0r]+[2.0r]*(n-2)+[1.0r])*1.0r/n)},
+     'Simpson': {'w': 1, 'xmin': -1, 'xmax': 1, 
+        'func': lambda n: (linspace(-1r,1,n), 
+            numpy.array([1.0r]+[4.0r,2.0r]*int((n-3.0r)/2.0r)+[4.0r,1.0r])*2.0r/(3.0r*n))}}
+var("x")
+def box(center, height, area,**kwds):
+    width2 = 1.0*area/height/2.0
+    return polygon([(center-width2,0),
+        (center+width2,0),(center+width2,height),(center-width2,height)],**kwds)
+    
+    
+@interact
+def weights(n=slider(1,30,1,default=10),f=input_box(default=3*x+cos(10*x),type=SR),
+    show_method=["Legendre", "Chebyshev", "Chebyshev2", "Trapezoid","Simpson"]):
+    ff = fast_float(f,'x')
+    method = methods[show_method]
+    xcoords,w = (method['func'])(int(n))
+    xmin = method['xmin']
+    xmax = method['xmax']
+    plot_min = max(xmin, -10)
+    plot_max = min(xmax, 10)
+    scaled_func = f*method['w']
+    scaled_ff = fast_float(scaled_func, 'x')
+
+    coords = zip(xcoords,w)
+    max_weight = max(w)
+    coords_scaled = zip(xcoords,w/max_weight)
+
+    f_graph = plot(scaled_func,plot_min,plot_max)
+    boxes = sum(box(x,ff(x),w*ff(x),rgbcolor=(0.5,0.5,0.5),alpha=0.3) for x,w in coords)
+    stems = sum(line([(x,0),(x,scaled_ff(x))],rgbcolor=(1-y,1-y,1-y),
+        thickness=2,markersize=6,alpha=y) for x,y in coords_scaled)
+    points = sum([point([(x,0),
+        (x,scaled_ff(x))],rgbcolor='black',pointsize=30) for x,_ in coords])
+    graph = stems+points+f_graph+boxes
+    if show_weight_graph:
+        graph += line([(x,y) for x,y in coords_scaled], rgbcolor='green',alpha=0.4)
+    
+    show(graph,xmin=plot_min,xmax=plot_max,aspect_ratio="auto")
+
+    approximation = sum([w*ff(x) for x,w in coords])
+    integral,integral_error = scipy.integrate.quad(scaled_ff, xmin, xmax)
+    x_val = linspace(min(xcoords), max(xcoords),n)
+    y_val = map(scaled_ff,x_val)
+    trapezoid = integral-trapz(y_val, x_val)
+    simpson = integral-simps(y_val, x_val)
+    html("$$\sum_{i=1}^{i=%s}w_i\left(%s\\right)= %s\\approx %s =\int_{-1}^{1}%s \,dx$$"%(n,
+        latex(f), approximation, integral, latex(scaled_func)))
+    error_data = [trapezoid, simpson, integral-approximation,integral_error]
+    print "Trapezoid: %s, Simpson: %s, \nMethod: %s, Real: %s"%tuple(error_data)
+    show(bar_chart(error_data,width=1),ymin=min(error_data), ymax=max(error_data))
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+# 2-D motion and vector calculus
+# Copyright 2009, Robert A. Beezer
+# Creative Commons BY-SA 3.0 US
+#
+# 2009/02/15  Built on Sage 3.3.rc0
+# 2009/02/17  Improvements from Jason Grout
+#
+# variable parameter is  t
+# later at a particular value named t0
+#
+var('t')
+#
+# parameter range
+#
+start=0
+stop=2*pi
+#
+# position vector definition
+# edit here for new example
+# example is wide ellipse
+# adjust x, extents in final show()
+#
+position=vector( (4*cos(t), sin(t)) )
+#
+# graphic of the motion itself
+#
+path = parametric_plot( position(t).list(), (t, start, stop), color = "black" )
+#
+# derivatives of motion, lengths, unit vectors, etc
+#
+velocity = derivative( position(t) )
+acceleration = derivative(velocity(t))
+speed = velocity.norm()
+speed_deriv = derivative(speed)
+tangent = (1/speed)*velocity
+dT = derivative(tangent(t))
+normal = (1/dT.norm())*dT
+#
+# interact section
+#   slider for parameter, 24 settings
+#   checkboxes for various vector displays
+#   computations at one value of parameter, t0
+#
+@interact
+def _(t0 = slider(float(start), float(stop), float((stop-start)/24), float(start) , label = "Parameter"),
+      pos_check = ("Position", True), 
+      vel_check = ("Velocity", False),
+      tan_check = ("Unit Tangent", False),
+      nor_check = ("Unit Normal", False),
+      acc_check = ("Acceleration", False),
+      tancomp_check = ("Tangential Component", False),
+      norcomp_check = ("Normal Component", False)
+       ):
+    #
+    # location of interest
+    #
+    pos_tzero = position(t0)
+    #
+    # various scalar quantities at point
+    #
+    speed_component = speed(t0)
+    tangent_component = speed_deriv(t0)
+    normal_component = sqrt( acceleration(t0).norm()^2 - tangent_component^2 )
+    curvature = normal_component/speed_component^2
+    #
+    # various vectors, mostly as arrows from the point
+    #
+    pos = arrow((0,0), pos_tzero, rgbcolor=(0,0,0))
+    tan = arrow(pos_tzero, pos_tzero + tangent(t0), rgbcolor=(0,1,0) )
+    vel = arrow(pos_tzero, pos_tzero + velocity(t0), rgbcolor=(0,0.5,0))
+    nor = arrow(pos_tzero, pos_tzero + normal(t0), rgbcolor=(0.5,0,0))
+    acc = arrow(pos_tzero, pos_tzero + acceleration(t0), rgbcolor=(1,0,1))
+    tancomp = arrow(pos_tzero, pos_tzero + tangent_component*tangent(t0), rgbcolor=(1,0,1) )
+    norcomp = arrow(pos_tzero, pos_tzero + normal_component*normal(t0), rgbcolor=(1,0,1))
+    #
+    # accumulate the graphic based on checkboxes
+    #
+    picture = path
+    if pos_check:
+        picture = picture + pos
+    if vel_check:
+        picture = picture + vel
+    if tan_check:
+        picture = picture+ tan
+    if nor_check:
+        picture = picture + nor
+    if acc_check:
+        picture = picture + acc
+    if tancomp_check:
+        picture = picture + tancomp
+    if norcomp_check:
+        picture = picture + norcomp
+    #
+    # print textual info
+    #
+    print "Position vector defined as r(t)=", position(t)
+    print "Speed is ", N(speed(t0))
+    print "Curvature is ", N(curvature)
+    #
+    # show accumulated graphical info
+    # adjust x-,y- extents to get best plot
+    #
+    show(picture, xmin=-4,xmax=4, ymin=-1.5,ymax=1.5,aspect_ratio=1)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+# 3-D motion and vector calculus
+# Copyright 2009, Robert A. Beezer
+# Creative Commons BY-SA 3.0 US
+#
+#
+# 2009/02/15  Built on Sage 3.3.rc0
+# 2009/02/17  Improvements from Jason Grout
+#
+# variable parameter is  t
+# later at a particular value named t0
+# 
+# un-comment double hash (##) to get
+# time-consuming torsion computation
+#
+var('t')
+#
+# parameter range
+#
+start=-4*pi
+stop=8*pi
+#
+# position vector definition
+# edit here for new example
+# example is wide ellipse
+# adjust figsize in final show() to get accurate aspect ratio
+#
+a=1/(8*pi)
+c=(3/2)*a
+position=vector( (exp(a*t)*cos(t), exp(a*t)*sin(t), exp(c*t)) )
+#
+# graphic of the motion itself
+#
+path = parametric_plot3d( position(t).list(), (t, start, stop), color = "black" )
+#
+# derivatives of motion, lengths, unit vectors, etc
+#
+velocity = derivative( position(t), t)
+acceleration = derivative(velocity(t), t)
+speed = velocity.norm()
+speed_deriv = derivative(speed, t)
+tangent = (1/speed)*velocity
+dT = derivative(tangent(t), t)
+normal = (1/dT.norm())*dT
+binormal = tangent.cross_product(normal)
+## dB = derivative(binormal(t), t)
+#
+# interact section
+#   slider for parameter, 24 settings
+#   checkboxes for various vector displays
+#   computations at one value of parameter, t0
+#
+@interact
+def _(t0 = slider(float(start), float(stop), float((stop-start)/24), float(start) , label = "Parameter"),
+      pos_check = ("Position", True), 
+      vel_check = ("Velocity", False),
+      tan_check = ("Unit Tangent", False),
+      nor_check = ("Unit Normal", False),
+      bin_check = ("Unit Binormal", False),
+      acc_check = ("Acceleration", False),
+      tancomp_check = ("Tangential Component", False),
+      norcomp_check = ("Normal Component", False)
+       ):
+    #
+    # location of interest
+    #
+    pos_tzero = position(t0)
+    #
+    # various scalar quantities at point
+    #
+    speed_component = speed(t0)
+    tangent_component = speed_deriv(t0)
+    normal_component = sqrt( acceleration(t0).norm()^2 - tangent_component^2 )
+    curvature = normal_component/speed_component^2
+    ## torsion = (1/speed_component)*(dB(t0)).dot_product(normal(t0))
+    #
+    # various vectors, mostly as arrows from the point
+    #
+    pos = arrow3d((0,0,0), pos_tzero, rgbcolor=(0,0,0))
+    tan = arrow3d(pos_tzero, pos_tzero + tangent(t0), rgbcolor=(0,1,0) )
+    vel = arrow3d(pos_tzero, pos_tzero + velocity(t0), rgbcolor=(0,0.5,0))
+    nor = arrow3d(pos_tzero, pos_tzero + normal(t0), rgbcolor=(0.5,0,0))
+    bin = arrow3d(pos_tzero, pos_tzero + binormal(t0), rgbcolor=(0,0,0.5))
+    acc = arrow3d(pos_tzero, pos_tzero + acceleration(t0), rgbcolor=(1,0,1))
+    tancomp = arrow3d(pos_tzero, pos_tzero + tangent_component*tangent(t0), rgbcolor=(1,0,1) )
+    norcomp = arrow3d(pos_tzero, pos_tzero + normal_component*normal(t0), rgbcolor=(1,0,1))
+    #
+    # accumulate the graphic based on checkboxes
+    #
+    picture = path
+    if pos_check:
+        picture = picture + pos
+    if vel_check:
+        picture = picture + vel
+    if tan_check:
+        picture = picture+ tan
+    if nor_check:
+        picture = picture + nor
+    if bin_check:
+        picture = picture + bin
+    if acc_check:
+        picture = picture + acc
+    if tancomp_check:
+        picture = picture + tancomp
+    if norcomp_check:
+        picture = picture + norcomp
+    #
+    # print textual info
+    #
+    print "Position vector: r(t)=", position(t)
+    print "Speed is ", N(speed(t0))
+    print "Curvature is ", N(curvature)
+    ## print "Torsion is ", N(torsion)
+    print
+    print "Right-click on graphic to zoom to 400%"
+    print "Drag graphic to rotate"
+    #
+    # show accumulated graphical info
+    #
+    show(picture, aspect_ratio=[1,1,1])
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+##  An interactive way to demonstrate limits of multivariate functions of the form z = f(x,y)
+##
+##  John Travis
+##  Mississippi College
+##  
+##  Spring 2011
+##
+
+#  Starting point for radius values before collapsing in as R approaches 0.
+#  Functions ought to be "reasonable" within a circular domain of radius R surrounding 
+#  the desired (x_0,y_0).
+var('x,y,z')
+Rmin=1/10
+Rmax=2
+@interact(layout=dict(top=[['f'],['x0'],['y0']], 
+bottom=[['in_3d','curves','R','graphjmol']]))
+def _(f=input_box((x^2-y^2)/(x^2+y^2),width=30,label='$f(x)$'),
+        R=slider(Rmin,Rmax,1/10,Rmax,label=',   $R$'),
+        x0=input_box(0,width=10,label='$x_0$'),
+        y0=input_box(0,width=10,label='$y_0$'),
+        curves=checkbox(default=false,label='Show curves'),
+        in_3d=checkbox(default=false,label='3D'),
+        graphjmol=checkbox(default=true,label='Interactive graph')):
+    if graphjmol:
+        view_method = 'jmol'
+    else:
+        view_method = 'tachyon'
+
+#   converting f to cylindrical coordinates.  
+    g(r,t) = f(x=r*cos(t)+x0,y=r*sin(t)+y0)
+
+#   Sage graphing transformation used to see the original surface.
+    cylinder = (r*cos(t)+x0,r*sin(t)+y0,z)
+    surface = plot3d(g,(t,0,2*pi),(r,1/100,Rmax),transformation=cylinder,opacity=0.2)
+    
+#   Regraph the surface for smaller and smaller radii controlled by the slider.
+    collapsing_surface = plot3d(g,(t,0,2*pi),(r,1/100,R),transformation=cylinder,rgbcolor=(0,1,0))
+    
+    G = surface+collapsing_surface
+    html('Enter $(x_0 ,y_0 )$ above and see what happens as $ R \\rightarrow 0 $.')
+    html('The surface has a limit as $(x,y) \\rightarrow $ ('+str(x0)+','+str(y0)+') if the green region collapses to a point.')
+
+#   If checked, add a couple of curves on the surface corresponding to limit as x->x0 for y=x^(3/5),
+#   and as y->y0 for x=y^(3/5).  Should make this more robust but perhaps using 
+#   these relatively obtuse curves could eliminate problems.
+
+    if curves:
+        curve_x = parametric_plot3d([x0-t,y0-t^(3/5),f(x=x0-t,y=y0-t^(3/5))],(t,Rmin,Rmax),color='red',thickness=10)
+        curve_y = parametric_plot3d([x0+t^(3/5),y0+t,f(x=x0+t^(3/5),y=y0+t)],(t,Rmin,Rmax),color='red',thickness=10)
+        R2 = Rmin/4
+        G += arrow((x0-Rmin,y0-Rmin^(3/5),f(x=x0-Rmin,y=y0-Rmin^(3/5))),(x0-R2,y0-R2^(3/5),f(x=x0-R2,y=y0-R2^(3/5))),size=30 )
+        G += arrow((x0+Rmin^(3/5),y0+Rmin,f(x=x0+Rmin^(3/5),y=y0+Rmin)),(x0+R2^(3/5),y0+R2,f(x=x0+R2^(3/5),y=y0+R2)),size=30 )  
+
+        limit_x = limit(f(x=x0-t,y=y0-t^(3/5)),t=0)
+        limit_y = limit(f(x=x0+t^(3/5),y=y0+t),t=0)
+        text_x = text3d(limit_x,(x0,y0,limit_x))
+        text_y = text3d(limit_y,(x0,y0,limit_y))
+        G += curve_x+curve_y+text_x+text_y 
+ 
+    
+        html('The red curves represent a couple of trajectories on the surface.  If they do not meet, then')
+        html('there is also no limit.  (If computer hangs up, likely the computer can not do these limits.)')
+        html('\n<center><font color="red">$\lim_{(x,?)\\rightarrow(x_0,y_0)} f(x,y) =%s$</font>'%str(limit_x)+'  and <font color="red">$\lim_{(?,y)\\rightarrow(x_0,y_0)} f(x,y) =%s$</font></center>'%str(limit_y))
+        
+    if in_3d:
+        show(G,stereo="redcyan",viewer=view_method)
+    else:
+        show(G,perspective_depth=true,viewer=view_method)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+##  An interactive way to demonstrate limits of multivariate functions of the form z = f(x,y)
+##  This one uses contour plots and so will work with functions that have asymptotic behavior.
+##
+##  John Travis
+##  Mississippi College
+##  
+##  Spring 2011
+##
+
+#  An increasing number of contours for z = f(x,y) are utilized surrounding a desired (x_0,y_0).
+#  A limit can be shown to exist at (x_0,y_0) provided the point stays trapped between adjacent 
+#  contour lines as the number of lines increases.  If the contours change wildly near the point,
+#  then a limit does not exist.
+#  Looking for two different paths to approach (x_0,y_0) that utilize a different selection of colors
+#  will help locate paths to use that exhibit the absence of a limit.
+
+var('x,y,z,u')
+@interact(layout=dict(top=[['f'],['x0'],['y0']], 
+bottom=[['N'],['R']]))
+def _(f=input_box(default=(x*y^2)/(x^2+y^4),width=30,label='$f(x)$'),
+        N=slider(5,100,1,10,label='Number of Contours'),
+        R=slider(0.1,1,0.01,1,label='Radius of circular neighborhood'),
+        x0=input_box(0,width=10,label='$x_0$'),
+        y0=input_box(0,width=10,label='$y_0$')):
+
+    html('Enter $(x_0 ,y_0 )$ above and see what happens as the number of contour levels $\\rightarrow \infty $.')
+    html('A surface will have a limit in the center of this graph provided there is not a sudden change in color there.')    
+
+#   Need to make certain the min and max contour lines are not huge due to asymptotes.  If so, clip and start contours at some reasonable
+#   values so that there are a nice collection of contours to show around the desired point.
+
+    surface = contour_plot(f,(x,x0-1,x0+1),(y,y0-1,y0+1),cmap=True,colorbar=True,fill=False,contours=N)
+    surface += parametric_plot([R*cos(u),R*sin(u)],[0,2*pi],color='black')
+#      Nice to use if f=x*y^2/(x^2 + y^4)    
+#    var('u')
+#    surface += parametric_plot([u^2,u],[u,-1,1],color='black')    
+    limit_point = point((x0,y0),color='red',size=30)
+#    show(limit_point+surface)
+    html.table([[surface],['hi']])
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+var('x,y,t,z')
+f(x,y)=sin(x)*cos(y)
+
+pif = float(pi)
+
+line_thickness=3
+surface_color='blue'
+plane_color='purple'
+line_color='red'
+tangent_color='green'
+gradient_color='orange'
+
+@interact
+def myfun(location=input_grid(1, 2, default=[0,0], label = "Location (x,y)", width=2), angle=slider(0, 2*pif, label = "Angle"), 
+show_surface=("Show surface", True)):
+    location3d = vector(location[0]+[0])
+    location = location3d[0:2]
+    direction3d = vector(RDF, [cos(angle), sin(angle), 0])
+    direction=direction3d[0:2]
+    cos_angle = math.cos(angle)
+    sin_angle = math.sin(angle)
+    df = f.gradient()
+    direction_vector=line3d([location3d, location3d+direction3d], arrow_head=True, rgbcolor=line_color, thickness=line_thickness)
+    curve_point = (location+t*direction).list()
+    curve = parametric_plot(curve_point+[f(*curve_point)], (t,-3,3),color=line_color,thickness=line_thickness)
+    plane = parametric_plot((cos_angle*x+location[0],sin_angle*x+location[1],t), (x, -3,3), (t,-3,3),opacity=0.8, color=plane_color)
+    pt = point3d(location3d.list(),color='green', size=10)
+
+    tangent_line = parametric_plot((location[0]+t*cos_angle, location[1]+t*sin_angle, f(*location)+t*df(*location)*(direction)), (t, -3,3), thickness=line_thickness, color=tangent_color)
+    picture3d = direction_vector+curve+plane+pt+tangent_line
+
+    picture2d = contour_plot(f(x,y), (x,-3,3),(y,-3,3), plot_points=100)
+    picture2d += arrow(location.list(), (location+direction).list()) 
+    picture2d += point(location.list(),rgbcolor='green',pointsize=40)
+    if show_surface:
+        picture3d += plot3d(f, (x,-3,3),(y,-3,3),opacity=0.7)
+        
+    dff = df(location[0], location[1])
+    dff3d = vector(RDF,dff.list()+[0])
+    picture3d += line3d([location3d, location3d+dff3d], arrow_head=True, rgbcolor=gradient_color, thickness=line_thickness)
+    picture2d += arrow(location.list(), (location+dff).list(), rgbcolor=gradient_color, width=line_thickness)
+    show(picture3d,aspect=[1,1,1], axes=True)
+    show(picture2d, aspect_ratio=1)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+x,y, t, u, v =var('x y t u v')
+INI_func='x^2-2*x+y^2-2*y'
+INI_box='-1,3.2,-1,3.2'
+INI_points='(1,1,\'green\'),(3/2,3/2),(0,1),(1,0),(0,0,\'black\'),(3,0,\'black\'),(0,3,\'black\')'
+INI_curves='(t,0,0,3,\'red\'),(0,t,0,3,\'green\'),(t,3-t,0,3)'
+@interact
+def _(func=input_box(INI_func,label="f(x,y)=",type=str),\
+  bounds=input_box(INI_box,label="xmin,xmax,ymin,ymax",type=str),\
+  st_points=input_box(INI_points,\
+  label="points <br><small><small>(comma separated pairs, optionally with color)</small></small>", type=str),\
+  bnd_curves=input_box(INI_curves,label="curves on boundary<br> <small><small><i>(x(t),y(t),tmin,tmax,'opt_color')</i></small></small>", type=str),\
+ show_planes=("Show zero planes", False),  show_axes=("Show axes", True),  
+ show_table=("Show table", True)):
+ f=sage_eval('lambda x,y: ' + func)
+ html(r'Function $ f(x,y)=%s$ '%latex(f(x,y)))
+ xmin,xmax,ymin,ymax=sage_eval('('+bounds+')')
+ A=plot3d(f(x,y),(x,xmin,xmax),(y,ymin,ymax),opacity=0.5)
+ if not(bool(st_points=='')):
+     st_p=sage_eval('('+st_points+',)')
+     html(r'<table border=1>')
+     for current in range(len(st_p)):
+         point_color='red'
+         if bool(len(st_p[current])==3):
+              point_color=st_p[current][2]
+         x0=st_p[current][0]
+         y0=st_p[current][1]
+         z0=f(x0,y0)
+         if show_table:
+              html(r'<tr><td>$\quad f(%s,%s)\quad $</td><td>$\quad %s$</td>\
+              </tr>'%(latex(x0),latex(y0),z0.n()))
+         A=A+point3d((x0,y0,z0),size=9,rgbcolor=point_color)           
+     html(r'</table>')
+ if not(bool(bnd_curves=='')):
+     bnd_cc=sage_eval('('+bnd_curves+',)',locals={'t':t})
+     for current in range(len(bnd_cc)):
+         bnd_c=bnd_cc[current]+('black',) 
+         A=A+parametric_plot3d((bnd_c[0],bnd_c[1],f(bnd_c[0],bnd_c[1])),\
+             (t,bnd_c[2],bnd_c[3]),thickness=3,rgbcolor=bnd_c[4])
+ if show_planes:
+     A=A+plot3d(0,(x,xmin,xmax),(y,ymin,ymax),opacity=0.3,rgbcolor='gray')
+     zmax=A.bounding_box()[1][2]
+     zmin=A.bounding_box()[0][2]
+     A=A+parametric_plot3d((u,0,v),(u,xmin,xmax),(v,zmin,zmax),opacity=0.3,rgbcolor='gray')
+     A=A+parametric_plot3d((0,u,v),(u,ymin,ymax),(v,zmin,zmax),opacity=0.3,rgbcolor='gray')
+ if show_axes:
+     zmax=A.bounding_box()[1][2]
+     zmin=A.bounding_box()[0][2]
+     A=A+line3d([(xmin,0,0), (xmax,0,0)], arrow_head=True,rgbcolor='black') 
+     A=A+line3d([(0,ymin,0), (0,ymax,0)], arrow_head=True,rgbcolor='black') 
+     A=A+line3d([(0,0,zmin), (0,0,zmax)], arrow_head=True,rgbcolor='black') 
+ show(A)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+x,y=var('x y')
+html('<h2>Explaining approximation of a function in two \
+variables by differential</h2>')
+html('Points x0 and y0 are values where the exact value of the function \
+is known. Deltax and Deltay are displacements of the new point. Exact value \
+and approximation by differential at shifted point are compared.')
+@interact
+def _(func=input_box('sqrt(x^3+y^3)',label="f(x,y)=",type=str), x0=1, y0=2, \
+  deltax=slider(-1,1,0.01,0.2),\
+  deltay=slider(-1,1,0.01,-0.4), xmin=0, xmax=2, ymin=0, ymax=3):
+  f=sage_eval('lambda x,y: ' + func)
+  derx(x,y)=diff(f(x,y),x)
+  dery(x,y)=diff(f(x,y),y)
+  tangent(x,y)=f(x0,y0)+derx(x0,y0)*(x-x0)+dery(x0,y0)*(y-y0)
+  A=plot3d(f(x,y),(x,xmin,xmax),(y,ymin,ymax),opacity=0.5)
+  B=plot3d(tangent(x,y),(x,xmin,xmax),(y,ymin,ymax),color='red',opacity=0.5)
+  C=point3d((x0,y0,f(x0,y0)),rgbcolor='blue',size=9)
+  CC=point3d((x0+deltax,y0+deltay,f(x0+deltax,y0+deltay)),rgbcolor='blue',size=9)
+  D=point3d((x0+deltax,y0+deltay,tangent(x0+deltax,y0+deltay)),rgbcolor='red',size=9)
+  exact_value_ori=f(x0,y0).n(digits=10)
+  exact_value=f(x0+deltax,y0+deltay)
+  approx_value=tangent(x0+deltax,y0+deltay).n(digits=10)
+  abs_error=(abs(exact_value-approx_value))
+  html(r'Function $ f(x,y)=%s \approx %s $ '%(latex(f(x,y)),latex(tangent(x,y))))
+  html(r' $f %s = %s$'%(latex((x0,y0)),latex(exact_value_ori)))
+  html(r'Shifted point $%s$'%latex(((x0+deltax),(y0+deltay))))
+  html(r'Value of the function in shifted point is $%s$'%f(x0+deltax,y0+deltay))
+  html(r'Value on the tangent plane in shifted point is $%s$'%latex(approx_value))
+  html(r'Error is $%s$'%latex(abs_error)) 
+  show(A+B+C+CC+D)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+var('x y')
+var('xx yy')
+G = sin(xx^2 + yy^2) * cos(yy) * exp(-0.5*(xx^2+yy^2))
+def F(x,y):
+    return G.subs(xx=x).subs(yy=y)
+plotF = plot3d(F, (0.4, 2), (0.4, 2), adaptive=True, color='blue')
+@interact
+def _(x0=(0.5,1.5), y0=(0.5, 1.5),
+      order=(1..10)):
+    F0 = float(G.subs(xx=x0).subs(yy=y0))
+    P = (x0, y0, F0)
+    dot = point3d(P, size=15, color='red')
+    plot = dot + plotF
+    approx = F0
+    for n in range(1, order+1):
+        for i in range(n+1):
+            if i == 0:
+                deriv = G.diff(yy, n)
+            elif i == n:
+                deriv = G.diff(xx, n)
+            else:
+                deriv = G.diff(xx, i).diff(yy, n-i)
+            deriv = float(deriv.subs(xx=x0).subs(yy=y0))
+            coeff = binomial(n, i)/factorial(n)
+            approx += coeff * deriv * (x-x0)^i * (y-y0)^(n-i)
+    plot += plot3d(approx, (x, 0.4, 1.6), 
+             (y, 0.4, 1.6), color='red', opacity=0.7)
+    html('$F(x,y) = e^{-(x^2+y^2)/2} \\cos(y) \\sin(x^2+y^2)$')
+    show(plot)
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+##  Graphing surfaces over non-rectangular domains 
+##  John Travis
+##  Spring 2011
+##
+##
+##  An updated version of this worksheet may be available at http://sagenb.mc.edu
+##
+##  Interact allows the user to input up to two inequality constraints on the
+##  domain when dealing with functional surfaces
+##
+##  User inputs:
+##    f = "top" surface with z = f(x,y)
+##    g = "bottom" surface with z = g(x,y)
+##    condition1 = a single boundary constraint.  It should not include && or | to join two conditions.
+##    condition2 = another boundary constraint.  If there is only one constraint, just enter something true
+##        or even just an x (or y) in the entry blank.
+##
+## 
+
+var('x,y')
+
+#  f is the top surface
+#  g is the bottom surface
+global f,g
+
+#  condition1 and condition2 are the inequality constraints.  It would be nice
+#  to have any number of conditions connected by $$ or | 
+global condition1,condition2
+
+@interact
+def _(f=input_box(default=(1/3)*x^2 + (1/4)*y^2 + 5,label='$f(x)=$'),
+        g=input_box(default=-1*x+0*y,label='$g(x)=$'),
+        condition1=input_box(default= x^2+y^2<8,label='$Constraint_1=$'),
+        condition2=input_box(default=y<sin(3*x),label='$Constraint_2=$'),
+        show_3d=('Stereographic',false), show_vol=('Shade volume',true), 
+        dospin = ('Spin?',true), 
+        clr = color_selector('#faff00', label='Volume Color', widget='colorpicker', hide_box=True), 
+        xx = range_slider(-5, 5, 1, default=(-3,3), label='X Range'),
+        yy = range_slider(-5, 5, 1, default=(-3,3), label='Y Range'),
+        auto_update=false):
+    
+    #  This is the top function actually graphed by using NaN outside domain
+    def F(x,y):
+        if condition1(x=x,y=y):
+            if condition2(x=x,y=y):
+                return f(x=x,y=y)
+            else:
+                return -NaN
+        else:
+            return -NaN
+
+    # This is the bottom function actually graphed by using NaN outside domain
+    def G(x,y):
+        if condition1(x=x,y=y):
+            if condition2(x=x,y=y):
+                return g(x=x,y=y)
+            else:
+                return -NaN
+        else:
+            return -NaN
+        
+    P = Graphics()      
+      
+#  The graph of the top and bottom surfaces
+    P_list = []
+    P_list.append(plot3d(F,(x,xx[0],xx[1]),(y,yy[0],yy[1]),color='blue',opacity=0.9))
+    P_list.append(plot3d(G,(x,xx[0],xx[1]),(y,yy[0],yy[1]),color='gray',opacity=0.9))
+    
+#  Interpolate "layers" between the top and bottom if desired
+
+    if show_vol:
+        ratios = range(10)
+
+        def H(x,y,r):
+            return (1-r)*F(x=x,y=y)+r*G(x=x,y=y)
+        P_list.extend([
+        plot3d(lambda x,y: H(x,y,ratios[1]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[2]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[3]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[4]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[5]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[6]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[7]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[8]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr),
+        plot3d(lambda x,y: H(x,y,ratios[9]/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2,color=clr)
+        ])
+#            P = plot3d(lambda x,y: H(x,y,ratio/10),(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.1)
+             
+           
+#  Now, accumulate all of the graphs into one grouped graph.        
+    P = sum(P_list[i] for i in range(len(P_list)))
+
+
+    if show_3d:
+        show(P,frame=true,axes=false,xmin=xx[0],xmax=xx[1],ymin=yy[0],ymax=yy[1],stereo='redcyan',figsize=(6,9),viewer='jmol',spin=dospin)
+    else:
+        show(P,frame=true,axes=false,xmin=xx[0],xmax=xx[1],ymin=yy[0],ymax=yy[1],figsize=(6,9),viewer='jmol',spin=dospin)
+  
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+##  Display and compute the area of the lateral surface between two surfaces
+##  corresponding to the (scalar) line integral
+##  John Travis
+##  Spring 2011
+##
+
+var('x,y,t,s')
+@interact(layout=dict(top=[['f','u'],['g','v']], 
+left=[['a'],['b'],['in_3d'],['smoother']],
+bottom=[['xx','yy']]))
+def _(f=input_box(default=6-4*x^2-y^2*2/5,label='Top = $f(x,y) = $',width=30),
+        g=input_box(default=-2+sin(x)+sin(y),label='Bottom = $g(x,y) = $',width=30),
+        u=input_box(default=cos(t),label='   $ x = u(t) = $',width=20),
+        v=input_box(default=2*sin(t),label='   $ y = v(t) = $',width=20),
+        a=input_box(default=0,label='$a = $',width=10),
+        b=input_box(default=3*pi/2,label='$b = $',width=10),
+        xx = range_slider(-5, 5, 1, default=(-1,1), label='x view'),
+        yy = range_slider(-5, 5, 1, default=(-2,2), label='y view'),
+        in_3d = checkbox(default=true,label='3D'),
+        smoother=checkbox(default=false),
+        auto_update=true):
+        
+    ds = sqrt(derivative(u,t)^2+derivative(v,t)^2)
+    
+#   Set up the integrand to compute the line integral, making all attempts
+#   to simplify the result so that it looks as nice as possible.    
+    A = (f(x=u,y=v)-g(x=u,y=v))*ds.simplify_trig().simplify()
+    
+#   It is not expected that Sage can actually perform the line integral calculation.
+#   So, the result displayed may not be a numerical value as expected.
+#   Creating a good but harder example that "works" is desirable.
+#   If you want Sage to try, uncomment the lines below.
+
+#    line_integral = integrate(A,t,a,b)
+#    html(r'<align=center size=+1>Lateral Surface Area = $ %s $ </font>'%latex(line_integral))
+
+    line_integral_approx = numerical_integral(A,a,b)[0]
+
+    html(r'<font align=center size=+1>Lateral Surface $ \approx $ %s</font>'%str(line_integral_approx))
+
+#   Plot the top function z = f(x,y) that is being integrated.
+    G = plot3d(f,(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2)
+    G += plot3d(g,(x,xx[0],xx[1]),(y,yy[0],yy[1]),opacity=0.2)
+
+#   Add space curves on the surfaces "above" the domain curve (u(t),v(t)) 
+    G += parametric_plot3d([u,v,g(x=u,y=v)],(t,a,b),thickness=2,color='red')
+    G += parametric_plot3d([u,v,f(x=u,y=v)],(t,a,b),thickness=2,color='red')
+    k=0
+    if smoother:
+        delw = 0.025
+        lat_thick = 3
+    else:
+        delw = 0.10
+        lat_thick = 10
+    for w in (a,a+delw,..,b):
+        G += parametric_plot3d([u(t=w),v(t=w),s*f(x=u(t=w),y=v(t=w))+(1-s)*g(x=u(t=w),y=v(t=w))],(s,0,1),thickness=lat_thick,color='yellow',opacity=0.9)
+        
+    if in_3d:
+        show(G,stereo='redcyan',spin=true)
+    else:
+        show(G,perspective_depth=true,spin=true)
+
+  
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+var('u,v')
+npi = RDF(pi)
+@interact
+def viewer(mesh = checkbox(default = False, label = 'Show u,v meshlines'), uc = slider(-2,2,1/10,0, label = '<span style="color:red">Constant u value</span>'), vc = slider(-2,2,1/10,0, label = '<span style="color:green">Constant v value</span>'), functions = input_box([u,v^2,u^2+v])):
+    f1(u,v) = functions[0]
+    f2(u,v) = functions[1]
+    f3(u,v) = functions[2]
+    surface_plot = parametric_plot3d([f1,f2,f3], (u,-2,2), (v,-2,2), mesh = mesh, opacity = .8)
+    constant_u = line3d([[f1(uc,q), f2(uc,q), f3(uc,q)] for q in srange(-2,2,.01)], rgbcolor = (1,0,0), thickness = 3)
+    constant_v = line3d([[f1(q,vc), f2(q,vc), f3(q,vc)] for q in srange(-2,2,.01)], rgbcolor = (0,1,0), thickness = 3)
+    show(surface_plot + constant_u + constant_v, frame = False)
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+##  This worksheet interactively computes and displays the line integral of a 3D vector field 
+##  over a given smooth curve C
+##  
+##  John Travis
+##  Mississippi College
+##  06/16/11
+##
+##  An updated version of this worksheet may be available at http://sagenb.mc.edu
+##
+
+var('x,y,z,t,s')
+
+@interact
+def _(M=input_box(default=x*y*z,label="$M(x,y,z)$"),
+        N=input_box(default=-y*z,label="$N(x,y,z)$"),
+        P=input_box(default=z*y,label="$P(x,y,z)$"),
+        u=input_box(default=cos(t),label="$x=u(t)$"),
+        v=input_box(default=2*sin(t),label="$y=v(t)$"),
+        w=input_box(default=t*(t-2*pi)/pi,label="$z=w(t)$"),
+        tt = range_slider(-2*pi, 2*pi, pi/6, default=(0,2*pi), label='t Range'),
+        xx = range_slider(-5, 5, 1, default=(-1,1), label='x Range'),
+        yy = range_slider(-5, 5, 1, default=(-2,2), label='y Range'),
+        zz = range_slider(-5, 5, 1, default=(-3,1), label='z Range'),
+        in_3d=checkbox(true)):
+
+#   setup the parts and then compute the line integral
+    dr = [derivative(u(t),t),derivative(v(t),t),derivative(w(t),t)]
+    A = (M(x=u(t),y=v(t),z=w(t))*dr[0]
+        +N(x=u(t),y=v(t),z=w(t))*dr[1]
+        +P(x=u(t),y=v(t),z=w(t))*dr[2])
+    global line_integral
+    line_integral = integral(A(t=t),t,tt[0],tt[1])
+    
+    html(r'<h2 align=center>$ \int_{C} \left \langle M,N,P \right \rangle dr $ = $ %s $ </h2>'%latex(line_integral))
+    G = plot_vector_field3d((M,N,P),(x,xx[0],xx[1]),(y,yy[0],yy[1]),(z,zz[0],zz[1]),plot_points=6)
+    G += parametric_plot3d([u,v,w],(t,tt[0],tt[1]),thickness='5',color='yellow')
+    if in_3d:
+        show(G,stereo='redcyan',spin=true)
+    else:
+        show(G,perspective_depth=true)
+</script></div></li>
+<li>http://wiki.sagemath.org/interact/graphics<div class="sage"><script type="text/x-sage">
+#---------------------------#
+# Javier Pérez Lázaro       #
+# Logroño (Spain)           #
+# javier.perezl@unirioja.es #
+#---------------------------#
+
+#introduction
+
+html('<h1><center>Spirograph</center></h1>')
+text1='Spirograph is a tool for drawing hypotrochoids and epitrochoids.'
+text2='Assume that a A is a point attached to a circle. A can be attached to the boundary of the circle or to any exterior or interior place. If the circle rolls around the outside of a fixed circle, the curve traced by the point A is called an epitrochoid. In case the circle rolls around the inside of a fixed circle, the curve is an hypotrochoid.'
+text3='If the quotient between the radii of the circles is a rational number, then the curves are periodic.'
+
+#the code
+
+@interact
+def fun(
+tex1=text_control(text1), tex2=text_control(text2), tex3=text_control(text3),
+h=('Select:',list(['epitrochoid','hypotrochoid'])),
+tex4=text_control('Radius of the circle. Should be a rational number with shape p/q.'),
+b=input_box(default=7/30,label='radius'),
+tex5=text_control("Rate between the distance of the point to the circle's center and the radius."),
+rate=input_box(default=1),
+u=selector(['Plot the curve. Slider of % below enabled.',
+'Build an animation of the plot with the number of frames specified below.'],label='Choose:'),
+per=slider(0,100,1,default=100,label='graph %'),
+frames=100,
+cir_bool=checkbox(True, "Show circles?"),
+auto_update=false):
+    draw=True
+    if h=='hypotrochoid' and (b>=1 or b<=0):
+        print "In a hypotrochoid, radius must be between 0 and 1."
+        draw=False
+    if h=='epitrochoid' and b<=0:
+        print "In a epitrochoid, radius must be positive"
+        draw=False
+    if draw==True:
+        if h=='hypotrochoid': b=-b 
+        var('t')
+        cx=(1+b)*cos(t*b/(1+b))
+        cy=(1+b)*sin(t*b/(1+b))
+        px=cx-b*rate*cos(t)
+        py=cy-b*rate*sin(t)
+        axeM=1+max([0,b+abs(b)*rate])
+        if u=='Plot the curve. Slider of % below enabled.':
+            tMax=pi*denominator(b/(b+1))*per/50
+            L=parametric_plot((px,py),(t,0,max([0.001,tMax])),plot_points=10*rate*tMax)
+            if cir_bool: 
+                p=point((px(t=tMax),py(t=tMax)),pointsize=30,color='blue')
+                c=point((cx(t=tMax),cy(t=tMax)),pointsize=30,color='red')
+                cir=circle((cx(t=tMax),cy(t=tMax)),b,color='red')
+                lin=line([(cx(t=tMax),cy(t=tMax)),(px(t=tMax),py(t=tMax))])
+                L+=circle((0,0),1)+cir+lin+p+c    
+            show(L,aspect_ratio=1,xmin=-axeM,xmax=axeM,ymin=-axeM,ymax=axeM)
+        if u=='Build an animation of the plot with the number of frames specified below.':
+            tMax=2*pi*denominator(b/(b+1))
+            step=tMax/(frames-1)
+            curva=Graphics()
+            v=[]
+            for a in srange(step,tMax,step):
+                curva+=parametric_plot((px,py),(t,a-step,a))
+                L=curva
+                if cir_bool:
+                    cx_a=cx(t=a)
+                    cy_a=cy(t=a)
+                    px_a=cx_a-b*rate*cos(a)
+                    py_a=cy_a-b*rate*sin(a)
+                    p=point((px_a,py_a),pointsize=30,color='blue')
+                    c=point((cx_a,cy_a),pointsize=30,color='red')
+                    cir=circle((cx_a,cy_a),b,color='red')
+                    lin=line([(cx_a,cy_a),(px_a,py_a)])
+                    L+=circle((0,0),1)+cir+lin+c+p         
+                v.append(L)
+            animate(v,xmin=-axeM,xmax=axeM,ymin=-axeM,ymax=axeM,aspect_ratio=1).show()
+</script></div></li>
+<li>http://wiki.sagemath.org/interact/linear_algebra<div class="sage"><script type="text/x-sage">
+#Choose the size D of the square matrix:
+D = 3
+
+example = [[1 if k==j else 0 for k in range(D)] for j in range(D)]
+example[0][-1] = 2
+example[-1][0] = 3
+
+@interact
+def _(M=input_grid(D,D, default = example,
+                   label='Matrix to invert', to_value=matrix),
+      tt = text_control('Enter the bits of precision used'
+                        ' (only if you entered floating point numbers)'),  
+      precision = slider(5,100,5,20),
+      auto_update=False):
+    if det(M)==0:
+        print 'Failure: Matrix is not invertible'
+        return
+    if M.base_ring() == RR:
+        M = M.apply_map(RealField(precision))
+    N=M
+    M=M.augment(identity_matrix(D))
+    print 'We construct the augmented matrix'
+    show(M)
+    for m in range(0,D-1):
+        if M[m,m] == 0:
+            lista = [(M[j,m],j) for j in range(m,D)]
+            maxi, c = max(lista)
+            M[c,:],M[m,:]=M[m,:],M[c,:]
+            print 'We permute rows %d and %d'%(m+1,c+1)
+            show(M)
+        for n in range(m+1,D):
+            a=M[m,m]
+            if M[n,m]!=0:
+                print "We add %s times row %d to row %d"%(-M[n,m]/a, m+1, n+1)
+                M=M.with_added_multiple_of_row(n,m,-M[n,m]/a)
+                show(M)
+    for m in range(D-1,-1,-1):
+        for n in range(m-1,-1,-1):
+            a=M[m,m]
+            if M[n,m]!=0:
+                print "We add %s times row %d to the row %d"%(-M[n,m]/a, m+1, n+1)
+                M=M.with_added_multiple_of_row(n,m,-M[n,m]/a)
+                show(M)       
+    for m in range(0,D):
+        if M[m,m]!=1:
+            print 'We divide row %d by %s'%(m+1,M[m,m])
+            M = M.with_row_set_to_multiple_of_row(m,m,1/M[m,m])
+            show(M)   
+    M=M.submatrix(0,D,D)
+    print 'We keep the right submatrix, which contains the inverse'        
+    html('$$M^{-1}=%s$$'%latex(M))
+    print 'We check it actually is the inverse'
+    html('$$M^{-1}*M=%s*%s=%s$$'%(latex(M),latex(N),latex(M*N)))
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+</script></div></li>
+<li><div class="sage"><script type="text/x-sage">
+
+
+</ol>
+</body>
+</html>
