@@ -793,7 +793,8 @@ var showInfo = function (data, cm) {
             "of": cm.display.cursor.parentNode,
             "collision": "none"
         },
-        "appendTo": $(cm.display.wrapper).parents(".sagecell").first()
+        "appendTo": $(cm.display.wrapper).parents(".sagecell").first(),
+        "close": closeDialog
     });
     cm.focus();
 }
@@ -802,7 +803,7 @@ var requestInfo = function (cm) {
     var cur = cm.getCursor();
     var line = cm.getLine(cur.line).substr(0, cur.ch);
     var detail = (cur.ch > 1 && line[cur.ch - 2] === "?") ? 1 : 0;
-    var oname = line.match(/([a-z_][a-z_\d.]*)\?\??$/i);
+    var oname = line.match(/([a-z_][a-z_\d.]*)(\?\??|\()$/i);
     if (oname === null) {
         return;
     }
@@ -907,7 +908,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                 "Tab": function (editor) {
                     var cur = editor.getCursor();
                     var line = editor.getLine(cur.line).substr(0, cur.ch);
-                    if (cur.ch > 0 && line[cur.ch - 1] === "?") {
+                    if (cur.ch > 0 && (line[cur.ch - 1] === "?" || line[cur.ch - 1] === "(")) {
                         requestInfo(editor);
                     } else if (line.match(/^ *$/)) {
                         CodeMirror.commands.indentMore(editor);

@@ -51,6 +51,10 @@
     max-height: 14em;
 }
 
+.sagecell .CodeMirror-hints {
+    padding-right: 10px;
+}
+
 .sagecell .ui-dialog-content {
     font-size: 80%;
 }
