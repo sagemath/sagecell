@@ -748,7 +748,15 @@ var completerMsg = function (msg, callback) {
     }
 };
 
-var showInfo = function (data, location) {
+var openedDialog = null;
+var closeDialog = function () {
+    if (openedDialog) {
+        openedDialog.dialog("destroy");
+        openedDialog = null;
+    }
+}
+
+var showInfo = function (data, cm) {
     if (data.content) {
         data = data.content;
     }
@@ -774,12 +782,20 @@ var showInfo = function (data, location) {
         d = ce("pre", {"class": "cm-s-default"});
         CodeMirror.runMode(data.source, "python", d);
     }
-    $(d).dialog({
+    closeDialog();
+    openedDialog = $(d).dialog({
         "title": data.name,
-        "width": 900,
-        "height": 500,
-        "appendTo": location
+        "width": 700,
+        "height": 300,
+        "position": {
+            "my": "left top",
+            "at": "left+5px bottom+5px",
+            "of": cm.display.cursor.parentNode,
+            "collision": "none"
+        },
+        "appendTo": $(cm.display.wrapper).parents(".sagecell").first()
     });
+    cm.focus();
 }
 
 var requestInfo = function (cm) {
@@ -791,7 +807,7 @@ var requestInfo = function (cm) {
         return;
     }
     var cb = function (data) {
-        showInfo(data, $(cm.display.wrapper).parents(".sagecell").first());
+        showInfo(data, cm);
     }
     var kernel = sagecell.kernels[cm.k];
     if (kernel && kernel.session.linked && kernel.shell_channel.send) {
@@ -896,17 +912,19 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     } else if (line.match(/^ *$/)) {
                         CodeMirror.commands.indentMore(editor);
                     } else {
+                        closeDialog();
                         CodeMirror.commands.autocomplete(editor);
                     }
                 },
                 "Shift-Tab": "indentLess",
-                "Shift-Enter": function (editor) {/* do nothing; wait for keyup (see below) */}
-            },
-            onKeyEvent: function (editor, event) {
-                editor.save();
-                 if (event.type === "keyup" && event.which === 13 && event.shiftKey) {
-                    inputLocation.find(".sagecell_evalButton").click();
-                }
+                "Shift-Enter": closeDialog,
+                "Esc": closeDialog
+            }
+        });
+        editorData.on("keyup", function (editor, event) {
+            editor.save();
+            if (event.which === 13 && event.shiftKey) {
+                inputLocation.find(".sagecell_evalButton").click();
             }
         });
         $(accordion).on("accordionactivate", function () {
