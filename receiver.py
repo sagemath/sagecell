@@ -254,6 +254,16 @@ from sagenb.misc.support import automatic_names
 set_random_seed()
 """
             exec sage_code in user_ns
+        def getsource(obj, is_binary):
+            from sage.misc.sagedoc import sageinspect, format_src
+            try:
+                s = sageinspect.sage_getsource(obj, is_binary)
+                return format_src(str(s))
+            except Exception, msg:
+                print 'Error getting source:', msg
+                return None
+        from IPython.core import oinspect
+        oinspect.getsource = getsource
         import interact_sagecell
         import interact_compatibility
         # overwrite Sage's interact command with our own

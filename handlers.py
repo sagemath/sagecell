@@ -155,8 +155,6 @@ class Completer(object):
     def on_recv(self, msg):
         msg = self.session.feed_identities(msg)[1]
         msg = self.session.unserialize(msg)
-        if msg["header"]["msg_type"] == "complete_reply" and len(msg["content"]["matched_text"]) == 0:
-            msg["content"]["matches"] = []
         msg_id = msg["parent_header"]["msg_id"]
         kc = self.waiting.pop(msg_id)
         del msg["header"]["date"]

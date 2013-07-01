@@ -748,31 +748,37 @@ var completerMsg = function (msg, callback) {
     }
 };
 
-var showInfo = function (data) {
-    var info = data.content;
-    if (!info.found) {
+var showInfo = function (data, location) {
+    if (data.content) {
+        data = data.content;
+    }
+    if (!data.found) {
         return;
     }
     var d;
-    if (info.source === null) {
-        var def = ce("code");
-        def.innerHTML = IPython.utils.fixConsole(info.definition);
+    if (data.source === null) {
+        var def;
+        if (data.definition !== null) {
+            def = ce("code");
+            def.innerHTML = IPython.utils.fixConsole(data.definition);
+        }
         d = ce("div", {}, [
-            ce("div", {}, [
-                ce("strong", {}, "File: "), ce("code", {}, info.file)]),
-            ce("div", {}, [ce("strong", {}, "Type: "), ce("code", {}, info.base_class)]),
-            ce("div", {}, [ce("strong", {}, "Definition: "), def]),
-            ce("pre", {}, info.docstring)
+            ce("div", {}, [ce("strong", {}, "File: "), ce("code", {}, data.file || data.namespace)]),
+            ce("div", {}, [ce("strong", {}, "Type: "), ce("code", {}, data.base_class)])
         ]);
+        if (def) {
+            d.appendChild(ce("div", {}, [ce("strong", {}, "Definition: "), def]));
+        }
+        d.appendChild(ce("pre", {}, data.docstring));
     } else {
         d = ce("pre", {"class": "cm-s-default"});
-        CodeMirror.runMode(info.source, "python", d);
+        CodeMirror.runMode(data.source, "python", d);
     }
     $(d).dialog({
-        "title": info.name,
-        "width": 800,
+        "title": data.name,
+        "width": 900,
         "height": 500,
-        "appendTo": $(".sagecell")
+        "appendTo": location
     });
 }
 
@@ -784,6 +790,9 @@ var requestInfo = function (cm) {
     if (oname === null) {
         return;
     }
+    var cb = function (data) {
+        showInfo(data, $(cm.display.wrapper).parents(".sagecell").first());
+    }
     var kernel = sagecell.kernels[cm.k];
     if (kernel && kernel.session.linked && kernel.shell_channel.send) {
         var msg = kernel._get_msg("object_info_request", {
@@ -792,13 +801,13 @@ var requestInfo = function (cm) {
         })
         kernel.shell_channel.send(JSON.stringify(msg));
         kernel.set_callbacks_for_msg(msg.header.msg_id, {
-            "object_info_reply": showInfo
+            "object_info_reply": cb
         });
     } else {
         completerMsg(makeMsg("object_info_request", {
             "oname": oname[1],
             "detail_level": detail
-        }), showInfo);
+        }), cb);
     }
 }
 
@@ -846,28 +855,27 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
             CodeMirror.showHint(cm, function (cm, callback) {
                 var cur = cm.getCursor();
                 var kernel = sagecell.kernels[cm.k];
-                if (kernel && kernel.session.linked && kernel.shell_channel.send) {
-                    kernel.complete(cm.getLine(cur.line), cur.ch, {
-                        "complete_reply": function (comp) {
-                            callback({
-                                "list": comp.matches,
-                                "from": CodeMirror.Pos(cur.line, cur.ch - comp.matched_text.length),
-                                "to": cur
-                            });
-                        }
+                var cb = function (data) {
+                    if (data.content) {
+                        data = data.content;
+                    }
+                    if (data.matched_text.length === 0) {
+                        data.matches = [];
+                    }
+                    callback({
+                        "list": data.matches,
+                        "from": CodeMirror.Pos(cur.line, cur.ch - data.matched_text.length),
+                        "to": cur
                     });
+                }
+                if (kernel && kernel.session.linked && kernel.shell_channel.send) {
+                    kernel.complete(cm.getLine(cur.line), cur.ch, {"complete_reply": cb});
                 } else {
                     completerMsg(makeMsg("complete_request", {
                         "text": "",
                         "line": cm.getLine(cur.line),
                         "cursor_pos": cur.ch
-                    }), function (data) {
-                        callback({
-                            "list": data.content.matches,
-                            "from": CodeMirror.Pos(cur.line, cur.ch - data.content.matched_text.length),
-                            "to": cur
-                        });
-                    });
+                    }), cb);
                 }
             }, {"async": true});
         };

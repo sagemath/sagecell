@@ -1,4 +1,4 @@
-fix-js       = ./fix-js.py
+fix-js         = ./fix-js.py
 all-css        = static/all.css
 all-js         = static/all.js
 all-min-css    = static/all.min.css
