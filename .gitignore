@@ -11,6 +11,7 @@ static/tos.html
 submodules/jsmin-bin
 static/jmol
 static/all*
+static/sagecell_embed.css
 static/codemirror.js
 static/jquery.min.js
 static/sockjs.js
