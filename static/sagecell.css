@@ -51,6 +51,10 @@
     max-height: 14em;
 }
 
+.sagecell .CodeMirror-hints {
+    padding-right: 10px;
+}
+
 .sagecell .ui-dialog-content {
     font-size: 80%;
 }
@@ -312,10 +316,12 @@
     color: #00a;
 }
 
-.sagecell .ansibold {font-weight: bold;}
 .sagecell .ansiblack {color: black;}
-.sagecell .ansired {color: red;}
-.sagecell .ansiyellow {color: gold;}
-.sagecell .ansiblue {color: blue;}
-.sagecell .ansicyan {color: cyan;}
-.sagecell .ansigrey {color: gray;}
+.sagecell .ansired {color: darkred;}
+.sagecell .ansigreen {color: darkgreen;}
+.sagecell .ansiyellow {color: brown;}
+.sagecell .ansiblue {color: darkblue;}
+.sagecell .ansipurple {color: darkviolet;}
+.sagecell .ansicyan {color: steelblue;}
+.sagecell .ansigrey {color: grey;}
+.sagecell .ansibold {font-weight: bold;}

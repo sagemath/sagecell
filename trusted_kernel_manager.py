@@ -210,7 +210,7 @@ class TrustedMultiKernelManager(object):
         self._comps[comp_id]["kernels"][kernel_id] = None
         self._sessions[kernel_id] = Session(key=kernel_connection["key"])
 
-    def new_session(self, comp_id = None):
+    def new_session(self, comp_id=None, limited=True):
         """ Starts a new kernel on an open or provided computer.
 
         Starts up a new kernel non-asynchronously. This should only be used
@@ -225,7 +225,7 @@ class TrustedMultiKernelManager(object):
         if comp_id is None:
             comp_id = self._find_open_computer()
 
-        resource_limits = self._comps[comp_id].get("resource_limits")
+        resource_limits = self._comps[comp_id].get("resource_limits") if limited else None
         reply = self._sender.send_msg({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id)
         if reply["type"] == "success":
             self._setup_session(reply, comp_id)

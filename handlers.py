@@ -140,6 +140,26 @@ class KernelHandler(tornado.web.RequestHandler):
             self.set_header("Content-Type", "text/html")
         return data
 
+class Completer(object):
+    def __init__(self, km):
+        self.waiting = {}
+        self.kernel_id = km.new_session(limited=False)
+        self.session = km._sessions[self.kernel_id]
+        self.stream = km.create_shell_stream(self.kernel_id)
+        self.stream.on_recv(self.on_recv)
+
+    def registerRequest(self, kc, msg):
+        self.waiting[msg["header"]["msg_id"]] = kc
+        self.session.send(self.stream, msg)
+
+    def on_recv(self, msg):
+        msg = self.session.feed_identities(msg)[1]
+        msg = self.session.unserialize(msg)
+        msg_id = msg["parent_header"]["msg_id"]
+        kc = self.waiting.pop(msg_id)
+        del msg["header"]["date"]
+        kc.send("complete/shell," + jsonapi.dumps(msg))
+
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
         self.session = session
@@ -150,16 +170,21 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
 
     def on_message(self, message):
         prefix, message = message.split(",", 1)
-        kernel, channel = prefix.split("/")
+        kernel, channel = prefix.split("/", 1)
         try:
-            if kernel not in self.channels:
-                application = self.session.handler.application
+            application = self.session.handler.application
+            if kernel == "complete":
+                message = jsonapi.loads(message)
+                if message["header"]["msg_type"] in ("complete_request", "object_info_request"):
+                    application.completer.registerRequest(self, message)
+            elif kernel not in self.channels:
                 self.channels[kernel] = \
                     {"shell": ShellSockJSHandler(kernel, self.send, application),
                      "iopub": IOPubSockJSHandler(kernel, self.send, application)}
                 self.channels[kernel]["shell"].open(kernel)
                 self.channels[kernel]["iopub"].open(kernel)
-            self.channels[kernel][channel].on_message(message)
+            if kernel != "complete":
+                self.channels[kernel][channel].on_message(message)
         except KeyError:
             logger.info("Message sent to deleted kernel: %s"%kernel)
             pass # Ignore messages to nonexistant or killed kernels

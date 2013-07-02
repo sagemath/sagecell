@@ -1,4 +1,4 @@
-fix-js       = ./fix-js.py
+fix-js         = ./fix-js.py
 all-css        = static/all.css
 all-js         = static/all.js
 all-min-css    = static/all.min.css
@@ -28,6 +28,8 @@ cm-css-mode    = submodules/codemirror/mode/css/css.js
 cm-r-mode      = submodules/codemirror/mode/r/r.js
 cm-runmode     = submodules/codemirror/addon/runmode/runmode.js
 cm-colorize    = submodules/codemirror/addon/runmode/colorize.js
+cm-hint-js     = submodules/codemirror/addon/hint/show-hint.js
+cm-hint-css    = submodules/codemirror/addon/hint/show-hint.css
 jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
 cssmin         = submodules/cssmin/src/cssmin.py
 jsmin          = submodules/jsmin/jsmin.c
@@ -61,10 +63,10 @@ $(all-min-js): $(jsmin-bin) $(all-js)
 
 $(codemirror-cat): $(codemirror) $(cm-python-mode) \
            $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
-           $(cm-r-mode) $(cm-brackets) $(cm-runmode) $(cm-colorize)
+           $(cm-r-mode) $(cm-brackets) $(cm-runmode) $(cm-colorize) $(cm-hint-js)
 	cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
 	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
-	    $(cm-runmode) $(cm-colorize) > $(codemirror-cat)
+	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) > $(codemirror-cat)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
@@ -78,8 +80,8 @@ $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
-$(all-min-css): $(codemirror-css) $(sagecell-css)
-	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
+$(all-min-css): $(codemirror-css) $(cm-hint-css) $(sagecell-css)
+	cat $(codemirror-css) $(cm-hint-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
 
 $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
