@@ -56,12 +56,19 @@ class RootHandler(tornado.web.RequestHandler):
                 z += "=" * ((4 - (len(z) % 4)) % 4)
                 code = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
-                code = "# Error decompressing code %s"%e
+                self.set_status(400)
+                self.finish("Invalid zipped code: %s\n" % (e.message,))
+                return
 
         if "q" in args:
             # if the code is referenced by a permalink identifier
             q = "".join(args["q"])
-            db.get_exec_msg(q, self.return_root)
+            try:
+                db.get_exec_msg(q, self.return_root)
+            except LookupError:
+                self.set_status(404)
+                self.finish("ID not found in permalink database")
+                return
         else:
             self.return_root(code, language)
 
