@@ -255,6 +255,7 @@ set_random_seed()
 """
             exec sage_code in user_ns
         def getsource(obj, is_binary):
+            # modified from sage.misc.sagedoc.my_getsource
             from sage.misc.sagedoc import sageinspect, format_src
             try:
                 s = sageinspect.sage_getsource(obj, is_binary)
