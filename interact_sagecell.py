@@ -328,7 +328,9 @@ def interact_func(session, pub_socket):
         elif isinstance(layout, dict):
             rows = []
             rows.extend(layout.get("top", []))
-            # TODO: implement left/right
+            for pos, ctrls in layout.iteritems():
+                if pos not in ("bottom", "top"):
+                    rows.extend(ctrls)
             rows.append([("_output",1)])
             rows.extend(layout.get("bottom", []))
             layout = rows
