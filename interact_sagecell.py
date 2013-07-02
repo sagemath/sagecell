@@ -131,7 +131,9 @@ class InteractProxy(object):
             control.globals = self.__function.func_globals
             msg = control.message()
             msg["label"] = control.label if control.label is not None else name
-            msg["update"] = control.update = True
+            msg["update"] = control.update = not any(
+                isinstance(c, UpdateButton) for c in self.__interact["controls"].itervalues()
+            )
             sys._sage_.display_message({
                 "application/sage-interact-new-control": {
                     "interact_id": self.__interact_id,
