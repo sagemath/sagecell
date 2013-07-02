@@ -3,9 +3,9 @@
 }
 
 .sagecell_sliderControl {
-    max-width: 50em;
+    max-width: 40em;
     margin-right: 1.0em;
-    margin-left: 1.0em;
+    margin-left: 0.5em;
 }
 
 .sagecell_multiSliderContainer {
@@ -170,7 +170,7 @@
 .sagecell_interactControlCell {
     display: inline-table;
     vertical-align: top;
-    min-width: 300px;
+    min-width: 200px;
 }
 
 .sagecell_interactControlLabel {
@@ -197,7 +197,7 @@
     /*width: 100%;*/ /* test: http://localhost:8888/?z=eJxzyMwrSS1KTC7RyEmszC8tsY2O1lDPU9cx1NTRUK9Q1zHWjI3V5OVKSU1TSNPIs9UwAMkoVNhqqKtUqKjrgPmamla8XApAUFAENE0hDwD51BXf&lang=sage */
     height: 100%;
     max-width: 700px;
-    min-width: 350px;
+    min-width: 200px;
 }
 
 .sagecell_sliderContainer > div:first-child {
@@ -208,7 +208,12 @@
 
 .sagecell_sliderContainer > div:first-child + div {
     display: table-cell;
-    min-width: 25ex;
+    min-width: 11ex;
+}
+
+.sagecell_interactTextbox[size="0"] {
+    width: 100%;
+    max-width: 40em;
 }
 
 .sagecell_dirtyControl {
