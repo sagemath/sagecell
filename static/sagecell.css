@@ -48,7 +48,6 @@
     overflow-y: hidden;
     overflow-x: auto;
     min-height: 3em;
-    max-height: 14em;
 }
 
 .sagecell .CodeMirror-hints {
