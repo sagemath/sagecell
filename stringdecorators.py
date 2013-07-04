@@ -2,6 +2,15 @@
 from IPython.core.inputtransformer import CoroutineInputTransformer
 import token
 
+def string_decorator_defaults(func):
+    def my_wrap(*args,**kwds):
+        if len(kwds)==0 and len(args)==1 and isinstance(args[0],basestring):
+            # call without parentheses
+            return func(*args)
+        else:
+            return lambda f: func(f, *args, **kwds)
+    return my_wrap
+
 @CoroutineInputTransformer.wrap
 def stringdecorator(end_on_blank_line=False):
     """Captures & transforms cell magics.
