@@ -4,30 +4,45 @@ import re
 import json
 import ast
 import logging
+from uuid import uuid4
+from sage.all import matrix, QQ, Graph
 
-def tabletransform(m):
-    matrix = [map(ast.literal_eval, row) for row in m['data']]
-    return "matrix(QQ,%r)"%(matrix,)
+class WidgetTransform(object):
+    def __init__(self, mesg):
+        self.mesg = mesg
+    def object(self):
+        return self._object
 
-def integertransform(m):
-    return repr(int(m['data']))
+class TableTransform(WidgetTransform):
+    def __init__(self, mesg):
+        super(TableTransform, self).__init__(mesg)
+        data = [map(ast.literal_eval, row) for row in mesg['data']]
+        self._object = matrix(QQ, data)
 
-def graphtransform(m):
-    vertices = m['data']['vertices']
-    edges = m['data']['edges']
-    data = {i:[] for i in range(vertices)}
-    for u,v in edges:
-        data[u].append(v)
-    return "Graph(%r)"%(data,)
+class IntegerTransform(WidgetTransform):
+    def __init__(self, mesg):
+        self._object = int(mesg['data'])
 
-widgets = {'table': tabletransform, 'integer': integertransform, 'graph': graphtransform}
+class GraphTransform(WidgetTransform):
+    def __init__(self, mesg):
+        vertices = mesg['data']['vertices']
+        edges = mesg['data']['edges']
+        data = {i:[] for i in range(vertices)}
+        for u,v in edges:
+            data[u].append(v)
+        self._object = Graph(data)
 
+widgets = {'table': TableTransform, 'integer': IntegerTransform, 'graph': GraphTransform}
 
+import sys
+sys._sage_.widgets={}
 def widget_handler(match):
     msg = json.loads(match.group(1))
     f = widgets.get(msg['widget'], None)
     if f is not None:
-        s = f(msg)
+        i = str(uuid4())
+        sys._sage_.widgets[i] = f(msg)
+        s = "sys._sage_.widgets[%r].object()"%i
         return s
     else:
         return u''
