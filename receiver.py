@@ -248,6 +248,7 @@ from sagenb.misc.support import automatic_names
         sys._sage_.clear = clear
         if self.sage_mode:
             ka.kernel.shell.extension_manager.load_extension('sage.misc.sage_extension')
+            ka.kernel.shell.extension_manager.load_extension('stringdecorators')
             user_ns.update(self.sage_dict)
             sage_code = """
 # Ensure unique random state after forking
