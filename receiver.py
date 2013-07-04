@@ -225,14 +225,27 @@ from sagenb.misc.support import automatic_names
             if key not in msg_types:
                 ka.kernel.shell_handlers[key] = handler_wrapper(key, handler)
         _sage_.register_handler = register_handler
-	def send_message(stream, msg_type, content, parent, **kwargs):
-		ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
-	_sage_.send_message = send_message
+        def send_message(stream, msg_type, content, parent, **kwargs):
+            ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
+        _sage_.send_message = send_message
 
         sys._sage_ = _sage_
-        user_ns = ka.kernel.shell.user_ns
+        # maybe should use prepare_user_module from IPython's interactive shell
+        from namespace import InstrumentedNamespace
+        logging.debug('namespace check:')
+        logging.debug(ka.kernel.shell.user_global_ns is ka.kernel.shell.user_ns)
+        user_ns = InstrumentedNamespace(ka.kernel.shell.user_module.__dict__)
+        ka.kernel.shell.user_module.__dict__ = user_ns
+        ka.kernel.shell.user_ns = ka.kernel.shell.Completer.namespace = user_ns
+        sys._sage_.namespace = user_ns
         # TODO: maybe we don't want to cut down the flush interval?
         sys.stdout.flush_interval = sys.stderr.flush_interval = 0.0
+        def clear(changed=None):
+            sys._sage_.display_message({
+                "application/sage-clear": {"changed": changed},
+                "text/plain": "Clear display"
+            })
+        sys._sage_.clear = clear
         if self.sage_mode:
             ka.kernel.shell.extension_manager.load_extension('sage.misc.sage_extension')
             user_ns.update(self.sage_dict)
@@ -241,6 +254,17 @@ from sagenb.misc.support import automatic_names
 set_random_seed()
 """
             exec sage_code in user_ns
+        def getsource(obj, is_binary):
+            # modified from sage.misc.sagedoc.my_getsource
+            from sage.misc.sagedoc import sageinspect, format_src
+            try:
+                s = sageinspect.sage_getsource(obj, is_binary)
+                return format_src(str(s))
+            except Exception, msg:
+                print 'Error getting source:', msg
+                return None
+        from IPython.core import oinspect
+        oinspect.getsource = getsource
         import interact_sagecell
         import interact_compatibility
         # overwrite Sage's interact command with our own

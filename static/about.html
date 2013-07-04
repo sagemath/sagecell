@@ -46,17 +46,18 @@
         of your server). The third line makes it so that any element with a
         class of <code>sage</code> will turn into a Sage cell.
       </p>
-      <pre data-lang="text/html">&lt;script src="http://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
-&lt;script src="http://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
+      <pre data-lang="text/html">&lt;script src="https://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
+&lt;script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
 &lt;script&gt;sagecell.makeSagecell({"inputLocation": ".sage"});&lt;/script&gt;</pre>
       <p>
-        If you are embedding into a webpage with lots of styling
-        (like a blog, or a deck.js presentation), there might be
-        conflicts between the page styling and the styles for the Sage
-        cell.  In that case, you might also include the following code
-        after the above in order to fix the Sage cell styles.
+        If you are embedding into a webpage with lots of styling (like
+        a blog, or a deck.js presentation), there might be conflicts
+        between the page styling and the styles for the Sage cell.  If
+        you notice that the Sage cell is not looking normal, you might
+        also include the following code after the above in order to
+        fix the Sage cell styles.
       </p>
-      <pre data-lang="text/html">&lt;link rel="stylesheet" type="text/css" href="http://sagecell.sagemath.org/static/sagecell_embed.css"></pre>
+     <pre data-lang="text/html">&lt;link rel="stylesheet" type="text/css" href="https://sagecell.sagemath.org/static/sagecell_embed.css"></pre>
       </li>
       <li>
         Include code in the body of the page. The code is wrapped in
@@ -66,6 +67,7 @@
   &lt;script type="text/x-sage"&gt;1+2&lt;/script&gt;
 &lt;/div&gt;</pre>
       </li>
+      
     </ol>
     There are <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">lots of options</a>
     controlling how cells are embedded, including:
@@ -85,6 +87,53 @@
         as <a href="http://www.r-project.org/">R</a>, for example).
       </li>
     </ul>
+
+    <h3 id="fullexample">Full Example</h3>
+    Here is a complete web page example:
+<pre data-lang="text/html">
+&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta name="viewport" content="width=device-width"&gt;
+    &lt;title&gt;Sage Cell Server&lt;/title&gt;
+    &lt;script src="https://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
+    &lt;script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
+    &lt;script&gt;$(function () {
+    // Make the div with id 'mycell' a Sage cell
+    sagecell.makeSagecell({inputLocation:  '#mycell',
+                           template:       sagecell.templates.minimal,
+                           evalButtonText: 'Activate'});
+    // Make *any* div with class 'compute' a Sage cell
+    sagecell.makeSagecell({inputLocation: 'div.compute',
+                           evalButtonText: 'Evaluate'});
+    });
+    &lt;/script&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+  &lt;h1&gt;Embedded Sage Cells&lt;/h1&gt;
+
+  &lt;h2&gt;Factorial&lt;/h2&gt;
+  Click the &ldquo;Activate&rdquo; button below to calculate factorials.
+    &lt;div id="mycell"&gt;&lt;script type="text/x-sage"&gt;
+@interact
+def _(a=(1, 10)):
+    print factorial(a)
+ &lt;/script&gt;
+&lt;/div&gt;
+
+&lt;h2&gt;Your own computations&lt;/h2&gt;
+Type your own Sage computation below and click &ldquo;Evaluate&rdquo;.
+    &lt;div class="compute"&gt;&lt;script type="text/x-sage"&gt;plot(sin(x), (x, 0, 2*pi))&lt;/script&gt;&lt;/div&gt;
+    &lt;div class="compute"&gt;&lt;script type="text/x-sage"&gt;
+@interact
+def f(n=(0,10)):
+    print 2^n
+&lt;/script&gt;&lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
+
     <h3 id="permalinks">Permalinks</h3>
     The Sage Cell Server has two types of permalinks generated with each
     computation (accessible from links at the upper right of any output).

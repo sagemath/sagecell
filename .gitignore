@@ -3,12 +3,15 @@
 doc/_build/*
 tests/multimechanize/results/
 sqlite.db
-config.py
+/config.py
+templates/tos.html
+static/tos.html
 
 # generated web files
 submodules/jsmin-bin
 static/jmol
 static/all*
+static/sagecell_embed.css
 static/codemirror.js
 static/jquery.min.js
 static/sockjs.js

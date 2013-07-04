@@ -1,4 +1,4 @@
-wrap-jquery    = ./wrap-jquery
+fix-js         = ./fix-js.py
 all-css        = static/all.css
 all-js         = static/all.js
 all-min-css    = static/all.min.css
@@ -8,9 +8,13 @@ compute_server = static/compute_server.js
 jmol           = static/jmol
 jmol-js        = $(jmol)/appletweb/Jmol.js
 jquery         = static/jquery.min.js
-jquery-ui      = static/jquery-ui/js/jquery-ui-1.8.21.custom.min.js
+jquery-ui      = static/jquery-ui/js/jquery-ui-1.10.2.custom.min.js
+tos-default    = templates/tos_default.html
+tos            = templates/tos.html
+tos-static     = static/tos.html
 sagecell       = static/sagecell.js
 sagecell-css   = static/sagecell.css
+embed-css      = static/sagecell_embed.css
 sockjs-client  = static/sockjs.js
 codemirror-cat = static/codemirror.js
 codemirror-css = submodules/codemirror/lib/codemirror.css
@@ -24,6 +28,8 @@ cm-css-mode    = submodules/codemirror/mode/css/css.js
 cm-r-mode      = submodules/codemirror/mode/r/r.js
 cm-runmode     = submodules/codemirror/addon/runmode/runmode.js
 cm-colorize    = submodules/codemirror/addon/runmode/colorize.js
+cm-hint-js     = submodules/codemirror/addon/hint/show-hint.js
+cm-hint-css    = submodules/codemirror/addon/hint/show-hint.css
 jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
 cssmin         = submodules/cssmin/src/cssmin.py
 jsmin          = submodules/jsmin/jsmin.c
@@ -38,10 +44,12 @@ ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
 jquery-url     = http://code.jquery.com/jquery-1.7.2.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
+canvas3d       = $(sage-root)/devel/sagenb/sagenb/data/sage/js/canvas3d_lib.js
 
-all: submodules $(jquery) $(all-min-js) $(all-min-css)
+all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
 
-.PHONY: submodules
+.PHONY: submodules $(tos-static)
+
 submodules:
 	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
 
@@ -49,28 +57,31 @@ $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
 $(all-min-js): $(jsmin-bin) $(all-js)
-	$(jsmin-bin) < $(all-js) > $(all-min-js)
+	# jsmin seems to corrupt Codemirror 3.14.0
+	cp $(all-js) $(all-min-js)
+	#$(jsmin-bin) < $(all-js) > $(all-min-js)
 
 $(codemirror-cat): $(codemirror) $(cm-python-mode) \
            $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
-           $(cm-r-mode) $(cm-brackets) $(cm-runmode) $(cm-colorize)
+           $(cm-r-mode) $(cm-brackets) $(cm-runmode) $(cm-colorize) $(cm-hint-js)
 	cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
 	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
-	    $(cm-runmode) $(cm-colorize) > $(codemirror-cat)
+	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) > $(codemirror-cat)
 
-$(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) \
+$(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(codemirror-cat) $(jmol-js) $(ip-namespace) $(wrap-js) > $(all-js)
+	cat $(codemirror-cat) $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
-$(wrap-js): $(wrap-jquery) $(ip-events) $(ip-utils) $(ip-kernel) \
-            $(jquery-ui) $(jquery-ui-tp) $(colorpicker)
+$(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
+            $(colorpicker)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
-	    $(colorpicker) | $(wrap-jquery) > $(wrap-js)
+	    $(colorpicker) > $(wrap-js)
+	python $(fix-js) $(wrap-js)
 
-$(all-min-css): $(codemirror-css) $(sagecell-css)
-	cat $(codemirror-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
+$(all-min-css): $(codemirror-css) $(cm-hint-css) $(sagecell-css)
+	cat $(codemirror-css) $(cm-hint-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
 
 $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
@@ -79,5 +90,11 @@ $(jmol-js): $(jmol-sage)
 	rm -f $(jmol)
 	ln -s $(jmol-sage) $(jmol)
 
+$(tos-static): $(tos-default)
+	@[ -e $(tos) ] && cp $(tos) $(tos-static) || cp $(tos-default) $(tos-static)
+
 $(sockjs-client):
 	python -c "import urllib; urllib.urlretrieve('$(sockjs-url)', '$(sockjs-client)')"
+
+$(embed-css): $(sagecell-css)
+	sed -e 's/;/ !important;/g' < $(sagecell-css) > $(embed-css)

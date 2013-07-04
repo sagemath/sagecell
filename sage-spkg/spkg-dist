@@ -67,6 +67,7 @@ required_packages = ('paramiko',
                      'pyzmq',
                      'tornado',
                      'sockjs-tornado',
+                     'lockfile',
     )
 
 install_python_dependencies=""

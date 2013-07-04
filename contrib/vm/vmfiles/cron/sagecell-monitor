@@ -1,0 +1,1 @@
+*/2 * * * * root /home/sageserver/sage/devel/sagecell/contrib/vm/vmfiles/check_sagecell http://localhost:8888 >> /home/sageserver/check.log 2>&1

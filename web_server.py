@@ -36,6 +36,7 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel", handlers.KernelHandler),
             (r"/embedded_sagecell.js", tornado.web.RedirectHandler, {"url":"/static/embedded_sagecell.js"}),
             (r"/sagecell.html", handlers.SageCellHandler),
+            (r"/tos.html", handlers.TOSHandler),
             (r"/kernel/%s" % _kernel_id_regex, handlers.KernelHandler),
             (r"/kernel/%s/iopub" % _kernel_id_regex, handlers.IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
@@ -63,6 +64,7 @@ class SageCellServer(tornado.web.Application):
         # to check for blocking when debugging, uncomment the following
         # and set the argument to the blocking timeout in seconds 
         self.ioloop.set_blocking_log_threshold(.5)
+        self.completer = handlers.Completer(self.km)
         super(SageCellServer, self).__init__(handlers_list, **settings)
 
 if __name__ == "__main__":
@@ -80,10 +82,29 @@ if __name__ == "__main__":
         logging.getLogger("tornado.general").setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
 
-    application = SageCellServer()
-    application.listen(args.port)
-    logger.debug("starting server")
+    import lockfile
+    from lockfile.pidlockfile import PIDLockFile
+    config = misc.Config()
+    pidfile_path = config.get_config('pid_file')
+    pidlock = PIDLockFile(pidfile_path)
+    if pidlock.is_locked():
+        # try killing the process that has the lock
+        pid = pidlock.read_pid()
+        logger.info("Killing PID %d"%pid)
+        try:
+            os.kill(pid, 9)
+        except OSError, (code, text):
+            import errno
+            if code != errno.ESRCH:
+                raise
+            else:
+                # process doesn't exist anymore
+                logger.info("Old process %d already gone"%pid)
+                pidlock.break_lock()
     try:
+        pidlock.acquire(timeout=10)
+        application = SageCellServer()
+        application.listen(args.port)
         application.ioloop.start()
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt, so I'm shutting down.")
@@ -91,3 +112,5 @@ if __name__ == "__main__":
             application.km.shutdown()
         except KeyboardInterrupt:
             logging.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")
+    finally:
+        pidlock.release()

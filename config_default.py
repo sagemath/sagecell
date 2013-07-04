@@ -12,6 +12,8 @@ if sage == "":
     else:
         # assume both the web server and the untrusted workers have sage in their paths
         sage = "sage"
+# Require the user to accept terms of service before evaluation
+requires_tos = True
 
 db = "sqlalchemy"
 db_config = {"uri": "sqlite:///sqlite.db"}
@@ -25,7 +27,7 @@ permalink_server = {
 }
 
 max_kernel_timeout = 60*10 # 10 minutes, for interacts
-
+pid_file = 'sagecell.pid'
 computers = []
 
 _default_config = {"host": "localhost",

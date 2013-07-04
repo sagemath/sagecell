@@ -12,7 +12,8 @@ except ImportError:
     # old IPython
     from IPython.zmq.session import Session
 
-from misc import json_default, Timer
+from misc import json_default, Timer, Config
+config = Config()
 import logging
 logger = logging.getLogger('sagecell')
 
@@ -102,6 +103,11 @@ class KernelHandler(tornado.web.RequestHandler):
         elif method == "OPTIONS":
             self.options(*args, **kwargs)
         else:
+            if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
+                self.get_argument("accepted_tos", "false") != "true":
+                self.set_status(403)
+                self.finish()
+                return
             timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
             proto = self.request.protocol.replace("http", "ws", 1)
             host = self.request.host
@@ -111,7 +117,9 @@ class KernelHandler(tornado.web.RequestHandler):
             kernel_id = yield gen.Task(km.new_session_async)
             data = {"ws_url": ws_url, "kernel_id": kernel_id}
             self.write(self.permissions(data))
+            self.set_cookie("accepted_tos", "true", expires_days=365)
             self.finish()
+
 
     def delete(self, kernel_id):
         self.application.km.end_session(kernel_id)
@@ -125,12 +133,33 @@ class KernelHandler(tornado.web.RequestHandler):
 
     def permissions(self, data=None):
         if "frame" not in self.request.arguments:
-            self.set_header("Access-Control-Allow-Origin", "*");
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
         else:
             data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
         return data
+
+class Completer(object):
+    def __init__(self, km):
+        self.waiting = {}
+        self.kernel_id = km.new_session(limited=False)
+        self.session = km._sessions[self.kernel_id]
+        self.stream = km.create_shell_stream(self.kernel_id)
+        self.stream.on_recv(self.on_recv)
+
+    def registerRequest(self, kc, msg):
+        self.waiting[msg["header"]["msg_id"]] = kc
+        self.session.send(self.stream, msg)
+
+    def on_recv(self, msg):
+        msg = self.session.feed_identities(msg)[1]
+        msg = self.session.unserialize(msg)
+        msg_id = msg["parent_header"]["msg_id"]
+        kc = self.waiting.pop(msg_id)
+        del msg["header"]["date"]
+        kc.send("complete/shell," + jsonapi.dumps(msg))
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
@@ -142,16 +171,21 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
 
     def on_message(self, message):
         prefix, message = message.split(",", 1)
-        kernel, channel = prefix.split("/")
+        kernel, channel = prefix.split("/", 1)
         try:
-            if kernel not in self.channels:
-                application = self.session.handler.application
+            application = self.session.handler.application
+            if kernel == "complete":
+                message = jsonapi.loads(message)
+                if message["header"]["msg_type"] in ("complete_request", "object_info_request"):
+                    application.completer.registerRequest(self, message)
+            elif kernel not in self.channels:
                 self.channels[kernel] = \
                     {"shell": ShellSockJSHandler(kernel, self.send, application),
                      "iopub": IOPubSockJSHandler(kernel, self.send, application)}
                 self.channels[kernel]["shell"].open(kernel)
                 self.channels[kernel]["iopub"].open(kernel)
-            self.channels[kernel][channel].on_message(message)
+            if kernel != "complete":
+                self.channels[kernel][channel].on_message(message)
         except KeyError:
             logger.info("Message sent to deleted kernel: %s"%kernel)
             pass # Ignore messages to nonexistant or killed kernels
@@ -163,6 +197,33 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
 
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
+class TOSHandler(tornado.web.RequestHandler):
+    """Handler for ``/tos.html``"""
+    if config.get_config("requires_tos"):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "tos.html")
+        with open(path) as f:
+            tos_html = f.read()
+            tos_json = json.dumps(tos_html)
+    else:
+        tos_html = "No Terms of Service Required"
+        tos_json = json.dumps(tos_html)
+    
+    def post(self):
+        cookie_set = self.get_cookie("accepted_tos") == "true" or not config.get_config("requires_tos")
+        if len(self.get_arguments("callback")) == 0:
+            if cookie_set:
+                self.set_status(204)
+            else:
+                self.write(self.tos_html)
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
+            self.set_header("Content-Type", "text/html")
+        else:
+            resp = '""' if cookie_set else self.tos_json
+            self.write("%s(%s);" % (self.get_argument("callback"), resp))
+            self.set_header("Content-Type", "application/javascript")
+
+
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
 
@@ -173,7 +234,8 @@ class SageCellHandler(tornado.web.RequestHandler):
     def get(self):
         if len(self.get_arguments("callback")) == 0:
             self.write(self.sagecell_html);
-            self.set_header("Access-Control-Allow-Origin", "*")
+            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "text/html")
         else:
             self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
@@ -182,7 +244,8 @@ class SageCellHandler(tornado.web.RequestHandler):
 class StaticHandler(tornado.web.StaticFileHandler):
     """Handler for static requests"""
     def set_extra_headers(self, path):
-        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+        self.set_header("Access-Control-Allow-Credentials", "true")
 
 class ServiceHandler(tornado.web.RequestHandler):
     """
@@ -196,6 +259,14 @@ class ServiceHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
+        if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
+            self.get_argument("accepted_tos", "false") != "true":
+            self.write("""When evaluating code, you must acknowledge your acceptance
+of the terms of service at /static/tos.html by passing the parameter or cookie
+accepted_tos=true\n""")
+            self.set_status(403)
+            self.finish()
+            return
         default_timeout = 30 # seconds
         code = "".join(self.get_arguments('code', strip=False))
         if code:
@@ -244,7 +315,8 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.shell_handler.on_close()
         self.iopub_handler.on_close()
         retval.update(success=self.success)
-        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+        self.set_header("Access-Control-Allow-Credentials", "true")
         self.write(retval)
         self.finish()
 
@@ -534,7 +606,7 @@ class IOPubSockJSHandler(IOPubHandler):
     def _output_message(self, message):
         self.callback("%s/iopub,%s" % (self.kernel_id, self._json_msg(message)))
 
-class FileHandler(tornado.web.StaticFileHandler):
+class FileHandler(StaticHandler):
     """
     Files handler
     
