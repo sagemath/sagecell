@@ -40,6 +40,5 @@ ol.sagecell_toc ol {
 }
 
 #sagecell .CodeMirror-scroll {
-    overflow: auto;
     height: 14em;
 }
