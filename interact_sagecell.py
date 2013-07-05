@@ -131,7 +131,9 @@ class InteractProxy(object):
             control.globals = self.__function.func_globals
             msg = control.message()
             msg["label"] = control.label if control.label is not None else name
-            msg["update"] = control.update = True
+            msg["update"] = control.update = not any(
+                isinstance(c, UpdateButton) for c in self.__interact["controls"].itervalues()
+            )
             sys._sage_.display_message({
                 "application/sage-interact-new-control": {
                     "interact_id": self.__interact_id,
@@ -326,7 +328,9 @@ def interact_func(session, pub_socket):
         elif isinstance(layout, dict):
             rows = []
             rows.extend(layout.get("top", []))
-            # TODO: implement left/right
+            for pos, ctrls in layout.iteritems():
+                if pos not in ("bottom", "top"):
+                    rows.extend(ctrls)
             rows.append([("_output",1)])
             rows.extend(layout.get("bottom", []))
             layout = rows
