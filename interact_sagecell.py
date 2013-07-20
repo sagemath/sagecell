@@ -121,6 +121,13 @@ class InteractProxy(object):
         self.__function = function
         self._changed = self.__interact["controls"].keys()
 
+    def _state(self, state=None):
+        if state is None:
+            return {k:v.value for k,v in self.__interact["controls"].items()}
+        else:
+            for k,v in state.items():
+                setattr(self, k, v)
+
     def __setattr__(self, name, value):
         if name.startswith("_"):
             super(InteractProxy, self).__setattr__(name, value)
