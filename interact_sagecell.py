@@ -153,7 +153,9 @@ class InteractProxy(object):
                 self._changed.append(name)
             return
         if isinstance(self.__interact["controls"][name].value, list):
-            raise TypeError("object does not support item assignment")
+            for i,v in enumerate(value):
+                getattr(self, name)[i]=v
+            return
         self.__interact["controls"][name].value = value
         self.__send_update(name)
     def __dir__(self):
@@ -223,7 +225,9 @@ class InteractProxy(object):
             if isinstance(index, slice):
                 raise TypeError("object does not support slice assignment")
             if isinstance(self.list[index], list):
-                raise TypeError("object does not support item assignment")
+                for i,v in enumerate(value):
+                    self[index][i] = v
+                return
             index = int(index)
             self.list[index] = self.control.constrain_elem(value, index)
             self.iproxy._InteractProxy__send_update(self.name, {
