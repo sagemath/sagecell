@@ -165,23 +165,21 @@ sagecell.init = function (callback) {
     }
 
     if(window.MathJax === undefined && sagecell.loadMathJax) {
-        // Mathjax.  We need a separate script tag for mathjax since it later comes back and looks at the script tag.
-        load({'text': 'MathJax.Hub.Config({  \n\
-extensions: ["jsMath2jax.js", "tex2jax.js"],\n\
-tex2jax: {\n\
-inlineMath: [ ["$","$"], ["\\\\(","\\\\)"] ],\n\
-displayMath: [ ["$$","$$"], ["\\\\[","\\\\]"] ],\n\
-processEscapes: true,\n\
-processEnvironments: false},\n\
-});\n\
-// SVG backend does not work for IE version < 9, so switch if the default is SVG\n\
-//if (MathJax.Hub.Browser.isMSIE && (document.documentMode||0) < 9) {\n\
-//  MathJax.Hub.Register.StartupHook("End Config",function () {\n\
-//    var settings = MathJax.Hub.config.menuSettings;\n\
-//    if (!settings.renderer) {settings.renderer = "HTML-CSS"}\n\
-//  });\n\
-//}', 
-              'type': 'text/x-mathjax-config'});
+        // Mathjax.  We need a separate script tag for mathjax since it later
+        // comes back and looks at the script tag.
+        var mjConfig = {
+            "extensions": ["jsMath2jax.js", "tex2jax.js"],
+            "tex2jax": {
+                "inlineMath": [["$", "$"], ["\\(", "\\)"]],
+                "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
+                "processEscapes": true,
+                "processEnvironments": false
+            }
+        };
+        load({
+            'text': 'MathJax.Hub.Config(' + JSON.stringify(mjConfig) + ');',
+            'type': 'text/x-mathjax-config'
+        });
         load({"src": sagecell.URLs.root + "static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
     }
     // Preload images
@@ -506,6 +504,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
             }
             if (replaceOutput) {
                 $(sagecell.last_session[evt.data.id].session_container).remove();
+                sagecell.last_session[evt.data.id].removed = true;
             }
         }
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
