@@ -707,7 +707,7 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
             "class": "sagecell_interactControlLabel",
             "for": id,
             "title": name
-        }, control.control.label));
+        }, [control.control.label]));
     }
     div.appendChild(ce("div", {"class": "sagecell_interactControl"}, [
         control.rendered(id)
