@@ -884,14 +884,17 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                         "from": CodeMirror.Pos(cur.line, cur.ch - data.matched_text.length),
                         "to": cur
                     });
-                }
-                if (kernel && kernel.session.linked && kernel.shell_channel.send) {
+                };
+                var mode = langSelect[0].value;
+                if ((mode === "sage" || mode === "python") && kernel &&
+                    kernel.session.linked && kernel.shell_channel.send) {
                     kernel.complete(cm.getLine(cur.line), cur.ch, {"complete_reply": cb});
                 } else {
                     completerMsg(makeMsg("complete_request", {
                         "text": "",
                         "line": cm.getLine(cur.line),
-                        "cursor_pos": cur.ch
+                        "cursor_pos": cur.ch,
+                        "mode": mode
                     }), cb);
                 }
             }, {"async": true});
@@ -908,7 +911,9 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                 "Tab": function (editor) {
                     var cur = editor.getCursor();
                     var line = editor.getLine(cur.line).substr(0, cur.ch);
-                    if (cur.ch > 0 && (line[cur.ch - 1] === "?" || line[cur.ch - 1] === "(")) {
+                    var mode = langSelect[0].value;
+                    if ((mode === "sage" || mode === "python") && cur.ch > 0 &&
+                        (line[cur.ch - 1] === "?" || line[cur.ch - 1] === "(")) {
                         requestInfo(editor);
                     } else if (line.match(/^ *$/)) {
                         CodeMirror.commands.indentMore(editor);

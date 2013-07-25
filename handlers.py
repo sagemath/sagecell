@@ -1,4 +1,4 @@
-import time, string, urllib, zlib, base64, uuid, json, os.path
+import time, string, urllib, zlib, base64, uuid, json, os.path, re
 
 import tornado.web
 import tornado.websocket
@@ -11,7 +11,17 @@ try:
 except ImportError:
     # old IPython
     from IPython.zmq.session import Session
-
+try:
+    from sage.all import gap, gp, maxima, r, singular
+    trait_names = {
+        "gap": gap.trait_names(),
+        "gp": gp.trait_names(),
+        "maxima": maxima.trait_names(),
+        "r": r.trait_names(),
+        "singular": singular.trait_names()
+    }
+except ImportError:
+    trait_names = {}
 from misc import json_default, Timer, Config
 config = Config()
 import logging
@@ -148,6 +158,8 @@ class KernelHandler(tornado.web.RequestHandler):
         return data
 
 class Completer(object):
+    name_pattern = re.compile(r"\b([a-z_][a-z_\d.]*)$", re.IGNORECASE)
+
     def __init__(self, km):
         self.waiting = {}
         self.kernel_id = km.new_session(limited=False)
@@ -156,8 +168,35 @@ class Completer(object):
         self.stream.on_recv(self.on_recv)
 
     def registerRequest(self, kc, msg):
-        self.waiting[msg["header"]["msg_id"]] = kc
-        self.session.send(self.stream, msg)
+        name = None
+        if "mode" not in msg["content"] or msg["content"]["mode"] in ("sage", "python"):
+            self.waiting[msg["header"]["msg_id"]] = kc
+            self.session.send(self.stream, msg)
+            return
+        elif msg["content"]["mode"] in trait_names:
+            line = msg["content"]["line"][:msg["content"]["cursor_pos"]]
+            name = Completer.name_pattern.search(line)
+        response = {
+            "header": {
+                "msg_id": str(uuid.uuid4()),
+                "username": "",
+                "session": self.kernel_id,
+                "msg_type": "complete_reply"
+            },
+            "parent_header": msg["header"],
+            "metadata": {}
+        }
+        if name is not None:
+            response["content"] = {
+                "matches": [t for t in trait_names[msg["content"]["mode"]] if t.startswith(name.group())],
+                "matched_text": name.group()
+            }
+        else:
+            response["content"] = {
+                "matches": [],
+                "matched_text": []
+            }
+        kc.send("complete/shell," + jsonapi.dumps(response))
 
     def on_recv(self, msg):
         msg = self.session.feed_identities(msg)[1]
