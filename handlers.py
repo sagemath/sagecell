@@ -158,7 +158,7 @@ class KernelHandler(tornado.web.RequestHandler):
         return data
 
 class Completer(object):
-    name_pattern = re.compile(r"\b([a-z_][a-z_\d.]*)$", re.IGNORECASE)
+    name_pattern = re.compile(r"\b[a-z_]\w*$", re.IGNORECASE)
 
     def __init__(self, km):
         self.waiting = {}
