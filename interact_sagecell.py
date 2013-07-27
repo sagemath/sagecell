@@ -93,7 +93,7 @@ from misc import session_metadata, decorator_defaults
 
 __interacts={}
 
-def update_interact(interact_id, name=None, value=None):
+def update_interact(interact_id, name=None, value=None, do_update=True):
     interact_info = __interacts[interact_id]
     controls = interact_info["controls"]
     proxy = interact_info["proxy"]
@@ -101,7 +101,7 @@ def update_interact(interact_id, name=None, value=None):
         controls[name].value = value
         if name not in proxy._changed:
             proxy._changed.append(str(name))
-    if name is None or controls[name].update:
+    if do_update and (name is None or controls[name].update):
         kwargs = {n: c.adapter(c.value) for n, c in controls.iteritems()}
         interact_info["function"](control_vals=kwargs)
         for c in controls.itervalues():
@@ -110,7 +110,12 @@ def update_interact(interact_id, name=None, value=None):
 
 def update_interact_msg(stream, ident, msg):
     content = msg["content"]
-    update_interact(content["interact_id"], content["name"], content["value"])
+    interact_id = content["interact_id"]
+    for name in content["values"]:
+        if name in __interacts[interact_id]["controls"]:
+            update_interact(interact_id, name, content["values"][name], not content["update_last"])
+    if content["update_last"]:
+        update_interact(interact_id)
     sys._sage_.send_message(stream, 'sagenb.interact.update_reply',
       content={'status': 'ok'}, parent=msg, ident=ident)
 

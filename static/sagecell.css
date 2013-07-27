@@ -62,6 +62,10 @@
     padding-right: 2px;
 }
 
+.sagecell button.sagecell_evalButton {
+    cursor: default;
+}
+
 .sagecell_output {
     padding-right: 2px;
 }
@@ -137,8 +141,83 @@
 }
 
 .sagecell_interactContainer {
+    position: relative;
     padding: 15px 5px 5px 5px;
     border: 2px solid lightgray;
+}
+
+.sagecell_bookmarks {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    cursor: pointer;
+}
+
+.sagecell_bookmarks:before {
+    position: absolute;
+    right: 0px;
+    bottom: 0px;
+    content: "\2605";
+    color: #8c8c8c;
+    font-size: 1.3em;
+    font-family: Arial;
+    transition: color 0.25s ease-out;
+}
+
+.sagecell_bookmarks:hover:before {
+    color: #ffa500;
+}
+
+.sagecell_bookmarks_list.ui-menu {
+    display: inline-block;
+    min-width: 15em;
+    cursor: default;
+}
+
+.sagecell_bookmarks_list.ui-menu li.ui-state-disabled {
+    opacity: 1;
+    margin: 0px;
+}
+
+.sagecell_bookmarks_list > li > a > input,
+.sagecell_bookmarks_list > li > a > div:first-child {
+    display: inline-block;
+    width: 85%;
+    border: none;
+    border-radius: 3px;
+}
+
+.sagecell_bookmarks_list > li > a > div:last-child {
+    float: right;
+    width: 1.5em;
+    text-align: center;
+    font-weight: bold;
+    color: #777;
+    cursor: pointer;
+    transition: 0.25s color;
+}
+
+.sagecell_bookmarks_list > li:not(:last-child):not(:hover) > a > div:last-child {
+     display: none;
+}
+
+.sagecell_bookmarks_list > li > a > div:last-child:hover {
+    color: darkred;
+}
+
+.sagecell_bookmarks_list > li > a > div:last-child:before {
+    content: "\2716";
+}
+
+.sagecell_bookmarks_list > li:last-child > a > div:hover {
+    color: darkblue;
+}
+
+.sagecell_bookmarks_list > li:last-child > a > div:before {
+    content: "+";
 }
 
 .sagecell_interactOutput {

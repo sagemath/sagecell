@@ -640,7 +640,7 @@ sagecell.InteractCell.prototype.newControl = function (data) {
 
 sagecell.InteractCell.prototype.delControl = function (data) {
     delete this.controls[data.name];
-    var tr = this.cells[data.name][0].parentNode;
+    var tr = this.cells[data.name].parentNode;
     tr.parentNode.removeChild(tr);
     delete this.cells[data.name];
 }
@@ -657,9 +657,10 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
         }
         var msg_dict = {
             "interact_id": that.interact_id,
-            "name": event.data.name,
-            "value": that.controls[event.data.name].json_value(ui)
+            "values": {},
+            "update_last": false
         };
+        msg_dict.values[event.data.name] = that.controls[event.data.name].json_value(ui);
         if (that.controls[event.data.name].dirty_update) {
             $(that.cells[event.data.name]).addClass("sagecell_dirtyControl");
         }
@@ -714,6 +715,30 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
     ]))
 }
 
+var textboxItem = function (defaultVal, callback) {
+    var input = ce("input", {
+        "value": defaultVal,
+        "placeholder": "Bookmark name"
+    });
+    input.addEventListener("keydown", function (event) {
+        event.stopPropagation();
+    });
+    input.addEventListener("keypress", function (event) {
+        if (event.keyCode === 13) {
+            callback();
+            event.preventDefault();
+        }
+        event.stopPropagation();
+    });
+    var div = ce("div", {
+        "title": "Add bookmark",
+        "tabindex": "0",
+        "role": "button"
+    });
+    div.addEventListener("click", callback);
+    return ce("li", {"class": "ui-state-disabled"}, [ce("a", {}, [input, div])]);
+};
+
 sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     this.cells = {}
     this.container = ce("div", {"class": "sagecell_interactContainer"});
@@ -742,6 +767,89 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             this.placeControl(name);
         }
     }
+    var menuTop = ce("div", {
+        "title": "Bookmarks",
+        "tabindex": "0",
+        "class": "sagecell_bookmarks",
+        "role": "button"
+    });
+    this.container.appendChild(menuTop);
+    var list = ce("ul", {"class": "sagecell_bookmarks_list"});
+    this.bookmarks = list;
+    list.addEventListener("mousedown", function (event) {
+        event.stopPropagation();
+    }, true);
+    var that = this;
+    $(list).menu({
+        "select": function (event, ui) {
+            var vals = ui.item.data("values");
+            for (var n in vals) {
+                if (vals.hasOwnProperty(n) && that.controls.hasOwnProperty(n)) {
+                    that.controls[n].ignoreNext = that.controls[n].eventCount;
+                    that.controls[n].update(vals[n]);
+                }
+            }
+            var msg_dict = {
+                "interact_id": that.interact_id,
+                "values": vals,
+                "update_last": true
+            };
+            var callbacks = {
+                "output": $.proxy(that.session.handle_output, that.session),
+                "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)
+            };
+            that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
+        }
+    });
+    var visible = false;
+    menuTop.addEventListener("mousedown", function (event) {
+        if (visible) {
+            return;
+        }
+        var tb;
+        (function addTextbox() {
+            var n = 1;
+            while (true) {
+                for (var i = 0; i < list.childNodes.length; i++) {
+                    if (list.childNodes[i].firstChild.firstChild.firstChild.nodeValue === "Bookmark " + n) {
+                        break;
+                    }
+                }
+                if (i === list.childNodes.length) {
+                    break;
+                }
+                n++;
+            }
+            tb = textboxItem("Bookmark " + n, function () {
+                list.removeChild(tb);
+                that.createBookmark(tb.firstChild.firstChild.value);
+                addTextbox();
+            });
+            list.appendChild(tb);
+            $(list).menu("refresh");
+            setTimeout(function () {
+                var input = list.lastChild.firstChild.firstChild;
+                input.selectionStart = 0;
+                input.selectionEnd = input.value.length;
+                input.selectionDirection = "forward";
+                input.focus();
+            }, 0);
+        })();
+        visible = true;
+        that.session.outputDiv.append(list);
+        $(list).position({
+            "my": "right top",
+            "at": "right bottom+5px",
+            "of": menuTop
+        });
+        window.addEventListener("mousedown", function close() {
+            list.parentNode.removeChild(list);
+            list.removeChild(tb);
+            window.removeEventListener("mousedown", close);
+            visible = false;
+        });
+        event.stopPropagation();
+    });
     this.session.output(this.container, parent_block);
 }
 
@@ -752,6 +860,31 @@ sagecell.InteractCell.prototype.updateControl = function (data) {
         $(this.cells[data.control]).addClass("sagecell_dirtyControl");
     }
 }
+
+sagecell.InteractCell.prototype.createBookmark = function (name, vals) {
+    if (vals === undefined) {
+        vals = {};
+        for (var n in this.controls) {
+            if (this.controls.hasOwnProperty(n) && this.controls[n].update) {
+                vals[n] = this.controls[n].json_value();
+            }
+        }
+    }
+    var del = ce("div", {
+        "title": "Delete bookmark",
+        "tabindex": "0",
+        "role": "button"
+    });
+    var entry = ce("li", {}, [ce("a", {}, [ce("div", {}, [name]), del])]);
+    var that = this;
+    var i = this.bookmarks.childNodes.length;
+    del.addEventListener("click", function (event) {
+        that.bookmarks.removeChild(entry);
+        event.stopPropagation();
+    });
+    $(entry).data({"values": vals});
+    this.bookmarks.appendChild(entry);
+};
 
 sagecell.InteractCell.prototype.disable = function () {
     for (var name in this.controls) {
@@ -913,6 +1046,7 @@ sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.HtmlBox.prototype.rendered = function () {
     this.div = ce("div");
+    this.value = this.control.value;
     $(this.div).html(this.control.value);
     return this.div;
 }
@@ -922,10 +1056,11 @@ sagecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
 }
 
 sagecell.InteractData.HtmlBox.prototype.json_value = function() {
-    return null;
+    return this.value;
 }
 
 sagecell.InteractData.HtmlBox.prototype.update = function (value) {
+    this.value = value;
     $(this.div).html(value);
 }
 
@@ -1007,8 +1142,17 @@ sagecell.InteractData.InputGrid.prototype.json_value = function () {
 }
 
 sagecell.InteractData.InputGrid.prototype.update = function (value, index) {
-    this.textboxes[index[0] * this.control.ncols + index[1]].value = value;
-}
+    if (index === undefined) {
+        var i = -1;
+        for (var row = 0; row < value.length; row++) {
+            for (var col = 0; col < value[row].length; col++) {
+                this.textboxes[++i].value = value[row][col];
+            }
+        }
+    } else {
+        this.textboxes[index[0] * this.control.ncols + index[1]].value = value;
+    }
+};
 
 sagecell.InteractData.InputGrid.prototype.disable = function () {
     this.textboxes.prop("disabled", true);
@@ -1099,13 +1243,21 @@ sagecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
 }
 
 sagecell.InteractData.MultiSlider.prototype.json_value = function () {
-    return this.values;
-}
+    return this.values.slice();
+};
 
 sagecell.InteractData.MultiSlider.prototype.update = function (value, index) {
-    $(this.sliders[index]).slider("option", "value", value);
-    $(this.sliders[index]).trigger("slide", {"value": value});
-}
+    if (index === undefined) {
+        this.ignoreNext = value.length;
+        for (var i = 0; i < value.length; i++) {
+            $(this.sliders[i]).slider("option", "value", value[i]);
+            $(this.sliders[i]).trigger("slide", {"value": value[i]});
+        }
+    } else {
+        $(this.sliders[index]).slider("option", "value", value);
+        $(this.sliders[index]).trigger("slide", {"value": value});
+    }
+};
 
 sagecell.InteractData.MultiSlider.prototype.disable = function () {
     this.sliders.slider("option", "disabled", true);
@@ -1346,13 +1498,16 @@ sagecell.InteractData.Slider.prototype.changeHandlers = function() {
 
 sagecell.InteractData.Slider.prototype.json_value = function () {
     if (this.range) {
-        return this.values;
+        return this.values.slice();
     } else {
         return this.value;
     }
-}
+};
 
 sagecell.InteractData.Slider.prototype.update = function (value) {
+    if (this.range) {
+        value = value.slice();
+    }
     $(this.slider).slider("option", (this.range ? "values" : "value"), value);
     var ui = {};
     ui[this.range ? "values" : "value"] = value;
