@@ -100,6 +100,14 @@ EOFSAGE
   git pull origin master
   ../../sage -sh -c "make -B"
 
+  echo 'Installing extra python packages'
+  cd /home/sageserver/sage/
+  ./sage -sh <<EOFSAGE
+    easy_install pip
+    pip install -U pandas
+    pip install -U scikit-learn
+EOFSAGE
+
 EOF
 
 RC=`grep "Error building Sage" install.log` 
