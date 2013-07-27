@@ -52,6 +52,23 @@ class Receiver(object):
             import sage
             import sage.all
             sage.misc.misc.EMBEDDED_MODE = {'frontend': 'sagecell'}
+
+            # override matplotlib and pylab show functions
+            # TODO: use something like IPython's inline backend
+            from uuid import uuid4
+            import os
+            def mp_show(savefig):
+                filename="%s.png"%uuid4()
+                savefig(filename)
+                msg={'text/image-filename': filename}
+                sys._sage_.sent_files[filename] = os.path.getmtime(filename)
+                sys._sage_.display_message(msg)
+            from functools import partial
+            import pylab
+            import matplotlib.pyplot
+            pylab.show = partial(mp_show, savefig=pylab.savefig)
+            matplotlib.pyplot.show = partial(mp_show, savefig=matplotlib.pyplot.savefig)
+
             import StringIO
             # The first plot takes about 2 seconds to generate (presumably
             # because lots of things, like matplotlib, are imported).  We plot
