@@ -107,6 +107,8 @@ EOFSAGE
   ./sage -sh -c "easy_install pip"
   ./sage -sh -c "pip install -U pandas"
   ./sage -sh -c "pip install -U scikit-learn"
+  ./sage -sh -c "pip install -U statsmodels"
+  ./sage -sh -c "pip install -U patsy"
 
 EOF
 
