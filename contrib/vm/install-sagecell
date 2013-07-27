@@ -26,6 +26,9 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   yum -y update
   yum clean all
 
+  echo "Removing cron scripts"
+  rm -rf /etc/cron.d/sagecell*
+
   #echo 'Setting up systemd scripts'
   #cd /etc/systemd/system/getty.target.wants
   #ln -sf /lib/systemd/system/sage@.service getty@tty8.service
@@ -101,11 +104,9 @@ EOFSAGE
 
   echo 'Installing extra python packages'
   cd /home/sageserver/sage/
-  ./sage -sh <<EOFSAGE
-    easy_install pip
-    pip install -U pandas
-    pip install -U scikit-learn
-EOFSAGE
+  ./sage -sh -c "easy_install pip"
+  ./sage -sh -c "pip install -U pandas"
+  ./sage -sh -c "pip install -U scikit-learn"
 
 EOF
 
