@@ -75,8 +75,8 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   su -l sageserver
   #set -v
   tar xf /home/sage-source.tar
-  rm sage
-  ln -s sage* sage
+  rm -f sage
+  ln -s sage-5* sage
   cd sage
 
   echo 'Compiling Sage'
