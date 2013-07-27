@@ -88,6 +88,7 @@ from sagenb.misc.support import automatic_names
             exec sage_code in self.sage_dict
             return True
         except ImportError as e:
+            print e
             self.sage_dict = {}
             return False
 
@@ -304,7 +305,7 @@ set_random_seed()
             reply_content = self.km.start_kernel(resource_limits=resource_limits)
             return self._form_message(reply_content)
         except Exception as e:
-            return self._form_message({}, error=True)
+            return self._form_message(str(e), error=True)
 
     def kill_kernel(self, msg_content):
         """Handler for kill_kernel messages."""
