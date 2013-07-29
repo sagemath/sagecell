@@ -261,7 +261,7 @@ def interact_func(session, pub_socket):
     """
 
     @decorator_defaults
-    def interact(f, controls=[], update=None, layout=None):
+    def interact(f, controls=[], update=None, layout=None, output=True):
         """
         A decorator that creates an interact.
 
@@ -342,7 +342,8 @@ def interact_func(session, pub_socket):
             for pos, ctrls in layout.iteritems():
                 if pos not in ("bottom", "top"):
                     rows.extend(ctrls)
-            rows.append([("_output",1)])
+            if output:
+                rows.append([("_output",1)])
             rows.extend(layout.get("bottom", []))
             layout = rows
 
@@ -357,7 +358,7 @@ def interact_func(session, pub_socket):
                         raise ValueError("duplicate item %s in layout" % (c[0],))
                     placed.add(c[0])
         layout.extend([(n, 1)] for n in names if n not in placed)
-        if "_output" not in placed:
+        if output and "_output" not in placed:
             layout.append([("_output", 1)])
 
         interact_id=str(uuid.uuid4())
