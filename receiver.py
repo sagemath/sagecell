@@ -285,10 +285,11 @@ set_random_seed()
         oinspect.getsource = getsource
         import interact_sagecell
         import interact_compatibility
+        import dynamic
         # overwrite Sage's interact command with our own
-        user_ns["interact"] = interact_sagecell.interact_func(ka.session, ka.iopub_socket)
         user_ns.update(interact_sagecell.imports)
         user_ns.update(interact_compatibility.imports)
+        user_ns.update(dynamic.imports)
         sys._sage_.update_interact = interact_sagecell.update_interact
 
     """
