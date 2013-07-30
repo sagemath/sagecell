@@ -1,3 +1,5 @@
+# Modified from sage_salvus.py in the sagemath/cloud github project
+# Original version licensed GPLv2+ by William Stein
 
 #TODO: Need some way of having controls without output and without
 #having a 'dirty' indicator.  Just javascript controls.  This should
@@ -6,6 +8,8 @@
 # also, need an easy way to make controls read-only (especially if
 # they are just displaying a value)
 
+import sys
+from interact_sagecell import interact
 def _dynamic(var, control=None):
     if control is None:
         control = sys._sage_.namespace.get(var,'')
@@ -58,11 +62,11 @@ def dynamic(*args, **kwds):
         _dynamic(var, control)
 
 
-def dynamicexpression(v, vars):
+def dynamic_expression(v, vars):
     """
     sage: t=5
     sage: dynamic(t)
-    sage: dynamicexpression('2*t','t')
+    sage: dynamic_expression('2*t','t')
     """
     # control
     @interact(output=False, readonly=True)
@@ -76,3 +80,5 @@ def dynamicexpression(v, vars):
     for vv in vars:
         sys._sage_.namespace.on(vv,'change',g)
 
+imports = {"dynamic": dynamic,
+           "dynamic_expression": dynamic_expression}
