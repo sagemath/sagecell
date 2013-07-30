@@ -780,6 +780,14 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
         event.stopPropagation();
     }, true);
     var that = this;
+    var visible = false;
+    var tb;
+    var close = function close() {
+        list.parentNode.removeChild(list);
+        list.removeChild(tb);
+        window.removeEventListener("mousedown", close);
+        visible = false;
+    };
     $(list).menu({
         "select": function (event, ui) {
             var vals = ui.item.data("values");
@@ -799,14 +807,13 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)
             };
             that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
+            close();
         }
     });
-    var visible = false;
-    menuTop.addEventListener("mousedown", function (event) {
+    var handler = function (event) {
         if (visible) {
             return;
         }
-        var tb;
         (function addTextbox() {
             var n = 1;
             while (true) {
@@ -842,14 +849,15 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             "at": "right bottom+5px",
             "of": menuTop
         });
-        window.addEventListener("mousedown", function close() {
-            list.parentNode.removeChild(list);
-            list.removeChild(tb);
-            window.removeEventListener("mousedown", close);
-            visible = false;
-        });
+        window.addEventListener("mousedown", close);
         event.stopPropagation();
-    });
+    };
+    menuTop.addEventListener("mousedown", handler);
+    this.disable_bookmarks = function () {
+        menuTop.removeEventListener("mousedown", handler);
+        menuTop.setAttribute("aria-disabled", "true");
+        menuTop.removeAttribute("tabindex");
+    }
     this.session.output(this.container, parent_block);
 }
 
@@ -887,6 +895,8 @@ sagecell.InteractCell.prototype.createBookmark = function (name, vals) {
 };
 
 sagecell.InteractCell.prototype.disable = function () {
+    this.disable_bookmarks();
+    $(this.container).addClass("sagecell_disabled");
     for (var name in this.controls) {
         if (this.controls.hasOwnProperty(name) && this.controls[name].disable) {
             this.controls[name].disable();
