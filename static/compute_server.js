@@ -398,6 +398,9 @@ sagecell.Session.prototype.display_handlers = {
     'application/sage-interact-del-control': function (data) {
         interacts[data.interact_id].delControl(data);
     },
+    'application/sage-interact-bookmark': function (data) {
+        interacts[data.interact_id].createBookmark(data.name, data.values);
+    },
     'application/sage-clear': function (data, block_id) {
         this.clear(block_id, data.changed);
     }
