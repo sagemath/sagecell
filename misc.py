@@ -168,12 +168,10 @@ def session_metadata(metadata):
     new_metadata = old_metadata.copy()
     new_metadata.update(metadata)
     session.metadata = new_metadata
-    try:
-        yield None
-    finally:
-        sys.stdout.flush()
-        sys.stderr.flush()
-        session.metadata = old_metadata
+    yield
+    sys.stdout.flush()
+    sys.stderr.flush()
+    session.metadata = old_metadata
 
 def display_message(data, metadata=None):
     session = sys.stdout.session

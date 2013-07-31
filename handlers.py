@@ -386,10 +386,13 @@ class ShellHandler(ZMQStreamHandler):
         self.shell_stream.on_recv(self._on_zmq_reply)
         self.msg_to_kernel_callbacks.append(self._request_timeout)
         self.msg_from_kernel_callbacks.append(self._reset_timeout)
+        self.known_timeout = 0.0
 
     def _request_timeout(self, msg):
         if msg["header"]["msg_type"] in ("execute_request", "sagenb.interact.update_interact"):
             msg["content"].setdefault("user_expressions",{})
+            if msg["content"].get("linked", False):
+                self.known_timeout = float('inf')
             msg["content"]["user_expressions"]["_sagecell_timeout"] = \
                 "float('inf')" if msg["content"].get("linked", False) else "sys._sage_.kernel_timeout"
 
@@ -397,7 +400,8 @@ class ShellHandler(ZMQStreamHandler):
         if msg["header"]["msg_type"] in ("execute_reply",
                                          "sagenb.interact.update_interact_reply"):
             try:
-                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0))
+                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", self.known_timeout))
+                self.known_timeout = timeout
             except:
                 timeout = 0.0
 
