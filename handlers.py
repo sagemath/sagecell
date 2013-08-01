@@ -584,10 +584,17 @@ class IOPubHandler(ZMQStreamHandler):
             self.application.km.end_session(self.kernel_id)
         except:
             pass
-        msg = {'header': {'msg_type': 'status'},
-               'parent_header': {},
-               'metadata': {},
-               'content': {'execution_state':'dead'}}
+        msg = {
+            'header': {
+                'msg_type': 'status',
+                'session': self.kernel_id,
+                'msg_id': str(uuid.uuid4()),
+                'username': ''
+            },
+            'parent_header': {},
+            'metadata': {},
+            'content': {'execution_state': 'dead'}
+        }
         self._output_message(msg)
         self.on_close()
 
