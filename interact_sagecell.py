@@ -278,8 +278,12 @@ def interact(f, controls=[], update=None, layout=None, output=True):
     In each example, ``name1``, with no associated control,
     will default to a text box.
 
+    If ``output=False``, then changed controls will not be
+    highlighted.
+
     :arg function f: the function to make into an interact
     :arg list controls: a list of tuples of the form ``("name",control)``
+    :arg boolean output: whether any output should be shown
     :returns: the original function
     :rtype: function
     """
@@ -359,7 +363,7 @@ def interact(f, controls=[], update=None, layout=None, output=True):
         "application/sage-interact": {
             "new_interact_id": interact_id,
             "controls": msgs,
-            "layout": layout
+            "layout": layout,
         },
         "text/plain": "Sage Interact"
     }

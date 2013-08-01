@@ -271,6 +271,7 @@ sagecell.Session.prototype.last_output = function(block_id) {
 
 sagecell.Session.prototype.clear = function (block_id, changed) {
     var output_block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
+    if (output_block.length===0) {return;}
     output_block[0].style.minHeight = output_block.height() + "px";
     setTimeout(function () {
         output_block.animate({"min-height": "0px"}, "slow");
@@ -286,6 +287,7 @@ sagecell.Session.prototype.clear = function (block_id, changed) {
 sagecell.Session.prototype.output = function(html, block_id) {
     // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
     var output_block=$(block_id === null ? this.output_block : interacts[block_id].output_block);
+    if (output_block.length===0) {return;}
     return output_block.append(html).children().last();
 };
 
@@ -341,7 +343,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
             var html = "<pre class='sagecell_" + content.name + "'></pre>";
         }
         var out = this.output(html, block_id);
-        out.text(out.text() + content.data);
+        if (out) {out.text(out.text() + content.data);}
         break;
 
     case "pyout":
@@ -634,7 +636,7 @@ sagecell.InteractCell.prototype.newControl = function (data) {
     this.controls[data.name] = new sagecell.InteractData.control_types[data.control.control_type](data.control);
     this.placeControl(data.name);
     this.bindChange(data.name);
-    $(this.cells[data.name]).addClass("sagecell_dirtyControl");
+    if (this.output_block) {$(this.cells[data.name]).addClass("sagecell_dirtyControl");}
 }
 
 sagecell.InteractCell.prototype.delControl = function (data) {
@@ -698,8 +700,12 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
         div = this.cells[name] = ce("div", {"class": "sagecell_interactControlCell"});
         div.style.width = "90%";
         rdiv.appendChild(div);
-        var outRow = this.output_block.parentNode.parentNode;
-        outRow.parentNode.insertBefore(rdiv, outRow);
+        if (this.output_block) {
+            var outRow = this.output_block.parentNode.parentNode 
+            outRow.parentNode.insertBefore(rdiv, outRow);
+        } else {
+            $(this.container).append(rdiv);
+        }
     }
     if (control.control.label.length > 0) {
         div.appendChild(ce("label", {
@@ -748,7 +754,7 @@ sagecell.InteractCell.prototype.updateControl = function (data) {
     if (this.controls[data.control].update) {
         this.controls[data.control].ignoreNext = this.controls[data.control].eventCount;
         this.controls[data.control].update(data.value, data.index);
-        $(this.cells[data.control]).addClass("sagecell_dirtyControl");
+        if (this.output_block) {$(this.cells[data.control]).addClass("sagecell_dirtyControl");}
     }
 }
 
