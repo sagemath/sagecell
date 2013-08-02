@@ -399,7 +399,11 @@ def interact_func(session, pub_socket):
             args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
             with session_metadata({'interact_id': interact_id}):
                 sys._sage_.clear(__interacts[interact_id]["proxy"]._changed)
-                returned=f(*args, **control_vals)
+                try:
+                    returned = f(*args, **control_vals)
+                except:
+                    print "Interact state: %r" % (__interacts[interact_id]["proxy"]._state())
+                    raise
             return returned
         # update global __interacts
         __interacts[interact_id] = {
