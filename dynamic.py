@@ -69,7 +69,7 @@ def dynamic_expression(v, vars):
     sage: dynamic_expression('2*t','t')
     """
     # control
-    @interact(output=False)
+    @interact(output=False, readonly=True)
     def f(t=(0,2)):
         pass
 

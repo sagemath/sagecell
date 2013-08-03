@@ -619,6 +619,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
     this.controls = {};
     this.session = session;
     this.layout = data.layout;
+    this.locations = data.locations;
     this.msg_id = data.msg_id;
     this.changed = [];
 
@@ -630,6 +631,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
     }
     this.renderCanvas(parent_block);
     this.bindChange();
+    if (data.readonly) {this.disable();}
 }
 
 sagecell.InteractCell.prototype.newControl = function (data) {
@@ -722,32 +724,46 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
 sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     this.cells = {}
     this.container = ce("div", {"class": "sagecell_interactContainer"});
-    for (var row = 0; row < this.layout.length; row++) {
-        var rdiv = ce("div");
-        var total = 0;
-        for (var col = 0; col < this.layout[row].length; col++) {
-            total += this.layout[row][col][1];
+    if (this.layout && this.layout.length>0) {
+        for (var row = 0; row < this.layout.length; row++) {
+            var rdiv = ce("div");
+            var total = 0;
+            for (var col = 0; col < this.layout[row].length; col++) {
+                total += this.layout[row][col][1];
+            }
+            for (var col =  0; col < this.layout[row].length; col++) {
+                var cdiv = ce("div", {"class": "sagecell_interactControlCell"});
+                cdiv.style.width = 100 * this.layout[row][col][1] / total + "%";
+                if (this.layout[row][col] !== undefined) {
+                    this.cells[this.layout[row][col][0]] = cdiv;
+                    if (this.layout[row][col][0] === "_output") {
+                        this.output_block = ce("div", {"class": "sagecell_interactOutput"});
+                        cdiv.appendChild(this.output_block);
+                    }
+                }
+                rdiv.appendChild(cdiv);
+            }
+            this.container.appendChild(rdiv);
         }
-        for (var col =  0; col < this.layout[row].length; col++) {
-            var cdiv = ce("div", {"class": "sagecell_interactControlCell"});
-            cdiv.style.width = 100 * this.layout[row][col][1] / total + "%";
-            if (this.layout[row][col] !== undefined) {
-                this.cells[this.layout[row][col][0]] = cdiv;
-                if (this.layout[row][col][0] === "_output") {
-                    this.output_block = ce("div", {"class": "sagecell_interactOutput"});
-                    cdiv.appendChild(this.output_block);
+    }
+    if (this.locations) {
+        for (var name in this.locations) {
+            if (this.locations.hasOwnProperty(name)) {
+                this.cells[name] = $("body").find(this.locations[name]).slice(0,1).empty()[0];
+                if (name==="_output") {
+                    this.output_block = this.cells[name];
                 }
             }
-            rdiv.appendChild(cdiv);
         }
-        this.container.appendChild(rdiv);
     }
     for (var name in this.controls) {
         if (this.controls.hasOwnProperty(name)) {
             this.placeControl(name);
         }
     }
-    this.session.output(this.container, parent_block);
+    if (this.layout && this.layout.length>0) {
+        this.session.output(this.container, parent_block);
+    }
 }
 
 sagecell.InteractCell.prototype.updateControl = function (data) {
