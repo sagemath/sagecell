@@ -389,11 +389,11 @@ def interact(f, controls=[], update=None, layout=None, output=True):
         args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
         with session_metadata({'interact_id': interact_id}):
             sys._sage_.clear(__interacts[interact_id]["proxy"]._changed)
-                try:
-                    returned = f(*args, **control_vals)
-                except:
-                    print "Interact state: %r" % (__interacts[interact_id]["proxy"]._state())
-                    raise
+            try:
+                returned = f(*args, **control_vals)
+            except:
+                print "Interact state: %r" % (__interacts[interact_id]["proxy"]._state())
+                raise
         return returned
     # update global __interacts
     __interacts[interact_id] = {
