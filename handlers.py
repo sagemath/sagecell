@@ -37,6 +37,7 @@ class RootHandler(tornado.web.RequestHandler):
         db = self.application.db
         code = None
         language = None
+        interacts = None
         args = self.request.arguments
 
         if "lang" in args:
@@ -54,6 +55,12 @@ class RootHandler(tornado.web.RequestHandler):
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
                 z += "=" * ((4 - (len(z) % 4)) % 4)
+                if "interacts" in args:
+                    interacts = "".join(args["interacts"])
+                    interacts += "=" * ((4 - (len(interacts) % 4)) % 4)
+                    interacts = zlib.decompress(base64.urlsafe_b64decode(interacts))
+                else:
+                    interacts = "[]"
                 code = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
                 self.set_status(400)
@@ -70,16 +77,22 @@ class RootHandler(tornado.web.RequestHandler):
                 self.finish("ID not found in permalink database")
                 return
         else:
-            self.return_root(code, language)
+            self.return_root(code, language, interacts)
 
-    def return_root(self, code, language):
+    def return_root(self, code, language, interacts):
         autoeval = None
         if code is not None:
             if isinstance(code, unicode):
                 code = code.encode("utf8")
             code = urllib.quote(code)
             autoeval = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
-        self.render("root.html", code=code, lang=language, autoeval=autoeval)
+        if interacts == "[]":
+            interacts = None
+        if interacts is not None:
+            if isinstance(interacts, unicode):
+                interacts = interacts.encode("utf8")
+            interacts = urllib.quote(interacts)
+        self.render("root.html", code=code, lang=language, interacts=interacts, autoeval=autoeval)
 
 class KernelHandler(tornado.web.RequestHandler):
     """

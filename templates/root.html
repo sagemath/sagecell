@@ -22,6 +22,7 @@ $(function () {
                            languages: sagecell.allLanguages
             {% if code %}, code: decodeURIComponent('{{ code }}'),
                            autoeval: {{autoeval}} {% end %}
+       {% if interacts %}, interacts: JSON.parse(decodeURIComponent('{{interacts}}')) {% end %}
             {% if lang %}, defaultLanguage: '{{lang}}' {% end %},
                            //Focus the editor
                            callback: function() {$('#sagecell').find(".CodeMirror").get(0).CodeMirror.focus();}});

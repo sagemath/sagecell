@@ -6,7 +6,7 @@ SQLAlchemy Database Adapter
 """
 System library imports
 """
-import json, uuid
+import json, uuid, string, random
 from datetime import datetime
 
 """
@@ -35,19 +35,15 @@ class DB(db.DB):
         Base.metadata.create_all(self.engine)
         self.dbsession = self.SQLSession()
 
-    def new_exec_msg(self, code, language, callback):
+    def new_exec_msg(self, code, language, interacts, callback):
         """
         See :meth:`db.DB.new_exec_msg`
         """
-        session_id = None
-        try:
-            #session_id = hashlib.sha1(code).hexdigest()
-            session_id = str(uuid.uuid4())
-            message = ExecMessage(ident=session_id, code=code, language=language)
-            self.dbsession.add(message)
-            self.dbsession.commit()
-        except:
-            session_id = None
+        #session_id = hashlib.sha1(code).hexdigest()
+        session_id = "".join(random.choice(string.lowercase) for _ in xrange(6))
+        message = ExecMessage(ident=session_id, code=code, language=language, interacts=interacts)
+        self.dbsession.add(message)
+        self.dbsession.commit()
         callback(session_id)
 
     def get_exec_msg(self, key, callback):
@@ -60,7 +56,7 @@ class DB(db.DB):
             self.dbsession.commit()
         if msg is None:
             raise LookupError
-        callback(msg.code, msg.language)
+        callback(msg.code, msg.language, msg.interacts)
 
 Base = declarative_base()
 
@@ -72,6 +68,7 @@ class ExecMessage(Base):
     ident = Column(String, primary_key = True, index = True)
     code = Column(String)
     language = Column(String)
+    interacts = Column(String)
     created = Column(DateTime, default=datetime.utcnow)
     last_accessed = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     requested = Column(Integer, default=0)

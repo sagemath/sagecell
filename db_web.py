@@ -27,11 +27,11 @@ class DB(db.DB):
     def __init__(self, url):
         self.url = url
 
-    def new_exec_msg(self, code, language, callback):
+    def new_exec_msg(self, code, language, interacts, callback):
         """
         See :meth:`db.DB.new_exec_msg`
         """
-        post_data = { 'code': code, 'language': language } #A dictionary of your post data
+        post_data = { 'code': code, 'language': language, 'interacts': interacts } #A dictionary of your post data
         body = urllib.urlencode(post_data) #Make it into a post request
         http_client = tornado.httpclient.AsyncHTTPClient()
         exec_callback = partial(self.return_exec_msg_id, callback)
@@ -52,7 +52,7 @@ class DB(db.DB):
 
     def return_exec_msg_code(self, callback, response):
         if response.code == 200:
-            code, language = json.loads(response.body)
+            code, language, interacts = json.loads(response.body)
         else:
             raise LookupError("Code lookup produced error")
-        callback(code, language)
+        callback(code, language, interacts)

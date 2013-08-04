@@ -300,6 +300,9 @@ sagecell.makeSagecell = function (args, k) {
             if (settings.languages.length === 1) {
                 settings.hide.push("language");
             }
+            if (settings.linked) {
+                settings.hide.push("permalink");
+            }
 
             var hide = settings.hide;
             var inputLocation = $(settings.inputLocation);
@@ -512,10 +515,11 @@ sagecell.initCell = (function (sagecellInfo, k) {
         }
         var code = textArea.val();
         var language = langSelect[0].value;
-        var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
+        var session = new sagecell.Session(outputLocation, language,
+            sagecellInfo.interacts || [], k, sagecellInfo.linked || false);
         sagecellInfo.session = session;
+        sagecellInfo.interacts = [];
         session.execute(code);
-        outputLocation.find(".sagecell_permalink_request").click(function() {session.createPermalink(code, language);});
         sagecell.last_session[evt.data.id] = session;
         outputLocation.find(".sagecell_output_elements").show();
     };

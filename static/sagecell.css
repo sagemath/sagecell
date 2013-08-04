@@ -47,6 +47,11 @@
 .sagecell .CodeMirror-scroll {
     min-height: 3em;
     max-height: 14em;
+    cursor: text;
+}
+
+.sagecell .CodeMirror-gutter {
+    cursor: default;
 }
 
 .sagecell .CodeMirror-hints {
@@ -81,21 +86,38 @@
 }
 
 .sagecell_permalink_result {
-    display: none;
     position: absolute;
     padding-right: 5px;
     text-align: right;
-    right: 0;
+    right: 3px;
     z-index: 100;
-    box-shadow: 10px 10px 5px #888888;
-    background-color: #fff;
-    border: 2px solid #000;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 3px;
     padding: 5px;
 }
 
+.sagecell_permalink_result a:not([href]) {
+    color: gray;
+    text-decoration: none;
+    cursor: default;
+}
+
+.sagecell_permalink_result img {
+    display: inline-block;
+    background-color: lightgray;
+    width: 200px;
+    height: 200px;
+}
 
 .sagecell_sessionContainer {
     position: relative;
+}
+
+.sagecell_sessionContainer:after {
+    display: table;
+    content: " ";
+    clear: both;
 }
 
 .sagecell_sessionOutput {
@@ -144,6 +166,7 @@
     position: relative;
     padding: 15px 5px 5px 5px;
     border: 2px solid lightgray;
+    margin-bottom: 2px;
 }
 
 .sagecell_bookmarks {
@@ -167,7 +190,7 @@
     transition: color 0.25s ease-out;
 }
 
-.sagecell_interactContainer:not(.sagecell_disabled) .sagecell_bookmarks:hover:before {
+.sagecell_sessionOutput.sagecell_active .sagecell_bookmarks:hover:before {
     color: #ffa500;
     cursor: pointer;
 }
