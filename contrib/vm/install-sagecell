@@ -26,6 +26,9 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   yum -y update
   yum clean all
 
+  echo "Removing cron scripts"
+  rm -rf /etc/cron.d/sagecell*
+
   #echo 'Setting up systemd scripts'
   #cd /etc/systemd/system/getty.target.wants
   #ln -sf /lib/systemd/system/sage@.service getty@tty8.service
@@ -66,7 +69,6 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   setquota -u sageworker 1000000 1200000 20000 30000 /
 
   echo 'Making temporary directory'
-  su -l sageserver
   mkdir /tmp/sagecell
   chown sageserver.sagecell /tmp/sagecell
   chmod g=wxs,o= /tmp/sagecell
@@ -75,8 +77,8 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   su -l sageserver
   #set -v
   tar xf /home/sage-source.tar
-  rm sage
-  ln -s sage* sage
+  rm -f sage
+  ln -s sage-5* sage
   cd sage
 
   echo 'Compiling Sage'
@@ -99,6 +101,14 @@ EOFSAGE
   git config --global user.name "Your Name"
   git pull origin master
   ../../sage -sh -c "make -B"
+
+  echo 'Installing extra python packages'
+  cd /home/sageserver/sage/
+  ./sage -sh -c "easy_install pip"
+  ./sage -sh -c "pip install -U pandas"
+  ./sage -sh -c "pip install -U scikit-learn"
+  ./sage -sh -c "pip install -U statsmodels"
+  ./sage -sh -c "pip install -U patsy"
 
 EOF
 

@@ -52,6 +52,23 @@ class Receiver(object):
             import sage
             import sage.all
             sage.misc.misc.EMBEDDED_MODE = {'frontend': 'sagecell'}
+
+            # override matplotlib and pylab show functions
+            # TODO: use something like IPython's inline backend
+            from uuid import uuid4
+            import os
+            def mp_show(savefig):
+                filename="%s.png"%uuid4()
+                savefig(filename)
+                msg={'text/image-filename': filename}
+                sys._sage_.sent_files[filename] = os.path.getmtime(filename)
+                sys._sage_.display_message(msg)
+            from functools import partial
+            import pylab
+            import matplotlib.pyplot
+            pylab.show = partial(mp_show, savefig=pylab.savefig)
+            matplotlib.pyplot.show = partial(mp_show, savefig=matplotlib.pyplot.savefig)
+
             import StringIO
             # The first plot takes about 2 seconds to generate (presumably
             # because lots of things, like matplotlib, are imported).  We plot
@@ -71,6 +88,7 @@ from sagenb.misc.support import automatic_names
             exec sage_code in self.sage_dict
             return True
         except ImportError as e:
+            print e
             self.sage_dict = {}
             return False
 
@@ -267,10 +285,11 @@ set_random_seed()
         oinspect.getsource = getsource
         import interact_sagecell
         import interact_compatibility
+        import dynamic
         # overwrite Sage's interact command with our own
-        user_ns["interact"] = interact_sagecell.interact_func(ka.session, ka.iopub_socket)
         user_ns.update(interact_sagecell.imports)
         user_ns.update(interact_compatibility.imports)
+        user_ns.update(dynamic.imports)
         sys._sage_.update_interact = interact_sagecell.update_interact
 
     """
@@ -287,7 +306,7 @@ set_random_seed()
             reply_content = self.km.start_kernel(resource_limits=resource_limits)
             return self._form_message(reply_content)
         except Exception as e:
-            return self._form_message({}, error=True)
+            return self._form_message(str(e), error=True)
 
     def kill_kernel(self, msg_content):
         """Handler for kill_kernel messages."""
