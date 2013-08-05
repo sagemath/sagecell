@@ -62,6 +62,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.last_requests = {};
     this.sessionContinue = true;
     this.namespaces = {};
+    this.removed = false;
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": sagecell.log};
     $.post = function (url, callback) {
@@ -173,7 +174,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         }
     });
     $([IPython.events]).on("status_dead.Kernel", function (evt, data) {
-        if (data.kernel.kernel_id === that.kernel.kernel_id) {
+        if (!that.removed && data.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
@@ -714,7 +715,7 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
             "class": "sagecell_interactControlLabel",
             "for": id,
             "title": name
-        }, control.control.label));
+        }, [control.control.label]));
     }
     div.appendChild(ce("div", {"class": "sagecell_interactControl"}, [
         control.rendered(id)
@@ -1032,7 +1033,7 @@ sagecell.InteractData.InputGrid.prototype.update = function (value, index) {
 }
 
 sagecell.InteractData.InputGrid.prototype.disable = function () {
-    this.textboxes.attr("disabled", true);
+    this.textboxes.prop("disabled", true);
 }
 
 sagecell.InteractData.MultiSlider = sagecell.InteractData.InteractControl();
@@ -1130,7 +1131,7 @@ sagecell.InteractData.MultiSlider.prototype.update = function (value, index) {
 
 sagecell.InteractData.MultiSlider.prototype.disable = function () {
     this.sliders.slider("option", "disabled", true);
-    this.value_boxes.attr("disabled", true);
+    this.value_boxes.prop("disabled", true);
 }
 
 sagecell.InteractData.Selector = sagecell.InteractData.InteractControl();
@@ -1206,7 +1207,7 @@ sagecell.InteractData.Selector.prototype.disable = function () {
     if (this.control.subtype === "list") {
         this.changing.disabled = true;
     } else if (this.control.subtype === "radio") {
-        this.changing.attr("disabled", true);
+        this.changing.prop("disabled", true);
     } else {
         this.changing.button("option", "disabled", true);
     }
@@ -1382,7 +1383,7 @@ sagecell.InteractData.Slider.prototype.update = function (value) {
 
 sagecell.InteractData.Slider.prototype.disable = function () {
     $(this.slider).slider("option", "disabled", true);
-    $(this.value_boxes).attr("disabled", true);
+    $(this.value_boxes).prop("disabled", true);
 }
 
 sagecell.InteractData.control_types = {
