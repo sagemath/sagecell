@@ -192,7 +192,7 @@
 
 .sagecell_sliderContainer {
     display: table;
-    /*width: 100%;*/ /* test: http://localhost:8888/?z=eJxzyMwrSS1KTC7RyEmszC8tsY2O1lDPU9cx1NTRUK9Q1zHWjI3V5OVKSU1TSNPIs9UwAMkoVNhqqKtUqKjrgPmamla8XApAUFAENE0hDwD51BXf&lang=sage */
+    width: 100%;
     height: 100%;
     max-width: 700px;
     min-width: 200px;
