@@ -902,7 +902,6 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
             mode: sagecell.modes[mode],
             viewportMargin: Infinity,
             indentUnit: 4,
-            tabMode: "shift",
             lineNumbers: true,
             matchBrackets: true,
             readOnly: readOnly,
