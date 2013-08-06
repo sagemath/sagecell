@@ -41,11 +41,6 @@ Supported / Partially Supported Interact Controls and Features
 
 [X] Autoguessing Syntax
 
-[X] User defined-update parameters
-
-* Update button that can update an entire interact or only particular variables
-* Arbitrary variables can update other arbitrary variables
-
 [X] Layouts
 
 * Users can specify order of controls and position relative to interact output
@@ -61,7 +56,7 @@ The controls of an interact can be defined in two ways:
 
 * In the arguments of the :func:`~interact_sagecell.interact` function::
 
-    @interact([("name1", control1), ("name2", control2)])
+    @interact(controls=[("name1", control1), ("name2", control2)])
     def f(**kwargs):
         ...
 
@@ -85,15 +80,6 @@ default configurations and print the sum of their values::
     def f(a = slider(), b = slider()):
         print a + b
 
-If Sage Mode is not enabled or if Sage libraries cannot be imported, the
-previous code must be prefaced with
-``from interact_sagecell import *`` to run. Sage already reserves
-part of the user namespace (such as the decorator @interact), so the
-sagecell replaces the Sage decorator with its own version. In contrast,
-since the sagecell can also run and interpret stock python code, the
-goal is to avoid cluttering the user namespace, so the prefacing import
-statement must be explicit.
-
 Updating Interacts
 ^^^^^^^^^^^^^^^^^^
 
@@ -101,7 +87,7 @@ By default, interact controls update themselves automatically when they
 are changed. However, one can specify custom updating structures in two
 different ways:
 
-* UpdateButton controls. This creates an interact control which, when clicked, updates specified variables.
+* UpdateButton controls. This creates an interact control which, when clicked, runs the interact function.
 
 * Decorator specification. If a parameter ``update`` is given in @interact, arbitrary variables can update other arbitrary variables. This should take the form::
     
@@ -113,20 +99,6 @@ For both options, one can give the shortcut ``["*"]`` in place of variable names
 
 Interact Layouts
 ^^^^^^^^^^^^^^^^
-
-An entire interact can be visualized as a table taking the following form::
-
-     ____________________________________________
-    |             |               |              |
-    |  top_left   |  top_center   |   top_right  |
-    |_____________|_______________|______________|
-    |             |               |              |
-    |     left    |  __output__   |     right    |
-    |_____________|_______________|______________|
-    |             |               |              |
-    | bottom_left | bottom_center | bottom_right |
-    |_____________|_______________|______________|
-
 
 In the interact decorator, a parameter ``layout`` can be given taking the form::
 
@@ -396,4 +368,5 @@ Interact Module
 ---------------
 
 .. automodule:: interact_sagecell
+
 
