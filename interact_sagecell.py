@@ -121,6 +121,13 @@ class InteractProxy(object):
         self.__function = function
         self._changed = self.__interact["controls"].keys()
 
+    def _state(self, state=None):
+        if state is None:
+            return {k:v.value for k,v in self.__interact["controls"].items()}
+        else:
+            for k,v in state.items():
+                setattr(self, k, v)
+
     def __setattr__(self, name, value):
         if name.startswith("_"):
             super(InteractProxy, self).__setattr__(name, value)
@@ -131,7 +138,9 @@ class InteractProxy(object):
             control.globals = self.__function.func_globals
             msg = control.message()
             msg["label"] = control.label if control.label is not None else name
-            msg["update"] = control.update = True
+            msg["update"] = control.update = not any(
+                isinstance(c, UpdateButton) for c in self.__interact["controls"].itervalues()
+            )
             sys._sage_.display_message({
                 "application/sage-interact-new-control": {
                     "interact_id": self.__interact_id,
@@ -144,7 +153,9 @@ class InteractProxy(object):
                 self._changed.append(name)
             return
         if isinstance(self.__interact["controls"][name].value, list):
-            raise TypeError("object does not support item assignment")
+            for i,v in enumerate(value):
+                getattr(self, name)[i]=v
+            return
         self.__interact["controls"][name].value = value
         self.__send_update(name)
     def __dir__(self):
@@ -214,7 +225,9 @@ class InteractProxy(object):
             if isinstance(index, slice):
                 raise TypeError("object does not support slice assignment")
             if isinstance(self.list[index], list):
-                raise TypeError("object does not support item assignment")
+                for i,v in enumerate(value):
+                    self[index][i] = v
+                return
             index = int(index)
             self.list[index] = self.control.constrain_elem(value, index)
             self.iproxy._InteractProxy__send_update(self.name, {
@@ -236,102 +249,102 @@ try:
 except AttributeError:
     pass
 
-def interact_func(session, pub_socket):
+@decorator_defaults
+def interact(f, controls=[], update=None, layout=None, locations=None, output=True, readonly=False):
     """
-    Create a function to be used as ``interact`` in the user namespace,
-    with the correct session and socket objects.
+    A decorator that creates an interact.
 
-    :arg IPython.zmq.session.Session session: an IPython session
-    :arg zmq.Socket pub_socket: the \xd8MQ PUB socket used for the IOPUB stream
-    :returns: the ``interact`` function
+    Each control can be given as an :class:`.InteractControl` object
+    or a value, defined in :func:`.automatic_control`, that will be
+    interpreted as the parameters for some control.
+
+    The decorator can be used in several ways::
+
+        @interact([name1, (name2, control2), (name3, control3)])
+        def f(**kwargs):
+            ...
+
+        @interact
+        def f(name1, name2=control2, name3=control3):
+            ...
+
+
+    The two ways can also be combined::
+
+        @interact([name1, (name2, control2)])
+        def f(name3, name4=control4, name5=control5, **kwargs):
+            ...
+
+    In each example, ``name1``, with no associated control,
+    will default to a text box.
+
+    If ``output=False``, then changed controls will not be
+    highlighted.
+
+    :arg function f: the function to make into an interact
+    :arg list controls: a list of tuples of the form ``("name",control)``
+    :arg boolean output: whether any output should be shown
+    :returns: the original function
     :rtype: function
     """
+    if isinstance(f, InteractProxy):
+        f = f._InteractProxy__function
+    update = set(update) if update is not None else set()
+    if isinstance(controls,(list,tuple)):
+        controls=list(controls)
+        for i,name in enumerate(controls):
+            if isinstance(name, str):
+                controls[i]=(name, None)
+            elif not isinstance(name[0], str):
+                raise ValueError("interact control must have a string name, but %r isn't a string"%(name[0],))
+    names = {c[0] for c in controls}
 
-    @decorator_defaults
-    def interact(f, controls=[], update=None, layout=None):
-        """
-        A decorator that creates an interact.
+    import inspect
+    (args, varargs, varkw, defaults) = inspect.getargspec(f)
+    if args is None:
+        args = []
+    if defaults is None:
+        defaults = []
+    if len(args) > len(defaults):
+        pass_proxy = True
+        args = args[1:]
+    else:
+        pass_proxy = False
+    if len(names) != len(controls) or any(a in names for a in args):
+        raise ValueError("duplicate argument in interact definition")
+    n=len(args)-len(defaults)
+    controls = zip(args, [None] * n + list(defaults)) + controls
+    names = [c[0] for c in controls]
+    controls = {n: automatic_control(c, var=n) for n, c in controls}
+    nameset = set(names)
 
-        Each control can be given as an :class:`.InteractControl` object
-        or a value, defined in :func:`.automatic_control`, that will be
-        interpreted as the parameters for some control.
+    for n, c in controls.iteritems():
+        if n.startswith("_"):
+            raise ValueError("invalid control name: %s" % (n,))
+        if isinstance(c, UpdateButton):
+            update.add(n)
+    if len(update) == 0:
+        update = names
+    for n in update:
+        controls[n].update = True
 
-        The decorator can be used in several ways::
-
-            @interact([name1, (name2, control2), (name3, control3)])
-            def f(**kwargs):
-                ...
-
-            @interact
-            def f(name1, name2=control2, name3=control3):
-                ...
-
-
-        The two ways can also be combined::
-
-            @interact([name1, (name2, control2)])
-            def f(name3, name4=control4, name5=control5, **kwargs):
-                ...
-
-        In each example, ``name1``, with no associated control,
-        will default to a text box.
-
-        :arg function f: the function to make into an interact
-        :arg list controls: a list of tuples of the form ``("name",control)``
-        :returns: the original function
-        :rtype: function
-        """
-        if isinstance(f, InteractProxy):
-            f = f._InteractProxy__function
-        update = set(update) if update is not None else set()
-        if isinstance(controls,(list,tuple)):
-            controls=list(controls)
-            for i,name in enumerate(controls):
-                if isinstance(name, str):
-                    controls[i]=(name, None)
-                elif not isinstance(name[0], str):
-                    raise ValueError("interact control must have a string name, but %r isn't a string"%(name[0],))
-        names = {c[0] for c in controls}
-
-        import inspect
-        (args, varargs, varkw, defaults) = inspect.getargspec(f)
-        if args is None:
-            args = []
-        if defaults is None:
-            defaults = []
-        if len(args) > len(defaults):
-            pass_proxy = True
-            args = args[1:]
-        else:
-            pass_proxy = False
-        if len(names) != len(controls) or any(a in names for a in args):
-            raise ValueError("duplicate argument in interact definition")
-        n=len(args)-len(defaults)
-        controls = zip(args, [None] * n + list(defaults)) + controls
-        names = [c[0] for c in controls]
-        controls = {n: automatic_control(c, var=n) for n, c in controls}
-        nameset = set(names)
-
-        for n, c in controls.iteritems():
-            if n.startswith("_"):
-                raise ValueError("invalid control name: %s" % (n,))
-            if isinstance(c, UpdateButton):
-                update.add(n)
-        if len(update) == 0:
-            update = names
-        for n in update:
-            controls[n].update = True
-        if layout is None:
-            layout = [[(n, 1)] for n in names]
-        elif isinstance(layout, dict):
-            rows = []
-            rows.extend(layout.get("top", []))
-            # TODO: implement left/right
+    if isinstance(layout, dict):
+        rows = []
+        rows.extend(layout.get("top", []))
+        for pos, ctrls in layout.iteritems():
+            if pos not in ("bottom", "top"):
+                rows.extend(ctrls)
+        if output:
             rows.append([("_output",1)])
-            rows.extend(layout.get("bottom", []))
-            layout = rows
+        rows.extend(layout.get("bottom", []))
+        layout = rows
+    elif layout is None:
+        layout = []
 
-        placed = set()
+    placed = set()
+    if locations:
+        placed.update(locations.keys())
+    if layout:
         for r in layout:
             for i, c in enumerate(r):
                 if not isinstance(c, (list, tuple)):
@@ -341,44 +354,45 @@ def interact_func(session, pub_socket):
                     if c[0] in placed:
                         raise ValueError("duplicate item %s in layout" % (c[0],))
                     placed.add(c[0])
-        layout.extend([(n, 1)] for n in names if n not in placed)
-        if "_output" not in placed:
-            layout.append([("_output", 1)])
+    layout.extend([(n, 1)] for n in names if n not in placed)
+    if output and "_output" not in placed:
+        layout.append([("_output", 1)])
 
-        interact_id=str(uuid.uuid4())
-        msgs = {n: c.message() for n, c in controls.iteritems()}
-        for n, m in msgs.iteritems():
-            m["label"] = controls[n].label if controls[n].label is not None else n
-            m["update"] = controls[n].update
-        msg = {
-            "application/sage-interact": {
-                "new_interact_id": interact_id,
-                "controls": msgs,
-                "layout": layout
-            },
-            "text/plain": "Sage Interact"
-        }
-        sys._sage_.display_message(msg)
-        sys._sage_.kernel_timeout = float("inf")
-        def adapted_f(control_vals):
-            args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
-            with session_metadata({'interact_id': interact_id}):
-                sys._sage_.clear(__interacts[interact_id]["proxy"]._changed)
-                returned=f(*args, **control_vals)
-            return returned
-        # update global __interacts
-        __interacts[interact_id] = {
-            "function": adapted_f,
-            "controls": controls,
-            "update": update
-        }
-        for n, c in controls.iteritems():
-            c.globals = f.func_globals
-        proxy = InteractProxy(interact_id, f)
-        __interacts[interact_id]["proxy"] = proxy
-        update_interact(interact_id)
-        return proxy
-    return interact
+    interact_id=str(uuid.uuid4())
+    msgs = {n: c.message() for n, c in controls.iteritems()}
+    for n, m in msgs.iteritems():
+        m["label"] = controls[n].label if controls[n].label is not None else n
+        m["update"] = controls[n].update
+    msg = {
+        "application/sage-interact": {
+            "new_interact_id": interact_id,
+            "controls": msgs,
+            "layout": layout,
+            "locations": locations,
+            "readonly": readonly,
+        },
+        "text/plain": "Sage Interact"
+    }
+    sys._sage_.display_message(msg)
+    sys._sage_.kernel_timeout = float("inf")
+    def adapted_f(control_vals):
+        args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
+        with session_metadata({'interact_id': interact_id}):
+            sys._sage_.clear(__interacts[interact_id]["proxy"]._changed)
+            returned=f(*args, **control_vals)
+        return returned
+    # update global __interacts
+    __interacts[interact_id] = {
+        "function": adapted_f,
+        "controls": controls,
+        "update": update
+    }
+    for n, c in controls.iteritems():
+        c.globals = f.func_globals
+    proxy = InteractProxy(interact_id, f)
+    __interacts[interact_id]["proxy"] = proxy
+    update_interact(interact_id)
+    return proxy
 
 def safe_sage_eval(code, globs):
     """
@@ -1288,10 +1302,18 @@ def flatten(listOfLists):
     from itertools import chain
     return chain.from_iterable(listOfLists)
 
-imports = {"Checkbox": Checkbox, "InputBox": InputBox,
-           "ExpressionBox": ExpressionBox, "InputGrid": InputGrid,
-           "Selector": Selector, "DiscreteSlider": DiscreteSlider,
-           "ContinuousSlider": ContinuousSlider, "MultiSlider": MultiSlider,
-           "ColorSelector": ColorSelector, "Selector": Selector,
-           "Button": Button, "ButtonBar": ButtonBar, "HtmlBox": HtmlBox,
+imports = {"interact": interact,
+           "Checkbox": Checkbox,
+           "InputBox": InputBox,
+           "ExpressionBox": ExpressionBox,
+           "InputGrid": InputGrid,
+           "Selector": Selector,
+           "DiscreteSlider": DiscreteSlider,
+           "ContinuousSlider": ContinuousSlider,
+           "MultiSlider": MultiSlider,
+           "ColorSelector": ColorSelector,
+           "Selector": Selector,
+           "Button": Button,
+           "ButtonBar": ButtonBar,
+           "HtmlBox": HtmlBox,
            "UpdateButton": UpdateButton}

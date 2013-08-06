@@ -18,17 +18,19 @@ embed-css      = static/sagecell_embed.css
 sockjs-client  = static/sockjs.js
 codemirror-cat = static/codemirror.js
 codemirror-css = submodules/codemirror/lib/codemirror.css
-codemirror     = submodules/codemirror/lib/codemirror.js
-cm-brackets    = submodules/codemirror/addon/edit/matchbrackets.js
-cm-python-mode = submodules/codemirror/mode/python/python.js
-cm-xml-mode    = submodules/codemirror/mode/xml/xml.js
-cm-html-mode   = submodules/codemirror/mode/htmlmixed/htmlmixed.js
-cm-js-mode     = submodules/codemirror/mode/javascript/javascript.js
-cm-css-mode    = submodules/codemirror/mode/css/css.js
-cm-r-mode      = submodules/codemirror/mode/r/r.js
-cm-runmode     = submodules/codemirror/addon/runmode/runmode.js
-cm-colorize    = submodules/codemirror/addon/runmode/colorize.js
-cm-hint-js     = submodules/codemirror/addon/hint/show-hint.js
+cm-dir         = submodules/codemirror/
+cm-compress    = bin/compress
+codemirror     = lib/codemirror.js
+cm-brackets    = addon/edit/matchbrackets.js
+cm-python-mode = mode/python/python.js
+cm-xml-mode    = mode/xml/xml.js
+cm-html-mode   = mode/htmlmixed/htmlmixed.js
+cm-js-mode     = mode/javascript/javascript.js
+cm-css-mode    = mode/css/css.js
+cm-r-mode      = mode/r/r.js
+cm-runmode     = addon/runmode/runmode.js
+cm-colorize    = addon/runmode/colorize.js
+cm-hint-js     = addon/hint/show-hint.js
 cm-hint-css    = submodules/codemirror/addon/hint/show-hint.css
 jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
 cssmin         = submodules/cssmin/src/cssmin.py
@@ -41,7 +43,7 @@ ip-namespace   = $(ip-static)/base/js/namespace.js
 ip-events      = $(ip-static)/base/js/events.js
 ip-utils       = $(ip-static)/base/js/utils.js
 ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
-jquery-url     = http://code.jquery.com/jquery-1.7.2.min.js
+jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
 canvas3d       = $(sage-root)/devel/sagenb/sagenb/data/sage/js/canvas3d_lib.js
@@ -56,21 +58,20 @@ submodules:
 $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
-$(all-min-js): $(jsmin-bin) $(all-js)
-	# jsmin seems to corrupt Codemirror 3.14.0
-	cp $(all-js) $(all-min-js)
-	#$(jsmin-bin) < $(all-js) > $(all-min-js)
-
-$(codemirror-cat): $(codemirror) $(cm-python-mode) \
-           $(cm-xml-mode) $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) \
-           $(cm-r-mode) $(cm-brackets) $(cm-runmode) $(cm-colorize) $(cm-hint-js)
-	cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
+$(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
+	cp $(codemirror-cat) $(all-min-js)
+	$(jsmin-bin) < $(all-js) >> $(all-min-js)
+$(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(cm-python-mode) \
+           $(cm-dir)/$(cm-xml-mode) $(cm-dir)/$(cm-html-mode) $(cm-dir)/$(cm-js-mode) \
+           $(cm-dir)/$(cm-css-mode) $(cm-dir)/$(cm-r-mode) $(cm-dir)/$(cm-brackets) \
+           $(cm-dir)/$(cm-runmode) $(cm-dir)/$(cm-colorize) $(cm-dir)/$(cm-hint-js)
+	cd $(cm-dir); $(cm-compress) $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
 	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
-	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) > $(codemirror-cat)
+	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) > ../../$(codemirror-cat)
 
-$(all-js): $(ip-namespace) $(wrap-js) $(codemirror-cat) $(jmol-js) $(canvas3d)\
+$(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(codemirror-cat) $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
+	cat $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 

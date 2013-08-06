@@ -198,3 +198,14 @@ Click on 100 bins.  I get: "/Users/grout/projects/sagenb/sagecell/receiver.py:43
   self.dealer.send(source, zmq.SNDMORE)" below the picture
 
 
+
+New Interact issues
+===================
+
+* Implement readonly and no-dirty-controls to have *just* controls
+* make errors in interacts return the error message *and* the state
+  causing the error
+* Implement submit button for matrix control
+* implement interact html layout and location 'layout'
+
+
