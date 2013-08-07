@@ -46,7 +46,7 @@ ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
 jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
-canvas3d       = $(sage-root)/devel/sagenb/sagenb/data/sage/js/canvas3d_lib.js
+canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-0.10.4-py2.7.egg/sagenb/data/sage/js/canvas3d_lib.js
 
 all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
 
