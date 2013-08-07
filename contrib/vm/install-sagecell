@@ -105,10 +105,22 @@ EOFSAGE
   echo 'Installing extra python packages'
   cd /home/sageserver/sage/
   ./sage -sh -c "easy_install pip"
-  ./sage -sh -c "pip install pandas"
-  ./sage -sh -c "pip install scikit-learn"
-  ./sage -sh -c "pip install statsmodels"
-  ./sage -sh -c "pip install patsy"
+  for i in pandas scikit-learn statsmodels patsy numexpr scikits-image scimath Shapely SimPy pyproj bitarray lxml
+  do
+    ./sage -sh -c "pip install $i"
+  done
+
+  cd /tmp
+  export BASEMAP='basemap-1.0.6'
+  wget http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/$BASEMAP/$BASEMAP.tar.gz
+  tar xf $BASEMAP.tar.gz
+  cd $BASEMAP
+  cd geos-3.3.3
+  sage -sh -c "export GEOS_DIR=$SAGE_LOCAL && ./configure --prefix=$GEOS_DIR && make && make install"
+  cd ..
+  /home/sageserver/sage/sage setup.py install
+  cd /tmp
+  rm -rf $BASEMAP
 
 EOF
 
