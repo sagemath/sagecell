@@ -119,7 +119,8 @@ EOFSAGE
   then
      echo "Basemap already downloaded"
   else
-     wget -q http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/\$BASEMAP/\$BASEMAP.tar.gz
+     echo "Downloading basemap"
+     wget --progress=dot:mega http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/\$BASEMAP/\$BASEMAP.tar.gz
   fi
   tar xf \$BASEMAP.tar.gz
   cd \$BASEMAP
