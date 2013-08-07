@@ -102,25 +102,33 @@ EOFSAGE
   git pull origin master
   ../../sage -sh -c "make -B"
 
+
   echo 'Installing extra python packages'
   cd /home/sageserver/sage/
   ./sage -sh -c "easy_install pip"
-  for i in pandas scikit-learn statsmodels patsy numexpr scikits-image scimath Shapely SimPy pyproj bitarray lxml
+  for i in pandas scikit-learn statsmodels patsy numexpr scikits-image scimath Shapely SimPy pyproj bitarray
   do
-    ./sage -sh -c "pip install $i"
+    echo $i
+    ./sage -sh -c "pip install \$i"
   done
 
   cd /tmp
-  export BASEMAP='basemap-1.0.6'
-  wget http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/$BASEMAP/$BASEMAP.tar.gz
-  tar xf $BASEMAP.tar.gz
-  cd $BASEMAP
+  export BASEMAP=basemap-1.0.6
+  export GEOS_DIR=/home/sageserver/sage/local/
+  if [ -f \$BASEMAP.tar.gz ];
+  then
+     echo "Basemap already downloaded"
+  else
+     wget -q http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/\$BASEMAP/\$BASEMAP.tar.gz
+  fi
+  tar xf \$BASEMAP.tar.gz
+  cd \$BASEMAP
   cd geos-3.3.3
-  sage -sh -c "export GEOS_DIR=$SAGE_LOCAL && ./configure --prefix=$GEOS_DIR && make && make install"
+  /home/sageserver/sage/sage -sh -c "export GEOS_DIR=\$GEOS_DIR && ./configure --prefix=\$GEOS_DIR && make && make install"
   cd ..
   /home/sageserver/sage/sage setup.py install
   cd /tmp
-  rm -rf $BASEMAP
+  rm -rf \$BASEMAP
 
 EOF
 
