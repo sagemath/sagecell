@@ -301,10 +301,12 @@ set_random_seed()
         import interact_sagecell
         import interact_compatibility
         import dynamic
+        import exercise
         # overwrite Sage's interact command with our own
         user_ns.update(interact_sagecell.imports)
         user_ns.update(interact_compatibility.imports)
         user_ns.update(dynamic.imports)
+        user_ns.update(exercise.imports)
         sys._sage_.update_interact = interact_sagecell.update_interact
 
     """
