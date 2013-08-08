@@ -305,7 +305,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     } 
     */
     var payload = msg.payload[0];
-    if (payload && payload.new_files){
+    if (payload && payload.new_files && payload.new_files.length>0){
         var files = payload.new_files;
         var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
         var html="<div>\n";
@@ -662,14 +662,15 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
         var msg_dict = {
             "interact_id": that.interact_id,
             "name": event.data.name,
-            "value": that.controls[event.data.name].json_value(ui)
+            "value": that.controls[event.data.name].json_value(ui),
+            "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}
         };
         if (that.controls[event.data.name].dirty_update) {
             $(that.cells[event.data.name]).addClass("sagecell_dirtyControl");
         }
         var callbacks = {
             "output": $.proxy(that.session.handle_output, that.session),
-            "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)
+            "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_execute_reply, that.session)
         };
         that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
     };

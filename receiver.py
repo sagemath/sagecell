@@ -215,6 +215,21 @@ from sagenb.misc.support import automatic_names
                     reply_content[u'user_variables'] = {}
                     reply_content[u'user_expressions'] = {}
 
+
+                # Payloads should be retrieved regardless of outcome, so we can both
+                # recover partial output (that could have been generated early in a
+                # block, before an error) and clear the payload system always.
+                reply_content[u'payload'] = kernel.shell.payload_manager.read_payload()
+                # Be agressive about clearing the payload because we don't want
+                # it to sit in memory until the next execute_request comes in.
+                kernel.shell.payload_manager.clear_payload()
+
+                # Flush output before sending the reply.
+                sys.stdout.flush()
+                sys.stderr.flush()
+                # FIXME: on rare occasions, the flush doesn't seem to make it to the
+                # clients... This seems to mitigate the problem, but we definitely need
+                # to better understand what's going on.
                 if kernel._execute_sleep:
                     import time
                     time.sleep(kernel._execute_sleep)
