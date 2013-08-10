@@ -6,7 +6,7 @@ SQLAlchemy Database Adapter
 """
 System library imports
 """
-import json, uuid, string, random
+import json, string, random
 from datetime import datetime
 
 """
@@ -15,6 +15,7 @@ SQLAlchemy imports
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
 
 """
 Generic database adapter import
@@ -39,11 +40,16 @@ class DB(db.DB):
         """
         See :meth:`db.DB.new_exec_msg`
         """
-        #session_id = hashlib.sha1(code).hexdigest()
-        session_id = "".join(random.choice(string.lowercase) for _ in xrange(6))
-        message = ExecMessage(ident=session_id, code=code, language=language, interacts=interacts)
-        self.dbsession.add(message)
-        self.dbsession.commit()
+        while True:
+            session_id = "".join(random.choice(string.lowercase) for _ in xrange(6))
+            message = ExecMessage(ident=session_id, code=code, language=language, interacts=interacts)
+            try:
+                self.dbsession.add(message)
+                self.dbsession.commit()
+            except IntegrityError:
+                self.dbsession.rollback()
+            else:
+                break
         callback(session_id)
 
     def get_exec_msg(self, key, callback):
