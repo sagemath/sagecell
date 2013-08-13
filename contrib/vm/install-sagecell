@@ -15,6 +15,7 @@ fi
 
 echo 'Syncing sage source'
 rsync --progress -avv -e "ssh -p $VMPORT" $SOURCE $VMSSH:/home/sage-source.tar
+rsync --progress -avv -e "ssh -p $VMPORT" basemap-1.0.6.tar.gz $VMSSH:/tmp/basemap-1.0.6.tar.gz
 
 #scp "$SCRIPTSDIR"/systemd-run-sage.service $VMSSH:/lib/systemd/system/sage@.service
 
@@ -34,8 +35,14 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   #ln -sf /lib/systemd/system/sage@.service getty@tty8.service
 
   echo 'Resetting accounts'
-  /usr/sbin/userdel -r sageserver
-  /usr/sbin/userdel -r sageworker
+  killall -u sageworker -SIGKILL
+  killall -u sageserver -SIGKILL
+  pushd /home/sageworker
+  chattr -R -i .ssh .bashrc .bash_profile .bash_logout
+  chattr -i .sage .sage/init.sage
+  popd
+  /usr/sbin/userdel -rf sageworker
+  /usr/sbin/userdel -rf sageserver
   if grep sagecell /etc/group; then
     /usr/sbin/groupdel sagecell
   fi
@@ -69,6 +76,7 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   setquota -u sageworker 1000000 1200000 20000 30000 /
 
   echo 'Making temporary directory'
+  rm -rf /tmp/sagecell
   mkdir /tmp/sagecell
   chown sageserver.sagecell /tmp/sagecell
   chmod g=wxs,o= /tmp/sagecell
@@ -76,16 +84,26 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   echo 'Extracting sage'
   su -l sageserver
   #set -v
+  rm -rf sage
   tar xf /home/sage-source.tar
-  rm -f sage
-  ln -s sage-5* sage
-  cd sage
 
   echo 'Compiling Sage'
-  # export SAGE_ATLAS_ARCH=fast
+  # downloading the optional git spkg requires the .sage directory
+  mkdir .sage
+  cd sage
   export SAGE_ATLAS_LIB=/usr/lib64/atlas/
-  #export SAGE_FAT_BINARY="yes"
+  export SAGE_KEEP_BUILT_SPKGS=yes
   export MAKE='make -j16'
+  # export SAGE_FAT_BINARY="yes"
+  # export SAGE_ATLAS_ARCH=fast
+  git remote rm jason
+  git remote add -f jason https://github.com/jasongrout/sage.git 
+  git checkout jason/sagecell
+  if [ ! -f upstream/ipython-1.0.0.tar.gz ]; then
+    pushd upstream
+    wget -O ipython-1.0.0.tar.gzhttps://github.com/ipython/ipython/releases/download/rel-1.0.0/ipython-1.0.0.tar.gz
+    popd
+  fi 
   make
   #make test
   ./sage <<EOFSAGE
@@ -93,10 +111,13 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
 EOFSAGE
 
   echo 'Installing sagecell'
-  rm -rf local/lib/python/site-packages/[iI]Python*
-  ./sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
-  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-08-05.spkg
-  cd /home/sageserver/sage/devel/sagecell/
+  ./sage -sh -c "easy_install pip"
+  ./sage -i zeromq
+  ./sage -i pyzmq
+  # we need a more recent pyzmq than Sage provides
+  ./sage -sh -c "pip install -U pyzmq"
+  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-08-13.spkg
+  cd /home/sageserver/sage/sagecell/
   git config --global user.email "you@example.com"
   git config --global user.name "Your Name"
   git pull origin master
@@ -105,32 +126,32 @@ EOFSAGE
 
   echo 'Installing extra python packages'
   cd /home/sageserver/sage/
-  ./sage -sh -c "easy_install pip"
   for i in pandas scikit-learn statsmodels patsy numexpr scikits-image scimath Shapely SimPy pyproj bitarray
   do
     echo $i
     ./sage -sh -c "pip install \$i"
   done
 
-  cd /tmp
-  export BASEMAP=basemap-1.0.6
-  export GEOS_DIR=/home/sageserver/sage/local/
-  if [ -f \$BASEMAP.tar.gz ];
-  then
-     echo "Basemap already downloaded"
-  else
-     echo "Downloading basemap"
-     wget --progress=dot:mega http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/\$BASEMAP/\$BASEMAP.tar.gz
+  if ! ./sage -c "import mpl_toolkits.basemap"; then 
+    cd /tmp
+    export BASEMAP=basemap-1.0.6
+    export GEOS_DIR=/home/sageserver/sage/local/
+    if [ -f \$BASEMAP.tar.gz ];
+    then
+       echo "Basemap already downloaded"
+    else
+       echo "Downloading basemap"
+       wget --progress=dot:mega http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/\$BASEMAP/\$BASEMAP.tar.gz
+    fi
+    tar xf \$BASEMAP.tar.gz
+    cd \$BASEMAP
+    cd geos-3.3.3
+    /home/sageserver/sage/sage -sh -c "export GEOS_DIR=\$GEOS_DIR && ./configure --prefix=\$GEOS_DIR && make && make install"
+    cd ..
+    /home/sageserver/sage/sage setup.py install
+    cd /tmp
+    rm -rf \$BASEMAP
   fi
-  tar xf \$BASEMAP.tar.gz
-  cd \$BASEMAP
-  cd geos-3.3.3
-  /home/sageserver/sage/sage -sh -c "export GEOS_DIR=\$GEOS_DIR && ./configure --prefix=\$GEOS_DIR && make && make install"
-  cd ..
-  /home/sageserver/sage/sage setup.py install
-  cd /tmp
-  rm -rf \$BASEMAP
-
 EOF
 
 RC=`grep "Error building Sage" install.log` 
@@ -140,17 +161,17 @@ if [ "$RC" != "" ]; then
 fi
 
 scp -P $VMPORT vm/vmfiles/sagecell_nginx.conf $VMSSH:/etc/nginx/conf.d/sagecell.conf
-scp -P $VMPORT vm/vmfiles/config.py $VMSSH:/home/sageserver/sage/devel/sagecell/config.py
+scp -P $VMPORT vm/vmfiles/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
 scp -P $VMPORT vm/vmfiles/cron/* $VMSSH:/etc/cron.d/
 scp -P $VMPORT vm/vmfiles/upstart/* $VMSSH:/etc/init/
 
 ssh -p $VMPORT $VMSSH -T <<EOF
   # make sure the config file is owned by the right person
-  chown sageserver.sageserver /home/sageserver/sage/devel/sagecell/config.py
+  chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
 
   restorecon -R /etc/cron.d/
   restorecon -R /etc/init/
-  rm /etc/nginx/conf.d/default.conf
+  rm -f /etc/nginx/conf.d/default.conf
   restorecon -R /etc/nginx/conf.d/
 
   # change permissions so sageworker can execute sage
