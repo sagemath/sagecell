@@ -61,11 +61,12 @@ $(jquery):
 $(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
 	cp $(codemirror-cat) $(all-min-js)
 	$(jsmin-bin) < $(all-js) >> $(all-min-js)
+
 $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(cm-python-mode) \
            $(cm-dir)/$(cm-xml-mode) $(cm-dir)/$(cm-html-mode) $(cm-dir)/$(cm-js-mode) \
            $(cm-dir)/$(cm-css-mode) $(cm-dir)/$(cm-r-mode) $(cm-dir)/$(cm-brackets) \
            $(cm-dir)/$(cm-runmode) $(cm-dir)/$(cm-colorize) $(cm-dir)/$(cm-hint-js)
-	cd $(cm-dir); $(cm-compress) $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
+	cd $(cm-dir); cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
 	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
 	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) > ../../$(codemirror-cat)
 
