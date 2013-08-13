@@ -101,7 +101,7 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   git checkout jason/sagecell
   if [ ! -f upstream/ipython-1.0.0.tar.gz ]; then
     pushd upstream
-    wget -O ipython-1.0.0.tar.gzhttps://github.com/ipython/ipython/releases/download/rel-1.0.0/ipython-1.0.0.tar.gz
+    wget -O ipython-1.0.0.tar.gz https://github.com/ipython/ipython/releases/download/rel-1.0.0/ipython-1.0.0.tar.gz
     popd
   fi 
   make
