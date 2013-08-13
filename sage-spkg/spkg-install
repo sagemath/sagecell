@@ -20,36 +20,36 @@ cd $SRC
 
 cd $SRC
 
-if [ -d "$SAGE_ROOT/devel/sagecell-main" ]; then
-    echo "Moving old SageCell package to '$SAGE_ROOT/devel/sagecell-main-old'..."
-    rm -rf "$SAGE_ROOT/devel/sagecell-main-old"
-    mv "$SAGE_ROOT/devel/sagecell-main" "$SAGE_ROOT/devel/sagecell-main-old"
+if [ -d "$SAGE_ROOT/sagecell-main" ]; then
+    echo "Moving old SageCell package to '$SAGE_ROOT/sagecell-main-old'..."
+    rm -rf "$SAGE_ROOT/sagecell-main-old"
+    mv "$SAGE_ROOT/sagecell-main" "$SAGE_ROOT/sagecell-main-old"
     if [ $? -ne 0 ]; then
         echo >&2 "Error moving the old 'sagecell-main'."
         exit 1
     fi
 fi
 
-rm -f "$SAGE_ROOT/devel/sagecell" # Delete just the link itself (if it exists)
+rm -f "$SAGE_ROOT/sagecell" # Delete just the link itself (if it exists)
 
 # We need to have -R below so symbolic links are copied correctly
 echo "Copying sagecell source"
 
-cp -pR sagecell "$SAGE_ROOT/devel/sagecell-main" # Creates new sagecell-main dir
+cp -pR sagecell "$SAGE_ROOT/sagecell-main" # Creates new sagecell-main dir
 if [ $? -ne 0 ]; then
     echo >&2 "Error copying the new SageCell package."
     exit 1
 fi
 
-echo "Creating devel/sagecell symbolic link"
-cd "$SAGE_ROOT/devel"
+echo "Creating sagecell symbolic link"
+cd "$SAGE_ROOT/"
 ln -s sagecell-main sagecell # Create new symbolic link (deleted above)
 if [ $? -ne 0 ]; then
-    echo >&2 "Error creating symbolic link to '$SAGE_ROOT/devel/sagecell-main'."
+    echo >&2 "Error creating symbolic link to '$SAGE_ROOT/sagecell-main'."
     exit 1
 fi
 
-SAGECELL="$SAGE_ROOT/devel/sagecell"
+SAGECELL="$SAGE_ROOT/sagecell"
 
 echo "Creating jmol link"
 cd "$SAGECELL/static"
