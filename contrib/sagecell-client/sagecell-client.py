@@ -14,6 +14,8 @@ class SageCell(object):
         if not url.endswith('/'):
             url+='/'
         # POST or GET <url>/kernel
+        # if there is a terms of service agreement, you need to
+        # indicate acceptance in the data parameter below (see the API docs)
         req = urllib2.Request(url=url+'kernel', data='',headers={'Accept': 'application/json'})
         response = json.loads(urllib2.urlopen(req).read())
 
