@@ -18,7 +18,10 @@ Jason Grout <jason-sage@creativetrax.com>
 
 == Dependencies ==
 
-Other dependencies are included (zeromq, pyzmq)
+* IPython 1.0
+* pyzmq optional spkg
+
+Other dependencies are included (tornado, lockfile, etc.)
 
 == Changelog ==
 

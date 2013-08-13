@@ -44,6 +44,7 @@ class RootHandler(tornado.web.RequestHandler):
     """
     @tornado.web.asynchronous
     def get(self):
+        logger.debug('request')
         db = self.application.db
         code = None
         language = None
@@ -436,7 +437,8 @@ class ShellHandler(ZMQStreamHandler):
         if msg["header"]["msg_type"] in ("execute_reply",
                                          "sagenb.interact.update_interact_reply"):
             try:
-                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", 0.0))
+                timeout = msg["content"]["user_expressions"].pop("_sagecell_timeout", {'data': {'text/plain': '0.0'}})
+                timeout = float(timeout['data']['text/plain'])
             except:
                 timeout = 0.0
 

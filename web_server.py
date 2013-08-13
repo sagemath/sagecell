@@ -77,6 +77,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
+        logging.getLogger("tornado.access").setLevel(logging.DEBUG)
+        logging.getLogger("tornado.application").setLevel(logging.DEBUG)
+        logging.getLogger("tornado.general").setLevel(logging.DEBUG)
     logger.info("starting tornado web server")
 
     import lockfile

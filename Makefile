@@ -38,15 +38,15 @@ jsmin          = submodules/jsmin/jsmin.c
 jsmin-bin      = submodules/jsmin-bin
 wrap-js        = static/wrap.js
 sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
-ip-js          = $(shell $(sage-root)/sage -python -c "import os,IPython; print '/'+os.path.join(*IPython.__file__.split(os.sep)[:-1]+'frontend/html/notebook/static/js'.split(os.sep))")
-ip-namespace   = $(ip-js)/namespace.js
-ip-events      = $(ip-js)/events.js
-ip-utils       = $(ip-js)/utils.js
-ip-kernel      = $(ip-js)/kernel.js
+ip-static      = $(shell $(sage-root)/sage -python -c "import os,IPython; print '/'+os.path.join(*IPython.__file__.split(os.sep)[:-1]+'html/static/'.split(os.sep))")
+ip-namespace   = $(ip-static)/base/js/namespace.js
+ip-events      = $(ip-static)/base/js/events.js
+ip-utils       = $(ip-static)/base/js/utils.js
+ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
 jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
-canvas3d       = $(sage-root)/devel/sagenb/sagenb/data/sage/js/canvas3d_lib.js
+canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-0.10.4-py2.7.egg/sagenb/data/sage/js/canvas3d_lib.js
 
 all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
 
