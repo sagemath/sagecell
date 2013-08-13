@@ -245,7 +245,8 @@ KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
 class TOSHandler(tornado.web.RequestHandler):
     """Handler for ``/tos.html``"""
-    if config.get_config("requires_tos"):
+    tos = config.get_config("requires_tos")
+    if tos:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "tos.html")
         with open(path) as f:
             tos_html = f.read()
@@ -255,7 +256,7 @@ class TOSHandler(tornado.web.RequestHandler):
         tos_json = json.dumps(tos_html)
     
     def post(self):
-        cookie_set = self.get_cookie("accepted_tos") == "true" or not config.get_config("requires_tos")
+        cookie_set = self.get_cookie("accepted_tos") == "true" or not self.tos
         if len(self.get_arguments("callback")) == 0:
             if cookie_set:
                 self.set_status(204)
@@ -269,6 +270,11 @@ class TOSHandler(tornado.web.RequestHandler):
             self.write("%s(%s);" % (self.get_argument("callback"), resp))
             self.set_header("Content-Type", "application/javascript")
 
+    def get(self):
+        if self.tos:
+            self.write(self.tos_html)
+        else:
+            raise tornado.web.HTTPError(404, 'No Terms of Service Required')
 
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
