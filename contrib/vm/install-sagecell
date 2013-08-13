@@ -14,7 +14,7 @@ if [ -z $SOURCE ] || [ ! -f $SOURCE ] ; then
 fi
 
 echo 'Syncing sage source'
-rsync --progress -avv -e "ssh -p $VMPORT" $SOURCE $VMSSH:/home/sage-source.tar
+rsync --progress -avv -e "ssh -p $VMPORT" $SOURCE $VMSSH:/home/sage-source.tar.gz
 rsync --progress -avv -e "ssh -p $VMPORT" basemap-1.0.6.tar.gz $VMSSH:/tmp/basemap-1.0.6.tar.gz
 
 #scp "$SCRIPTSDIR"/systemd-run-sage.service $VMSSH:/lib/systemd/system/sage@.service
