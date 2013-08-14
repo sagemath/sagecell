@@ -21,7 +21,7 @@ db_config = {"uri": "https://sagecell.sagemath.org/permalink"}
 # db = "web"
 # db_config = {"uri": "http://localhost:8889"}
 
-requires_tos = False
+requires_tos = True
 
 permalink_server = {
     'db': 'sqlalchemy',

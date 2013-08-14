@@ -3,7 +3,7 @@ Parts of these files were taken from or inspired by Volker Braun's scripts to bu
 
 vm/make-base-centos centos mnt
 vm/make-shadow-vm centos sagecell
-vm/install-sagecell sagecell sage-5.10.rc2-built.tar
+vm/install-sagecell sagecell sage-5.11.rc1-built.tar.gz
 virsh shutdown sagecell
 
 vm/deploy server jason@combinat.math.washington.edu /scratch/jason/sagecellvm 888 889
