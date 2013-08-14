@@ -85,7 +85,7 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   su -l sageserver
   #set -v
   rm -rf sage
-  tar xf /home/sage-source.tar
+  tar xf /home/sage-source.tar.gz
 
   echo 'Compiling Sage'
   # downloading the optional git spkg requires the .sage directory
