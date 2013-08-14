@@ -854,9 +854,9 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         }
     });
     if (editor === "textarea") {
-        editorData = editor;
+        editorData = {};
     } else if (editor === "textarea-readonly") {
-        editorData = editor;
+        editorData = {}
         commands.attr("readonly", "readonly");
     } else {
         var readOnly = false;
@@ -944,7 +944,8 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
     if ($.inArray(editor, editable) !== -1) {
         if (editor === "codemirror") {
             editorData.toTextArea();
-            editor = editorData = "textarea";
+            editor = "textarea";
+            editorData = {}
         } else {
             editor = "codemirror";
             temp = this.renderEditor(editor, inputLocation);
