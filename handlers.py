@@ -209,7 +209,6 @@ class Completer(object):
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
-        self.session = session
         super(KernelConnection, self).__init__(session)
 
     def on_open(self, request):
@@ -218,13 +217,22 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
     def on_message(self, message):
         prefix, message = message.split(",", 1)
         kernel, channel = prefix.split("/", 1)
+        if channel=="stdin":
+            # TODO: Support the stdin channel
+            # See http://ipython.org/ipython-doc/dev/development/messaging.html
+            print "STDIN CHANNEL; EXITING"
+            return
         try:
-            application = self.session.handler.application
             if kernel == "complete":
+                application = self.session.handler.application
                 message = jsonapi.loads(message)
                 if message["header"]["msg_type"] in ("complete_request", "object_info_request"):
                     application.completer.registerRequest(self, message)
             elif kernel not in self.channels:
+                # handler may be None in certain circumstances (it seems to only be set
+                # in GET requests, not POST requests, so even using it here may
+                # only work with JSONP because of a race condition)
+                application = self.session.handler.application
                 self.channels[kernel] = \
                     {"shell": ShellSockJSHandler(kernel, self.send, application),
                      "iopub": IOPubSockJSHandler(kernel, self.send, application)}
