@@ -392,7 +392,7 @@ sagecell.makeSagecell = function (args, k) {
                 inputLocation.find(".sagecell_evalButton").text(evalButtonText);
             }
             sagecell.initCell(settings, k);
-            _gaq.push(['sagecell._trackEvent', 'SageCell', 'Make']);
+            _gaq.push(['sagecell._trackEvent', 'SageCell', 'Make',window.location.origin+window.location.pathname]);
 
         });
     }, 0);
@@ -526,7 +526,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
-        _gaq.push(['sagecell._trackEvent', 'SageCell', 'Execute']);
+        _gaq.push(['sagecell._trackEvent', 'SageCell', 'Execute',window.location.origin+window.location.pathname]);
 
         var code = textArea.val();
         var language = langSelect[0].value;
