@@ -265,9 +265,10 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
         pprint(msg)
         msg=json.loads(msg)
         if msg["header"]["msg_type"] == "execute_request":
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             statslogger.info(StatsMessage(kernel_id = kernel,
-                                          remote_ip = self.session.conn_info.ip,
+                                          # TODO: get referrer, remote IP
+                                          remote_ip = self.session.conn_info.headers,
                                           code = msg["content"]["code"],
                                           execute_type='request'))
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")

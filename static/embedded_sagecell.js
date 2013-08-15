@@ -1,3 +1,17 @@
+// TODO: put this tracking code in a site-specific file.
+// TODO: finish implementing our own stats service that handles,
+//       the phone apps, for example.
+var _gaq = _gaq || [];
+_gaq.push(['sagecell._setAccount', 'UA-29124745-1']);
+_gaq.push(['sagecell._setDomainName', 'sagemath.org']);
+_gaq.push(['sagecell._trackPageview']);
+
+(function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+
 (function() {
 "use strict";
 var undefined;
@@ -378,6 +392,8 @@ sagecell.makeSagecell = function (args, k) {
                 inputLocation.find(".sagecell_evalButton").text(evalButtonText);
             }
             sagecell.initCell(settings, k);
+            _gaq.push(['sagecell._trackEvent', 'SageCell', 'Make']);
+
         });
     }, 0);
     return settings;
@@ -510,6 +526,8 @@ sagecell.initCell = (function (sagecellInfo, k) {
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
+        _gaq.push(['sagecell._trackEvent', 'SageCell', 'Execute']);
+
         var code = textArea.val();
         var language = langSelect[0].value;
         var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
