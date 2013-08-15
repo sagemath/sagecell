@@ -6,11 +6,11 @@ vm/make-shadow-vm centos sagecell
 vm/install-sagecell sagecell sage-5.11.rc1-built.tar.gz
 virsh shutdown sagecell
 
-vm/deploy server jason@combinat.math.washington.edu /scratch/jason/sagecellvm 888 889
-vm/deploy server grout@localhost /home/grout/images/deploy 888 889
+vm/deploy grout@localhost:/home/grout/images/deploy server 888 889
+vm/deploy jason@combinat.math.washington.edu:/scratch/jason/sagecellvm server 888 889
 
 
 rm -rf test/centos.img test/sagecell.img
 ln centos.img test/centos.img
 ln sagecell.img test/sagecell.img
-vm/deploy test grout@localhost /home/grout/images/test 988 989
+vm/deploy grout@localhost:/home/grout/images/test test 988 989

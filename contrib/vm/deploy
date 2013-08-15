@@ -1,18 +1,20 @@
-#!/bin/sh
+#!/bin/bash
 set -v
-SERVERPREFIX=$1
-REMOTESERVER=$2
-REMOTEDIR=$3
-SAGECELLPORTPREFIX=$4
-STATICPORTPREFIX=$5
+REMOTELOGIN=$1
+SERVERPREFIX=$2
+SAGECELLPORTPREFIX=$3
+STATICPORTPREFIX=$4
+IFS='@:' read REMOTEUSER REMOTEHOST REMOTEDIR <<< "$REMOTELOGIN"
+REMOTESERVER=$REMOTEUSER@$REMOTEHOST
+REMOTEHOSTSAFE=`sed 's/\./_/g' <<< "$REMOTEHOST"`
 SSHPORT=43234
 VIRSH="virsh --connect qemu:///session"
 RSYNC="rsync --progress --archive --verbose --sparse --compress --protect-args --human-readable --recursive -e ssh"
 $VIRSH shutdown sagecell
 sleep 10
-$RSYNC centos.img $REMOTESERVER:$REMOTEDIR/centos.img
-$RSYNC sagecell.img $REMOTESERVER:$REMOTEDIR/sagecell.img
-$RSYNC vm/ $REMOTESERVER:$REMOTEDIR/vm/
+$RSYNC centos.img $REMOTELOGIN/centos.img
+$RSYNC sagecell.img $REMOTELOGIN/sagecell.img
+$RSYNC vm/ $REMOTELOGIN/vm/
 ssh $REMOTESERVER -T <<EOF
   set -v
   cd $REMOTEDIR
@@ -25,15 +27,17 @@ ssh $REMOTESERVER -T <<EOF
     vm/forward-port \$SERVER $SSHPORT 22
     ssh -p $SSHPORT root@localhost <<EOFADMIN
       set -v
-      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$REMOTESERVER-\$SERVER/' /etc/sysconfig/network
+      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$REMOTEHOSTSAFE-\$SERVER/' /etc/sysconfig/network
 EOFADMIN
     # remove ssh port forward by restarting server
-    $VIRSH reboot \$SERVER
+    $VIRSH shutdown \$SERVER
     sleep 15
+    $VIRSH start \$SERVER
+    sleep 5
     vm/forward-port \$SERVER $SAGECELLPORTPREFIX\$i 8888
     vm/forward-port \$SERVER $STATICPORTPREFIX\$i 8889
     sleep 10 # so it can come up before doing the next one
   done
 EOF
 
-#vm/deploy server localhost /home/grout/images/deploy 888 889
+#vm/deploy grout@localhost:/home/grout/images/deploy server 888 889
