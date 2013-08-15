@@ -1,10 +1,11 @@
+#!/bin/sh
 set -v
 SERVERPREFIX=$1
 REMOTESERVER=$2
 REMOTEDIR=$3
 SAGECELLPORTPREFIX=$4
 STATICPORTPREFIX=$5
-#SSHPORTPREFIX=$6
+SSHPORT=43234
 VIRSH="virsh --connect qemu:///session"
 RSYNC="rsync --progress --archive --verbose --sparse --compress --protect-args --human-readable --recursive -e ssh"
 $VIRSH shutdown sagecell
@@ -18,14 +19,20 @@ ssh $REMOTESERVER -T <<EOF
   for i in 0 1 2; do
     echo Setting up server \$i
     export SERVER=$SERVERPREFIX\$i
-    #export SERVER=server\$i
     vm/make-shadow-vm sagecell \$SERVER
     $VIRSH start \$SERVER
     sleep 5
-    #vm/forward-port \$SERVER $SSHPORTPREFIX\$i 22
+    vm/forward-port \$SERVER $SSHPORT 22
+    ssh -p $SSHPORT root@localhost <<EOFADMIN
+      set -v
+      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$REMOTESERVER-\$SERVER/' /etc/sysconfig/network
+EOFADMIN
+    # remove ssh port forward by restarting server
+    $VIRSH reboot \$SERVER
+    sleep 15
     vm/forward-port \$SERVER $SAGECELLPORTPREFIX\$i 8888
     vm/forward-port \$SERVER $STATICPORTPREFIX\$i 8889
-    sleep 30 # so it can come up before doing the next one
+    sleep 10 # so it can come up before doing the next one
   done
 EOF
 
