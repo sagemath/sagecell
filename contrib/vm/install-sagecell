@@ -27,6 +27,10 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   yum -y update
   yum clean all
 
+  # for python's netcdf package below
+  yum install -y netcdf-devel
+
+
   echo "Removing cron scripts"
   rm -rf /etc/cron.d/sagecell*
 
@@ -124,12 +128,14 @@ EOFSAGE
   ../../sage -sh -c "make -B"
 
 
+  export NETCDF4_LIBDIR=/usr/lib64/
+
   echo 'Installing extra python packages'
   cd /home/sageserver/sage/
-  for i in pandas scikit-learn statsmodels patsy numexpr scikits-image scimath Shapely SimPy pyproj bitarray
+  for i in netcdf4 tables h5py pandas scikit-learn patsy statsmodels numexpr scikits-image scimath Shapely SimPy pyproj bitarray
   do
     echo $i
-    ./sage -sh -c "pip install \$i"
+    ./sage -sh -c "pip install -U \$i"
   done
 
   if ! ./sage -c "import mpl_toolkits.basemap"; then 
