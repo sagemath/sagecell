@@ -27,6 +27,17 @@ config = Config()
 import logging
 logger = logging.getLogger('sagecell')
 
+
+
+statslogger = logging.getLogger('sagecell.stats')
+statslogger.propagate=False
+import sys
+#h = logging.FileHandler('stats.log','a')
+h = logging.StreamHandler(sys.stdout)
+h.setFormatter(logging.Formatter('%(asctime)s %(name)s %(process)d: %(message)s'))
+statslogger.addHandler(h)
+from log import StatsMessage
+
 class RootHandler(tornado.web.RequestHandler):
     """
     Root URL request handler.
@@ -220,7 +231,6 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
         if channel=="stdin":
             # TODO: Support the stdin channel
             # See http://ipython.org/ipython-doc/dev/development/messaging.html
-            print "STDIN CHANNEL; EXITING"
             return
         try:
             if kernel == "complete":
@@ -239,6 +249,7 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
                 self.channels[kernel]["shell"].open(kernel)
                 self.channels[kernel]["iopub"].open(kernel)
             if kernel != "complete":
+                self._log_stats(kernel, message)
                 self.channels[kernel][channel].on_message(message)
         except KeyError:
             logger.info("Message sent to deleted kernel: %s"%kernel)
@@ -249,6 +260,16 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
             channel["shell"].on_close()
             channel["iopub"].on_close()
 
+    def _log_stats(self, kernel, msg):
+        from pprint import pprint
+        pprint(msg)
+        msg=json.loads(msg)
+        if msg["header"]["msg_type"] == "execute_request":
+            import pdb; pdb.set_trace()
+            statslogger.info(StatsMessage(kernel_id = kernel,
+                                          remote_ip = self.session.conn_info.ip,
+                                          code = msg["content"]["code"],
+                                          execute_type='request'))
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
 class TOSHandler(tornado.web.RequestHandler):
@@ -332,6 +353,10 @@ accepted_tos=true\n""")
         if code:
             km = self.application.km
             self.kernel_id = yield gen.Task(km.new_session_async)
+            statslogger.info(StatsMessage(kernel_id = self.kernel_id,
+                                          remote_ip = self.request.remote_ip,
+                                          code = code,
+                                          execute_type = 'service'))
 
             self.shell_handler = ShellServiceHandler(self.application)
             self.iopub_handler = IOPubServiceHandler(self.application)
@@ -371,6 +396,7 @@ accepted_tos=true\n""")
         except:
             pass
 
+        #statslogger.info(StatMessage(kernel_id = self.kernel_id, '%r SERVICE DONE'%self.kernel_id)
         retval = self.iopub_handler.streams
         self.shell_handler.on_close()
         self.iopub_handler.on_close()
