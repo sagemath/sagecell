@@ -27,10 +27,6 @@ ssh -p $VMPORT $VMSSH -T <<EOF | tee  install.log
   yum -y update
   yum clean all
 
-  # for python's netcdf package below
-  yum install -y netcdf-devel
-
-
   echo "Removing cron scripts"
   rm -rf /etc/cron.d/sagecell*
 
