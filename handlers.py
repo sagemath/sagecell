@@ -261,8 +261,6 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
             channel["iopub"].on_close()
 
     def _log_stats(self, kernel, msg):
-        from pprint import pprint
-        pprint(msg)
         msg=json.loads(msg)
         if msg["header"]["msg_type"] == "execute_request":
             statslogger.info(StatsMessage(kernel_id = kernel,
