@@ -266,8 +266,8 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
         msg=json.loads(msg)
         if msg["header"]["msg_type"] == "execute_request":
             statslogger.info(StatsMessage(kernel_id = kernel,
-                                          # TODO: get referrer, remote IP
-                                          remote_ip = self.session.conn_info.headers,
+                                          remote_ip = self.session.conn_info.ip,
+                                          referer = self.session.conn_info.headers.get('Referer',''),
                                           code = msg["content"]["code"],
                                           execute_type='request'))
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
@@ -355,6 +355,7 @@ accepted_tos=true\n""")
             self.kernel_id = yield gen.Task(km.new_session_async)
             statslogger.info(StatsMessage(kernel_id = self.kernel_id,
                                           remote_ip = self.request.remote_ip,
+                                          referer = self.request.headers.get('Referer',''),
                                           code = code,
                                           execute_type = 'service'))
 
