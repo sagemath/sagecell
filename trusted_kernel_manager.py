@@ -24,7 +24,7 @@ class TrustedMultiKernelManager(object):
 
         self._kernel_queue = Queue()
 
-        self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin}}
+        self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin, "referer": referer, "remote_ip": remote_ip}}
         self._comps = {} #comp_id: {"host:"", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
         self._clients = {} #comp_id: {"ssh": paramiko client}
         self._sessions = {} # kernel_id: Session
@@ -249,7 +249,7 @@ class TrustedMultiKernelManager(object):
         logger.info("Trying to start kernel on %s", comp_id[:4])
         self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
-    def new_session_async(self, callback=None):
+    def new_session_async(self, referer='', remote_ip='', callback=None):
         """ Starts a new kernel on an open computer.
 
         We try to get a kernel off a queue of preforked kernels to minimize
@@ -267,7 +267,10 @@ class TrustedMultiKernelManager(object):
         try:
             preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
             logger.info("Using kernel on %s.  Queue: %s kernels on %s computers"%(comp_id[:4], self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue]))
-            self._kernels[preforked_kernel_id]["timeout"] = time.time()+self.kernel_timeout
+            kernel_info = self._kernels[preforked_kernel_id]
+            kernel_info["timeout"] = time.time()+self.kernel_timeout
+            kernel_info["referer"] = referer
+            kernel_info["remote_ip"] = remote_ip
             self.new_session_prefork(comp_id)
             logger.info("Activated kernel %s on computer %s (preforked)", preforked_kernel_id, comp_id)
             callback(preforked_kernel_id)
@@ -277,6 +280,9 @@ class TrustedMultiKernelManager(object):
                 if reply["type"] == "success":
                     kernel_id = reply["content"]["kernel_id"]
                     self._setup_session(reply, comp_id)
+                    kernel_info = self._kernels[preforked_kernel_id]
+                    kernel_info["referer"] = referer
+                    kernel_info["remote_ip"] = remote_ip
                     logger.info("Activated kernel %s on computer %s", kernel_id, comp_id)
                     callback(kernel_id)
                 else:
@@ -292,7 +298,7 @@ class TrustedMultiKernelManager(object):
 
         :arg str kernel_id: the id of the kernel you want to kill
         """
-        if not kernel_id in self._kernels:
+        if kernel_id not in self._kernels:
             return
         comp_id = self._kernels[kernel_id]["comp_id"]
         def cb(reply):
@@ -367,7 +373,8 @@ class TrustedMultiKernelManager(object):
         connection = self._kernels[kernel_id]["connection"]
         hb_stream = self._create_connected_stream(connection["ip"], connection["hb_port"], zmq.REQ)
         return hb_stream
-
+    def kernel_info(self, kernel_id):
+        return self._kernels[kernel_id]
 
 
 if __name__ == "__main__":
