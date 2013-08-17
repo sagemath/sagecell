@@ -246,6 +246,13 @@ $SSH <<EOF
   iptables -I INPUT 1 -p tcp --dport 8889 -j ACCEPT # open up incoming web connections to nginx
   iptables -I INPUT 1 -i lo -j ACCEPT # open up loopback for all traffic
   /sbin/service iptables save
+
+  # set up logging
+  # TODO: make this finer-grained than just allowing everything to bind to 5514
+  # TODO: or we can change the port, maybe to 10514
+  # TODO: really, we should set up a small tinc VPN and send logging info over that
+  setsebool allow_ypbind 1
+
 EOF
 }
 
@@ -254,6 +261,7 @@ $SSH <<EOF
   # open up ports in firewall
   # TODO: drop all iptables rules
   iptables -I INPUT 1 -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to database
+  iptables -I INPUT 1 -p tcp --dport 514 -j ACCEPT # open up rsyslog connections
   iptables -I INPUT 1 -i lo -j ACCEPT # open up loopback for all traffic
   /sbin/service iptables save
 EOF
