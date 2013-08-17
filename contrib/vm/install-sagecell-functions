@@ -1,6 +1,6 @@
 #/bin/sh
 
-SSH=ssh -T -p $VMPORT $VMSSH
+SSH="ssh -T -p $VMPORT $VMSSH"
 function upload_sage_source {
 ### The Sage version
      if [ -z $SAGE_SOURCE ] || [ ! -f $SAGE_SOURCE ] ; then
@@ -147,6 +147,7 @@ function install_sagecell {
 
     $SSH <<EOF | tee -a install.log
   su -l sageserver
+  cd /home/sageserver/sage
   echo 'Installing sagecell'
   ./sage -sh -c "easy_install pip"
   ./sage -i zeromq

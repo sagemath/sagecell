@@ -16,6 +16,7 @@ if [ $? -ne 0 ]; then
     sleep 2
 fi
 
+sleep 3
 
 ./vm/forward-port $VM $SSHPORT 22
 STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $SSHPORT echo "ready"`

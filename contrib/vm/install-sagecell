@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
+set -v
 # These variable names are important for the functions below
 VM=$1
 SAGE_SOURCE=$2
@@ -29,5 +30,5 @@ install_extra_python_packages
 copy_sagecell_system_files
 lock_down_sageworker
 set_up_sagecell_firewall
-compress_zero
+#compress_zero
 virsh shutdown $VM
