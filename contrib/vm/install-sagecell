@@ -166,6 +166,7 @@ scp -P $VMPORT vm/vmfiles/sagecell_nginx.conf $VMSSH:/etc/nginx/conf.d/sagecell.
 scp -P $VMPORT vm/vmfiles/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
 scp -P $VMPORT vm/vmfiles/cron/* $VMSSH:/etc/cron.d/
 scp -P $VMPORT vm/vmfiles/upstart/* $VMSSH:/etc/init/
+scp -P $VMPORT vm/vmfiles/rsyslog/* $VMSSH:/etc/rsyslog.d/
 
 ssh -p $VMPORT $VMSSH -T <<EOF
   # make sure the config file is owned by the right person
@@ -173,6 +174,7 @@ ssh -p $VMPORT $VMSSH -T <<EOF
 
   restorecon -R /etc/cron.d/
   restorecon -R /etc/init/
+  restorecon -R /etc/rsyslog.d/
   rm -f /etc/nginx/conf.d/default.conf
   restorecon -R /etc/nginx/conf.d/
 
