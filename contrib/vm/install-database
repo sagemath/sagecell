@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# These variable names are important for the functions below
 VM=$1
 SAGE_SOURCE=$2
 VMSSH=root@localhost
@@ -8,15 +7,13 @@ VMPORT=2555
 
 ./vm/start-vm $VM $VMPORT
 
-source ./vm/install-sagecell-functions
+source ./vm/install_sagecell_functions
 
 remove_install_log
 update_system
 kill_monitor
 remove_accounts
 set_up_sageserver_account
-set_up_sageworker_account
-make_tmp_dir
 upload_sage_source
 install_sage
 RC=`grep "Error building Sage" install.log` 
@@ -25,9 +22,10 @@ if [ "$RC" != "" ]; then
    exit 1
 fi
 install_sagecell
-install_extra_python_packages
-copy_sagecell_system_files
-lock_down_sageworker
-set_up_sagecell_firewall
+
+copy_database_system_files
+set_up_database_firewall
 compress_zero
 virsh shutdown $VM
+
+

@@ -14,3 +14,12 @@ rm -rf test/centos.img test/sagecell.img
 ln centos.img test/centos.img
 ln sagecell.img test/sagecell.img
 vm/deploy grout@localhost:/home/grout/images/test test 988 989
+
+
+# For database/logging server
+
+vm/make-shadow-vm centos database
+vm/install-database database sage-5.11.rc1-built.tar.gz
+virsh shutdown database
+
+

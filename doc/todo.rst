@@ -209,3 +209,60 @@ New Interact issues
 * implement interact html layout and location 'layout'
 
 
+* make html controls not have a dirty state--they are just labels
+* Enable remote logging:
+
+forward port 5514 of sagecell.sagemath.org to port 514 of logger
+
+  - on logger, do this in /etc/rsyslog.conf:
+
+# Provides TCP syslog reception
+$ModLoad imtcp
+$InputTCPServerRun 514
+
+# This one is the template to generate the log filename dynamically, depending on the client's IP address.
+$template FILENAME,"/var/log/sagecell-%HOSTNAME%.log"
+#
+# Log all messages to the dynamically formed file. Now each clients log (192.168.1.2, 192.168.1.3,etc...), will be under a separate directory which is formed by the template FILENAME.
+*.* ?FILENAME
+
+
+
+  - on clients, do this in 
+
+# ### begin forwarding rule ###
+# The statement between the begin ... end define a SINGLE forwarding
+# rule. They belong together, do NOT split them. If you create multiple
+# forwarding rules, duplicate the whole block!
+# Remote Logging (we use TCP for reliable delivery)
+#
+# An on-disk queue is created for this action. If the remote host is
+# down, messages are spooled to disk and sent when it is up again.
+$WorkDirectory /var/lib/rsyslog # where to place spool files
+$ActionQueueFileName fwdRule1 # unique name prefix for spool files
+$ActionQueueMaxDiskSpace 1g   # 1gb space limit (use as much as possible)
+$ActionQueueSaveOnShutdown on # save messages to disk on shutdown
+$ActionQueueType LinkedList   # run asynchronously
+$ActionResumeRetryCount -1    # infinite retries if host is down
+# remote host is: name/ip:port, e.g. 192.168.0.1:514, port optional
+local3.* @@sagecell.sagemath.org:5514
+
+  - on clients, allow rsyslogd to connect to port 5514, you can enable
+    the ypbind boolean:
+
+setsebool allow_ypbind 1
+
+but presumably there's a better way to do it.
+
+see http://www.centos.org/docs/5/html/Deployment_Guide-en-US/sec-sel-building-policy-module.html
+
+or https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/5/html/Deployment_Guide/sec-sel-analyze-te.html
+
+  - on the server, enable the firewall to allow connections to port
+    514
+
+- set logger or main server to block connections to port 5514 except
+  for specific addresses
+- set up haproxy to pass on the ip address of the original client---right now remote_ip is always the haproxy ip address.
+
+Hmmm...get tinc working???
