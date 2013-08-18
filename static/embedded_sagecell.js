@@ -506,8 +506,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
                 sagecell.last_session[evt.data.id].kernel.kill();
             }
             if (replaceOutput) {
-                $(sagecell.last_session[evt.data.id].session_container).remove();
-                sagecell.last_session[evt.data.id].removed = true;
+                sagecell.last_session[evt.data.id].destroy();
             }
         }
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
