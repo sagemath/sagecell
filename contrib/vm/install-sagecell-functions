@@ -1,4 +1,4 @@
-#/bin/sh
+#/bin/bash
 
 SSH="ssh -T -p $VMPORT $VMSSH"
 function upload_sage_source {
@@ -240,29 +240,26 @@ EOF
 
 function set_up_sagecell_firewall {
 $SSH <<EOF
-  # open up ports in firewall
-  # TODO: drop all iptables rules
-  iptables -I INPUT 1 -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to sage cell server
-  iptables -I INPUT 1 -p tcp --dport 8889 -j ACCEPT # open up incoming web connections to nginx
-  iptables -I INPUT 1 -i lo -j ACCEPT # open up loopback for all traffic
+  #TODO: set up rules for outgoing
+  iptables --flush INPUT
+  iptables -A INPUT -i lo -j ACCEPT # open up loopback for all traffic
+  iptables -A INPUT -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to sage cell server
+  iptables -A INPUT -p tcp --dport 8889 -j ACCEPT # open up incoming web connections to nginx
+  iptables -A INPUT -p tcp --dport 22 -j ACCEPT # open up ssh
+  iptables -P INPUT DROP
   /sbin/service iptables save
-
-  # set up logging
-  # TODO: make this finer-grained than just allowing everything to bind to 5514
-  # TODO: or we can change the port, maybe to 10514
-  # TODO: really, we should set up a small tinc VPN and send logging info over that
-  setsebool allow_ypbind 1
-
 EOF
 }
 
 function set_up_database_firewall {
 $SSH <<EOF
-  # open up ports in firewall
-  # TODO: drop all iptables rules
-  iptables -I INPUT 1 -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to database
-  iptables -I INPUT 1 -p tcp --dport 514 -j ACCEPT # open up rsyslog connections
-  iptables -I INPUT 1 -i lo -j ACCEPT # open up loopback for all traffic
+  #TODO: set up rules for outgoing
+  iptables --flush INPUT
+  iptables -A INPUT -i lo -j ACCEPT # open up loopback for all traffic
+  iptables -A INPUT -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to database
+  iptables -A INPUT -p tcp --dport 514 -j ACCEPT # open up rsyslog connections
+  iptables -A INPUT -p tcp --dport 22 -j ACCEPT # open up ssh
+  iptables -P INPUT DROP
   /sbin/service iptables save
 EOF
 }
