@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 VM=$1
 SAGE_SOURCE=$2
@@ -7,7 +7,7 @@ VMPORT=2555
 
 ./vm/start-vm $VM $VMPORT
 
-source ./vm/install_sagecell_functions
+source ./vm/install-sagecell-functions
 
 remove_install_log
 update_system
