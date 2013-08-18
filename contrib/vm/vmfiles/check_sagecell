@@ -1,6 +1,6 @@
 #!/bin/sh
 ROOT=/home/sageserver/sage
-${ROOT}/sage ${ROOT}/devel/sagecell/contrib/sagecell-client/sagecell-service.py $1
+${ROOT}/sage ${ROOT}/sagecell/contrib/sagecell-client/sagecell-service.py $1
 if [ $? -ne 0 ]
  then
    echo `date`

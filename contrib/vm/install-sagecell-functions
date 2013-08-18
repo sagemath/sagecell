@@ -1,0 +1,271 @@
+#/bin/bash
+
+SSH="ssh -T -p $VMPORT $VMSSH"
+function upload_sage_source {
+### The Sage version
+     if [ -z $SAGE_SOURCE ] || [ ! -f $SAGE_SOURCE ] ; then
+        echo "Cannot find Sage source archive $SAGE_SOURCE."
+        exit 1
+    fi
+
+    echo 'Syncing sage source'
+    rsync --progress -avv -e "ssh -p $VMPORT" $SAGE_SOURCE $VMSSH:/home/sage-source.tar.gz
+}
+
+
+function update_system {
+
+    $SSH <<EOF | tee -a install.log
+       set -v
+       echo 'Updating system'
+       yum -y update
+       yum clean all
+EOF
+}
+
+function remove_install_log {
+    rm -f install.log
+}
+
+function remove_accounts {
+
+    $SSH <<EOF | tee -a install.log
+  echo 'Removing sage accounts'
+  killall -u sageworker -SIGKILL
+  killall -u sageserver -SIGKILL
+  pushd /home/sageworker
+  chattr -R -i .ssh .bashrc .bash_profile .bash_logout
+  chattr -i .sage .sage/init.sage
+  popd
+  /usr/sbin/userdel -rf sageworker
+  /usr/sbin/userdel -rf sageserver
+  if grep sagecell /etc/group; then
+    /usr/sbin/groupdel sagecell
+  fi
+EOF
+}
+
+function set_up_sageserver_account {
+    $SSH <<EOF | tee -a install.log
+  /usr/sbin/groupadd sagecell
+  /usr/sbin/useradd sageserver --groups sagecell
+
+  echo 'Setting up ssh keys'
+  if ! [ -f /home/sageserver/.ssh/id_rsa ]; then
+    su -l sageserver -c 'ssh-keygen -q -N "" -f /home/sageserver/.ssh/id_rsa'
+  fi
+  restorecon -R /home/sageserver/.ssh
+EOF
+
+
+}
+
+
+function set_up_sageworker_account {
+    $SSH <<EOF | tee -a install.log
+  /usr/sbin/useradd sageworker --groups sagecell
+
+  echo 'Setting up ssh keys'
+  su -l sageworker -c 'mkdir .ssh && chmod 700 .ssh'
+  cp -r /home/sageserver/.ssh/id_rsa.pub /home/sageworker/.ssh/authorized_keys
+  chown -R sageworker.sageworker /home/sageworker/
+  restorecon -R /home/sageworker/.ssh
+
+  echo 'Setting up permissions for sage worker'
+  pushd /home/sageworker
+  chattr -R +i .ssh .bashrc .bash_profile .bash_logout
+  popd
+
+  echo 'Setting quotas'
+  setquota -u sageworker 1000000 1200000 20000 30000 /
+
+  # change permissions so sageworker can execute sage later
+  chmod o+rx /home/sageserver
+EOF
+
+ssh -p $VMPORT $VMSSH -tt <<EOF
+  # get the localhost in the known_hosts file
+  su -l sageserver -c 'ssh -q -oStrictHostKeyChecking=no sageworker@localhost echo done'
+  exit
+EOF
+}
+
+function kill_monitor {
+    $SSH <<EOF | tee -a install.log
+      echo "Removing cron scripts"
+      rm -rf /etc/cron.d/sagecell*
+EOF
+}
+
+function make_tmp_dir {
+
+    $SSH <<EOF | tee -a install.log
+  echo 'Making temporary directory'
+  rm -rf /tmp/sagecell
+  mkdir /tmp/sagecell
+  chown sageserver.sagecell /tmp/sagecell
+  chmod g=wxs,o= /tmp/sagecell
+EOF
+}
+
+function install_sage {
+
+    $SSH <<EOF | tee -a install.log
+  echo 'Extracting sage'
+  su -l sageserver
+  #set -v
+  rm -rf sage
+  tar xf /home/sage-source.tar.gz
+
+  echo 'Compiling Sage'
+  # downloading the optional git spkg requires the .sage directory
+  mkdir .sage
+  cd sage
+  export SAGE_ATLAS_LIB=/usr/lib64/atlas/
+  export SAGE_KEEP_BUILT_SPKGS=yes
+  export MAKE='make -j16'
+  # export SAGE_FAT_BINARY="yes"
+  # export SAGE_ATLAS_ARCH=fast
+  git remote rm jason
+  git remote add -f jason https://github.com/jasongrout/sage.git 
+  git checkout jason/sagecell
+  if [ ! -f upstream/ipython-1.0.0.tar.gz ]; then
+    pushd upstream
+    wget -O ipython-1.0.0.tar.gz https://github.com/ipython/ipython/releases/download/rel-1.0.0/ipython-1.0.0.tar.gz
+    popd
+  fi 
+  make
+  #make test
+  ./sage <<EOFSAGE
+     quit
+EOFSAGE
+EOF
+
+}
+
+function install_sagecell {
+
+    $SSH <<EOF | tee -a install.log
+  su -l sageserver
+  cd /home/sageserver/sage
+  echo 'Installing sagecell'
+  ./sage -sh -c "easy_install pip"
+  ./sage -i zeromq
+  ./sage -i pyzmq
+  # we need a more recent pyzmq than Sage provides
+  ./sage -sh -c "pip install -U pyzmq"
+  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-08-13.spkg
+  cd /home/sageserver/sage/sagecell/
+  git config --global user.email "you@example.com"
+  git config --global user.name "Your Name"
+  git pull origin master
+  ../sage -sh -c "make -B"
+EOF
+
+}
+
+function install_extra_python_packages {
+rsync --progress -avv -e "ssh -p $VMPORT" basemap-1.0.6.tar.gz $VMSSH:/tmp/basemap-1.0.6.tar.gz
+    $SSH <<EOF | tee -a install.log
+  su -l sageserver
+  export NETCDF4_LIBDIR=/usr/lib64/
+
+  echo 'Installing extra python packages'
+  cd /home/sageserver/sage/
+  for i in netcdf4 tables h5py pandas scikit-learn patsy statsmodels numexpr scikits-image scimath Shapely SimPy pyproj bitarray
+  do
+    echo $i
+    ./sage -sh -c "pip install -U \$i"
+  done
+
+  if ! ./sage -c "import mpl_toolkits.basemap"; then 
+    cd /tmp
+    export BASEMAP=basemap-1.0.6
+    export GEOS_DIR=/home/sageserver/sage/local/
+    if [ -f \$BASEMAP.tar.gz ];
+    then
+       echo "Basemap already downloaded"
+    else
+       echo "Downloading basemap"
+       wget --progress=dot:mega http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/\$BASEMAP/\$BASEMAP.tar.gz
+    fi
+    tar xf \$BASEMAP.tar.gz
+    cd \$BASEMAP
+    cd geos-3.3.3
+    /home/sageserver/sage/sage -sh -c "export GEOS_DIR=\$GEOS_DIR && ./configure --prefix=\$GEOS_DIR && make && make install"
+    cd ..
+    /home/sageserver/sage/sage setup.py install
+    cd /tmp
+    rm -rf \$BASEMAP
+  fi
+EOF
+}
+
+function copy_sagecell_system_files {
+scp -P $VMPORT vm/vmfiles/sagecell/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
+scp -P $VMPORT vm/vmfiles/sagecell/cron/* $VMSSH:/etc/cron.d/
+scp -P $VMPORT vm/vmfiles/sagecell/upstart/* $VMSSH:/etc/init/
+scp -P $VMPORT vm/vmfiles/sagecell/rsyslog/* $VMSSH:/etc/rsyslog.d/
+scp -P $VMPORT vm/vmfiles/sagecell/sagecell_nginx.conf $VMSSH:/etc/nginx/conf.d/sagecell.conf
+
+    $SSH <<EOF | tee -a install.log
+  chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
+  restorecon -R /etc/cron.d/
+  restorecon -R /etc/init/
+  restorecon -R /etc/rsyslog.d/
+  rm -f /etc/nginx/conf.d/default.conf
+  restorecon -R /etc/nginx/conf.d/
+EOF
+}
+
+function copy_database_system_files {
+scp -P $VMPORT vm/vmfiles/database/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
+scp -P $VMPORT vm/vmfiles/database/rsyslog/* $VMSSH:/etc/rsyslog.d/
+
+    $SSH <<EOF | tee -a install.log
+  chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
+  restorecon -R /etc/rsyslog.d/
+EOF
+}
+
+function lock_down_sageworker {
+    $SSH <<EOF | tee -a install.log
+  # set the .sage and init.sage to be immutable.  We do this to prevent
+  # someone from making *everyone* execute code at the start of their sessions
+  su -l sageworker -c "echo 'DihedralGroup(4).cayley_graph()' | /home/sageserver/sage/sage"
+  touch /home/sageworker/.sage/init.sage
+  chattr +i /home/sageworker/.sage /home/sageworker/.sage/init.sage
+EOF
+}
+
+function set_up_sagecell_firewall {
+$SSH <<EOF
+  #TODO: set up rules for outgoing
+  iptables --flush INPUT
+  iptables -A INPUT -i lo -j ACCEPT # open up loopback for all traffic
+  iptables -A INPUT -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to sage cell server
+  iptables -A INPUT -p tcp --dport 8889 -j ACCEPT # open up incoming web connections to nginx
+  iptables -A INPUT -p tcp --dport 22 -j ACCEPT # open up ssh
+  iptables -P INPUT DROP
+  /sbin/service iptables save
+EOF
+}
+
+function set_up_database_firewall {
+$SSH <<EOF
+  #TODO: set up rules for outgoing
+  iptables --flush INPUT
+  iptables -A INPUT -i lo -j ACCEPT # open up loopback for all traffic
+  iptables -A INPUT -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to database
+  iptables -A INPUT -p tcp --dport 514 -j ACCEPT # open up rsyslog connections
+  iptables -A INPUT -p tcp --dport 22 -j ACCEPT # open up ssh
+  iptables -P INPUT DROP
+  /sbin/service iptables save
+EOF
+}
+
+function compress_zero {
+$SSH <<EOF
+  dd if=/dev/zero of=/zerofile ; rm -f /zerofile
+EOF
+}

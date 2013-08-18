@@ -381,6 +381,7 @@ sagecell.Session.prototype.last_output = function(block_id) {
 
 sagecell.Session.prototype.clear = function (block_id, changed) {
     var output_block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
+    if (output_block.length===0) {return;}
     output_block[0].style.minHeight = output_block.height() + "px";
     setTimeout(function () {
         output_block.animate({"min-height": "0px"}, "slow");
@@ -403,6 +404,7 @@ sagecell.Session.prototype.clear = function (block_id, changed) {
 sagecell.Session.prototype.output = function(html, block_id) {
     // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
     var output_block=$(block_id === null ? this.output_block : interacts[block_id].output_block);
+    if (output_block.length===0) {return;}
     return output_block.append(html).children().last();
 };
 
@@ -419,7 +421,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     } 
     */
     var payload = msg.payload[0];
-    if (payload && payload.new_files){
+    if (payload && payload.new_files && payload.new_files.length>0){
         var files = payload.new_files;
         var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
         var html="<div>\n";
@@ -458,7 +460,7 @@ sagecell.Session.prototype.handle_output = function (msg_type, content, metadata
             var html = "<pre class='sagecell_" + content.name + "'></pre>";
         }
         var out = this.output(html, block_id);
-        out.text(out.text() + content.data);
+        if (out) {out.text(out.text() + content.data);}
         break;
 
     case "pyout":
@@ -743,6 +745,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
     this.session = session;
     this.parent_block = parent_block;
     this.layout = data.layout;
+    this.locations = data.locations;
     this.msg_id = data.msg_id;
     this.changed = [];
 
@@ -755,13 +758,14 @@ sagecell.InteractCell = function (session, data, parent_block) {
     this.session.interact_pl.style.display = "block";
     this.renderCanvas(parent_block);
     this.bindChange();
+    if (data.readonly) {this.disable();}
 }
 
 sagecell.InteractCell.prototype.newControl = function (data) {
     this.controls[data.name] = new sagecell.InteractData.control_types[data.control.control_type](data.control);
     this.placeControl(data.name);
     this.bindChange(data.name);
-    $(this.cells[data.name]).addClass("sagecell_dirtyControl");
+    if (this.output_block) {$(this.cells[data.name]).addClass("sagecell_dirtyControl");}
     if (this.parent_block === null) {
         this.session.updateLinks(true);
     }
@@ -790,7 +794,8 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
         var msg_dict = {
             "interact_id": that.interact_id,
             "values": {},
-            "update_last": false
+            "update_last": false,
+            "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}
         };
         msg_dict.values[event.data.name] = that.controls[event.data.name].json_value(ui);
         if (that.controls[event.data.name].dirty_update) {
@@ -798,7 +803,7 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
         }
         var callbacks = {
             "output": $.proxy(that.session.handle_output, that.session),
-            "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_message_reply, that.session)
+            "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_execute_reply, that.session)
         };
         that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
         if (this.parent_block === null) {
@@ -835,15 +840,19 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
         div = this.cells[name] = ce("div", {"class": "sagecell_interactControlCell"});
         div.style.width = "90%";
         rdiv.appendChild(div);
-        var outRow = this.output_block.parentNode.parentNode;
-        outRow.parentNode.insertBefore(rdiv, outRow);
+        if (this.output_block) {
+            var outRow = this.output_block.parentNode.parentNode 
+            outRow.parentNode.insertBefore(rdiv, outRow);
+        } else {
+            $(this.container).append(rdiv);
+        }
     }
     if (control.control.label.length > 0) {
         div.appendChild(ce("label", {
             "class": "sagecell_interactControlLabel",
             "for": id,
             "title": name
-        }, control.control.label));
+        }, [control.control.label]));
     }
     div.appendChild(ce("div", {"class": "sagecell_interactControl"}, [
         control.rendered(id)
@@ -875,25 +884,37 @@ var textboxItem = function (defaultVal, callback) {
 sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     this.cells = {}
     this.container = ce("div", {"class": "sagecell_interactContainer"});
-    for (var row = 0; row < this.layout.length; row++) {
-        var rdiv = ce("div");
-        var total = 0;
-        for (var col = 0; col < this.layout[row].length; col++) {
-            total += this.layout[row][col][1];
+    if (this.layout && this.layout.length>0) {
+        for (var row = 0; row < this.layout.length; row++) {
+            var rdiv = ce("div");
+            var total = 0;
+            for (var col = 0; col < this.layout[row].length; col++) {
+                total += this.layout[row][col][1];
+            }
+            for (var col =  0; col < this.layout[row].length; col++) {
+                var cdiv = ce("div", {"class": "sagecell_interactControlCell"});
+                cdiv.style.width = 100 * this.layout[row][col][1] / total + "%";
+                if (this.layout[row][col] !== undefined) {
+                    this.cells[this.layout[row][col][0]] = cdiv;
+                    if (this.layout[row][col][0] === "_output") {
+                        this.output_block = ce("div", {"class": "sagecell_interactOutput"});
+                        cdiv.appendChild(this.output_block);
+                    }
+                }
+                rdiv.appendChild(cdiv);
+            }
+            this.container.appendChild(rdiv);
         }
-        for (var col =  0; col < this.layout[row].length; col++) {
-            var cdiv = ce("div", {"class": "sagecell_interactControlCell"});
-            cdiv.style.width = 100 * this.layout[row][col][1] / total + "%";
-            if (this.layout[row][col] !== undefined) {
-                this.cells[this.layout[row][col][0]] = cdiv;
-                if (this.layout[row][col][0] === "_output") {
-                    this.output_block = ce("div", {"class": "sagecell_interactOutput"});
-                    cdiv.appendChild(this.output_block);
+    }
+    if (this.locations) {
+        for (var name in this.locations) {
+            if (this.locations.hasOwnProperty(name)) {
+                this.cells[name] = $("body").find(this.locations[name]).slice(0,1).empty()[0];
+                if (name==="_output") {
+                    this.output_block = this.cells[name];
                 }
             }
-            rdiv.appendChild(cdiv);
         }
-        this.container.appendChild(rdiv);
     }
     for (var name in this.controls) {
         if (this.controls.hasOwnProperty(name)) {
@@ -978,14 +999,16 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
         menuTop.setAttribute("aria-disabled", "true");
         menuTop.removeAttribute("tabindex");
     }
-    this.session.output(this.container, parent_block);
+    if (this.layout && this.layout.length > 0) {
+        this.session.output(this.container, parent_block);
+    }
 }
 
 sagecell.InteractCell.prototype.updateControl = function (data) {
     if (this.controls[data.control].update) {
         this.controls[data.control].ignoreNext = this.controls[data.control].eventCount;
         this.controls[data.control].update(data.value, data.index);
-        $(this.cells[data.control]).addClass("sagecell_dirtyControl");
+        if (this.output_block) {$(this.cells[data.control]).addClass("sagecell_dirtyControl");}
         if (this.parent_block === null) {
             this.session.updateLinks(true);
         }

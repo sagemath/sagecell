@@ -270,7 +270,7 @@ except AttributeError:
     pass
 
 @decorator_defaults
-def interact(f, controls=[], update=None, layout=None, output=True):
+def interact(f, controls=[], update=None, layout=None, locations=None, output=True, readonly=False):
     """
     A decorator that creates an interact.
 
@@ -298,8 +298,12 @@ def interact(f, controls=[], update=None, layout=None, output=True):
     In each example, ``name1``, with no associated control,
     will default to a text box.
 
+    If ``output=False``, then changed controls will not be
+    highlighted.
+
     :arg function f: the function to make into an interact
     :arg list controls: a list of tuples of the form ``("name",control)``
+    :arg boolean output: whether any output should be shown
     :returns: the original function
     :rtype: function
     """
@@ -343,9 +347,8 @@ def interact(f, controls=[], update=None, layout=None, output=True):
         update = names
     for n in update:
         controls[n].update = True
-    if layout is None:
-        layout = [[(n, 1)] for n in names]
-    elif isinstance(layout, dict):
+
+    if isinstance(layout, dict):
         rows = []
         rows.extend(layout.get("top", []))
         for pos, ctrls in layout.iteritems():
@@ -355,17 +358,22 @@ def interact(f, controls=[], update=None, layout=None, output=True):
             rows.append([("_output",1)])
         rows.extend(layout.get("bottom", []))
         layout = rows
+    elif layout is None:
+        layout = []
 
     placed = set()
-    for r in layout:
-        for i, c in enumerate(r):
-            if not isinstance(c, (list, tuple)):
-                c = (c, 1)
-            r[i] = c = (c[0], int(c[1]))
-            if c[0] is not None:
-                if c[0] in placed:
-                    raise ValueError("duplicate item %s in layout" % (c[0],))
-                placed.add(c[0])
+    if locations:
+        placed.update(locations.keys())
+    if layout:
+        for r in layout:
+            for i, c in enumerate(r):
+                if not isinstance(c, (list, tuple)):
+                    c = (c, 1)
+                r[i] = c = (c[0], int(c[1]))
+                if c[0] is not None:
+                    if c[0] in placed:
+                        raise ValueError("duplicate item %s in layout" % (c[0],))
+                    placed.add(c[0])
     layout.extend([(n, 1)] for n in names if n not in placed)
     if output and "_output" not in placed:
         layout.append([("_output", 1)])
@@ -379,7 +387,9 @@ def interact(f, controls=[], update=None, layout=None, output=True):
         "application/sage-interact": {
             "new_interact_id": interact_id,
             "controls": msgs,
-            "layout": layout
+            "layout": layout,
+            "locations": locations,
+            "readonly": readonly,
         },
         "text/plain": "Sage Interact"
     }

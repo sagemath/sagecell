@@ -21,7 +21,7 @@ db_config = {"uri": "https://sagecell.sagemath.org/permalink"}
 # db = "web"
 # db_config = {"uri": "http://localhost:8889"}
 
-requires_tos = False
+requires_tos = True
 
 permalink_server = {
     'db': 'sqlalchemy',
@@ -58,3 +58,12 @@ _default_config = {"host": "localhost",
 
 for i in xrange(4):
     computers.append(_default_config)
+
+import logging
+from logging.handlers import SysLogHandler
+statslogger = logging.getLogger('sagecell.stats')
+import sys
+h = SysLogHandler(address='/dev/log',
+                  facility=SysLogHandler.LOG_LOCAL3)
+h.setFormatter(logging.Formatter('%(asctime)s %(name)s %(process)d: %(message)s'))
+statslogger.addHandler(h)

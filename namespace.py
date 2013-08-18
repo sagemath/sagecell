@@ -11,10 +11,10 @@ class InstrumentedNamespace(dict):
         self.events[key][event].append(f)
 
     def off(self, key, event=None, f=None):
-        if key is None:
-            self.events.pop(key)
+        if event is None:
+            self.events.pop(key,None)
         elif f is None:
-            self.events[key].pop(event)
+            self.events[key].pop(event,None)
         else:
             self.events[key][event].remove(f)
 

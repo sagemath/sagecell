@@ -62,9 +62,7 @@ print "Fetching the required packages"
 pkg_index = PackageIndex()
 tmp_dir = mkdtemp()
 # in order of dependencies
-zeromq_version='2.2.0'
 required_packages = ('paramiko',
-                     'pyzmq',
                      'tornado',
                      'sockjs-tornado',
                      'lockfile',
@@ -85,13 +83,6 @@ if [ $? -ne 0 ]; then
 fi
 
 """ % {'pkg': os.path.basename(location)}
-
-os.chdir(SPKG_SRC)
-
-# get zeromq and mathjax
-zeromq_url='http://download.zeromq.org/zeromq-%s.tar.gz'%zeromq_version
-os.system("curl -L %s | tar xz"%zeromq_url)
-os.system("ln -s zeromq-%s zeromq"%zeromq_version)
 
 os.chdir(SPKG_ROOT)
 os.chdir(os.path.pardir) # (now in dist/)

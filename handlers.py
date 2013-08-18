@@ -27,6 +27,17 @@ config = Config()
 import logging
 logger = logging.getLogger('sagecell')
 
+
+
+statslogger = logging.getLogger('sagecell.stats')
+statslogger.propagate=False
+import sys
+#h = logging.FileHandler('stats.log','a')
+h = logging.StreamHandler(sys.stdout)
+h.setFormatter(logging.Formatter('%(asctime)s %(name)s %(process)d: %(message)s'))
+statslogger.addHandler(h)
+from log import StatsMessage
+
 class RootHandler(tornado.web.RequestHandler):
     """
     Root URL request handler.
@@ -44,6 +55,7 @@ class RootHandler(tornado.web.RequestHandler):
     """
     @tornado.web.asynchronous
     def get(self):
+        logger.debug('request')
         db = self.application.db
         code = None
         language = None
@@ -143,7 +155,9 @@ class KernelHandler(tornado.web.RequestHandler):
             ws_url = "%s://%s/" % (proto, host)
             km = self.application.km
             logger.info("Starting session: %s"%timer)
-            kernel_id = yield gen.Task(km.new_session_async)
+            kernel_id = yield gen.Task(km.new_session_async, 
+                                       referer = self.request.headers.get('Referer',''),
+                                       remote_ip = self.request.remote_ip)
             data = {"ws_url": ws_url, "kernel_id": kernel_id}
             self.write(self.permissions(data))
             self.set_cookie("accepted_tos", "true", expires_days=365)
@@ -221,7 +235,6 @@ class Completer(object):
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
     def __init__(self, session):
-        self.session = session
         super(KernelConnection, self).__init__(session)
 
     def on_open(self, request):
@@ -230,19 +243,31 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
     def on_message(self, message):
         prefix, message = message.split(",", 1)
         kernel, channel = prefix.split("/", 1)
+        if channel=="stdin":
+            # TODO: Support the stdin channel
+            # See http://ipython.org/ipython-doc/dev/development/messaging.html
+            return
         try:
-            application = self.session.handler.application
             if kernel == "complete":
+                application = self.session.handler.application
                 message = jsonapi.loads(message)
                 if message["header"]["msg_type"] in ("complete_request", "object_info_request"):
                     application.completer.registerRequest(self, message)
             elif kernel not in self.channels:
+                # handler may be None in certain circumstances (it seems to only be set
+                # in GET requests, not POST requests, so even using it here may
+                # only work with JSONP because of a race condition)
+                application = self.session.handler.application
+                kernel_info = application.km.kernel_info(kernel)
+                self.kernel_info = {'remote_ip': kernel_info['remote_ip'],
+                                    'referer': kernel_info['referer']}
                 self.channels[kernel] = \
                     {"shell": ShellSockJSHandler(kernel, self.send, application),
                      "iopub": IOPubSockJSHandler(kernel, self.send, application)}
                 self.channels[kernel]["shell"].open(kernel)
                 self.channels[kernel]["iopub"].open(kernel)
             if kernel != "complete":
+                self._log_stats(kernel, message)
                 self.channels[kernel][channel].on_message(message)
         except KeyError:
             logger.info("Message sent to deleted kernel: %s"%kernel)
@@ -253,11 +278,21 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
             channel["shell"].on_close()
             channel["iopub"].on_close()
 
+    def _log_stats(self, kernel, msg):
+        msg=json.loads(msg)
+        if msg["header"]["msg_type"] == "execute_request":
+            statslogger.info(StatsMessage(kernel_id = kernel,
+                                          remote_ip = self.kernel_info['remote_ip'],
+                                          referer = self.kernel_info['referer'],
+                                          code = msg["content"]["code"],
+                                          execute_type='request'))
+
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
 class TOSHandler(tornado.web.RequestHandler):
     """Handler for ``/tos.html``"""
-    if config.get_config("requires_tos"):
+    tos = config.get_config("requires_tos")
+    if tos:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "tos.html")
         with open(path) as f:
             tos_html = f.read()
@@ -267,7 +302,7 @@ class TOSHandler(tornado.web.RequestHandler):
         tos_json = json.dumps(tos_html)
     
     def post(self):
-        cookie_set = self.get_cookie("accepted_tos") == "true" or not config.get_config("requires_tos")
+        cookie_set = self.get_cookie("accepted_tos") == "true" or not self.tos
         if len(self.get_arguments("callback")) == 0:
             if cookie_set:
                 self.set_status(204)
@@ -281,6 +316,11 @@ class TOSHandler(tornado.web.RequestHandler):
             self.write("%s(%s);" % (self.get_argument("callback"), resp))
             self.set_header("Content-Type", "application/javascript")
 
+    def get(self):
+        if self.tos:
+            self.write(self.tos_html)
+        else:
+            raise tornado.web.HTTPError(404, 'No Terms of Service Required')
 
 class SageCellHandler(tornado.web.RequestHandler):
     """Handler for ``/sagecell.html``"""
@@ -329,7 +369,14 @@ accepted_tos=true\n""")
         code = "".join(self.get_arguments('code', strip=False))
         if code:
             km = self.application.km
-            self.kernel_id = yield gen.Task(km.new_session_async)
+            self.kernel_id = yield gen.Task(km.new_session_async,
+                                            referer = self.request.headers.get('Referer',''),
+                                            remote_ip = self.request.remote_ip)
+            statslogger.info(StatsMessage(kernel_id = self.kernel_id,
+                                          remote_ip = self.request.remote_ip,
+                                          referer = self.request.headers.get('Referer',''),
+                                          code = code,
+                                          execute_type = 'service'))
 
             self.shell_handler = ShellServiceHandler(self.application)
             self.iopub_handler = IOPubServiceHandler(self.application)
@@ -369,6 +416,7 @@ accepted_tos=true\n""")
         except:
             pass
 
+        #statslogger.info(StatMessage(kernel_id = self.kernel_id, '%r SERVICE DONE'%self.kernel_id)
         retval = self.iopub_handler.streams
         self.shell_handler.on_close()
         self.iopub_handler.on_close()
@@ -452,7 +500,8 @@ class ShellHandler(ZMQStreamHandler):
         if msg["header"]["msg_type"] in ("execute_reply",
                                          "sagenb.interact.update_interact_reply"):
             try:
-                timeout = float(msg["content"]["user_expressions"].pop("_sagecell_timeout", self.known_timeout))
+                timeout = msg["content"]["user_expressions"].pop("_sagecell_timeout", {'data': {'text/plain': '0.0'}})
+                timeout = float(timeout['data']['text/plain'])
                 self.known_timeout = timeout
             except:
                 timeout = 0.0
