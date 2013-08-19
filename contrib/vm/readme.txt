@@ -25,5 +25,11 @@ ln sagecell.img test/sagecell.img
 vm/deploy grout@localhost:/home/grout/images/test test 988 989
 
 
-
+# deploy one test image
+virsh start sagecell
+virsh start database
+vm/forward-port sagecell 9999 8888
+vm/forward-port sagecell 3333 22
+vm/forward-port database 10514 514
+vm/forward-port database 4444 22
 
