@@ -25,7 +25,6 @@ install_sagecell
 
 copy_database_system_files
 set_up_database_firewall
-#compress_zero
+change_hostname database
 virsh shutdown $VM
-
 
