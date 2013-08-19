@@ -272,6 +272,8 @@ EOF
 
 function change_hostname {
     $SSH <<EOF
-      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$1' /etc/sysconfig/network
+      set -v
+      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$1/' /etc/sysconfig/network
+      hostname $1
 EOF
 }

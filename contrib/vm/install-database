@@ -3,7 +3,7 @@
 VM=$1
 SAGE_SOURCE=$2
 VMSSH=root@localhost
-VMPORT=2555
+VMPORT=2556
 
 ./vm/start-vm $VM $VMPORT
 
