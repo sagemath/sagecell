@@ -30,6 +30,7 @@ virsh start sagecell
 virsh start database
 vm/forward-port sagecell 9999 8888
 vm/forward-port sagecell 3333 22
-vm/forward-port database 10514 514
+# SELinux expects port 6514
+vm/forward-port database 6514 6514
 vm/forward-port database 4444 22
 
