@@ -13,11 +13,9 @@ if sage == "":
         # assume both the web server and the untrusted workers have sage in their paths
         sage = "sage"
 
-#db = "sqlalchemy"
-#db_config = {"uri": "sqlite:///sqlite.db"}
+db = "sqlalchemy"
+db_config = {"uri": "sqlite:///sqlite.db"}
 
-db = "web"
-db_config = {"uri": "https://sagecell.sagemath.org/permalink"}
 # db = "web"
 # db_config = {"uri": "http://localhost:8889"}
 
@@ -25,7 +23,7 @@ requires_tos = True
 
 permalink_server = {
     'db': 'sqlalchemy',
-    'db_config': {'uri': 'sqlite:///sqlite.db'}
+    'db_config': {'uri': 'sqlite:////home/sageserver/permalinks.db'}
 }
 
 max_kernel_timeout = 60*90 # 90 minutes, for interacts

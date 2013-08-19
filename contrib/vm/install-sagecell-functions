@@ -220,10 +220,12 @@ EOF
 
 function copy_database_system_files {
 scp -P $VMPORT vm/vmfiles/database/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
+scp -P $VMPORT vm/vmfiles/database/upstart/* $VMSSH:/etc/init/
 scp -P $VMPORT vm/vmfiles/database/rsyslog/* $VMSSH:/etc/rsyslog.d/
 
     $SSH <<EOF | tee -a install.log
   chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
+  restorecon -R /etc/init/
   restorecon -R /etc/rsyslog.d/
 EOF
 }

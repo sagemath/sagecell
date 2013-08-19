@@ -34,7 +34,32 @@ if __name__ == "__main__":
 
     define("port", default=8889, help="run on the given port", type=int)
     tornado.options.parse_command_line()
-    application = PermalinkServer()
-    http_server = tornado.httpserver.HTTPServer(application)
-    http_server.listen(options.port)
-    tornado.ioloop.IOLoop.instance().start()
+
+    import lockfile
+    from lockfile.pidlockfile import PIDLockFile
+    config = misc.Config()
+    pidfile_path = config.get_config('permalink_pid_file')
+    pidlock = PIDLockFile(pidfile_path)
+    if pidlock.is_locked():
+        # try killing the process that has the lock
+        pid = pidlock.read_pid()
+        print "Killing PID %d"%pid
+        try:
+            os.kill(pid, 9)
+        except OSError, (code, text):
+            import errno
+            if code != errno.ESRCH:
+                raise
+            else:
+                # process doesn't exist anymore
+                print "Old process %d already gone"%pid
+                pidlock.break_lock()
+    try:
+        pidlock.acquire(timeout=10)
+        application = PermalinkServer()
+        http_server = tornado.httpserver.HTTPServer(application)
+        http_server.listen(options.port)
+        tornado.ioloop.IOLoop.instance().start()
+    finally:
+        pidlock.release()
+
