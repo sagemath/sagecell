@@ -269,3 +269,9 @@ $SSH <<EOF
   dd if=/dev/zero of=/zerofile ; rm -f /zerofile
 EOF
 }
+
+function change_hostname {
+    $SSH <<EOF
+      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$1' /etc/sysconfig/network
+EOF
+}
