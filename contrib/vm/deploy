@@ -7,7 +7,7 @@ STATICPORTPREFIX=$4
 IFS='@:' read REMOTEUSER REMOTEHOST REMOTEDIR <<< "$REMOTELOGIN"
 REMOTESERVER=$REMOTEUSER@$REMOTEHOST
 REMOTEHOSTSAFE=`sed 's/\./_/g' <<< "$REMOTEHOST"`
-SSHPORT=43234
+SSHPORT=4323
 VIRSH="virsh --connect qemu:///session"
 RSYNC="rsync --progress --archive --verbose --sparse --compress --protect-args --human-readable --recursive -e ssh"
 $VIRSH shutdown sagecell
@@ -24,14 +24,14 @@ ssh $REMOTESERVER -T <<EOF
     vm/make-shadow-vm sagecell \$SERVER
     $VIRSH start \$SERVER
     sleep 5
-    vm/forward-port \$SERVER $SSHPORT 22
-    ssh -p $SSHPORT root@localhost <<EOFADMIN
+    vm/forward-port \$SERVER $SSHPORT\$i 22
+    ssh -p $SSHPORT\$i root@localhost <<EOFADMIN
       set -v
       sed -ri 's/^HOSTNAME=.*/HOSTNAME=$REMOTEHOSTSAFE-\$SERVER/' /etc/sysconfig/network
 EOFADMIN
     # remove ssh port forward by restarting server
     $VIRSH shutdown \$SERVER
-    sleep 15
+    sleep 40 #TODO: wait, like the vm-start script does 
     $VIRSH start \$SERVER
     sleep 5
     vm/forward-port \$SERVER $SAGECELLPORTPREFIX\$i 8888
