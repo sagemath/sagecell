@@ -58,7 +58,7 @@ if __name__ == "__main__":
     try:
         pidlock.acquire(timeout=10)
         application = PermalinkServer()
-        http_server = tornado.httpserver.HTTPServer(application)
+        http_server = tornado.httpserver.HTTPServer(application, xheaders=True)
         http_server.listen(options.port)
         tornado.ioloop.IOLoop.instance().start()
     finally:
