@@ -8,6 +8,7 @@ post/get api for storing and retrieving code.
 import tornado.httpserver
 import tornado.ioloop
 import tornado.web
+import os
 import misc
 import permalink
 

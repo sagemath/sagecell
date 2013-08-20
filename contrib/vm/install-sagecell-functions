@@ -259,7 +259,7 @@ $SSH <<EOF
   iptables --flush INPUT
   iptables -A INPUT -i lo -j ACCEPT # open up loopback for all traffic
   iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow established connections
-  iptables -A INPUT -p tcp --dport 8888 -j ACCEPT # open up incoming web connections to database
+  iptables -A INPUT -p tcp --dport 8889 -j ACCEPT # open up incoming web connections to database
   iptables -A INPUT -p tcp --dport 6514 -j ACCEPT # open up rsyslog connections
   iptables -A INPUT -p tcp --dport 22 -j ACCEPT # open up ssh
   iptables -P INPUT DROP
