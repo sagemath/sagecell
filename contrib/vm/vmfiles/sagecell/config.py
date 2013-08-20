@@ -17,7 +17,7 @@ if sage == "":
 #db_config = {"uri": "sqlite:///sqlite.db"}
 
 db = "web"
-db_config = {"uri": "https://sagecell.sagemath.org:5555/permalink"}
+db_config = {"uri": "https://sagecell.sagemath.org/permalink"}
 # db = "web"
 # db_config = {"uri": "http://localhost:8889"}
 
