@@ -104,7 +104,7 @@ if __name__ == "__main__":
     try:
         pidlock.acquire(timeout=10)
         application = SageCellServer()
-        application.listen(args.port)
+        application.listen(args.port, xheaders=True)
         application.ioloop.start()
     except KeyboardInterrupt:
         logger.info("Received KeyboardInterrupt, so I'm shutting down.")
