@@ -217,8 +217,10 @@ New Interact issues
 * set up permalink server:
  - Make sage-monitor monitor the permalink server
  - set up the permalink server to have a ping page to check up status
- - make upstart scripts for the permalink server
  - set up rsnapshot to back up the permalink database and the logs
+ - or maybe it should be a git checkin, at least for the logs?  Every
+   single time the file will be appended to, so rsnapshot will store
+   the whole thing.  Git will at least compact something.
 
 
 
