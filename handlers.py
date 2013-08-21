@@ -356,6 +356,11 @@ accepted_tos=true\n""")
             return
         default_timeout = 30 # seconds
         code = "".join(self.get_arguments('code', strip=False))
+        if len(code)>65000:
+            self.set_status(413)
+            self.write("Max code size is 65000 characters")
+            self.finish()
+            return
         if code:
             km = self.application.km
             remote_ip = self.request.remote_ip
