@@ -27,6 +27,8 @@ config = Config()
 import logging
 logger = logging.getLogger('sagecell')
 
+import re
+cron = re.compile("^print [-]?\d+\+[-]?\d+$")
 
 
 statslogger = logging.getLogger('sagecell.stats')
@@ -356,14 +358,18 @@ accepted_tos=true\n""")
         code = "".join(self.get_arguments('code', strip=False))
         if code:
             km = self.application.km
+            remote_ip = self.request.remote_ip
+            referer = self.request.headers.get('Referer','')
             self.kernel_id = yield gen.Task(km.new_session_async,
-                                            referer = self.request.headers.get('Referer',''),
-                                            remote_ip = self.request.remote_ip)
-            statslogger.info(StatsMessage(kernel_id = self.kernel_id,
-                                          remote_ip = self.request.remote_ip,
-                                          referer = self.request.headers.get('Referer',''),
-                                          code = code,
-                                          execute_type = 'service'))
+                                            referer = referer,
+                                            remote_ip = remote_ip)
+            if not (remote_ip=="::1" and referer==""
+                    and cron.match(code) is not None):
+                statslogger.info(StatsMessage(kernel_id = self.kernel_id,
+                                              remote_ip = remote_ip,
+                                              referer = referer,
+                                              code = code,
+                                              execute_type = 'service'))
 
             self.shell_handler = ShellServiceHandler(self.application)
             self.iopub_handler = IOPubServiceHandler(self.application)
