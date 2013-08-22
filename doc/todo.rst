@@ -212,15 +212,10 @@ New Interact issues
 * make logging better
 - set logger or main server to block connections to port 5514 except
   for specific addresses
-- set up haproxy to pass on the ip address of the original client---right now remote_ip is always the haproxy ip address.
 
 * set up permalink server:
  - Make sage-monitor monitor the permalink server
  - set up the permalink server to have a ping page to check up status
- - set up rsnapshot to back up the permalink database and the logs
- - or maybe it should be a git checkin, at least for the logs?  Every
-   single time the file will be appended to, so rsnapshot will store
-   the whole thing.  Git will at least compact something.
 
 
 
