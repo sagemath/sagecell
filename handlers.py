@@ -61,6 +61,7 @@ class RootHandler(tornado.web.RequestHandler):
         db = self.application.db
         code = None
         language = None
+        interacts = None
         args = self.request.arguments
 
         if "lang" in args:
@@ -78,6 +79,12 @@ class RootHandler(tornado.web.RequestHandler):
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
                 z += "=" * ((4 - (len(z) % 4)) % 4)
+                if "interacts" in args:
+                    interacts = "".join(args["interacts"])
+                    interacts += "=" * ((4 - (len(interacts) % 4)) % 4)
+                    interacts = zlib.decompress(base64.urlsafe_b64decode(interacts))
+                else:
+                    interacts = "[]"
                 code = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
                 self.set_status(400)
@@ -94,16 +101,22 @@ class RootHandler(tornado.web.RequestHandler):
                 self.finish("ID not found in permalink database")
                 return
         else:
-            self.return_root(code, language)
+            self.return_root(code, language, interacts)
 
-    def return_root(self, code, language):
+    def return_root(self, code, language, interacts):
         autoeval = None
         if code is not None:
             if isinstance(code, unicode):
                 code = code.encode("utf8")
             code = urllib.quote(code)
             autoeval = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
-        self.render("root.html", code=code, lang=language, autoeval=autoeval)
+        if interacts == "[]":
+            interacts = None
+        if interacts is not None:
+            if isinstance(interacts, unicode):
+                interacts = interacts.encode("utf8")
+            interacts = urllib.quote(interacts)
+        self.render("root.html", code=code, lang=language, interacts=interacts, autoeval=autoeval)
 
 class KernelHandler(tornado.web.RequestHandler):
     """
@@ -484,10 +497,13 @@ class ShellHandler(ZMQStreamHandler):
         self.shell_stream.on_recv(self._on_zmq_reply)
         self.msg_to_kernel_callbacks.append(self._request_timeout)
         self.msg_from_kernel_callbacks.append(self._reset_timeout)
+        self.known_timeout = 0.0
 
     def _request_timeout(self, msg):
         if msg["header"]["msg_type"] in ("execute_request", "sagenb.interact.update_interact"):
             msg["content"].setdefault("user_expressions",{})
+            if msg["content"].get("linked", False):
+                self.known_timeout = float('inf')
             msg["content"]["user_expressions"]["_sagecell_timeout"] = \
                 "float('inf')" if msg["content"].get("linked", False) else "sys._sage_.kernel_timeout"
 
@@ -497,6 +513,7 @@ class ShellHandler(ZMQStreamHandler):
             try:
                 timeout = msg["content"]["user_expressions"].pop("_sagecell_timeout", {'data': {'text/plain': '0.0'}})
                 timeout = float(timeout['data']['text/plain'])
+                self.known_timeout = timeout
             except:
                 timeout = 0.0
 

@@ -89,11 +89,12 @@ Recursively nested interact::
 
 import uuid
 import sys
+import json
 from misc import session_metadata, decorator_defaults
 
 __interacts={}
 
-def update_interact(interact_id, name=None, value=None):
+def update_interact(interact_id, name=None, value=None, do_update=True):
     interact_info = __interacts[interact_id]
     controls = interact_info["controls"]
     proxy = interact_info["proxy"]
@@ -101,7 +102,7 @@ def update_interact(interact_id, name=None, value=None):
         controls[name].value = value
         if name not in proxy._changed:
             proxy._changed.append(str(name))
-    if name is None or controls[name].update:
+    if do_update and (name is None or controls[name].update):
         kwargs = {n: c.adapter(c.value) for n, c in controls.iteritems()}
         interact_info["function"](control_vals=kwargs)
         for c in controls.itervalues():
@@ -110,7 +111,12 @@ def update_interact(interact_id, name=None, value=None):
 
 def update_interact_msg(stream, ident, msg):
     content = msg["content"]
-    update_interact(content["interact_id"], content["name"], content["value"])
+    interact_id = content["interact_id"]
+    for name in content["values"]:
+        if name in __interacts[interact_id]["controls"]:
+            update_interact(interact_id, name, content["values"][name], not content["update_last"])
+    if content["update_last"]:
+        update_interact(interact_id)
     sys._sage_.send_message(stream, 'sagenb.interact.update_reply',
       content={'status': 'ok'}, parent=msg, ident=ident)
 
@@ -120,13 +126,6 @@ class InteractProxy(object):
         self.__interact = globals()["__interacts"][self.__interact_id]
         self.__function = function
         self._changed = self.__interact["controls"].keys()
-
-    def _state(self, state=None):
-        if state is None:
-            return {k:v.value for k,v in self.__interact["controls"].items()}
-        else:
-            for k,v in state.items():
-                setattr(self, k, v)
 
     def __setattr__(self, name, value):
         if name.startswith("_"):
@@ -205,6 +204,34 @@ class InteractProxy(object):
 
     def _update(self):
         update_interact(self.__interact_id)
+
+    def _state(self, state=None):
+        if state is None:
+            return {k:v.value for k,v in self.__interact["controls"].items()}
+        else:
+            for k,v in state.items():
+                setattr(self, k, v)
+
+    def _bookmark(self, name, state=None):
+        if state is None:
+            state = self._state()
+        else:
+            state = {n: self.__interact["controls"][n].constrain(v) for n, v in state.iteritems()}
+        msg = {
+            "application/sage-interact-bookmark": {
+                "interact_id": self.__interact_id,
+                "name": name,
+                "values": state
+            },
+            "text/plain": "Creating bookmark %s" % (name,)
+        }
+        sys._sage_.display_message(msg)
+
+    def _set_bookmarks(self, bookmarks):
+        if isinstance(bookmarks, basestring):
+            bookmarks = json.loads(bookmarks)
+            for name, state in bookmarks:
+                self._bookmark(name, state)
 
     class ListProxy(object):
         def __init__(self, iproxy, name, index=[]):
@@ -379,7 +406,11 @@ def interact(f, controls=[], update=None, layout=None, locations=None, output=Tr
         args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
         with session_metadata({'interact_id': interact_id}):
             sys._sage_.clear(__interacts[interact_id]["proxy"]._changed)
-            returned=f(*args, **control_vals)
+            try:
+                returned = f(*args, **control_vals)
+            except:
+                print "Interact state: %r" % (__interacts[interact_id]["proxy"]._state())
+                raise
         return returned
     # update global __interacts
     __interacts[interact_id] = {
