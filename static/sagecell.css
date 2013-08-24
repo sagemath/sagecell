@@ -173,24 +173,51 @@
     position: absolute;
     right: 3px;
     bottom: 3px;
-    display: inline-block;
-    width: 1.5em;
-    height: 1.5em;
     cursor: default;
 }
 
-.sagecell_bookmarks:before {
-    position: absolute;
-    right: 0px;
-    bottom: 0px;
-    content: "\2605";
-    color: #8c8c8c;
+.sagecell_bookmarks div {
+    display: inline-block;
+    height: 1.5em;
+    vertical-align: bottom;
+    overflow-y: hidden;
     font-size: 1.3em;
     font-family: Arial;
+    color: #8c8c8c;
     transition: color 0.25s ease-out;
 }
 
-.sagecell_sessionOutput.sagecell_active .sagecell_bookmarks:hover:before {
+.sagecell_bookmarks div:first-child {
+    color: transparent;
+}
+
+.sagecell_bookmarks div:last-child {
+    margin-left: 10px;
+    width: 1.5em;
+}
+
+.sagecell_bookmarks div:last-child:before {
+    display: inline-block;
+    content: "\2605";
+}
+
+.sagecell_bookmarks div.sagecell_export {
+    transition: color 0.5s 0.5s;
+    color: inherit;
+    cursor: pointer;
+}
+
+.sagecell_export:before {
+    content: "\22ef";
+}
+
+.sagecell_bookmarks input {
+    border: 1px solid black;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.sagecell_sessionOutput.sagecell_active .sagecell_bookmarks div:last-child:hover {
     color: #ffa500;
     cursor: pointer;
 }

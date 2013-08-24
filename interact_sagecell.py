@@ -89,6 +89,7 @@ Recursively nested interact::
 
 import uuid
 import sys
+import json
 from misc import session_metadata, decorator_defaults
 
 __interacts={}
@@ -225,6 +226,12 @@ class InteractProxy(object):
             "text/plain": "Creating bookmark %s" % (name,)
         }
         sys._sage_.display_message(msg)
+
+    def _set_bookmarks(self, bookmarks):
+        if isinstance(bookmarks, basestring):
+            bookmarks = json.loads(bookmarks)
+            for name, state in bookmarks:
+                self._bookmark(name, state)
 
     class ListProxy(object):
         def __init__(self, iproxy, name, index=[]):

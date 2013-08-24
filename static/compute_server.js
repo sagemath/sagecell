@@ -881,6 +881,12 @@ var textboxItem = function (defaultVal, callback) {
     return ce("li", {"class": "ui-state-disabled"}, [ce("a", {}, [input, div])]);
 };
 
+var selectAll = function (txt) {
+    txt.selectionStart = 0;
+    txt.selectionEnd = txt.value.length;
+    txt.selectionDirection = "forward";
+};
+
 sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     this.cells = {}
     this.container = ce("div", {"class": "sagecell_interactContainer"});
@@ -921,22 +927,58 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             this.placeControl(name);
         }
     }
-    var menuTop = ce("div", {
+    var menuBar = ce("div", {"class": "sagecell_bookmarks"});
+    var expText = ce("input", {
+        "title": "Pass this string to the interact proxy\u2019s _set_bookmarks method.",
+        "readonly": ""
+    });
+    var expButton = ce("div", {
+        "title": "Export bookmarks",
+        "tabindex": "0",
+        "role": "button"
+    }, [expText]);
+    expText.style.display = "none";
+    expText.addEventListener("focus", function (event) {
+        selectAll(expText);
+    });
+    var starButton = ce("div", {
         "title": "Bookmarks",
         "tabindex": "0",
-        "class": "sagecell_bookmarks",
         "role": "button"
     });
-    this.container.appendChild(menuTop);
+    this.set_export = function () {
+        var b = [];
+        for (var i = 0; i < this.bookmarks.childNodes.length; i++) {
+            var li = this.bookmarks.childNodes[i];
+            var node = li.firstChild.firstChild.firstChild;
+            if (node !== null) {
+                b.push([node.nodeValue, $(li).data("values")]);
+            }
+        }
+        expText.value = JSON.stringify(JSON.stringify(b));
+    };
     var list = ce("ul", {"class": "sagecell_bookmarks_list"});
+    var that = this;
+    expButton.addEventListener("mousedown", stop);
+    expButton.addEventListener("click", function () {
+        expText.style.display = "";
+        expText.focus();
+        selectAll(expText);
+        $(expButton).removeClass("sagecell_export");
+    });
+    menuBar.appendChild(expButton);
+    menuBar.appendChild(starButton);
+    this.container.appendChild(menuBar)
     this.bookmarks = list;
     list.addEventListener("mousedown", stop, true);
-    var that = this;
+    this.set_export();
     var visible = false;
     var tb;
     var hide_box = function hide_box() {
         list.parentNode.removeChild(list);
         list.removeChild(tb);
+        $(expButton).removeClass("sagecell_export");
+        expText.style.display = "none";
         window.removeEventListener("mousedown", hide_box);
         visible = false;
         close = null;
@@ -988,16 +1030,18 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
         $(list).position({
             "my": "right top",
             "at": "right bottom+5px",
-            "of": menuTop
+            "of": starButton
         });
+        $(expButton).addClass("sagecell_export");
+        expButton.style.display = "inline-block";
         window.addEventListener("mousedown", hide_box);
         event.stopPropagation();
     };
-    menuTop.addEventListener("mousedown", handler);
+    starButton.addEventListener("mousedown", handler);
     this.disable_bookmarks = function () {
-        menuTop.removeEventListener("mousedown", handler);
-        menuTop.setAttribute("aria-disabled", "true");
-        menuTop.removeAttribute("tabindex");
+        starButton.removeEventListener("mousedown", handler);
+        starButton.setAttribute("aria-disabled", "true");
+        starButton.removeAttribute("tabindex");
     }
     if (this.layout && this.layout.length > 0) {
         this.session.output(this.container, parent_block);
@@ -1059,8 +1103,9 @@ sagecell.InteractCell.prototype.createBookmark = function (name, vals) {
     del.addEventListener("click", function (event) {
         that.bookmarks.removeChild(entry);
         if (that.parent_block === null) {
-            this.session.updateLinks(true);
+            that.session.updateLinks(true);
         }
+        that.set_export();
         event.stopPropagation();
     });
     $(entry).data({"values": vals});
@@ -1077,6 +1122,7 @@ sagecell.InteractCell.prototype.createBookmark = function (name, vals) {
     if (this.parent_block === null) {
         this.session.updateLinks(true);
     }
+    this.set_export();
 };
 
 sagecell.InteractCell.prototype.clearBookmarks = function () {
