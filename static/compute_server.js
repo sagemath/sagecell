@@ -936,7 +936,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
         "title": "Export bookmarks",
         "tabindex": "0",
         "role": "button"
-    }, [expText]);
+    });
     expText.style.display = "none";
     expText.addEventListener("focus", function (event) {
         selectAll(expText);
@@ -959,7 +959,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     };
     var list = ce("ul", {"class": "sagecell_bookmarks_list"});
     var that = this;
-    expButton.addEventListener("mousedown", stop);
+    menuBar.addEventListener("mousedown", stop);
     expButton.addEventListener("click", function () {
         expText.style.display = "";
         expText.focus();
@@ -967,6 +967,7 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
         $(expButton).removeClass("sagecell_export");
     });
     menuBar.appendChild(expButton);
+    menuBar.appendChild(expText);
     menuBar.appendChild(starButton);
     this.container.appendChild(menuBar)
     this.bookmarks = list;

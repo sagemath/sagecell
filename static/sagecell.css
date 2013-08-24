@@ -189,6 +189,7 @@
 
 .sagecell_bookmarks div:first-child {
     color: transparent;
+    visibility: hidden;
 }
 
 .sagecell_bookmarks div:last-child {
@@ -202,6 +203,7 @@
 }
 
 .sagecell_bookmarks div.sagecell_export {
+    visibility: visible;
     transition: color 0.5s 0.5s;
     color: inherit;
     cursor: pointer;
@@ -214,7 +216,9 @@
 .sagecell_bookmarks input {
     border: 1px solid black;
     border-radius: 3px;
+    vertical-align: 50%;
     background-color: rgba(0, 0, 0, 0.1);
+    font-family: monospace;
 }
 
 .sagecell_sessionOutput.sagecell_active .sagecell_bookmarks div:last-child:hover {
