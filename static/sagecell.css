@@ -172,7 +172,7 @@
 .sagecell_bookmarks {
     position: absolute;
     right: 3px;
-    bottom: 3px;
+    top: 3px;
     cursor: default;
 }
 
