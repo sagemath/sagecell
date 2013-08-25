@@ -765,7 +765,9 @@ sagecell.InteractCell.prototype.newControl = function (data) {
     this.controls[data.name] = new sagecell.InteractData.control_types[data.control.control_type](data.control);
     this.placeControl(data.name);
     this.bindChange(data.name);
-    if (this.output_block) {$(this.cells[data.name]).addClass("sagecell_dirtyControl");}
+    if (this.output_block && this.controls[data.name].dirty_update) {
+        $(this.cells[data.name]).addClass("sagecell_dirtyControl");
+    }
     if (this.parent_block === null) {
         this.session.updateLinks(true);
     }
@@ -1053,7 +1055,9 @@ sagecell.InteractCell.prototype.updateControl = function (data) {
     if (this.controls[data.control].update) {
         this.controls[data.control].ignoreNext = this.controls[data.control].eventCount;
         this.controls[data.control].update(data.value, data.index);
-        if (this.output_block) {$(this.cells[data.control]).addClass("sagecell_dirtyControl");}
+        if (this.output_block && this.controls[data.control].dirty_update) {
+            $(this.cells[data.control]).addClass("sagecell_dirtyControl");
+        }
         if (this.parent_block === null) {
             this.session.updateLinks(true);
         }
@@ -1151,10 +1155,14 @@ sagecell.InteractCell.prototype.disable = function () {
 
 sagecell.InteractData = {};
 
-sagecell.InteractData.InteractControl = function () {
+sagecell.InteractData.InteractControl = function (dirty_update) {
     return function (control) {
         this.control = control;
-        this.dirty_update = !this.control.update;
+        if (typeof dirty_update === "undefined") {
+            this.dirty_update = !this.control.update;
+        } else {
+            this.dirty_update = dirty_update;
+        }
         this.eventCount = this.ignoreNext = 0;
     }
 }
@@ -1297,7 +1305,7 @@ sagecell.InteractData.ColorSelector.prototype.disable = function () {
     this.span.firstChild.style.cursor = "default";
 }
 
-sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
+sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl(false);
 
 sagecell.InteractData.HtmlBox.prototype.rendered = function () {
     this.div = ce("div");
