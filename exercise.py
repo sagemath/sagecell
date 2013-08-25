@@ -199,7 +199,7 @@ def exercise(code):
     obj = {}
     obj['E'] = Exercise(question, answer, check, hints)
     obj['title'] = title
-    title_html = '<div><h3 class="lighten">%s</h3></div>'
+    title_html = '<h3>%s</h3>'
 
     the_times = []
     @interact(layout=[[('go',1), ('title',11,'')],[('_output')], [('times',12, "<b>Times:</b>")]])#, flicker=True)
@@ -208,7 +208,7 @@ def exercise(code):
           times = HtmlBox('No times')):
         c = self._changed
         if 'go' in c or 'another' in c:
-            self.title = title_html%title
+            self.title = title
             def cb(obj):
                 the_times.append("%.1f"%obj['time'])
                 h.times = ', '.join(the_times)
