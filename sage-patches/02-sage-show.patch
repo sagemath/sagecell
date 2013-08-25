@@ -261,7 +261,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
          else:
              kwds.setdefault('filename', tmp_filename(ext='.png'))
              self.save(**kwds)
-@@ -2651,42 +2661,47 @@
+@@ -2717,45 +2727,50 @@
          options.update(kwds)
          dpi = options.pop('dpi')
          transparent = options.pop('transparent')
@@ -291,6 +291,9 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +                elif ext in ['', '.sobj']:
 +                    SageObject.save(self, filename)
 +
++        from matplotlib import rcParams
++        rc_backup = (rcParams['ps.useafm'], rcParams['pdf.use14corefonts'],
++                     rcParams['text.usetex']) # save the rcParams
 +        figure = self.matplotlib(**options)
 +        # You can output in PNG, PS, EPS, PDF, or SVG format, depending on the file extension. 
 +        # matplotlib looks at the file extension to see what the renderer should be.
@@ -311,6 +314,9 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +                transparent=transparent, format=format)
 +
          else:
+-            from matplotlib import rcParams
+-            rc_backup = (rcParams['ps.useafm'], rcParams['pdf.use14corefonts'],
+-                         rcParams['text.usetex']) # save the rcParams
 -            figure = self.matplotlib(**options)
 -            # You can output in PNG, PS, EPS, PDF, or SVG format, depending
 -            # on the file extension.
@@ -322,7 +328,7 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 -            figure.set_canvas(FigureCanvasAgg(figure))
 -            # this messes up the aspect ratio!
 -            #figure.canvas.mpl_connect('draw_event', pad_for_tick_labels)
--            
+-
 -            # tight_layout adjusts the *subplot* parameters so ticks aren't cut off, etc.
 -            figure.tight_layout()
 -
@@ -336,8 +342,8 @@ diff --git a/sage/plot/graphics.py b/sage/plot/graphics.py
 +            figure.savefig(filename, dpi=dpi,
 +                       transparent=transparent, format=format)
  
- 
- class GraphicsArray(SageObject):
+             # Restore the rcParams to the original, possibly user-set values
+             (rcParams['ps.useafm'], rcParams['pdf.use14corefonts'],
 @@ -3046,11 +3061,18 @@
              self.save(DOCTEST_MODE_FILE,
                        dpi=dpi, figsize=self._figsize, axes = axes, **args)
