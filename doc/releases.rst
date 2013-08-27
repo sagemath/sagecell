@@ -19,3 +19,30 @@
   methods
 * Made progress on collecting statistics and logging use besides
   Google Analytics
+
+27 Aug 2013
+-----------
+
+* Bookmarks for interacts.  This requires a database upgrade:
+
+BEGIN TRANSACTION;
+ALTER TABLE permalinks RENAME TO permalinksOld;
+DROP INDEX ix_permalinks_ident;
+CREATE TABLE permalinks (
+	ident VARCHAR NOT NULL,
+	code VARCHAR,
+	language VARCHAR,
+	interacts VARCHAR,
+	created TIMESTAMP,
+	last_accessed TIMESTAMP,
+	requested INTEGER,
+	PRIMARY KEY (ident)
+);
+INSERT INTO permalinks (ident, code, language, created, last_accessed, requested)
+SELECT ident, code, language, created, last_accessed, requested FROM permalinksOld;
+CREATE INDEX ix_permalinks_ident ON permalinks (ident);
+COMMIT;
+
+Check to make sure it works, then do
+
+DROP TABLE permalinksOld;
