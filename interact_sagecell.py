@@ -368,6 +368,12 @@ def interact(f, controls=[], update=None, layout=None, locations=None, output=Tr
     elif layout is None:
         layout = []
 
+    if locations is True:
+        locations="" # empty prefix
+    if isinstance(locations, basestring):
+        prefix = '#'+locations
+        locations = {name: prefix+name for name in names+["_output","bookmarks"]}
+
     placed = set()
     if locations:
         placed.update(locations.keys())
