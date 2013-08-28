@@ -920,6 +920,9 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 this.cells[name] = $("body").find(this.locations[name]).slice(0,1).empty()[0];
                 if (name==="_output") {
                     this.output_block = this.cells[name];
+                    $(this.output_block).addClass("sagecell_interactOutput");
+                } else if (name==="_bookmarks") {
+                    this.bookmark_container = this.cells[name];
                 }
             }
         }
@@ -971,7 +974,8 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     menuBar.appendChild(expButton);
     menuBar.appendChild(expText);
     menuBar.appendChild(starButton);
-    this.container.appendChild(menuBar)
+    this.bookmark_container = this.bookmark_container || this.container;
+    this.bookmark_container.appendChild(menuBar)
     this.bookmarks = list;
     list.addEventListener("mousedown", stop, true);
     this.set_export();
