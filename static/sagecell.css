@@ -320,8 +320,13 @@
     display: table-cell;
     width: 100%;
     height: 100%;
-    padding: 1ex;
     vertical-align: middle;
+}
+
+.sagecell_interactControlCell .sagecell_interactControl {
+    /* only pad if we are setting up the layout.  If we have an inline control
+       don't pad, but leave it up to the user */
+    padding: 1ex;
 }
 
 .sagecell_sliderContainer {
