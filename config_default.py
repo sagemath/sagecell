@@ -44,7 +44,7 @@ _default_config = {"host": "localhost",
 # Note: All other resource limits seem to be working, but besides RLIMIT_CPU and
 # RLIMIT_AS they don't actually kill off offending processes
                   "resource_limits": {"RLIMIT_CPU": 30, # CPU time in seconds
-                                      "RLIMIT_AS": 1024*(2**20), #Maximum address space in bytes; this sets 1024 MB
+                                      "RLIMIT_AS": 2048*(2**20), #Maximum address space in bytes; this sets 1024 MB
                                      },
 # The log file will be in the home directory of the untrusted account
                   "log_file": "sagecell.log",
