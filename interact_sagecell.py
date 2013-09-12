@@ -277,7 +277,8 @@ except AttributeError:
     pass
 
 @decorator_defaults
-def interact(f, controls=[], update=None, layout=None, locations=None, output=True, readonly=False):
+def interact(f, controls=[], update=None, layout=None, locations=None,
+             output=True, readonly=False, show_labels=True):
     """
     A decorator that creates an interact.
 
@@ -394,7 +395,10 @@ def interact(f, controls=[], update=None, layout=None, locations=None, output=Tr
     interact_id=str(uuid.uuid4())
     msgs = {n: c.message() for n, c in controls.iteritems()}
     for n, m in msgs.iteritems():
-        m["label"] = controls[n].label if controls[n].label is not None else n
+        if not show_labels:
+            m["label"]=""
+        else:
+            m["label"] = controls[n].label if controls[n].label is not None else n
         m["update"] = controls[n].update
     msg = {
         "application/sage-interact": {
