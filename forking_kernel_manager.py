@@ -28,14 +28,14 @@ class KernelError(Exception):
 
 class ForkingKernelManager(object):
     """ A class for managing multiple kernels and forking on the untrusted side. """
-    def __init__(self, filename, ip, update_function=None):
+    def __init__(self, filename, ip, update_function=None, tmp_dir = None):
         self.kernels = {}
         self.ip = ip
         self.filename = filename
         self.update_function = update_function
-
-        self.dir = '/tmp/sagecell'
+        self.dir = tmp_dir
         makedirs(self.dir)
+
     def fork_kernel(self, config, pipe, resource_limits, logfile):
         """ A function to be set as the target for the new kernel processes forked in ForkingKernelManager.start_kernel. This method forks and initializes a new kernel, uses the update_function to update the kernel's namespace, sets resource limits for the kernel, and sends kernel connection information through the Pipe object.
 

@@ -31,6 +31,7 @@ import permalink
 
 class SageCellServer(tornado.web.Application):
     def __init__(self, baseurl=""):
+        self.config = misc.Config()
         baseurl = baseurl.rstrip('/')
         handlers_list = [
             (r"/", handlers.RootHandler),
@@ -41,7 +42,7 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel/%s" % _kernel_id_regex, handlers.KernelHandler),
             (r"/kernel/%s/iopub" % _kernel_id_regex, handlers.IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
-            (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": "/tmp/sagecell/"}),
+            (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": tmp_dir}),
             (r"/permalink", permalink.PermalinkHandler),
             (r"/service", handlers.ServiceHandler),
             ] + handlers.KernelRouter.urls
@@ -52,14 +53,12 @@ class SageCellServer(tornado.web.Application):
             static_url_prefix = baseurl+"/static/",
             static_handler_class = handlers.StaticHandler
             )
-        self.config = misc.Config()
 
         initial_comps = self.config.get_config("computers")
         default_comp = self.config.get_default_config("_default_config")
         kernel_timeout = self.config.get_config("max_kernel_timeout")
-
         self.km = TMKM(computers=initial_comps, default_computer_config=default_comp,
-                       kernel_timeout=kernel_timeout)
+                       kernel_timeout=kernel_timeout, tmp_dir = tmp_dir)
         db = __import__('db_'+self.config.get_config('db'))
         self.db = db.DB(self.config.get_config('db_config')['uri'])
         self.ioloop = ioloop.IOLoop.instance()
@@ -85,6 +84,8 @@ def get_ip_address(ifname):
 
 
 if __name__ == "__main__":
+    config = misc.Config()
+
     import argparse
     parser = argparse.ArgumentParser(description='Launch a SageCell web server',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -93,17 +94,20 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--debug', action='store_true', help='debug messages')
     parser.add_argument('-b', '--baseurl', default="", help="base url")
     parser.add_argument('--interface', default=None, help="interface to listen on (default all)")
+    parser.add_argument('--tmp_dir', default=config.get_config("tmp_dir"), help="temporary directory for calculations")
+
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
         logging.getLogger("tornado.access").setLevel(logging.DEBUG)
         logging.getLogger("tornado.application").setLevel(logging.DEBUG)
         logging.getLogger("tornado.general").setLevel(logging.DEBUG)
-    logger.info("starting tornado web server")
 
+    tmp_dir = args.tmp_dir
+
+    logger.info("starting tornado web server")
     import lockfile
     from lockfile.pidlockfile import PIDLockFile
-    config = misc.Config()
     pidfile_path = config.get_config('pid_file')
     pidlock = PIDLockFile(pidfile_path)
     if pidlock.is_locked():

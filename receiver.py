@@ -5,7 +5,7 @@ import sys
 from misc import Timer
 
 class Receiver(object):
-    def __init__(self, filename, ip):
+    def __init__(self, filename, ip, tmp_dir):
         self.context = zmq.Context()
         self.dealer = self.context.socket(zmq.DEALER)
         self.port = self.dealer.bind_to_random_port("tcp://%s" % ip)
@@ -15,7 +15,7 @@ class Receiver(object):
         print self.sage_mode
         sys.stdout.flush()
         self.km = UntrustedMultiKernelManager(filename, ip,
-                update_function=self.update_dict_with_sage)
+                update_function=self.update_dict_with_sage, tmp_dir=tmp_dir)
         self.filename = filename
         self.timer = Timer("", reset=True)
 
@@ -323,6 +323,7 @@ set_random_seed()
             reply_content = self.km.start_kernel(resource_limits=resource_limits)
             return self._form_message(reply_content)
         except Exception as e:
+            logging.exception("Error starting kernel")
             return self._form_message(str(e), error=True)
 
     def kill_kernel(self, msg_content):
@@ -367,13 +368,14 @@ set_random_seed()
 
 
 if __name__ == '__main__':
+    ip = sys.argv[1]
     filename = sys.argv[2]
     comp_id = sys.argv[3]
+    tmp_dir = sys.argv[4]
     import logging
     import uuid
     logging.basicConfig(filename=filename,format=comp_id[:4]+': %(asctime)s %(message)s',level=logging.DEBUG)
     logging.debug('started')
-    ip = sys.argv[1]
-    receiver = Receiver(filename, ip)
+    receiver = Receiver(filename, ip, tmp_dir)
     receiver.start()
     logging.debug('ended')

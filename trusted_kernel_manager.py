@@ -20,7 +20,7 @@ import sender
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self, computers = None, default_computer_config = None,
-                 kernel_timeout = None):
+                 kernel_timeout = None, tmp_dir = None):
 
         self._kernel_queue = Queue()
 
@@ -37,7 +37,8 @@ class TrustedMultiKernelManager(object):
         self.kernel_timeout = kernel_timeout
         if kernel_timeout is None:
             self.kernel_timeout = 0.0
-
+        self.tmp_dir = tmp_dir
+        
         if computers is not None:
             for comp in computers:
                 comp_id = self.add_computer(comp)
@@ -90,7 +91,7 @@ class TrustedMultiKernelManager(object):
     def _ssh_untrusted(self, cfg, client, comp_id):
         logfile = cfg.get("log_file", os.devnull)
         ip = socket.gethostbyname(cfg["host"])
-        code = "%s '%s/receiver.py' '%s' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile, comp_id)
+        code = "%s '%s/receiver.py' '%s' '%s' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile, comp_id, self.tmp_dir)
         logger.debug(code)
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
@@ -245,7 +246,7 @@ class TrustedMultiKernelManager(object):
                 self._kernel_queue.put((kernel_id, comp_id))
                 logger.info("Started preforked kernel on %s: %s", comp_id[:4], kernel_id)
             else:
-                logger.error("Error starting prefork kernel on computer %s", comp_id)
+                logger.error("Error starting prefork kernel on computer %s: %s", comp_id, reply)
         logger.info("Trying to start kernel on %s", comp_id[:4])
         self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
