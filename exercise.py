@@ -39,6 +39,7 @@ class Exercise:
 
         from sage.misc.all import walltime
         response = "<div class='well'>"
+        correct=False
         try:
             r = self._check(attempt)
             if isinstance(r, tuple) and len(r)==2:
