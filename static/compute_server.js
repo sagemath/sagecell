@@ -371,7 +371,6 @@ sagecell.Session.prototype.execute = function (code) {
         this.set_last_request(null, this.kernel.execute(code, callbacks, {
             "silent": false,
             "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"},
-            "linked": this.linked
         }));
     } else {
         this.kernel.deferred_code.push(code);
