@@ -178,6 +178,10 @@ def display_message(data, metadata=None):
     content = {'data': data, 'source': 'sagecell'}
     session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header, metadata=metadata)
 
+def reset_kernel_timeout(timeout):
+    sys.stdout.session.send(sys.stdout.pub_socket, 'kernel_timeout', content={'timeout': float(timeout)}, parent = sys.stdout.parent_header)
+
+
 def json_default(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()

@@ -20,7 +20,7 @@ import sender
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
     def __init__(self, computers = None, default_computer_config = None,
-                 kernel_timeout = None, tmp_dir = None):
+                 max_kernel_timeout = 0.0, tmp_dir = None):
 
         self._kernel_queue = Queue()
 
@@ -34,11 +34,9 @@ class TrustedMultiKernelManager(object):
         self.context = zmq.Context()
         self.default_computer_config = default_computer_config
 
-        self.kernel_timeout = kernel_timeout
-        if kernel_timeout is None:
-            self.kernel_timeout = 0.0
+        self.max_kernel_timeout = float(max_kernel_timeout)
         self.tmp_dir = tmp_dir
-        
+
         if computers is not None:
             for comp in computers:
                 comp_id = self.add_computer(comp)
@@ -204,10 +202,13 @@ class TrustedMultiKernelManager(object):
         reply_content = reply["content"]
         kernel_id = reply_content["kernel_id"]
         kernel_connection = reply_content["connection"]
+        if timeout is None :
+            timeout = self.max_kernel_timeout
         self._kernels[kernel_id] = {"comp_id": comp_id,
                                     "connection": kernel_connection,
                                     "executing": 0, # number of active execute_requests
-                                    "timeout": timeout if timeout is not None else time.time()+self.kernel_timeout}
+                                    "deadline": time.time()+timeout,
+                                    "timeout": timeout}
         self._comps[comp_id]["kernels"][kernel_id] = None
         self._sessions[kernel_id] = Session(key=kernel_connection["key"])
 
@@ -242,7 +243,7 @@ class TrustedMultiKernelManager(object):
         def cb(reply):
             if reply["type"] == "success":
                 kernel_id = reply["content"]["kernel_id"]
-                self._setup_session(reply, comp_id, timeout=sys.float_info.max)
+                self._setup_session(reply, comp_id, timeout=float('inf'))
                 self._kernel_queue.put((kernel_id, comp_id))
                 logger.info("Started preforked kernel on %s: %s", comp_id[:4], kernel_id)
             else:
@@ -250,7 +251,7 @@ class TrustedMultiKernelManager(object):
         logger.info("Trying to start kernel on %s", comp_id[:4])
         self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
-    def new_session_async(self, referer='', remote_ip='', callback=None):
+    def new_session_async(self, referer='', remote_ip='', timeout = None, callback=None):
         """ Starts a new kernel on an open computer.
 
         We try to get a kernel off a queue of preforked kernels to minimize
@@ -269,7 +270,13 @@ class TrustedMultiKernelManager(object):
             preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
             logger.info("Using kernel on %s.  Queue: %s kernels on %s computers"%(comp_id[:4], self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue]))
             kernel_info = self._kernels[preforked_kernel_id]
-            kernel_info["timeout"] = time.time()+self.kernel_timeout
+            if timeout is not None:
+                timeout = float(timeout)
+            import math
+            if math.isnan(timeout) or timeout<0 or timeout > self.max_kernel_timeout:
+                timeout = self.max_kernel_timeout
+            kernel_info["deadline"] = time.time() + timeout
+            kernel_info["timeout"] = timeout
             kernel_info["referer"] = referer
             kernel_info["remote_ip"] = remote_ip
             self.new_session_prefork(comp_id)

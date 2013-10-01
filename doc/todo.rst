@@ -54,6 +54,17 @@ Frontend
   the python side to send an output id).  This would help with displaying errors, for example. (see https://github.com/sagemath/sagecell/issues/387)
 
 
+Fall 2013
+=========
+
+* [X] Revamp the timeout mechanism:
+  - no purpose to linked message attribute---just request a default
+    timeout when the kernel is created
+  - To set the default timeout from code, we should just have a
+    special function that will deliver a message to the intermediate
+    zmq/websocket bridge to set the timeout, instead of surreptitously
+    adding timeout data to every message.
+
 Summer 2013
 ===========
 * [X] new interacts, maybe based on William's system

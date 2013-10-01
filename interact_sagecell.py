@@ -413,7 +413,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
         "text/plain": "Sage Interact"
     }
     sys._sage_.display_message(msg)
-    sys._sage_.kernel_timeout = float("inf")
+    sys._sage_.reset_kernel_timeout(float('inf'))
     def adapted_f(control_vals):
         args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
         with session_metadata({'interact_id': interact_id}):

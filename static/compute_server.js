@@ -143,7 +143,23 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             }
             this.iopub_channel.onopen = undefined;
         }
-        this.kernel.start(IPython.utils.uuid());
+        this.kernel.start = function(notebook_id, timeout) {
+            // Override the IPython start kernel function since we want to send extra data, like a default timeout
+            var that = this;
+            if (!this.running) {
+                timeout = timeout || 0;
+                var qs = $.param({notebook:notebook_id, timeout: timeout});
+                console.log(qs);
+                var url = this.base_url + '?' + qs;
+                $.post(url,
+                       $.proxy(that._kernel_started,that),
+                       'json'
+                      );
+            }
+
+        }
+
+        this.kernel.start(IPython.utils.uuid(), linked ? 'inf' : 0);
     }
     var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(

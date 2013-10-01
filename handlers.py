@@ -6,6 +6,7 @@ import tornado.gen as gen
 import sockjs.tornado
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
+import math
 try:
     from IPython.kernel.zmq.session import Session
 except ImportError:
@@ -157,9 +158,15 @@ class KernelHandler(tornado.web.RequestHandler):
             ws_url = "%s://%s/" % (proto, host)
             km = self.application.km
             logger.info("Starting session: %s"%timer)
-            kernel_id = yield gen.Task(km.new_session_async, 
+            timeout = self.get_argument("timeout", None)
+            if timeout is not None:
+                timeout = float(timeout)
+                if math.isnan(timeout) or timeout<0:
+                    timeout = None
+            kernel_id = yield gen.Task(km.new_session_async,
                                        referer = self.request.headers.get('Referer',''),
-                                       remote_ip = self.request.remote_ip)
+                                       remote_ip = self.request.remote_ip,
+                                       timeout = timeout)
             data = {"ws_url": ws_url, "kernel_id": kernel_id}
             self.write(self.permissions(data))
             self.set_cookie("accepted_tos", "true", expires_days=365)
@@ -262,7 +269,8 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
                 application = self.session.handler.application
                 kernel_info = application.km.kernel_info(kernel)
                 self.kernel_info = {'remote_ip': kernel_info['remote_ip'],
-                                    'referer': kernel_info['referer']}
+                                    'referer': kernel_info['referer'],
+                                    'timeout': kernel_info['timeout']}
                 self.channels[kernel] = \
                     {"shell": ShellSockJSHandler(kernel, self.send, application),
                      "iopub": IOPubSockJSHandler(kernel, self.send, application)}
@@ -449,7 +457,7 @@ class ZMQStreamHandler(object):
         self.km = self.application.km
         self.kernel_id = kernel_id
         self.session = self.km._sessions[self.kernel_id]
-        self.kernel_timeout = self.km.kernel_timeout
+        self.kernel = self.km._kernels[self.kernel_id]
         self.msg_from_kernel_callbacks = []
         self.msg_to_kernel_callbacks = []
 
@@ -473,9 +481,13 @@ class ZMQStreamHandler(object):
     def _on_zmq_reply(self, msg_list):
         try:
             msg = self._unserialize_reply(msg_list)
+            send = True
             for f in self.msg_from_kernel_callbacks:
-                f(msg)
-            self._output_message(msg)
+                result = f(msg)
+                if result is False:
+                    send = False
+            if send:
+                self._output_message(msg)
         except:
             pass
     
@@ -495,43 +507,27 @@ class ShellHandler(ZMQStreamHandler):
         self.kill_kernel = False
         self.shell_stream = self.km.create_shell_stream(self.kernel_id)
         self.shell_stream.on_recv(self._on_zmq_reply)
-        self.msg_to_kernel_callbacks.append(self._request_timeout)
-        self.msg_from_kernel_callbacks.append(self._reset_timeout)
-        self.known_timeout = 0.0
+        self.msg_from_kernel_callbacks.append(self._reset_deadline)
 
-    def _request_timeout(self, msg):
-        if msg["header"]["msg_type"] in ("execute_request", "sagenb.interact.update_interact"):
-            msg["content"].setdefault("user_expressions",{})
-            if msg["content"].get("linked", False):
-                self.known_timeout = float('inf')
-            msg["content"]["user_expressions"]["_sagecell_timeout"] = \
-                "float('inf')" if msg["content"].get("linked", False) else "sys._sage_.kernel_timeout"
-
-    def _reset_timeout(self, msg):
+    def _reset_deadline(self, msg):
         if msg["header"]["msg_type"] in ("execute_reply",
                                          "sagenb.interact.update_interact_reply"):
-            try:
-                timeout = msg["content"]["user_expressions"].pop("_sagecell_timeout", {'data': {'text/plain': '0.0'}})
-                timeout = float(timeout['data']['text/plain'])
-                self.known_timeout = timeout
-            except:
-                timeout = 0.0
-
-            if timeout > self.kernel_timeout:
-                timeout = self.kernel_timeout
-            if timeout <= 0.0 and self.km._kernels[self.kernel_id]["executing"] == 1:
+            timeout = self.kernel["timeout"]
+            if timeout > self.km.max_kernel_timeout:
+                self.kernel["timeout"] = timeout = self.km.max_kernel_timeout
+            if timeout <= 0.0 and self.kernel["executing"] == 1:
                 # kill the kernel before the heartbeat is able to
                 self.kill_kernel = True
             else:
-                self.km._kernels[self.kernel_id]["timeout"] = (time.time()+timeout)
-                self.km._kernels[self.kernel_id]["executing"] -= 1
-        
+                self.kernel["deadline"] = (time.time()+timeout)
+                self.kernel["executing"] -= 1
+
     def on_message(self, message):
         if self.km._kernels.get(self.kernel_id) is not None:
             msg = jsonapi.loads(message)
             for f in self.msg_to_kernel_callbacks:
                 f(msg)
-            self.km._kernels[self.kernel_id]["executing"] += 1
+            self.kernel["executing"] += 1
             self.session.send(self.shell_stream, msg)
 
     def on_close(self):
@@ -550,7 +546,7 @@ class ShellHandler(ZMQStreamHandler):
         super(ShellHandler, self)._on_zmq_reply(msg_list)
         if self.kill_kernel:
             self.shell_stream.flush()
-            self.km._kernels[self.kernel_id]["kill"]()
+            self.kernel["kill"]()
 
 class IOPubHandler(ZMQStreamHandler):
     """
@@ -571,11 +567,25 @@ class IOPubHandler(ZMQStreamHandler):
 
         self.iopub_stream = self.km.create_iopub_stream(self.kernel_id)
         self.iopub_stream.on_recv(self._on_zmq_reply)
-        self.km._kernels[kernel_id]["kill"] = self.kernel_died
+        self.kernel["kill"] = self.kernel_died
 
         self.hb_stream = self.km.create_hb_stream(self.kernel_id)
         self.start_hb(self.kernel_died)
 
+        self.msg_from_kernel_callbacks.append(self._reset_timeout)
+
+    def _reset_timeout(self, msg):
+        if msg["header"]["msg_type"]=="kernel_timeout":
+            try:
+                timeout = float(msg["content"]["timeout"])
+                if (not math.isnan(timeout)) and timeout >= 0:
+                    if timeout > self.km.max_kernel_timeout:
+                        timeout = self.km.max_kernel_timeout
+                    self.kernel["timeout"] = timeout
+            except:
+                pass
+            return False
+        
     def on_message(self, msg):
         pass
 
@@ -601,12 +611,10 @@ class IOPubHandler(ZMQStreamHandler):
             def ping_or_dead():
                 self.hb_stream.flush()
                 try:
-                    if self.km._kernels[self.kernel_id]["executing"] == 0:
+                    if self.kernel["executing"] == 0:
                         # only kill the kernel after all pending
                         # execute requests have finished
-                        timeout = self.km._kernels[self.kernel_id]["timeout"]
-
-                        if time.time() > timeout:
+                        if time.time() > self.kernel["deadline"]:
                             self._kernel_alive = False
                 except:
                     self._kernel_alive = False
