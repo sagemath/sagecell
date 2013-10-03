@@ -117,8 +117,6 @@ def update_interact_msg(stream, ident, msg):
             update_interact(interact_id, name, content["values"][name], not content["update_last"])
     if content["update_last"]:
         update_interact(interact_id)
-    sys._sage_.send_message(stream, 'sagenb.interact.update_reply',
-      content={'status': 'ok'}, parent=msg, ident=ident)
 
 class InteractProxy(object):
     def __init__(self, interact_id, function):

@@ -389,7 +389,7 @@ sagecell.Session.prototype.execute = function (code) {
         }
         this.code = code;
         var callbacks = {iopub: {"output": $.proxy(this.handle_output, this)},
-                         shell: {"execute_reply": $.proxy(this.handle_execute_reply, this)}};
+                         shell: {"reply": $.proxy(this.handle_execute_reply, this)}};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {
             "silent": false,
             "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"},
@@ -457,7 +457,9 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
             .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
     } 
     */
-    var payload = msg.payload[0];
+    // TODO: handle payloads with a payload callback, instead of in the execute_reply
+    // That would be much less brittle
+    var payload = msg.content.payload[0];
     if (payload && payload.new_files && payload.new_files.length>0){
         var files = payload.new_files;
         var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
@@ -845,7 +847,7 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
         }
         var callbacks = {
             iopub: {"output": $.proxy(that.session.handle_output, that.session)},
-            shell: {"sagenb.interact.update_interact_reply": $.proxy(that.session.handle_execute_reply, that.session)}
+            shell: {"reply": $.proxy(that.session.handle_execute_reply, that.session)}
         };
         that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
         if (this.parent_block === null) {
