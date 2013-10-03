@@ -130,7 +130,6 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
     /**
      * Handle a websocket entering the open state
-     * sends session and cookie authentication info as first message.
      * Once all sockets are open, signal the Kernel.status_started event.
      * @method _ws_opened
      */
@@ -143,28 +142,17 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             // if any channel is not ready, don't trigger event.
             if ( !channels[i].readyState ) return;
         }
+
+        // All channels are started
+        this.opened = true;
+        while (this.deferred_code.length > 0) {
+            this.session.execute(this.deferred_code.shift());
+        }
+
         // all events ready, trigger started event.
         $([IPython.events]).trigger('status_started.Kernel', {kernel: this});
     };
 
-
-
-        this.kernel._kernel_started = function (json) {
-            sagecell.log('kernel start callback: '+that.timer()+' ms.');
-            this._kernel_started = IPython.Kernel.prototype._kernel_started;
-            this._kernel_started(json);
-            sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
-            this.shell_channel.onopen = function () {
-                console.log = old_log;
-                console = old_console;
-                sagecell.log('kernel channel opened: '+that.timer()+' ms.');
-                that.kernel.opened = true;
-                while (that.kernel.deferred_code.length > 0) {
-                    that.execute(that.kernel.deferred_code.shift());
-                }
-            }
-            this.iopub_channel.onopen = undefined;
-        }
         this.kernel.start = function(notebook_id, timeout) {
             // Override the IPython start kernel function since we want to send extra data, like a default timeout
             var that = this;
@@ -1845,11 +1833,9 @@ sagecell.MultiSockJS = function (url, prefix) {
     sagecell.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
     if (!sagecell.MultiSockJS.channels) {
         sagecell.MultiSockJS.channels = {};
-        sagecell.MultiSockJS.opened = false;
         sagecell.MultiSockJS.to_init = [];
         sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, sagecell.sockjs_options || {});
         sagecell.MultiSockJS.sockjs.onopen = function (e) {
-            sagecell.MultiSockJS.opened = true;
             while (sagecell.MultiSockJS.to_init.length > 0) {
                 sagecell.MultiSockJS.to_init.shift().init_socket(e);
             }
@@ -1863,7 +1849,9 @@ sagecell.MultiSockJS = function (url, prefix) {
             }
         }
         sagecell.MultiSockJS.sockjs.onclose = function (e) {
+            var readyState = sagecell.MultiSockJS.sockjs.readyState;
             for (var prefix in sagecell.MultiSockJS.channels) {
+                sagecell.MultiSockJS.channels[prefix].readyState = readyState;
                 if (sagecell.MultiSockJS.channels[prefix].onclose) {
                     sagecell.MultiSockJS.channels[prefix].onclose(e);
                 }
@@ -1871,16 +1859,18 @@ sagecell.MultiSockJS = function (url, prefix) {
         }
     }
     this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1] : prefix;
+    this.readyState = sagecell.MultiSockJS.sockjs.readyState;
     sagecell.MultiSockJS.channels[this.prefix] = this;
     this.init_socket();
 }
 
 sagecell.MultiSockJS.prototype.init_socket = function (e) {
-    if (sagecell.MultiSockJS.opened) {
+    if (sagecell.MultiSockJS.sockjs.readyState) {
         var that = this;
         // Run the onopen function after the current thread has finished,
         // so that onopen has a chance to be set.
         setTimeout(function () {
+            that.readyState = sagecell.MultiSockJS.sockjs.readyState;
             if (that.onopen) {
                 that.onopen(e);
             }
