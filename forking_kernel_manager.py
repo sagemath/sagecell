@@ -45,15 +45,19 @@ class ForkingKernelManager(object):
         """
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
-        logging.debug("kernel forked; now configuring")
-        ka = IPKernelApp.instance(config=config, ip=config["ip"])
-        ka.initialize([])
-        logging.debug("now updating")
+        logging.debug("kernel forked; now starting and configuring")
+        try:
+            ka = IPKernelApp.instance(config=config, ip=config["ip"])
+            from namespace import InstrumentedNamespace
+            ka.user_ns = InstrumentedNamespace()
+            ka.initialize([])
+        except:
+            logging.exception("Error initializing IPython kernel")
         try:
             if self.update_function is not None:
                 self.update_function(ka)
         except:
-            logging.exception("Error setting up kernel")
+            logging.exception("Error configuring up kernel")
         logging.debug("finished updating")
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))

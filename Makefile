@@ -43,6 +43,7 @@ ip-namespace   = $(ip-static)/base/js/namespace.js
 ip-events      = $(ip-static)/base/js/events.js
 ip-utils       = $(ip-static)/base/js/utils.js
 ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
+ip-comm        = $(ip-static)/notebook/js/comm.js
 jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 jmol-sage      = $(sage-root)/local/share/jmol
@@ -76,9 +77,9 @@ $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
-$(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
+$(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
             $(colorpicker)
-	cat $(ip-events) $(ip-utils) $(ip-kernel) $(jquery-ui) $(jquery-ui-tp) \
+	cat $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 

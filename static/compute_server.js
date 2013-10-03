@@ -127,6 +127,28 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             $.proxy(IPython.Kernel.prototype.start_channels, this)();
             this.kernel_url = absolute_kernel;
         }
+
+    /**
+     * Handle a websocket entering the open state
+     * sends session and cookie authentication info as first message.
+     * Once all sockets are open, signal the Kernel.status_started event.
+     * @method _ws_opened
+     */
+    this.kernel._ws_opened = function (evt) {
+        // send the session id so the Session object Python-side
+        // has the same identity
+        //evt.target.send(this.session_id + ':' + document.cookie);
+        var channels = [this.shell_channel, this.iopub_channel, this.stdin_channel];
+        for (var i=0; i < channels.length; i++) {
+            // if any channel is not ready, don't trigger event.
+            if ( !channels[i].readyState ) return;
+        }
+        // all events ready, trigger started event.
+        $([IPython.events]).trigger('status_started.Kernel', {kernel: this});
+    };
+
+
+
         this.kernel._kernel_started = function (json) {
             sagecell.log('kernel start callback: '+that.timer()+' ms.');
             this._kernel_started = IPython.Kernel.prototype._kernel_started;
@@ -366,8 +388,8 @@ sagecell.Session.prototype.execute = function (code) {
             code += "\nNone";
         }
         this.code = code;
-        var callbacks = {"output": $.proxy(this.handle_output, this),
-                         "execute_reply": $.proxy(this.handle_execute_reply, this)};
+        var callbacks = {iopub: {"output": $.proxy(this.handle_output, this)},
+                         shell: {"execute_reply": $.proxy(this.handle_execute_reply, this)}};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {
             "silent": false,
             "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"},
@@ -457,7 +479,10 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     }
 }
     
-sagecell.Session.prototype.handle_output = function (msg_type, content, metadata, default_block_id) {
+sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
+    var msg_type = msg.header.msg_type;
+    var content = msg.content;
+    var metadata = msg.metadata;
     var block_id = metadata.interact_id || default_block_id || null;
     if (block_id !== null && !interacts.hasOwnProperty(block_id)) {
         return;
@@ -655,7 +680,7 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
         slide: throttle(function(event, ui) {
             if (! event.originalEvent) {return;}
             that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
-                                      {"output": $.proxy(that.session.handle_output, that.session)});
+                                      {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
         }, sagecell.InteractControls.throttle)
     });
 }
@@ -664,12 +689,12 @@ sagecell.InteractControls.Slider.prototype.update = function (namespace, variabl
     var that = this;
     if (this.control_id !== control_id) {
         this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                                  {"output": $.proxy(this.session.handle_output, this.session), 
-                                   "control_update_reply": function(content, metadata) {
+                                  {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                                   shell: {"control_update_reply": function(content, metadata) {
                                        if (content.status === 'ok') {
                                            that.control.slider('value', content.result.value);
                                        }
-                                   }});
+                                   }}});
     }
 }
 
@@ -681,19 +706,19 @@ sagecell.InteractControls.ExpressionBox.prototype.create = function (data, block
     this.control.change(function(event) {
         if (! event.originalEvent) {return;}
         that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
-                                  {"output": $.proxy(that.session.handle_output, that.session)});
+                                  {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
     });
 }
 
 sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {"output": $.proxy(this.session.handle_output, this.session), 
-                               "control_update_reply": function(content, metadata) {
+                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                               shell: {"control_update_reply": function(content, metadata) {
                                    if (content.status === 'ok') {
                                        that.control.val(content.result.value);
                                    }
-                               }});
+                               }}});
 }
 
 sagecell.InteractControls.Checkbox = sagecell.InteractControls.InteractControl();
@@ -703,19 +728,19 @@ sagecell.InteractControls.Checkbox.prototype.create = function (data, block_id) 
     this.control.change(function(event) {
         if (! event.originalEvent) {return;}
         that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).prop("checked")}, 
-                                  {"output": $.proxy(that.session.handle_output, that.session)});
+                                  {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
     });
 }
 
 sagecell.InteractControls.Checkbox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {"output": $.proxy(this.session.handle_output, this.session), 
-                               "control_update_reply": function(content, metadata) {
+                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                               shell: {"control_update_reply": function(content, metadata) {
                                    if (content.status === 'ok') {
                                        that.control.prop('checked', content.result.value);
                                    }
-                               }});
+                               }}});
 }
 
 
@@ -732,11 +757,11 @@ sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, v
     this.message_number += 1;
     var msg_number = this.message_number;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {"output": function(msg_type, content, metadata) {
+                              {iopub: {"output": function(msg) {
                                   if (msg_number === that.message_number) {
-                                      $.proxy(that.session.handle_output, that.session)(msg_type, content, metadata, that.control_id);
+                                      $.proxy(that.session.handle_output, that.session)(msg, that.control_id);
                                   }
-                              }});
+                              }}});
 }
 
 sagecell.interact_controls = {
@@ -819,8 +844,8 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
             $(that.cells[event.data.name]).addClass("sagecell_dirtyControl");
         }
         var callbacks = {
-            "output": $.proxy(that.session.handle_output, that.session),
-            "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_execute_reply, that.session)
+            iopub: {"output": $.proxy(that.session.handle_output, that.session)},
+            shell: {"sagenb.interact.update_interact_reply": $.proxy(that.session.handle_execute_reply, that.session)}
         };
         that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
         if (this.parent_block === null) {
@@ -1105,8 +1130,8 @@ sagecell.InteractCell.prototype.state = function (vals, callback) {
             "update_last": true
         };
         var callbacks = {
-            "output": $.proxy(this.session.handle_output, this.session),
-            "sagenb.interact.update_interact_reply": callback || $.proxy(this.session.handle_message_reply, this.session)
+            iopub: {"output": $.proxy(this.session.handle_output, this.session)},
+            shell: {"sagenb.interact.update_interact_reply": callback || $.proxy(this.session.handle_message_reply, this.session)}
         };
         this.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
     }
