@@ -58,23 +58,6 @@ var stop = function (event) {
 }
 var close = null;
 
-var TestWidget = function (comm) {
-    this.comm = comm;
-    this.comm.on_msg($.proxy(this.handler, this));
-    // get the cell that was probably executed
-    // msg_id:cell mapping will make this possible without guessing
-    this.callbacks = {
-        iopub : {
-            output : function(msg) {console.log(msg);}
-        }
-    };
-};
-
-TestWidget.prototype.handler = function(msg) {
-    console.log('handle'); console.log(this); console.log(msg);
-    this.comm.send({ b:10 }, this.callbacks);
-};
-
 sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     this.timer = sagecell.simpletimer();
     this.outputDiv = outputDiv;
@@ -85,10 +68,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     this.last_requests = {};
     this.sessionContinue = true;
     this.namespaces = {};
-    this.comm_manager = new IPython.CommManager();
 
-    this.comm_manager.register_target('test', IPython.utils.always_new(TestWidget));
-    
 
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": sagecell.log};
@@ -135,7 +115,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
         window.console = window.console || {};
-        console.log = sagecell.log;
+        //console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.session = this;
         this.kernel.opened = false;
@@ -169,7 +149,6 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
         // All channels are started
         this.opened = true;
-        this.session.comm_manager.init_kernel(this);
         while (this.deferred_code.length > 0) {
             this.session.execute(this.deferred_code.shift());
         }
@@ -183,7 +162,6 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             var that = this;
             if (!this.running) {
                 var qs = $.param(params);
-                console.log(qs);
                 var url = this.base_url + '?' + qs;
                 $.post(url,
                        $.proxy(that._kernel_started,that),
@@ -374,7 +352,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     this.eventHandlers = {};
 };
 
-    sagecell.Session.prototype.send_message = IPython.Kernel.prototype.send_shell_message;
+    sagecell.Session.prototype.send_message = function() {this.kernel.send_shell_message.apply(this.kernel, arguments);}
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.kernel.opened) {
@@ -571,6 +549,7 @@ sagecell.Session.prototype.display_handlers = {
         this.clear(block_id, data.changed);
     }
     ,'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); }
+    ,'application/javascript': function(data, block_id, filepath) {eval(data);}
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
     ,'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);}
     ,'application/x-jmol': function(data, block_id, filepath) {

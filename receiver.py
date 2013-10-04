@@ -99,6 +99,7 @@ from sagenb.misc.support import automatic_names
         _sage_ = TempClass()
         _sage_.display_message = misc.display_message
         _sage_.reset_kernel_timeout = misc.reset_kernel_timeout
+        _sage_.javascript = misc.javascript
         _sage_.sent_files = {}
         def new_files(root='./'):
             import os

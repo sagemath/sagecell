@@ -181,6 +181,8 @@ def display_message(data, metadata=None):
 def reset_kernel_timeout(timeout):
     sys.stdout.session.send(sys.stdout.pub_socket, 'kernel_timeout', content={'timeout': float(timeout)}, parent = sys.stdout.parent_header)
 
+def javascript(code):
+    sys._sage_.display_message({'application/javascript': code, 'text/plain': 'javascript code'})
 
 def json_default(obj):
     if isinstance(obj, datetime):
