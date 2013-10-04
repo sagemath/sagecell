@@ -129,6 +129,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         }
 
     /**
+     * Copied from IPython and slightly modified (comment out session_id send, add deferred code execution
      * Handle a websocket entering the open state
      * Once all sockets are open, signal the Kernel.status_started event.
      * @method _ws_opened
@@ -350,13 +351,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     this.eventHandlers = {};
 };
 
-// metadata is optional
-sagecell.Session.prototype.send_message = function(msg_type, content, callbacks, metadata) {
-    var msg = this.kernel._get_msg(msg_type, content);
-    msg['metadata'] = metadata || {};
-    this.kernel.shell_channel.send(JSON.stringify(msg));
-    this.kernel.set_callbacks_for_msg(msg.header.msg_id, callbacks);
-}
+    sagecell.Session.prototype.send_message = IPython.Kernel.prototype.send_shell_message;
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.kernel.opened) {
