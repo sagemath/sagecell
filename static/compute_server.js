@@ -154,12 +154,11 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         $([IPython.events]).trigger('status_started.Kernel', {kernel: this});
     };
 
-        this.kernel.start = function(notebook_id, timeout) {
+        this.kernel.start = function(params) {
             // Override the IPython start kernel function since we want to send extra data, like a default timeout
             var that = this;
             if (!this.running) {
-                timeout = timeout || 0;
-                var qs = $.param({notebook:notebook_id, timeout: timeout});
+                var qs = $.param(params);
                 console.log(qs);
                 var url = this.base_url + '?' + qs;
                 $.post(url,
@@ -170,7 +169,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
         }
 
-        this.kernel.start(IPython.utils.uuid(), linked ? 'inf' : 0);
+        this.kernel.start({notebook: IPython.utils.uuid(), timeout: linked ? 'inf' : 0});
     }
     var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(
