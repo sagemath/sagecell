@@ -1398,7 +1398,9 @@ sagecell.InteractData.InputGrid = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.InputGrid.prototype.rendered = function (id) {
     this.textboxes = $();
-    var table = ce("table", {"style": "width: auto;"});
+    var table = ce("table", {"style": "width: auto; vertical-align: middle; display: inline-table;"});
+    this.button = ce("button", {"style": "vertical-align: middle;"}, ["Submit"]);
+    var div = ce("div", {}, [table, this.button]);
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
@@ -1414,11 +1416,13 @@ sagecell.InteractData.InputGrid.prototype.rendered = function (id) {
         table.appendChild(tr);
     }
     this.textboxes.attr("id", id);
-    return table;
+
+
+    return div;
 }
 
 sagecell.InteractData.InputGrid.prototype.changeHandlers = function () {
-    return {"change": this.textboxes};
+    return {"click": this.button};
 }
 
 sagecell.InteractData.InputGrid.prototype.json_value = function () {
