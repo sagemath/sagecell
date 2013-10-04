@@ -58,6 +58,23 @@ var stop = function (event) {
 }
 var close = null;
 
+var TestWidget = function (comm) {
+    this.comm = comm;
+    this.comm.on_msg($.proxy(this.handler, this));
+    // get the cell that was probably executed
+    // msg_id:cell mapping will make this possible without guessing
+    this.callbacks = {
+        iopub : {
+            output : function(msg) {console.log(msg);}
+        }
+    };
+};
+
+TestWidget.prototype.handler = function(msg) {
+    console.log('handle'); console.log(this); console.log(msg);
+    this.comm.send({ b:10 }, this.callbacks);
+};
+
 sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     this.timer = sagecell.simpletimer();
     this.outputDiv = outputDiv;
@@ -68,8 +85,14 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     this.last_requests = {};
     this.sessionContinue = true;
     this.namespaces = {};
+    this.comm_manager = new IPython.CommManager();
+
+    this.comm_manager.register_target('test', IPython.utils.always_new(TestWidget));
+    
+
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": sagecell.log};
+    
     $.post = function (url, callback) {
         sagecell.sendRequest("POST", url, {}, function (data) {
             callback(JSON.parse(data));
@@ -146,6 +169,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
         // All channels are started
         this.opened = true;
+        this.session.comm_manager.init_kernel(this);
         while (this.deferred_code.length > 0) {
             this.session.execute(this.deferred_code.shift());
         }
