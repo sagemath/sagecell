@@ -161,10 +161,10 @@ function install_sagecell {
   popd
   git config --global user.email "you@example.com"
   git config --global user.name "Your Name"
-  git clone https://github.com/ipython/ipython.git
+  git clone git://github.com/ipython/ipython.git
   pushd ipython
-  git remote add minrk git://github.com/minrk/ipython.git
-  git pull minrk widget-msg
+  git remote add -f jason git@github.com:jasongrout/ipython.git
+  git checkout jason/sagecell
   ../sage setup.py develop
   popd
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-08-13.spkg
