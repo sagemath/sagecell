@@ -2,9 +2,9 @@ from forking_kernel_manager import ForkingKernelManager, KernelError
 import logging
 
 class UntrustedMultiKernelManager(object):
-    def __init__(self, filename, ip, update_function=None):
+    def __init__(self, filename, ip, update_function=None, tmp_dir=None):
         self.filename = filename
-        self.fkm = ForkingKernelManager(self.filename, ip, update_function)
+        self.fkm = ForkingKernelManager(self.filename, ip, update_function, tmp_dir=tmp_dir)
         self._kernels = set()
     
     def start_kernel(self, resource_limits=None):

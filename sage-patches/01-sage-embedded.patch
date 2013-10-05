@@ -219,9 +219,9 @@ diff --git a/sage/misc/html.py b/sage/misc/html.py
 diff --git a/sage/misc/interpreter.py b/sage/misc/interpreter.py
 --- a/sage/misc/interpreter.py
 +++ b/sage/misc/interpreter.py
-@@ -71,19 +71,6 @@
- from preparser import (preparse, preparse_file, load_wrap,
-                        modified_attached_files, attached_files)
+@@ -70,19 +70,6 @@
+                                      List, Unicode, Instance, Type)
+ from preparser import (preparse, preparse_file, load_wrap)
  
 -def embedded():
 -    """

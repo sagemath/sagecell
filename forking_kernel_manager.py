@@ -28,14 +28,14 @@ class KernelError(Exception):
 
 class ForkingKernelManager(object):
     """ A class for managing multiple kernels and forking on the untrusted side. """
-    def __init__(self, filename, ip, update_function=None):
+    def __init__(self, filename, ip, update_function=None, tmp_dir = None):
         self.kernels = {}
         self.ip = ip
         self.filename = filename
         self.update_function = update_function
-
-        self.dir = '/tmp/sagecell'
+        self.dir = tmp_dir
         makedirs(self.dir)
+
     def fork_kernel(self, config, pipe, resource_limits, logfile):
         """ A function to be set as the target for the new kernel processes forked in ForkingKernelManager.start_kernel. This method forks and initializes a new kernel, uses the update_function to update the kernel's namespace, sets resource limits for the kernel, and sends kernel connection information through the Pipe object.
 
@@ -45,15 +45,19 @@ class ForkingKernelManager(object):
         """
         os.setpgrp()
         logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
-        logging.debug("kernel forked; now configuring")
-        ka = IPKernelApp.instance(config=config, ip=config["ip"])
-        ka.initialize([])
-        logging.debug("now updating")
+        logging.debug("kernel forked; now starting and configuring")
+        try:
+            ka = IPKernelApp.instance(config=config, ip=config["ip"])
+            from namespace import InstrumentedNamespace
+            ka.user_ns = InstrumentedNamespace()
+            ka.initialize([])
+        except:
+            logging.exception("Error initializing IPython kernel")
         try:
             if self.update_function is not None:
                 self.update_function(ka)
         except:
-            logging.exception("Error setting up kernel")
+            logging.exception("Error configuring up kernel")
         logging.debug("finished updating")
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))

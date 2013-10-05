@@ -12,6 +12,8 @@ Installation
 
     sage -sh -c "easy_install https://github.com/ipython/ipython/archive/0d4706f.zip"
 
+UPDATE: the current codebase now requires IPython with this pull request applied: https://github.com/ipython/ipython/pull/4195
+
 5. Install the latest sagecell spkg at http://sage.math.washington.edu/home/jason/sagecell-spkg/ (replace ``<filename>`` below with the name of the current spkg)::
 
     sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/<filename>.spkg

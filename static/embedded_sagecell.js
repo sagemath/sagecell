@@ -314,6 +314,9 @@ sagecell.makeSagecell = function (args, k) {
             if (settings.languages.length === 1) {
                 settings.hide.push("language");
             }
+            if (settings.linked) {
+                settings.hide.push("permalink");
+            }
 
             var hide = settings.hide;
             var inputLocation = $(settings.inputLocation);
@@ -411,7 +414,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
     var collapse = sagecellInfo.collapse;
     var textArea = inputLocation.find(".sagecell_commands");
     var langSelect = inputLocation.find(".sagecell_language select");
-    var files = [];
+    //var files = [];
     var editorData, temp;
     if (editor === "textarea" || editor === "textarea-readonly") {
         inputLocation.find(".sagecell_editorToggle input").attr("checked", false);
@@ -434,6 +437,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         var mode = langSelect[0].value;
         editorData.setOption("mode", sagecell.modes[mode]);
     });
+    /* Old files code
     function fileRemover(i, li) {
         return function () {
             delete files[i];
@@ -513,14 +517,14 @@ sagecell.initCell = (function (sagecellInfo, k) {
         inputLocation.find(".sagecell_fileList").empty();
         return false;
     });
+    */
     var startEvaluation = function (evt) {
         if (sagecell.last_session[evt.data.id]) {
             if (!sagecell.last_session[evt.data.id].linked) {
                 sagecell.last_session[evt.data.id].kernel.kill();
             }
             if (replaceOutput) {
-                $(sagecell.last_session[evt.data.id].session_container).remove();
-                sagecell.last_session[evt.data.id].removed = true;
+                sagecell.last_session[evt.data.id].destroy();
             }
         }
         if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
@@ -530,10 +534,11 @@ sagecell.initCell = (function (sagecellInfo, k) {
 
         var code = textArea.val();
         var language = langSelect[0].value;
-        var session = new sagecell.Session(outputLocation, language, k, sagecellInfo.linked || false);
+        var session = new sagecell.Session(outputLocation, language,
+            sagecellInfo.interacts || [], k, sagecellInfo.linked || false);
         sagecellInfo.session = session;
+        sagecellInfo.interacts = [];
         session.execute(code);
-        outputLocation.find(".sagecell_permalink_request").click(function() {session.createPermalink(code, language);});
         sagecell.last_session[evt.data.id] = session;
         outputLocation.find(".sagecell_output_elements").show();
     };
@@ -603,6 +608,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
 sagecell.sendRequest = function (method, url, data, callback, files) {
     method = method.toUpperCase();
     var hasFiles = false;
+    /* files code
     if (files === undefined) {
         files = [];
     }
@@ -612,6 +618,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
             break;
         }
     }
+    */
     var xhr = new XMLHttpRequest();
     var fd = undefined;
     if (method === "GET") {
@@ -628,11 +635,13 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
                 fd.append(k, data[k]);
             }
         }
+        /* files code
         for (var i = 0; i < files.length; i++) {
             if (files[i]) {
                 fd.append("file", files[i]);
             }
         }
+        */
     } else {
         fd = "";
         for (var k in data) {
@@ -646,7 +655,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
             fd = undefined;
         }
     }
-    if (window.FormData || !(isXDomain || hasFiles)) {
+    if (window.FormData || !(isXDomain /*|| hasFiles*/)) {
         // If an XMLHttpRequest is possible, use it
         xhr.open(method, url, true);
         xhr.withCredentials = true;
@@ -680,6 +689,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
             }
         }
         form.appendChild(ce("input", {name: "frame", value: "on"}));
+        /* file code
         if (hasFiles) {
             form.setAttribute("enctype", "multipart/form-data");
             for (var i = 0; i < files.length; i++) {
@@ -688,6 +698,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
                 }
             }
         }
+        */
         form.style.display = iframe.style.display = "none";
         document.body.appendChild(iframe);
         document.body.appendChild(form);

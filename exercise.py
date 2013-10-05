@@ -1,4 +1,4 @@
-from interact_sagecell import interact,Button,HtmlBox
+from interact_sagecell import interact,Button,HtmlBox, UpdateButton
 
 
 #################
@@ -34,13 +34,12 @@ class Exercise:
         self._answer         = answer
         self._check          = check
         self._hints          = hints
-        print 'finished Exercise construction'
 
-    def _check_attempt(self, attempt, interact):
+    def _check_attempt(self, attempt):
 
-        print 'check attempt'
         from sage.misc.all import walltime
         response = "<div class='well'>"
+        correct=False
         try:
             r = self._check(attempt)
             if isinstance(r, tuple) and len(r)==2:
@@ -78,29 +77,28 @@ class Exercise:
 
         response += "</div>"
 
-        interact.feedback = HtmlBox(response,label='')
+        #interact.feedback = response#HtmlBox(response,label='')
 
-        return correct
+        return correct, response
 
     def ask(self, cb):
-        print 'Asking %r'%cb
         from sage.misc.all import walltime
         self._start_time = walltime()
         self._number_of_attempts = 0
         attempts = []
-        @interact(layout=[[('question',12)],[('attempt',12)], [('feedback',12)]])
+        @interact(layout=[[('question',12)],[('attempt',12)], [('submit',12)],[('feedback',12)]])
         def f(fself, question = ("Question:", HtmlBox(self._question)),
-              attempt   = ('Answer:',self._answer[1])):
-            print 'inner interact, %r, %r'%(fself._changed, attempt)
+              attempt   = ('Answer:',self._answer[1]),
+              submit = UpdateButton('Submit'),
+              feedback = HtmlBox('')):
             if 'attempt' in fself._changed and attempt != '':
                 attempts.append(attempt)
                 if self._start_time == 0:
                     self._start_time = walltime()
                 self._number_of_attempts += 1
-                print 'about to check attempt'
-                if self._check_attempt(attempt, self):
+                correct, fself.feedback = self._check_attempt(attempt)
+                if correct:
                     cb({'attempts':attempts, 'time':walltime()-self._start_time})
-            print 'finished inner interact'
 
 def exercise(code):
     r"""
@@ -192,6 +190,32 @@ def exercise(code):
                 return False, "too low"
             if c > 0:
                 return False, "too high"
+
+
+    Another example::
+
+        %exercise
+        title    = r""
+        rank = randint(2,4)
+        A        = random_matrix(QQ,5,algorithm='echelonizable', rank=rank,upper_bound=10)
+        kernel = A.T.kernel()
+        question = "Find a basis for the nullspace of $%s$.  Your answer should be a list of vectors (e.g., '[(1,2,3), (3,2,1)]' )"%latex(A)
+        def check(a):
+            try:
+                a = sage_eval(a)
+                i = [vector(QQ,j) for j in a]
+            except:
+                return False, "There was an error parsing your answer. Your answer should be a list of vectors (e.g., '[(1,2,3), (3,2,1)]' )."
+            v = span(i)
+            if v.dimension()!=len(i):
+                return False, "Are your vectors linearly independent?"
+            elif v != kernel:
+                return False, "You are missing some vectors"
+            else:
+                return True, "Great job!"
+        hints = ["The RREF is $%s$."%latex(A.rref())]
+        hints.append(" ".join(hints)+"  The nullity is %d."%kernel.dimension())
+
     """
     f = closure(code)
     def g():
@@ -199,35 +223,29 @@ def exercise(code):
         return x.get('title',''), x.get('question', ''), x.get('answer',''), x.get('check',None), x.get('hints',None)
 
     title, question, answer, check, hints = g()
-    print title, question, answer, check, hints
     obj = {}
     obj['E'] = Exercise(question, answer, check, hints)
     obj['title'] = title
-    def title_control(t):
-        return HtmlBox('<h3 class="lighten">%s</h3>'%t)
+    title_html = '<h3>%s</h3>'
 
     the_times = []
-    @interact(layout=[[('go',1), ('title',11,'')],[('')], [('times',12, "<b>Times:</b>")]])#, flicker=True)
-    def h(self, go    = Button(text=" "*5 + "Go" + " "*7, label=''),
-          title = title_control(title),
+    @interact(layout=[[('go',1), ('title',11,'')],[('_output')], [('times',12, "<b>Times:</b>")]])#, flicker=True)
+    def h(self, go = Button(text="New Question", label=''),
+          title = HtmlBox(title_html%title),
           times = HtmlBox('No times')):
-        print 'start h'
         c = self._changed
         if 'go' in c or 'another' in c:
-            self.title = 's'#title_control(obj['title'])
+            self.title = title
             def cb(obj):
                 the_times.append("%.1f"%obj['time'])
                 h.times = ', '.join(the_times)
 
             obj['E'].ask(cb)
-            print 'after ask'
             title, question, answer, check, hints = g()   # get ready for next time.
-            print title, question, answer, check, hints
-            obj['title'] = title
-            print 'construct new exercise'
+                                                          #print title, question, answer, check, hints
+            obj['title'] = title_html%title
             obj['E'] = Exercise(question, answer, check, hints)
-            print 'done'
-    print 'end exercise'
+
 def closure(code):
     """
     Wrap the given code block (a string) in a closure, i.e., a

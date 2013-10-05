@@ -18,7 +18,7 @@ class DB(object):
     def __init__(self):
         raise NotImplementedError
 
-    def new_exec_msg(self, code, language, callback):
+    def new_exec_msg(self, code, language, interacts, callback):
         """
         Add the code (with mode ``language``) to the database.
 

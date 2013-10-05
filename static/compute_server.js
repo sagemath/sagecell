@@ -53,18 +53,26 @@ sagecell.simpletimer = function () {
         }
     }
 
-sagecell.Session = function (outputDiv, language, k, linked) {
+var stop = function (event) {
+    event.stopPropagation();
+}
+var close = null;
+
+sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     this.timer = sagecell.simpletimer();
     this.outputDiv = outputDiv;
     this.outputDiv[0].sagecell_session = this;
     this.language = language;
+    this.interact_vals = interact_vals;
     this.linked = linked;
     this.last_requests = {};
     this.sessionContinue = true;
     this.namespaces = {};
-    this.removed = false;
+
+
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": sagecell.log};
+    
     $.post = function (url, callback) {
         sagecell.sendRequest("POST", url, {}, function (data) {
             callback(JSON.parse(data));
@@ -107,7 +115,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
         var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
         window.console = window.console || {};
-        console.log = sagecell.log;
+        //console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.session = this;
         this.kernel.opened = false;
@@ -122,38 +130,79 @@ sagecell.Session = function (outputDiv, language, k, linked) {
             $.proxy(IPython.Kernel.prototype.start_channels, this)();
             this.kernel_url = absolute_kernel;
         }
-        this.kernel._kernel_started = function (json) {
-            sagecell.log('kernel start callback: '+that.timer()+' ms.');
-            this._kernel_started = IPython.Kernel.prototype._kernel_started;
-            this._kernel_started(json);
-            sagecell.log('kernel ipython startup: '+that.timer()+' ms.');
-            this.shell_channel.onopen = function () {
-                console.log = old_log;
-                console = old_console;
-                sagecell.log('kernel channel opened: '+that.timer()+' ms.');
-                that.kernel.opened = true;
-                while (that.kernel.deferred_code.length > 0) {
-                    that.execute(that.kernel.deferred_code.shift());
-                }
-            }
-            this.iopub_channel.onopen = undefined;
+
+    /**
+     * Copied from IPython and slightly modified (comment out session_id send, add deferred code execution
+     * Handle a websocket entering the open state
+     * Once all sockets are open, signal the Kernel.status_started event.
+     * @method _ws_opened
+     */
+    this.kernel._ws_opened = function (evt) {
+        // send the session id so the Session object Python-side
+        // has the same identity
+        //evt.target.send(this.session_id + ':' + document.cookie);
+        var channels = [this.shell_channel, this.iopub_channel, this.stdin_channel];
+        for (var i=0; i < channels.length; i++) {
+            // if any channel is not ready, don't trigger event.
+            if ( !channels[i].readyState ) return;
         }
-        this.kernel.start(IPython.utils.uuid());
+
+        // All channels are started
+        this.opened = true;
+        while (this.deferred_code.length > 0) {
+            this.session.execute(this.deferred_code.shift());
+        }
+
+        // all events ready, trigger started event.
+        $([IPython.events]).trigger('status_started.Kernel', {kernel: this});
+    };
+
+        this.kernel.start = function(params) {
+            // Override the IPython start kernel function since we want to send extra data, like a default timeout
+            var that = this;
+            if (!this.running) {
+                var qs = $.param(params);
+                var url = this.base_url + '?' + qs;
+                $.post(url,
+                       $.proxy(that._kernel_started,that),
+                       'json'
+                      );
+            }
+
+        }
+
+        this.kernel.start({notebook: IPython.utils.uuid(), timeout: linked ? 'inf' : 0});
     }
+    var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(
         this.session_container = ce("div", {"class": "sagecell_sessionContainer"}, [
-                ce("div", {"class": "sagecell_permalink"}, [
-                    ce("button", {"class": "sagecell_permalink_request"}, ["Share"]),
-                    ce("div", {"class": "sagecell_permalink_result"}, [
-                        ce("a", {"class": "sagecell_permalink_zip", title: "Link that will work on any Sage Cell server"}, ["Permalink"]), ce("br"),
-                        ce("a", {"class": "sagecell_permalink_query", title: "Shortened link that will only work on this server"}, ["Short temporary link", ce("br"),
-                        ce("img", {"class": "sagecell_permalink_qrcode", title: "QR code that will only work on this server"}, [])])
+            ce("div", {"class": "sagecell_permalink"}, [
+                pl_button = ce("button", {}, ["Share"]),
+                pl_box = ce("div", {"class": "sagecell_permalink_result"}, [
+                    ce("div", {}, [pl_zlink = ce("a", {
+                        "title": "Link that will work on any Sage Cell server"
+                    }, ["Permalink"])]),
+                    ce("div", {}, [pl_qlink = ce("a", {
+                        "title": "Shortened link that will only work on this server"
+                    }, ["Short temporary link"])]),
+                    ce("div", {}, [ce("a", {}, [
+                        pl_qrcode = ce("img", {
+                            "title": "QR code that will only work on this server",
+                            "alt": ""
+                        })
+                    ])]),
+                    this.interact_pl = ce("label", {}, [
+                        "Share interact state",
+                        pl_chkbox = ce("input", {"type": "checkbox"})
                     ])
-                ]),
-            this.
-            output_block = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
-                this.spinner = ce("img", {"src": sagecell.URLs.spinner,
-                        "alt": "Loading", "class": "sagecell_spinner"})
+                ])
+            ]),
+            this.output_block = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
+                this.spinner = ce("img", {
+                    "src": sagecell.URLs.spinner,
+                    "alt": "Loading",
+                    "class": "sagecell_spinner"
+                })
             ]),
             ce("div", {"class": "sagecell_poweredBy"}, [
                 "Powered by ",
@@ -162,19 +211,133 @@ sagecell.Session = function (outputDiv, language, k, linked) {
                 ])
             ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
-        ]));
+        ])
+    );
+    pl_box.style.display = this.interact_pl.style.display = "none";
+    var pl_hidden = true;
+    var hide_box = function hide_box() {
+        pl_box.style.display = "none";
+        window.removeEventListener("mousedown", hide_box);
+        pl_hidden = true;
+        close = null;
+    };
+    var n = 0;
+    var code_links = {}, interact_links = {};
+    var that = this;
+    var qr_prefix = "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl="
+    this.updateLinks = function (new_vals) {
+        if (new_vals) {
+            interact_links = {};
+        }
+        if (pl_hidden) {
+            return;
+        }
+        var links = (pl_chkbox.checked ? interact_links : code_links);
+        if (links.zip === undefined) {
+            pl_zlink.removeAttribute("href");
+            pl_qlink.removeAttribute("href");
+            pl_qrcode.parentNode.removeAttribute("href");
+            pl_qrcode.removeAttribute("src");
+            sagecell.log('sending permalink request post: '+that.timer()+' ms');
+            var args = {
+                "code": that.code,
+                "language": that.language,
+                "n": ++n
+            };
+            if (pl_chkbox.checked) {
+                var list = [];
+                for (var i = 0; i < that.interacts.length; i++) {
+                    if (that.interacts[i].parent_block === null) {
+                        var interact = that.interacts[i];
+                        var dict = {
+                            "state": interact.state(),
+                            "bookmarks": []
+                        }
+                        for (var j = 0; j < interact.bookmarks.childNodes.length; j++) {
+                            var b = interact.bookmarks.childNodes[j];
+                            if (b.firstChild.firstChild.hasChildNodes()) {
+                                dict.bookmarks.push({
+                                    "name": b.firstChild.firstChild.firstChild.nodeValue,
+                                    "state": $(b).data("values")
+                                });
+                            }
+                        }
+                        list.push(dict);
+                    }
+                }
+                args.interacts = JSON.stringify(list);
+            }
+            sagecell.sendRequest("POST", sagecell.URLs.permalink, args, function (data) {
+                data = JSON.parse(data);
+                sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
+                if (data.n !== n) {
+                    return;
+                }
+                pl_qlink.href = links.query = sagecell.URLs.root + "?q=" + data.query;
+                links.zip = sagecell.URLs.root + "?z=" + data.zip + "&lang=" + that.language;
+                if (data.interacts) {
+                    links.zip += "&interacts=" + data.interacts;
+                }
+                pl_zlink.href = links.zip;
+                pl_qrcode.parentNode.href = links.query;
+                pl_qrcode.src = qr_prefix + links.query;
+            });
+        } else {
+            pl_qlink.href = pl_qrcode.parentNode.href = links.query;
+            pl_zlink.href = links.zip;
+            pl_qrcode.src = qr_prefix + links.query;
+        }
+    };
+    pl_button.addEventListener("click", function () {
+        if (pl_hidden) {
+            pl_hidden = false;
+            that.updateLinks(false);
+            pl_box.style.display = "block";
+            if (close) {
+                close();
+            }
+            close = hide_box;
+            window.addEventListener("mousedown", hide_box);
+        } else {
+            hide_box();
+        }
+    });
+    pl_button.addEventListener("mousedown", stop);
+    pl_box.addEventListener("mousedown", stop);
     $([IPython.events]).on("status_busy.Kernel", function (evt, data) {
         if (data.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
         }
     });
+    pl_chkbox.addEventListener("change", function () {
+        that.updateLinks(false);
+    });
     $([IPython.events]).on("status_idle.Kernel", function (evt, data) {
-        if (data.kernel.kernel_id === that.kernel.kernel_id) {
-            that.spinner.style.display = "none";
+        if (data.kernel.kernel_id !== that.kernel.kernel_id) {
+            return;
         }
+        that.spinner.style.display = "none";
+        for (var i = 0, j = 0; i < that.interact_vals.length; i++) {
+            while (that.interacts[j] && that.interacts[j].parent_block !== null) {
+                j++;
+            }
+            if (j === that.interacts.length) {
+                break;
+            }
+            that.interacts[j].state(that.interact_vals[i].state, (function (interact, val) {
+                return function () {
+                    interact.clearBookmarks();
+                    for (var i = 0; i < val.bookmarks.length; i++) {
+                        interact.createBookmark(val.bookmarks[i].name, val.bookmarks[i].state);
+                    }
+                };
+            })(that.interacts[j], that.interact_vals[i]));
+            j++;
+        }
+        that.interact_vals = [];
     });
     $([IPython.events]).on("status_dead.Kernel", function (evt, data) {
-        if (!that.removed && data.kernel.kernel_id === that.kernel.kernel_id) {
+        if (data.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
@@ -189,13 +352,7 @@ sagecell.Session = function (outputDiv, language, k, linked) {
     this.eventHandlers = {};
 };
 
-// metadata is optional
-sagecell.Session.prototype.send_message = function(msg_type, content, callbacks, metadata) {
-    var msg = this.kernel._get_msg(msg_type, content);
-    msg['metadata'] = metadata || {};
-    this.kernel.shell_channel.send(JSON.stringify(msg));
-    this.kernel.set_callbacks_for_msg(msg.header.msg_id, callbacks);
-}
+    sagecell.Session.prototype.send_message = function() {this.kernel.send_shell_message.apply(this.kernel, arguments);}
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.kernel.opened) {
@@ -214,43 +371,16 @@ sagecell.Session.prototype.execute = function (code) {
         if (this.language === "html") {
             code += "\nNone";
         }
-        var callbacks = {"output": $.proxy(this.handle_output, this),
-                         "execute_reply": $.proxy(this.handle_execute_reply, this)};
+        this.code = code;
+        var callbacks = {iopub: {"output": $.proxy(this.handle_output, this)},
+                         shell: {"reply": $.proxy(this.handle_execute_reply, this)}};
         this.set_last_request(null, this.kernel.execute(code, callbacks, {
             "silent": false,
             "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"},
-            "linked": this.linked
         }));
     } else {
         this.kernel.deferred_code.push(code);
     }
-};
-
-sagecell.Session.prototype.createPermalink = function (code) {
-    // check to see if permalink request has already been submitted with this code
-    // 
-    // Send request to permalink server
-    // callback will unhide div with permalink links when request comes back
-    var that = this;
-    sagecell.log('sending permalink request post: '+that.timer()+' ms.');
-    sagecell.sendRequest("POST", sagecell.URLs.permalink,
-			 {"code": code, "language": this.language},
-        function (data) {
-            data = JSON.parse(data);
-            sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
-            var query = sagecell.URLs.root + "?q=" + data.query;
-            var zip = sagecell.URLs.root + "?z=" + data.zip + "&lang=" + that.language
-            that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_query")
-                .attr("href", query);
-            // TODO: eventually use the client to zip this using javascript
-            that.outputDiv.find("div.sagecell_permalink a.sagecell_permalink_zip")
-                .attr("href", zip);
-            that.outputDiv.find("div.sagecell_permalink img.sagecell_permalink_qrcode")
-                .attr("src", "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl="+query);
-            var result = that.outputDiv.find("div.sagecell_permalink_result");
-            result.show();
-            that.outputDiv.find(".sagecell_permalink_request").off('click').click(function() { result.toggle()});
-        });
 };
 
 sagecell.Session.prototype.set_last_request = function (interact_id, msg_id) {
@@ -283,7 +413,14 @@ sagecell.Session.prototype.clear = function (block_id, changed) {
             $(interacts[block_id].cells[changed[i]]).removeClass("sagecell_dirtyControl");
         }
     }
-}
+    for (var i = 0; i < this.interacts.length; i++) {
+        if (this.interacts[i].parent_block === block_id) {
+            this.clear(this.interacts[i].interact_id);
+            delete interacts[this.interacts[i].interact_id];
+            this.interacts.splice(i--, 1);
+        }
+    }
+};
 
 sagecell.Session.prototype.output = function(html, block_id) {
     // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
@@ -304,7 +441,9 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
             .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
     } 
     */
-    var payload = msg.payload[0];
+    // TODO: handle payloads with a payload callback, instead of in the execute_reply
+    // That would be much less brittle
+    var payload = msg.content.payload[0];
     if (payload && payload.new_files && payload.new_files.length>0){
         var files = payload.new_files;
         var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
@@ -326,11 +465,14 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     }
 }
     
-sagecell.Session.prototype.handle_output = function (msg_type, content, metadata, default_block_id) {
-    //console.log('handling output');
-    //console.log(msg_type);
-    //console.log(content);
+sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
+    var msg_type = msg.header.msg_type;
+    var content = msg.content;
+    var metadata = msg.metadata;
     var block_id = metadata.interact_id || default_block_id || null;
+    if (block_id !== null && !interacts.hasOwnProperty(block_id)) {
+        return;
+    }
     // Handle each stream type.  This should probably be separated out into different functions.
     switch (msg_type) {
     case "stream":
@@ -400,10 +542,14 @@ sagecell.Session.prototype.display_handlers = {
     'application/sage-interact-del-control': function (data) {
         interacts[data.interact_id].delControl(data);
     },
+    'application/sage-interact-bookmark': function (data) {
+        interacts[data.interact_id].createBookmark(data.name, data.values);
+    },
     'application/sage-clear': function (data, block_id) {
         this.clear(block_id, data.changed);
     }
     ,'text/html': function(data, block_id, filepath) {this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath)); }
+    ,'application/javascript': function(data, block_id, filepath) {eval(data);}
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
     ,'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);}
     ,'application/x-jmol': function(data, block_id, filepath) {
@@ -473,6 +619,11 @@ sagecell.Session.prototype.update_variable = function(namespace, variable, contr
         notify = this.get_variable_controls(namespace, variable);
     }
     $.each(notify, function(k,v) {$.proxy(v.update, v)(namespace, variable, control_id);});
+};
+
+sagecell.Session.prototype.destroy = function () {
+    this.clear(null);
+    $(this.session_container).remove();
 }
 
 sagecell.InteractControls = {'throttle': 100};
@@ -516,7 +667,7 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
         slide: throttle(function(event, ui) {
             if (! event.originalEvent) {return;}
             that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
-                                      {"output": $.proxy(that.session.handle_output, that.session)});
+                                      {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
         }, sagecell.InteractControls.throttle)
     });
 }
@@ -525,12 +676,12 @@ sagecell.InteractControls.Slider.prototype.update = function (namespace, variabl
     var that = this;
     if (this.control_id !== control_id) {
         this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                                  {"output": $.proxy(this.session.handle_output, this.session), 
-                                   "control_update_reply": function(content, metadata) {
+                                  {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                                   shell: {"control_update_reply": function(content, metadata) {
                                        if (content.status === 'ok') {
                                            that.control.slider('value', content.result.value);
                                        }
-                                   }});
+                                   }}});
     }
 }
 
@@ -542,19 +693,19 @@ sagecell.InteractControls.ExpressionBox.prototype.create = function (data, block
     this.control.change(function(event) {
         if (! event.originalEvent) {return;}
         that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
-                                  {"output": $.proxy(that.session.handle_output, that.session)});
+                                  {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
     });
 }
 
 sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {"output": $.proxy(this.session.handle_output, this.session), 
-                               "control_update_reply": function(content, metadata) {
+                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                               shell: {"control_update_reply": function(content, metadata) {
                                    if (content.status === 'ok') {
                                        that.control.val(content.result.value);
                                    }
-                               }});
+                               }}});
 }
 
 sagecell.InteractControls.Checkbox = sagecell.InteractControls.InteractControl();
@@ -564,19 +715,19 @@ sagecell.InteractControls.Checkbox.prototype.create = function (data, block_id) 
     this.control.change(function(event) {
         if (! event.originalEvent) {return;}
         that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).prop("checked")}, 
-                                  {"output": $.proxy(that.session.handle_output, that.session)});
+                                  {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
     });
 }
 
 sagecell.InteractControls.Checkbox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {"output": $.proxy(this.session.handle_output, this.session), 
-                               "control_update_reply": function(content, metadata) {
+                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                               shell: {"control_update_reply": function(content, metadata) {
                                    if (content.status === 'ok') {
                                        that.control.prop('checked', content.result.value);
                                    }
-                               }});
+                               }}});
 }
 
 
@@ -593,11 +744,11 @@ sagecell.InteractControls.OutputRegion.prototype.update = function (namespace, v
     this.message_number += 1;
     var msg_number = this.message_number;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {"output": function(msg_type, content, metadata) {
+                              {iopub: {"output": function(msg) {
                                   if (msg_number === that.message_number) {
-                                      $.proxy(that.session.handle_output, that.session)(msg_type, content, metadata, that.control_id);
+                                      $.proxy(that.session.handle_output, that.session)(msg, that.control_id);
                                   }
-                              }});
+                              }}});
 }
 
 sagecell.interact_controls = {
@@ -619,6 +770,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
     this.function_code = data.function_code;
     this.controls = {};
     this.session = session;
+    this.parent_block = parent_block;
     this.layout = data.layout;
     this.locations = data.locations;
     this.msg_id = data.msg_id;
@@ -630,6 +782,7 @@ sagecell.InteractCell = function (session, data, parent_block) {
             this.controls[name] = new sagecell.InteractData.control_types[controls[name].control_type](controls[name]);
         }
     }
+    this.session.interact_pl.style.display = "block";
     this.renderCanvas(parent_block);
     this.bindChange();
     if (data.readonly) {this.disable();}
@@ -639,14 +792,22 @@ sagecell.InteractCell.prototype.newControl = function (data) {
     this.controls[data.name] = new sagecell.InteractData.control_types[data.control.control_type](data.control);
     this.placeControl(data.name);
     this.bindChange(data.name);
-    if (this.output_block) {$(this.cells[data.name]).addClass("sagecell_dirtyControl");}
+    if (this.output_block && this.controls[data.name].dirty_update) {
+        $(this.cells[data.name]).addClass("sagecell_dirtyControl");
+    }
+    if (this.parent_block === null) {
+        this.session.updateLinks(true);
+    }
 }
 
 sagecell.InteractCell.prototype.delControl = function (data) {
     delete this.controls[data.name];
-    var tr = this.cells[data.name][0].parentNode;
+    var tr = this.cells[data.name].parentNode;
     tr.parentNode.removeChild(tr);
     delete this.cells[data.name];
+    if (this.parent_block === null) {
+        this.session.updateLinks(true);
+    }
 }
 
 sagecell.InteractCell.prototype.bindChange = function (cname) {
@@ -661,18 +822,22 @@ sagecell.InteractCell.prototype.bindChange = function (cname) {
         }
         var msg_dict = {
             "interact_id": that.interact_id,
-            "name": event.data.name,
-            "value": that.controls[event.data.name].json_value(ui),
+            "values": {},
+            "update_last": false,
             "user_expressions": {"_sagecell_files": "sys._sage_.new_files()"}
         };
+        msg_dict.values[event.data.name] = that.controls[event.data.name].json_value(ui);
         if (that.controls[event.data.name].dirty_update) {
             $(that.cells[event.data.name]).addClass("sagecell_dirtyControl");
         }
         var callbacks = {
-            "output": $.proxy(that.session.handle_output, that.session),
-            "sagenb.interact.update_interact_reply": $.proxy(that.session.handle_execute_reply, that.session)
+            iopub: {"output": $.proxy(that.session.handle_output, that.session)},
+            shell: {"reply": $.proxy(that.session.handle_execute_reply, that.session)}
         };
         that.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
+        if (this.parent_block === null) {
+            that.session.updateLinks(true);
+        }
     };
     if (cname === undefined) {
         for (var name in this.controls) {
@@ -723,6 +888,34 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
     ]))
 }
 
+var textboxItem = function (defaultVal, callback) {
+    var input = ce("input", {
+        "value": defaultVal,
+        "placeholder": "Bookmark name"
+    });
+    input.addEventListener("keydown", stop);
+    input.addEventListener("keypress", function (event) {
+        if (event.keyCode === 13) {
+            callback();
+            event.preventDefault();
+        }
+        event.stopPropagation();
+    });
+    var div = ce("div", {
+        "title": "Add bookmark",
+        "tabindex": "0",
+        "role": "button"
+    });
+    div.addEventListener("click", callback);
+    return ce("li", {"class": "ui-state-disabled"}, [ce("a", {}, [input, div])]);
+};
+
+var selectAll = function (txt) {
+    txt.selectionStart = 0;
+    txt.selectionEnd = txt.value.length;
+    txt.selectionDirection = "forward";
+};
+
 sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
     this.cells = {}
     this.container = ce("div", {"class": "sagecell_interactContainer"});
@@ -754,6 +947,9 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
                 this.cells[name] = $("body").find(this.locations[name]).slice(0,1).empty()[0];
                 if (name==="_output") {
                     this.output_block = this.cells[name];
+                    $(this.output_block).addClass("sagecell_interactOutput");
+                } else if (name==="_bookmarks") {
+                    this.bookmark_container = this.cells[name];
                 }
             }
         }
@@ -763,7 +959,125 @@ sagecell.InteractCell.prototype.renderCanvas = function (parent_block) {
             this.placeControl(name);
         }
     }
-    if (this.layout && this.layout.length>0) {
+    var menuBar = ce("div", {"class": "sagecell_bookmarks"});
+    var expText = ce("input", {
+        "title": "Pass this string to the interact proxy\u2019s _set_bookmarks method.",
+        "readonly": ""
+    });
+    var expButton = ce("div", {
+        "title": "Export bookmarks",
+        "tabindex": "0",
+        "role": "button"
+    });
+    expText.style.display = "none";
+    expText.addEventListener("focus", function (event) {
+        selectAll(expText);
+    });
+    var starButton = ce("div", {
+        "title": "Bookmarks",
+        "tabindex": "0",
+        "role": "button"
+    });
+    this.set_export = function () {
+        var b = [];
+        for (var i = 0; i < this.bookmarks.childNodes.length; i++) {
+            var li = this.bookmarks.childNodes[i];
+            var node = li.firstChild.firstChild.firstChild;
+            if (node !== null) {
+                b.push([node.nodeValue, $(li).data("values")]);
+            }
+        }
+        expText.value = JSON.stringify(JSON.stringify(b));
+    };
+    var list = ce("ul", {"class": "sagecell_bookmarks_list"});
+    var that = this;
+    menuBar.addEventListener("mousedown", stop);
+    expButton.addEventListener("click", function () {
+        expText.style.display = "";
+        expText.focus();
+        selectAll(expText);
+        $(expButton).removeClass("sagecell_export");
+    });
+    menuBar.appendChild(expButton);
+    menuBar.appendChild(expText);
+    menuBar.appendChild(starButton);
+    this.bookmark_container = this.bookmark_container || this.container;
+    this.bookmark_container.appendChild(menuBar)
+    this.bookmarks = list;
+    list.addEventListener("mousedown", stop, true);
+    this.set_export();
+    var visible = false;
+    var tb;
+    var hide_box = function hide_box() {
+        list.parentNode.removeChild(list);
+        list.removeChild(tb);
+        $(expButton).removeClass("sagecell_export");
+        expText.style.display = "none";
+        window.removeEventListener("mousedown", hide_box);
+        visible = false;
+        close = null;
+    };
+    $(list).menu({
+        "select": function (event, ui) {
+            that.state(ui.item.data("values"));
+            hide_box();
+        }
+    });
+    var handler = function (event) {
+        if (visible) {
+            return;
+        }
+        (function addTextbox() {
+            var n = 1;
+            while (true) {
+                for (var i = 0; i < list.childNodes.length; i++) {
+                    if (list.childNodes[i].firstChild.firstChild.firstChild.nodeValue === "Bookmark " + n) {
+                        break;
+                    }
+                }
+                if (i === list.childNodes.length) {
+                    break;
+                }
+                n++;
+            }
+            tb = textboxItem("Bookmark " + n, function () {
+                list.removeChild(tb);
+                that.createBookmark(tb.firstChild.firstChild.value);
+                addTextbox();
+            });
+            list.appendChild(tb);
+            $(list).menu("refresh");
+            setTimeout(function () {
+                var input = list.lastChild.firstChild.firstChild;
+                input.selectionStart = 0;
+                input.selectionEnd = input.value.length;
+                input.selectionDirection = "forward";
+                input.focus();
+            }, 0);
+        })();
+        visible = true;
+        that.session.outputDiv.append(list);
+        if (close) {
+            close();
+        }
+        close = hide_box;
+        $(list).position({
+            "my": "right top",
+            "at": "right bottom+5px",
+            "of": starButton
+        });
+        $(expButton).addClass("sagecell_export");
+        expButton.style.display = "inline-block";
+        window.addEventListener("mousedown", hide_box);
+        event.stopPropagation();
+    };
+    starButton.addEventListener("mousedown", handler);
+    this.disable_bookmarks = function () {
+        starButton.removeEventListener("mousedown", handler);
+        starButton.setAttribute("aria-disabled", "true");
+        starButton.removeAttribute("tabindex");
+    }
+    if (this.layout && this.layout.length > 0) {
         this.session.output(this.container, parent_block);
     }
 }
@@ -772,11 +1086,97 @@ sagecell.InteractCell.prototype.updateControl = function (data) {
     if (this.controls[data.control].update) {
         this.controls[data.control].ignoreNext = this.controls[data.control].eventCount;
         this.controls[data.control].update(data.value, data.index);
-        if (this.output_block) {$(this.cells[data.control]).addClass("sagecell_dirtyControl");}
+        if (this.output_block && this.controls[data.control].dirty_update) {
+            $(this.cells[data.control]).addClass("sagecell_dirtyControl");
+        }
+        if (this.parent_block === null) {
+            this.session.updateLinks(true);
+        }
+    }
+}
+
+sagecell.InteractCell.prototype.state = function (vals, callback) {
+    if (vals === undefined) {
+        vals = {};
+        for (var n in this.controls) {
+            if (this.controls.hasOwnProperty(n) && this.controls[n].update) {
+                vals[n] = this.controls[n].json_value();
+            }
+        }
+        return vals;
+    } else {
+        for (var n in vals) {
+            if (vals.hasOwnProperty(n) && this.controls.hasOwnProperty(n)) {
+                this.controls[n].ignoreNext = this.controls[n].eventCount;
+                this.controls[n].update(vals[n]);
+            }
+        }
+        var msg_dict = {
+            "interact_id": this.interact_id,
+            "values": vals,
+            "update_last": true
+        };
+        var callbacks = {
+            iopub: {"output": $.proxy(this.session.handle_output, this.session)},
+            shell: {"sagenb.interact.update_interact_reply": callback || $.proxy(this.session.handle_message_reply, this.session)}
+        };
+        this.session.send_message('sagenb.interact.update_interact', msg_dict, callbacks);
+    }
+}
+
+sagecell.InteractCell.prototype.createBookmark = function (name, vals) {
+    if (vals === undefined) {
+        vals = this.state();
+    }
+    var del = ce("div", {
+        "title": "Delete bookmark",
+        "tabindex": "0",
+        "role": "button"
+    });
+    var entry = ce("li", {}, [ce("a", {}, [ce("div", {}, [name]), del])]);
+    var that = this;
+    var i = this.bookmarks.childNodes.length;
+    del.addEventListener("click", function (event) {
+        that.bookmarks.removeChild(entry);
+        if (that.parent_block === null) {
+            that.session.updateLinks(true);
+        }
+        that.set_export();
+        event.stopPropagation();
+    });
+    $(entry).data({"values": vals});
+    var tbEntry;
+    if (this.bookmarks.hasChildNodes() &&
+        !this.bookmarks.lastChild.firstChild.firstChild.hasChildNodes()) {
+        tbEntry = this.bookmarks.removeChild(this.bookmarks.lastChild);
+    }
+    this.bookmarks.appendChild(entry);
+    if (tbEntry) {
+        this.bookmarks.appendChild(tbEntry);
+    }
+    $(this.bookmarks).menu("refresh");
+    if (this.parent_block === null) {
+        this.session.updateLinks(true);
+    }
+    this.set_export();
+};
+
+sagecell.InteractCell.prototype.clearBookmarks = function () {
+    var tbEntry;
+    if (this.bookmarks.hasChildNodes() &&
+        !this.bookmarks.lastChild.firstChild.firstChild.hasChildNodes()) {
+        tbEntry = this.bookmarks.removeChild(this.bookmarks.lastChild);
+    }
+    while (this.bookmarks.hasChildNodes()) {
+        this.bookmarks.removeChild(this.bookmarks.firstChild);
+    }
+    if (tbEntry) {
+        this.bookmarks.appendChild(tbEntry);
     }
 }
 
 sagecell.InteractCell.prototype.disable = function () {
+    this.disable_bookmarks();
     for (var name in this.controls) {
         if (this.controls.hasOwnProperty(name) && this.controls[name].disable) {
             this.controls[name].disable();
@@ -786,10 +1186,14 @@ sagecell.InteractCell.prototype.disable = function () {
 
 sagecell.InteractData = {};
 
-sagecell.InteractData.InteractControl = function () {
+sagecell.InteractData.InteractControl = function (dirty_update) {
     return function (control) {
         this.control = control;
-        this.dirty_update = !this.control.update;
+        if (typeof dirty_update === "undefined") {
+            this.dirty_update = !this.control.update;
+        } else {
+            this.dirty_update = dirty_update;
+        }
         this.eventCount = this.ignoreNext = 0;
     }
 }
@@ -932,10 +1336,11 @@ sagecell.InteractData.ColorSelector.prototype.disable = function () {
     this.span.firstChild.style.cursor = "default";
 }
 
-sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl();
+sagecell.InteractData.HtmlBox = sagecell.InteractData.InteractControl(false);
 
 sagecell.InteractData.HtmlBox.prototype.rendered = function () {
     this.div = ce("div");
+    this.value = this.control.value;
     $(this.div).html(this.control.value);
     return this.div;
 }
@@ -945,10 +1350,11 @@ sagecell.InteractData.HtmlBox.prototype.changeHandlers = function() {
 }
 
 sagecell.InteractData.HtmlBox.prototype.json_value = function() {
-    return null;
+    return this.value;
 }
 
 sagecell.InteractData.HtmlBox.prototype.update = function (value) {
+    this.value = value;
     $(this.div).html(value);
 }
 
@@ -994,7 +1400,9 @@ sagecell.InteractData.InputGrid = sagecell.InteractData.InteractControl();
 
 sagecell.InteractData.InputGrid.prototype.rendered = function (id) {
     this.textboxes = $();
-    var table = ce("table", {"style": "width: auto;"});
+    var table = ce("table", {"style": "width: auto; vertical-align: middle; display: inline-table;"});
+    this.button = ce("button", {"style": "vertical-align: middle;"}, ["Submit"]);
+    var div = ce("div", {}, [table, this.button]);
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
@@ -1010,11 +1418,13 @@ sagecell.InteractData.InputGrid.prototype.rendered = function (id) {
         table.appendChild(tr);
     }
     this.textboxes.attr("id", id);
-    return table;
+
+
+    return div;
 }
 
 sagecell.InteractData.InputGrid.prototype.changeHandlers = function () {
-    return {"change": this.textboxes};
+    return {"click": this.button};
 }
 
 sagecell.InteractData.InputGrid.prototype.json_value = function () {
@@ -1030,8 +1440,17 @@ sagecell.InteractData.InputGrid.prototype.json_value = function () {
 }
 
 sagecell.InteractData.InputGrid.prototype.update = function (value, index) {
-    this.textboxes[index[0] * this.control.ncols + index[1]].value = value;
-}
+    if (index === undefined) {
+        var i = -1;
+        for (var row = 0; row < value.length; row++) {
+            for (var col = 0; col < value[row].length; col++) {
+                this.textboxes[++i].value = value[row][col];
+            }
+        }
+    } else {
+        this.textboxes[index[0] * this.control.ncols + index[1]].value = value;
+    }
+};
 
 sagecell.InteractData.InputGrid.prototype.disable = function () {
     this.textboxes.prop("disabled", true);
@@ -1122,13 +1541,21 @@ sagecell.InteractData.MultiSlider.prototype.changeHandlers = function() {
 }
 
 sagecell.InteractData.MultiSlider.prototype.json_value = function () {
-    return this.values;
-}
+    return this.values.slice();
+};
 
 sagecell.InteractData.MultiSlider.prototype.update = function (value, index) {
-    $(this.sliders[index]).slider("option", "value", value);
-    $(this.sliders[index]).trigger("slide", {"value": value});
-}
+    if (index === undefined) {
+        this.ignoreNext = value.length;
+        for (var i = 0; i < value.length; i++) {
+            $(this.sliders[i]).slider("option", "value", value[i]);
+            $(this.sliders[i]).trigger("slide", {"value": value[i]});
+        }
+    } else {
+        $(this.sliders[index]).slider("option", "value", value);
+        $(this.sliders[index]).trigger("slide", {"value": value});
+    }
+};
 
 sagecell.InteractData.MultiSlider.prototype.disable = function () {
     this.sliders.slider("option", "disabled", true);
@@ -1369,13 +1796,16 @@ sagecell.InteractData.Slider.prototype.changeHandlers = function() {
 
 sagecell.InteractData.Slider.prototype.json_value = function () {
     if (this.range) {
-        return this.values;
+        return this.values.slice();
     } else {
         return this.value;
     }
-}
+};
 
 sagecell.InteractData.Slider.prototype.update = function (value) {
+    if (this.range) {
+        value = value.slice();
+    }
     $(this.slider).slider("option", (this.range ? "values" : "value"), value);
     var ui = {};
     ui[this.range ? "values" : "value"] = value;
@@ -1404,11 +1834,9 @@ sagecell.MultiSockJS = function (url, prefix) {
     sagecell.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
     if (!sagecell.MultiSockJS.channels) {
         sagecell.MultiSockJS.channels = {};
-        sagecell.MultiSockJS.opened = false;
         sagecell.MultiSockJS.to_init = [];
         sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, sagecell.sockjs_options || {});
         sagecell.MultiSockJS.sockjs.onopen = function (e) {
-            sagecell.MultiSockJS.opened = true;
             while (sagecell.MultiSockJS.to_init.length > 0) {
                 sagecell.MultiSockJS.to_init.shift().init_socket(e);
             }
@@ -1422,7 +1850,9 @@ sagecell.MultiSockJS = function (url, prefix) {
             }
         }
         sagecell.MultiSockJS.sockjs.onclose = function (e) {
+            var readyState = sagecell.MultiSockJS.sockjs.readyState;
             for (var prefix in sagecell.MultiSockJS.channels) {
+                sagecell.MultiSockJS.channels[prefix].readyState = readyState;
                 if (sagecell.MultiSockJS.channels[prefix].onclose) {
                     sagecell.MultiSockJS.channels[prefix].onclose(e);
                 }
@@ -1430,16 +1860,18 @@ sagecell.MultiSockJS = function (url, prefix) {
         }
     }
     this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1] : prefix;
+    this.readyState = sagecell.MultiSockJS.sockjs.readyState;
     sagecell.MultiSockJS.channels[this.prefix] = this;
     this.init_socket();
 }
 
 sagecell.MultiSockJS.prototype.init_socket = function (e) {
-    if (sagecell.MultiSockJS.opened) {
+    if (sagecell.MultiSockJS.sockjs.readyState) {
         var that = this;
         // Run the onopen function after the current thread has finished,
         // so that onopen has a chance to be set.
         setTimeout(function () {
+            that.readyState = sagecell.MultiSockJS.sockjs.readyState;
             if (that.onopen) {
                 that.onopen(e);
             }

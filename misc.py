@@ -168,17 +168,21 @@ def session_metadata(metadata):
     new_metadata = old_metadata.copy()
     new_metadata.update(metadata)
     session.metadata = new_metadata
-    try:
-        yield None
-    finally:
-        sys.stdout.flush()
-        sys.stderr.flush()
-        session.metadata = old_metadata
+    yield
+    sys.stdout.flush()
+    sys.stderr.flush()
+    session.metadata = old_metadata
 
 def display_message(data, metadata=None):
     session = sys.stdout.session
     content = {'data': data, 'source': 'sagecell'}
     session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header, metadata=metadata)
+
+def reset_kernel_timeout(timeout):
+    sys.stdout.session.send(sys.stdout.pub_socket, 'kernel_timeout', content={'timeout': float(timeout)}, parent = sys.stdout.parent_header)
+
+def javascript(code):
+    sys._sage_.display_message({'application/javascript': code, 'text/plain': 'javascript code'})
 
 def json_default(obj):
     if isinstance(obj, datetime):

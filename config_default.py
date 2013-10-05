@@ -29,8 +29,9 @@ permalink_server = {
 max_kernel_timeout = 60*10 # 10 minutes, for interacts
 pid_file = 'sagecell.pid'
 permalink_pid_file = 'sagecell_permalink_server.pid'
-computers = []
+tmp_dir = "/tmp/sagecell"
 
+computers = []
 _default_config = {"host": "localhost",
                   "username": None,
                   "python": sage + " -python",
@@ -44,12 +45,12 @@ _default_config = {"host": "localhost",
 # Note: All other resource limits seem to be working, but besides RLIMIT_CPU and
 # RLIMIT_AS they don't actually kill off offending processes
                   "resource_limits": {"RLIMIT_CPU": 30, # CPU time in seconds
-                                      "RLIMIT_AS": 1024*(2**20), #Maximum address space in bytes; this sets 1024 MB
+                                      "RLIMIT_AS": 2048*(2**20), #Maximum address space in bytes; this sets 1024 MB
                                      },
 # The log file will be in the home directory of the untrusted account
                   "log_file": "sagecell.log",
                   "max_kernels": 10,
-                  "preforked_kernels": 5,
+                  "preforked_kernels": 3,
 # These set paramaters for a heartbeat channel checking whether a given kernel is alive.
 # Setting first_beat lower than 1.0 may cause javascript errors.
                   "beat_interval": 0.5,
