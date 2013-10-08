@@ -21,13 +21,89 @@
 # ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# The views and conclusions contained in the software and documentation are those
-# of the authors and should not be interpreted as representing official policies,
-# either expressed or implied, of the FreeBSD Project.
 ###############################################################################
 
-{defaults, required} = require('misc')
+#{defaults, required} = require('misc')
+
+###############
+## Start misc.coffee includes
+###############
+
+# convert basic structure to a JSON string
+to_json = (x) ->
+    JSON.stringify(x)
+
+# Returns a new object with properties determined by those of obj1 and
+# obj2.  The properties in obj1 *must* all also appear in obj2.  If an
+# obj2 property has value "defaults.required", then it must appear in
+# obj1.  For each property P of obj2 not specified in obj1, the
+# corresponding value obj1[P] is set (all in a new copy of obj1) to
+# be obj2[P].
+defaults = (obj1, obj2) ->
+    if not obj1?
+        obj1 = {}
+    error  = () ->
+        try
+            "(obj1=#{to_json(obj1)}, obj2=#{to_json(obj2)})"
+        catch error
+            ""
+    if typeof(obj1) != 'object'
+        # We put explicit traces before the errors in this function,
+        # since otherwise they can be very hard to debug.
+        console.trace()
+        throw "misc.defaults -- TypeError: function takes inputs as an object #{error()}"
+    r = {}
+    for prop, val of obj2
+        if obj1.hasOwnProperty(prop) and obj1[prop]?
+            if obj2[prop] == defaults.required and not obj1[prop]?
+                console.trace()
+                throw "misc.defaults -- TypeError: property '#{prop}' must be specified: #{error()}"
+            r[prop] = obj1[prop]
+        else if obj2[prop]?  # only record not undefined properties
+            if obj2[prop] == defaults.required
+                console.trace()
+                throw "misc.defaults -- TypeError: property '#{prop}' must be specified: #{error()}"
+            else
+                r[prop] = obj2[prop]
+    for prop, val of obj1
+        if not obj2.hasOwnProperty(prop)
+            console.trace()
+            throw "misc.defaults -- TypeError: got an unexpected argument '#{prop}' #{error()}"
+    return r
+
+# WARNING -- don't accidentally use this as a default:
+required = defaults.required = "__!!!!!!this is a required property!!!!!!__"
+
+# WARNING: params below have different semantics than above; these are what *really* make sense....
+eval_until_defined = (opts) ->
+    opts = defaults opts,
+        code         : required
+        start_delay  : 100    # initial delay beforing calling f again.  times are all in milliseconds
+        max_time     : 10000  # error if total time spent trying will exceed this time
+        exp_factor   : 1.4
+        cb           : required # cb(err, eval(code))
+    delay = undefined
+    total = 0
+    f = () ->
+        result = eval(opts.code)
+        if result?
+            opts.cb(false, result)
+        else
+            if not delay?
+                delay = opts.start_delay
+            else
+                delay *= opts.exp_factor
+            total += delay
+            if total > opts.max_time
+                opts.cb("failed to eval code within #{opts.max_time}")
+            else
+                setTimeout(f, delay)
+    f()
+
+############
+### END misc.coffee includes
+############
+
 
 component_to_hex = (c) ->
     hex = c.toString(16);
@@ -206,7 +282,7 @@ class SalvusThreeJS
 
         @scene.add(particle)
 
-    add_obj: (myobj)=>
+    add_obj: (myobj, opts)=>
         vertices = myobj.vertex_geometry
         for objects in [0..myobj.face_geometry.length-1]
             face3 = myobj.face_geometry[objects].face3
@@ -388,11 +464,11 @@ class SalvusThreeJS
                         fontface:o.fontface
                         constant_size:o.constant_size
                 when 'index_face_set'
-                    @add_obj(o)
+                    @add_obj(o, opts)
                     if o.mesh and not o.wireframe  # draw a wireframe mesh on top of the surface we just drew.
                         o.color='#000000'
                         o.wireframe = o.mesh
-                        @add_obj(o)
+                        @add_obj(o, opts)
                 when 'line'
                     delete o.type
                     @add_line(o)

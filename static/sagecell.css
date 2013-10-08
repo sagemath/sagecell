@@ -462,6 +462,18 @@
     color: #00a;
 }
 
+.sagecell .sagecell-templates .hide {
+ display: none;   
+}
+
+.sagecell .sagecell-templates .pull-right {
+    float: right;
+}
+
+.sagecell .sagecell-templates .lighten {
+    color: gray;
+}
+
 .sagecell .ansiblack {color: black;}
 .sagecell .ansired {color: darkred;}
 .sagecell .ansigreen {color: darkgreen;}
