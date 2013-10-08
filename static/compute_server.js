@@ -770,22 +770,17 @@ sagecell.interact_controls = {
     $(div).salvus_threejs(msg.content.data)
 
     that.obj = proxy(['add_3dgraphics_obj', 'render_scene', 'set_frame', 'animate']);
-    console.log(that.obj);
     run_when_defined({fn: function() {return $(div).data('salvus-threejs')},
                         cb: function(result) {that.obj._run_callbacks(result);
-                                              that.obj = result;
- console.log('getting rid of proxy object');
-                                              console.log(that.obj);},
+                                              that.obj = result;},
                         err: function(err) {comm.close(); console.log(err);}})
     session.output(div, null);
 
 
     comm.on_msg(function(msg) {
-        console.log(msg);
         var data = msg.content.data;
         var type = data.msg_type;
         delete data.msg_type;
-        console.log(that.obj);
         if(type==='add') {
             that.obj.add_3dgraphics_obj(data);
         } else if (type==='render') {
