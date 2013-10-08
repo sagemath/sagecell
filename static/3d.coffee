@@ -74,20 +74,26 @@ defaults = (obj1, obj2) ->
 # WARNING -- don't accidentally use this as a default:
 required = defaults.required = "__!!!!!!this is a required property!!!!!!__"
 
+############
+### END misc.coffee includes
+############
+
 # WARNING: params below have different semantics than above; these are what *really* make sense....
-eval_until_defined = (opts) ->
+# modified from misc.coffee, eval_until_defined
+run_when_defined = (opts) ->
     opts = defaults opts,
-        code         : required
+        fn         : required
         start_delay  : 100    # initial delay beforing calling f again.  times are all in milliseconds
         max_time     : 10000  # error if total time spent trying will exceed this time
         exp_factor   : 1.4
         cb           : required # cb(err, eval(code))
+        err          : required #
     delay = undefined
     total = 0
     f = () ->
-        result = eval(opts.code)
+        result = opts.fn()
         if result?
-            opts.cb(false, result)
+            opts.cb(result)
         else
             if not delay?
                 delay = opts.start_delay
@@ -95,14 +101,11 @@ eval_until_defined = (opts) ->
                 delay *= opts.exp_factor
             total += delay
             if total > opts.max_time
-                opts.cb("failed to eval code within #{opts.max_time}")
+                opts.err("failed to eval code within #{opts.max_time}")
             else
                 setTimeout(f, delay)
     f()
 
-############
-### END misc.coffee includes
-############
 
 
 component_to_hex = (c) ->
@@ -129,7 +132,6 @@ class SalvusThreeJS
         @scene = new THREE.Scene()
         @opts.width  = if opts.width? then opts.width else $(window).width()*.9
         @opts.height = if opts.height? then opts.height else $(window).height()*.6
-
         if not @opts.renderer?
             if Detector.webgl
                 @opts.renderer = 'webgl'
@@ -550,5 +552,6 @@ $.fn.salvus_threejs = (opts={}) ->
         opts.element = e
         elt.data('salvus-threejs', new SalvusThreeJS(opts))
 
-
+root = exports ? this
+root.run_when_defined = run_when_defined
 

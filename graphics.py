@@ -27,21 +27,17 @@
 # either expressed or implied, of the FreeBSD Project.
 ###############################################################################
 
-
-
-import json
 from uuid import uuid4
 def uuid():
     return str(uuid4())
-import sage_salvus
-
 
 #######################################################
 # Three.js based plotting
 #######################################################
 
+from comm import SageCellComm as Comm
+from uuid import uuid4 as uuid
 noneint = lambda n : n if n is None else int(n)
-
 class ThreeJS(object):
     def __init__(self, renderer=None, width=None, height=None,
                  frame=True, camera_distance=10.0, background=None, foreground=None, **ignored):
@@ -57,44 +53,44 @@ class ThreeJS(object):
         - foreground -- None (automatic = black if transparent; otherwise opposite of background);
            or a color; this is used for drawing the frame and axes labels.
         """
-        self._frame    = frame
-        self._salvus   = sage_salvus.salvus  # object for this cell
-        self._id       = uuid()
-        self._selector = "$('#%s')"%self._id
-        self._obj      = "%s.data('salvus-threejs')"%self._selector
-        self._salvus.html("<div id=%s style='border:1px solid grey'></div>"%self._id)
-        self._salvus.javascript("%s.salvus_threejs(obj)"%self._selector, once=False,
-                                obj={'renderer':renderer,
+        self.id = uuid()
+        self.comm = Comm(data={'renderer':renderer,
                                      'width':noneint(width),
                                      'height':noneint(height),
                                      'camera_distance':float(camera_distance),
                                      'background':background,
                                      'foreground':foreground
-                                     })
+                                     }, target_name='threejs')
+        self.comm.on_msg(self.on_msg)
         self._graphics = []
 
-    def _call(self, s, obj=None):
-        cmd = 'misc.eval_until_defined({code:"%s", cb:(function(err, __t__) { __t__ != null ? __t__.%s:void 0 })})'%(
-                self._obj, s)
-        self._salvus.execute_javascript(cmd, obj=obj)
-
+    def on_msg(self, msg):
+        data = msg['content']['data']
+        x,y = data['x'], data['y']
+        print (x,y)
+    def send(self, msg_type, data):
+        d = {'msg_type': msg_type}
+        d.update(data)
+        self.comm.send(d)
     def add(self, graphics3d, **kwds):
         kwds = graphics3d._process_viewing_options(kwds)
         self._frame = kwds.get('frame',False)
         self._graphics.append(graphics3d)
-        self._call('add_3dgraphics_obj(obj)', obj={'obj':graphics3d_to_jsonable(graphics3d), 'wireframe':jsonable(kwds.get('wireframe'))})
+        self.send('add', {'obj':graphics3d_to_jsonable(graphics3d), 
+                        'wireframe':jsonable(kwds.get('wireframe'))})
         self.set_frame(draw = self._frame)  # update the frame
-
     def render_scene(self, force=True):
-        self._call('render_scene(obj)', obj={'force':force})
+        self.send('render', {'force':force})
 
     def add_text(self, pos, text, fontsize=18, fontface='Arial', sprite_alignment='topLeft'):
-        self._call('add_text(obj)',
-                   obj={'pos':[float(pos[0]), float(pos[1]), float(pos[2])],'text':str(text),
-                        'fontsize':int(fontsize),'fontface':str(fontface), 'sprite_alignment':str(sprite_alignment)})
+        self.send('add_text',
+                   obj={'pos':[float(pos[0]), float(pos[1]), float(pos[2])],
+                        'text':str(text),
+                        'fontsize':int(fontsize),'fontface':str(fontface),
+                        'sprite_alignment':str(sprite_alignment)})
 
     def animate(self, fps=None, stop=None, mouseover=True):
-        self._call('animate(obj)', obj={'fps':noneint(fps), 'stop':stop, 'mouseover':mouseover})
+        self.send('animate', {'fps':noneint(fps), 'stop':stop, 'mouseover':mouseover})
 
     def set_frame(self, xmin=None, xmax=None, ymin=None, ymax=None, zmin=None, zmax=None, color=None, draw=True):
         if not self._graphics:
@@ -109,10 +105,11 @@ class ThreeJS(object):
                       min(b[0][1],ymin), max(b[1][1],ymax),
                       min(b[0][2],zmin), max(b[1][2],zmax))
 
-        self._call('set_frame(obj)', obj={
+        self.send('set_frame', {
                       'xmin':float(xmin), 'xmax':float(xmax),
                       'ymin':float(ymin), 'ymax':float(ymax),
                       'zmin':float(zmin), 'zmax':float(zmax), 'color':color, 'draw':draw})
+
 
 def show_3d_plot_using_threejs(g, **kwds):
     b = g.bounding_box()
@@ -123,6 +120,7 @@ def show_3d_plot_using_threejs(g, **kwds):
     t.add(g, **kwds)
     t.animate()
     return t
+
 
 import sage.plot.plot3d.index_face_set
 import sage.plot.plot3d.shapes
@@ -391,11 +389,6 @@ def graphics3d_to_jsonable(p):
     handler(p)(p)
 
     return obj_list
-
-
-
-
-
 
 ###
 # Interactive 2d Graphics

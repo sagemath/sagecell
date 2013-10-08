@@ -101,6 +101,8 @@ from sagenb.misc.support import automatic_names
         _sage_.reset_kernel_timeout = misc.reset_kernel_timeout
         _sage_.javascript = misc.javascript
         _sage_.sent_files = {}
+        import graphics
+        _sage_.show_3d_plot_using_threejs = graphics.show_3d_plot_using_threejs
         def new_files(root='./'):
             import os
             import sys
