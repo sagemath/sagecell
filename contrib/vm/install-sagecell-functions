@@ -137,6 +137,7 @@ function install_sage {
   make
   #make test
   ./sage <<EOFSAGE
+     octave.eval('1+2') # make appropriate octave directory
      quit
 EOFSAGE
 EOF
