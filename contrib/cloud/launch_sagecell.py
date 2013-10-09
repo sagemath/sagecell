@@ -27,4 +27,6 @@ print "https://cloud.sagemath.com%s"%baseurl
 print
 print "Computations in %s"%tmp_dir
 print "Running: %s"%command
+
+subprocess.call("../sage/sage -sh -c 'make -B'", shell=True)
 subprocess.call(command, shell=True)
