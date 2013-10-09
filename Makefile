@@ -5,6 +5,11 @@ all-min-css    = static/all.min.css
 all-min-js     = static/all.min.js
 colorpicker    = static/colorpicker/js/colorpicker.js
 compute_server = static/compute_server.js
+threejs        = static/three.js
+threejs-control= static/TrackballControls.js
+threejs-detect = static/Detector.js
+threed         = static/3d.js
+threed-coffee  = static/3d.coffee
 jmol           = static/jmol
 jmol-js        = $(jmol)/appletweb/Jmol.js
 jquery         = static/jquery.min.js
@@ -46,6 +51,9 @@ ip-comm        = $(ip-static)/services/kernels/js/comm.js
 ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
 jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
+threejs-url    = https://raw.github.com/mrdoob/three.js/r59/build/three.js
+threejs-url-control = https://raw.github.com/mrdoob/three.js/r59/examples/js/controls/TrackballControls.js
+threejs-url-detect = https://raw.github.com/mrdoob/three.js/r59/examples/js/Detector.js
 jmol-sage      = $(sage-root)/local/share/jmol
 canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-0.10.4-py2.7.egg/sagenb/data/sage/js/canvas3d_lib.js
 
@@ -59,8 +67,17 @@ submodules:
 $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
 
+$(threejs):
+	python -c "import urllib; urllib.urlretrieve('$(threejs-url)', '$(threejs)')"
+
+$(threejs-control):
+	python -c "import urllib; urllib.urlretrieve('$(threejs-url-control)', '$(threejs-control)')"
+
+$(threejs-detect):
+	python -c "import urllib; urllib.urlretrieve('$(threejs-url-detect)', '$(threejs-detect)')"
+
 $(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
-	cp $(codemirror-cat) $(all-min-js)
+	cp $(codemirror-cat) $(all-min-js) $(three-min-js)
 	$(jsmin-bin) < $(all-js) >> $(all-min-js)
 
 $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(cm-python-mode) \
@@ -77,10 +94,14 @@ $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
+# Commented out since we now include 3d.js in the repository
+#$(threed): $(threed-coffee)
+#	coffee -c $(threed-coffee)
+
 $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
-            $(colorpicker)
+            $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
-	    $(colorpicker) > $(wrap-js)
+	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
 $(all-min-css): $(codemirror-css) $(cm-hint-css) $(sagecell-css)

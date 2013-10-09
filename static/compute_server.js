@@ -19,6 +19,7 @@
 "use strict";
 var undefined;
 var ce = sagecell.util.createElement;
+var proxy = sagecell.util.proxy;
 var throttle = sagecell.util.throttle;
 var interacts = {};
 
@@ -117,6 +118,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         window.console = window.console || {};
         //console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
+        this.kernel.comm_manager.register_target('threejs', IPython.utils.always_new(sagecell.SessionThreeJSWidget(this)));
         this.kernel.session = this;
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
@@ -758,6 +760,40 @@ sagecell.interact_controls = {
     'OutputRegion': sagecell.InteractControls.OutputRegion
 
 }
+
+    sagecell.SessionThreeJSWidget = function(session) {
+    return function(comm, msg) {
+    var that = this;
+    var callbacks = {iopub : {output: $.proxy(session.handle_output, session)}};
+    var div = ce("div", {style: "border: 2px solid blue;margin:0;padding:0;"});
+    
+    $(div).salvus_threejs(msg.content.data)
+
+    that.obj = proxy(['add_3dgraphics_obj', 'render_scene', 'set_frame', 'animate']);
+    run_when_defined({fn: function() {return $(div).data('salvus-threejs')},
+                        cb: function(result) {that.obj._run_callbacks(result);
+                                              that.obj = result;},
+                        err: function(err) {comm.close(); console.log(err);}})
+    session.output(div, null);
+
+
+    comm.on_msg(function(msg) {
+        var data = msg.content.data;
+        var type = data.msg_type;
+        delete data.msg_type;
+        if(type==='add') {
+            that.obj.add_3dgraphics_obj(data);
+        } else if (type==='render') {
+            that.obj.render_scene(data);
+        } else if (type==='set_frame') {
+            that.obj.set_frame(data);
+        }  else if (type==='animate') {
+            that.obj.animate(data);
+        }
+    });
+        }
+    }
+
 
 /**********************************************
     OLD Interacts

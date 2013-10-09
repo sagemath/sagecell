@@ -251,7 +251,7 @@ class TrustedMultiKernelManager(object):
         logger.info("Trying to start kernel on %s", comp_id[:4])
         self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
 
-    def new_session_async(self, referer='', remote_ip='', timeout = None, callback=None):
+    def new_session_async(self, referer='', remote_ip='', timeout = 0, callback=None):
         """ Starts a new kernel on an open computer.
 
         We try to get a kernel off a queue of preforked kernels to minimize
@@ -270,10 +270,9 @@ class TrustedMultiKernelManager(object):
             preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
             logger.info("Using kernel on %s.  Queue: %s kernels on %s computers"%(comp_id[:4], self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue]))
             kernel_info = self._kernels[preforked_kernel_id]
-            if timeout is not None:
-                timeout = float(timeout)
+            timeout = float(timeout)
             import math
-            if math.isnan(timeout) or timeout<0 or timeout > self.max_kernel_timeout:
+            if math.isnan(timeout) or timeout > self.max_kernel_timeout:
                 timeout = self.max_kernel_timeout
             kernel_info["deadline"] = time.time() + timeout
             kernel_info["timeout"] = timeout

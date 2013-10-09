@@ -388,7 +388,8 @@ accepted_tos=true\n""")
             referer = self.request.headers.get('Referer','')
             self.kernel_id = yield gen.Task(km.new_session_async,
                                             referer = referer,
-                                            remote_ip = remote_ip)
+                                            remote_ip = remote_ip,
+                                            timeout=0)
             if not (remote_ip=="::1" and referer==""
                     and cron.match(code) is not None):
                 statslogger.info(StatsMessage(kernel_id = self.kernel_id,

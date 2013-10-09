@@ -109,6 +109,25 @@ sagecell.util = {
         }
         return node;
     }
+/* var p = proxy(['list', 'of', 'methods'])
+     will save any method calls in the list.  At some later time, you can invoke
+     each method on an object by doing p._run_callbacks(my_obj) */
+    ,"proxy": function(methods) {
+        var proxy = {_callbacks: []};
+        $.each(methods, function(i,method) {
+            proxy[method] = function() {
+                proxy._callbacks.push([method, arguments]);
+                console.log('stored proxy for '+method);
+            }
+        })
+            proxy._run_callbacks = function(obj) {
+                $.each(proxy._callbacks, function(i,cb) {
+                    obj[cb[0]].apply(obj, cb[1]);
+                })
+                    }
+        return proxy;
+    }
+
 
 //     throttle is from:
 //     Underscore.js 1.4.3
