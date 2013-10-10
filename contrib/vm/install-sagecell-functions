@@ -137,6 +137,8 @@ function install_sage {
   make
   # install extra sage packages
   yes | ./sage -i qepcad
+  # fix permissions on qepcad
+  chmod go+r local/bin/qepcad.help
   #make test
   ./sage <<EOFSAGE
      octave.eval('1+2') # make appropriate octave directory
