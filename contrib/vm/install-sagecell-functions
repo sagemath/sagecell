@@ -135,9 +135,17 @@ function install_sage {
     popd
   fi 
   make
+  # install extra sage packages
+  yes | ./sage -i qepcad
   #make test
   ./sage <<EOFSAGE
      octave.eval('1+2') # make appropriate octave directory
+     # make appropriate qepcad directory
+     var('a,b,c,d,x,y,z')
+     qf = qepcad_formula
+     ellipse = 3*x^2 + 2*x*y + y^2 - x + y - 7
+     F = qf.exists(y, ellipse == 0)
+     qepcad(F)
      quit
 EOFSAGE
 EOF
