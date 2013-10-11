@@ -94,9 +94,9 @@ $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
-# Commented out since we now include 3d.js in the repository
-#$(threed): $(threed-coffee)
-#	coffee -c $(threed-coffee)
+# not run by default
+coffee: $(threed-coffee)
+	coffee -c $(threed-coffee)
 
 $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
             $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed)
