@@ -28,5 +28,6 @@ print
 print "Computations in %s"%tmp_dir
 print "Running: %s"%command
 
+subprocess.call("../sage/sage -sh -c 'make coffee'", shell=True)
 subprocess.call("../sage/sage -sh -c 'make -B'", shell=True)
 subprocess.call(command, shell=True)
