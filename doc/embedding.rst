@@ -326,7 +326,7 @@ The following input elements can be hidden:
 
 The following output elements can be hidden:
 
-* Permalinks (``permalinks``)
+* Share button to permalinks (``permalink``)
 * Session output (``output``)
 * Session end message (``done``)
 * Session files (``sessionFiles``)
