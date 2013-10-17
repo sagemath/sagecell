@@ -40,7 +40,6 @@ Interacts
 * look into putting output in iframe to avoid all of the styling
   issues we've dealt with
 * interactive 2d plots using Matplotlib's new tools
-* Implement submit button for matrix control
 * Diagnose the error in this interact: http://localhost:8888/?z=eJyNlVtr2zAUx98L_Q4iL5ZS1bPdlkHBY9Ax-hTG6FsIQbHlVKssGUlZkn76HUlxLk4bpgfZupyLf-cvWbSdNg6pVdttEbNIdej6quYNWgg177Tczo3WzuJJyzaoRHkGjRqm3mBQ3Pu3unwxK04er68QNCYlrDwx47gVTP0yul5VDo_dqpMcT6e3Oc1nszH2Lm5yQkg0m5RgmFbM1EIxKdwW7xZEg0Lob5NdgLAbZspJHL9zwyCi6lLedmAXMh1794TWbtvxEpYq3UL4zc5n7BttkKKwskBCIQ4EwJPjGBIhR7EgAYXKMsQ8mvZtYTh7O9npcQw2BYaV5k1jPbIxZON36TY8hHI4owW14p2Xeyi3-cEHl5ZfdOm_4LDucUxV-P5HrMBZeJ3BPo_IW-Y1PnJAUhONDXcroyLOwOg75AaDykU9zLHy1KdeAfTBd1ELRdZP7GayWdBHaaWoucE5vYMFCi7YSrqyuCc93c5ABJQ8MVmtJHNCLVHQGkXCobUAITn2xhHrOqM3aUJ9_C8QiCaWV1rVNjnx86Idk17IC26QbgIlpVvBpH1MaDHea46i0ZofBYjlkNtRiBB9_nYe7QdnoPR7Dgdgp6hOOhh22pcTvYsO-ypzJjH4IRQGomXLMCCx1Dk60eKe9W58AF70HHve0O9hZuRYqaeaDbZlNpROYDX6Ydh6z9vDigx6ZgHaaGApXWpf9Ro3Yhk-4YFcFul5dRthLEwFzAVNLhbbkwz7fMXJsOR9A6LFhToVw5vqJ3wXJ_-HRBvAzusTJuk5lOLTwhcnlS_2pYc7R2pTJuA8QbTHeT9IC4PvG--ffI59KJteOjVXFu7QeSe1wwDHltOM3kftFP6A_vWEcJbewRTN0vxER0cqCrZnIhqQsxz-H1rBzaGDAXIaWQ617PMIAvNYR-d-PlBO354p2vB6yUEj2_BE8Z5_FdbppWFtUX9-zmhIHfu6-DdC92_ES2HJS_8vSr9SBN2MoqPBjCptWr77r32cW8ucEZsIGMJKvcTPhFYt68rkD3dJJOw7eihcLCT5B72dHfI=&lang=sage (Click on 100 bins.  I get: "/Users/grout/projects/sagenb/sagecell/receiver.py:43: RuntimeWarning: divide by zero encountered in log self.dealer.send(source, zmq.SNDMORE)" below the picture)
 
 * Implement IPython comm spec.  Here is a working example:
@@ -73,6 +72,8 @@ Fall 2013
     special function that will deliver a message to the intermediate
     zmq/websocket bridge to set the timeout, instead of surreptitously
     adding timeout data to every message.
+
+* [X] Implement submit button for matrix control
 
 Summer 2013
 ===========
