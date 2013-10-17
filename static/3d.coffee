@@ -332,17 +332,28 @@ class SalvusThreeJS
                     wireframe          : true
                     color              : color
                     wireframeLinewidth : line_width
+                mesh = new THREE.Mesh(geometry, material)
             else if not myobj.material[mk]?
                 console.log("BUG -- couldn't get material for ", myobj)
                 material = new THREE.MeshBasicMaterial
                     wireframe : false
                     color     : "#000000"
+                    overdraw    : true
+                    polygonOffset: true
+                    polygonOffsetFactor: 1
+                    polygonOffsetUnits: 1
+                mesh = new THREE.Mesh(geometry, material)
             else
                 material =  new THREE.MeshPhongMaterial
                     shininess   : "1"
                     ambient     : 0x0ffff
                     wireframe   : false
                     transparent : myobj.material[mk].opacity < 1
+                    overdraw    : true
+                    polygonOffset: true
+                    polygonOffsetFactor: 1
+                    polygonOffsetUnits: 1
+                    side: THREE.DoubleSide
 
                 material.color.setRGB(myobj.material[mk].color[0],
                                             myobj.material[mk].color[1],myobj.material[mk].color[2])
@@ -351,8 +362,15 @@ class SalvusThreeJS
                 material.specular.setRGB(myobj.material[mk].specular[0],
                                                myobj.material[mk].specular[1],myobj.material[mk].specular[2])
                 material.opacity = myobj.material[mk].opacity
+                mesh = new THREE.Mesh(geometry, material)
+                wireframeMaterial = new THREE.MeshBasicMaterial
+                    color: 0x111111
+                    wireframe: true
+                    transparent: true
+                    opacity:.3
+                multiMaterial = [material, wireframeMaterial]
+                mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
 
-            mesh = new THREE.Mesh(geometry, material)
             mesh.position.set(0,0,0)
             @scene.add(mesh)
 

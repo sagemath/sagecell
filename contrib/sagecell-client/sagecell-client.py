@@ -16,7 +16,7 @@ class SageCell(object):
         # POST or GET <url>/kernel
         # if there is a terms of service agreement, you need to
         # indicate acceptance in the data parameter below (see the API docs)
-        req = urllib2.Request(url=url+'kernel', data='',headers={'Accept': 'application/json'})
+        req = urllib2.Request(url=url+'kernel', data='accepted_tos=true',headers={'Accept': 'application/json'})
         response = json.loads(urllib2.urlopen(req).read())
 
         # RESPONSE: {"kernel_id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
@@ -24,6 +24,7 @@ class SageCell(object):
 
         self.kernel_url = response['ws_url']+'kernel/'+response['kernel_id']+'/'
         websocket.setdefaulttimeout(timeout)
+        print self.kernel_url
         self._shell = websocket.create_connection(self.kernel_url+'shell')
         self._iopub = websocket.create_connection(self.kernel_url+'iopub')
 
