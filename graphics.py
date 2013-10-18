@@ -449,18 +449,20 @@ class InteractiveGraphics(object):
             eventType = data['eventType']
             if eventType in self._events:
                 self._events[eventType](to_data_coords([x,y]))
-
+        file_id = uuid()
         if kwds.get('svg',False):
-            filename = '%s.svg'%id
+            filename = '%s.svg'%file_id
             del kwds['svg']
         else:
-            filename = '%s.png'%id
+            filename = '%s.png'%file_id
 
         fig.savefig(filename)
 
         from comm import SageCellComm as Comm
         self.comm = Comm(data={"filename": filename}, target_name='graphicswidget')
-        print self.comm
+        import sys
+        sys._sage_.sent_files[filename] = os.path.getmtime(filename)
+
         self.comm.on_msg(on_msg)
 
         STORED_INTERACTIVE_GRAPHICS.append(self);

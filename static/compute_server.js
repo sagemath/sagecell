@@ -768,7 +768,9 @@ sagecell.SessionGraphicsWidget = function(session) {
         var filename = msg.content.data.filename;
         var filepath=session.kernel.kernel_url+'/files/';
         var img =ce("img", {src: filepath+filename});
-        session.output(img, null);
+        var block_id = msg.metadata.interact_id || null;
+
+        session.output(img, block_id);
         // Handle clicks inside the image
         $(img).click(function(e) {
             var offset = $(this).offset();
