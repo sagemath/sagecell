@@ -119,6 +119,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         //console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.comm_manager.register_target('threejs', IPython.utils.always_new(sagecell.SessionThreeJSWidget(this)));
+        this.kernel.comm_manager.register_target('graphicswidget', IPython.utils.always_new(sagecell.SessionGraphicsWidget(this)));
         this.kernel.session = this;
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
@@ -761,12 +762,38 @@ sagecell.interact_controls = {
 
 }
 
+sagecell.SessionGraphicsWidget = function(session) {
+    return function(comm, msg) {
+        var callbacks = {iopub : {output: $.proxy(session.handle_output, session)}};
+        var filename = msg.content.data.filename;
+        var filepath=session.kernel.kernel_url+'/files/';
+        var img =ce("img", {src: filepath+filename});
+        session.output(img, null);
+        // Handle clicks inside the image
+        $(img).click(function(e) {
+            var offset = $(this).offset();
+            var x = (e.pageX - offset.left) / img.clientWidth;
+            var y = (e.pageY - offset.top) / img.clientHeight;
+            comm.send({x:x, y:y, eventType:'click'}, callbacks);
+        });
+        // Handle mousemove inside the image
+        $(img).mousemove(function(e) {
+            var offset = $(this).offset();
+            var x = (e.pageX - offset.left) / img.clientWidth;
+            var y = (e.pageY - offset.top) / img.clientHeight;
+            comm.send({x:x, y:y, eventType:'mousemove'}, callbacks);
+        });
+
+        // For messages from Python to javascript; we don't use this in this example
+        //comm.on_msg(function(msg) {console.log(msg)});
+    }
+ }
     sagecell.SessionThreeJSWidget = function(session) {
     return function(comm, msg) {
     var that = this;
     var callbacks = {iopub : {output: $.proxy(session.handle_output, session)}};
     var div = ce("div", {style: "border: 2px solid blue;margin:0;padding:0;"});
-    
+
     $(div).salvus_threejs(msg.content.data)
 
     that.obj = proxy(['add_3dgraphics_obj', 'render_scene', 'set_frame', 'animate']);

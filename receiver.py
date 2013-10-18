@@ -103,6 +103,7 @@ from sagenb.misc.support import automatic_names
         _sage_.sent_files = {}
         import graphics
         _sage_.threejs = graphics.show_3d_plot_using_threejs
+        _sage_.InteractiveGraphics = graphics.InteractiveGraphics
         def new_files(root='./'):
             import os
             import sys

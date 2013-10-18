@@ -396,9 +396,12 @@ def graphics3d_to_jsonable(p):
 
 import os, matplotlib.figure
 
+STORED_INTERACTIVE_GRAPHICS = [];
 class InteractiveGraphics(object):
-    def __init__(self, g, **events):
+    def __init__(self, g, events=None):
         self._g = g
+        if events is None:
+            events = {}
         self._events = events
 
     def figure(self, **kwds):
@@ -437,11 +440,15 @@ class InteractiveGraphics(object):
         # lower right data coordinates
         xmax, ymin = ax.transData.inverted().transform( fig.transFigure.transform((1,0)) )
 
-        id = '_a' + uuid().replace('-','')
-
         def to_data_coords(p):
             # 0<=x,y<=1
             return ((xmax-xmin)*p[0] + xmin, (ymax-ymin)*(1-p[1]) + ymin)
+        def on_msg(msg):
+            data = msg['content']['data']
+            x,y = data['x'], data['y']
+            eventType = data['eventType']
+            if eventType in self._events:
+                self._events[eventType](to_data_coords([x,y]))
 
         if kwds.get('svg',False):
             filename = '%s.svg'%id
@@ -451,21 +458,14 @@ class InteractiveGraphics(object):
 
         fig.savefig(filename)
 
-        def f(event, p):
-            self._events[event](to_data_coords(p))
-        sage_salvus.salvus.namespace[id] = f
-        x = {}
-        for ev in self._events.keys():
-            x[ev] = id
+        from comm import SageCellComm as Comm
+        self.comm = Comm(data={"filename": filename}, target_name='graphicswidget')
+        print self.comm
+        self.comm.on_msg(on_msg)
 
-        sage_salvus.salvus.file(filename, show=True, events=x)
-        os.unlink(filename)
+        STORED_INTERACTIVE_GRAPHICS.append(self);
 
-    def __del__(self):
-        for ev in self._events:
-            u = self._id+ev
-            if u in sage_salvus.salvus.namespace:
-                del sage_salvus.salvus.namespace[u]
+
 
 
 
