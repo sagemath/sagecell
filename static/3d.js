@@ -334,7 +334,7 @@
     };
 
     SalvusThreeJS.prototype.add_obj = function(myobj, opts) {
-      var c, color, face3, face4, face5, geometry, i, item, k, line_width, material, mesh, mk, name, objects, vertices, _i, _j, _k, _l, _m, _n, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _results;
+      var c, color, face3, face4, face5, geometry, i, item, k, line_width, material, mesh, mk, multiMaterial, name, objects, vertices, wireframeMaterial, _i, _j, _k, _l, _m, _n, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _results;
       vertices = myobj.vertex_geometry;
       _results = [];
       for (objects = _i = 0, _ref = myobj.face_geometry.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; objects = 0 <= _ref ? ++_i : --_i) {
@@ -385,25 +385,44 @@
             color: color,
             wireframeLinewidth: line_width
           });
+          mesh = new THREE.Mesh(geometry, material);
         } else if (myobj.material[mk] == null) {
           console.log("BUG -- couldn't get material for ", myobj);
           material = new THREE.MeshBasicMaterial({
             wireframe: false,
-            color: "#000000"
+            color: "#000000",
+            overdraw: true,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1
           });
+          mesh = new THREE.Mesh(geometry, material);
         } else {
           material = new THREE.MeshPhongMaterial({
             shininess: "1",
             ambient: 0x0ffff,
             wireframe: false,
-            transparent: myobj.material[mk].opacity < 1
+            transparent: myobj.material[mk].opacity < 1,
+            overdraw: true,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1,
+            side: THREE.DoubleSide
           });
           material.color.setRGB(myobj.material[mk].color[0], myobj.material[mk].color[1], myobj.material[mk].color[2]);
           material.ambient.setRGB(myobj.material[mk].ambient[mk], myobj.material[mk].ambient[1], myobj.material[0].ambient[2]);
           material.specular.setRGB(myobj.material[mk].specular[0], myobj.material[mk].specular[1], myobj.material[mk].specular[2]);
           material.opacity = myobj.material[mk].opacity;
+          mesh = new THREE.Mesh(geometry, material);
+          wireframeMaterial = new THREE.MeshBasicMaterial({
+            color: 0x111111,
+            wireframe: true,
+            transparent: true,
+            opacity: .3
+          });
+          multiMaterial = [material, wireframeMaterial];
+          mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
         }
-        mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(0, 0, 0);
         _results.push(this.scene.add(mesh));
       }

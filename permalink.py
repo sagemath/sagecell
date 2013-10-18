@@ -52,8 +52,13 @@ class PermalinkHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def get(self):
-        q = "".join(self.request.arguments["q"])
-        response = yield gen.Task(self.application.db.get_exec_msg, q)
+        try:
+            q = "".join(self.request.arguments["q"])
+            response = yield gen.Task(self.application.db.get_exec_msg, q)
+        except (LookupError, KeyError):
+            self.set_status(404)
+            self.finish("ID not found in permalink database")
+            return
         # response_json is [code, language]
         response_json = json.dumps(response[0])
         if len(self.get_arguments("callback")) == 0:
