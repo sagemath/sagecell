@@ -76,7 +76,7 @@ class ThreeJS(object):
         kwds = graphics3d._process_viewing_options(kwds)
         self._frame = kwds.get('frame',False)
         self._graphics.append(graphics3d)
-        self.send('add', {'obj':graphics3d_to_jsonable(graphics3d), 
+        self.send('add', {'obj':graphics3d_to_jsonable(graphics3d),
                         'wireframe':jsonable(kwds.get('wireframe'))})
         self.set_frame(draw = self._frame)  # update the frame
     def render_scene(self, force=True):
@@ -450,19 +450,20 @@ class InteractiveGraphics(object):
             if eventType in self._events:
                 self._events[eventType](to_data_coords([x,y]))
 
+        fileId = uuid()
         if kwds.get('svg',False):
-            filename = '%s.svg'%id
+            filename = '%s.svg'%fileId
             del kwds['svg']
         else:
-            filename = '%s.png'%id
+            filename = '%s.png'%fileId
 
         fig.savefig(filename)
 
         from comm import SageCellComm as Comm
         self.comm = Comm(data={"filename": filename}, target_name='graphicswidget')
-        print self.comm
         self.comm.on_msg(on_msg)
-
+        import sys
+        sys._sage_.sent_files[filename] = os.path.getmtime(filename)
         STORED_INTERACTIVE_GRAPHICS.append(self);
 
 

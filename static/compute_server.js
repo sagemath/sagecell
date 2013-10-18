@@ -73,7 +73,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": sagecell.log};
-    
+
     $.post = function (url, callback) {
         sagecell.sendRequest("POST", url, {}, function (data) {
             callback(JSON.parse(data));
@@ -89,15 +89,15 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         });
     }
     /* Always use sockjs, until we can get websockets working reliably.
-     * Right now, if we have a very short computation (like 1+1), there is some sort of 
-     * race condition where the iopub handler does not get established before 
+     * Right now, if we have a very short computation (like 1+1), there is some sort of
+     * race condition where the iopub handler does not get established before
      * the kernel is closed down.  This only manifests itself on a remote server, since presumably
      * if you are running on a local server, the connection is established too quickly.
      *
      * Also, there are some bugs in, for example, Firefox and other issues that we don't want to have
      * to work around, that sockjs already worked around.
      */
-    /* 
+    /*
     // When we restore the websocket, things are messed up if window.WebSocket was undefined and window.MozWebSocket was.
     var old_ws = window.WebSocket || window.MozWebSocket;
     if (!old_ws) {
@@ -442,7 +442,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
       if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
             .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
-    } 
+    }
     */
     // TODO: handle payloads with a payload callback, instead of in the execute_reply
     // That would be much less brittle
@@ -467,7 +467,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
         output_block.html(html).effect("pulsate", {times:1}, 500);
     }
 }
-    
+
 sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
     var msg_type = msg.header.msg_type;
     var content = msg.content;
@@ -507,7 +507,7 @@ sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
     case "display_data":
         var filepath=this.kernel.kernel_url+'/files/';
         // find any key of content that is in the display_handlers array and execute that handler
-        // if none found, do the text/plain 
+        // if none found, do the text/plain
         var already_handled = false;
         for (var key in content.data) {
             if (content.data.hasOwnProperty(key) && this.display_handlers[key]) {
@@ -638,21 +638,21 @@ sagecell.InteractControls.InteractControl = function () {
     }
 }
 
-/* 
-// To implement a new control, do something like the following.  
+/*
+// To implement a new control, do something like the following.
 // See below for examples.  The Checkbox control is particularly simple.
 
 sagecell.InteractControls.MyControl = sagecell.InteractControls.InteractControl();
 sagecell.InteractControls.MyControl.prototype.create = function (data, block_id) {
-    // The create message is in `data`, while the block id to use for `this.session.output` is in block_id.  
+    // The create message is in `data`, while the block id to use for `this.session.output` is in block_id.
     // This method creates the control and registers any change handlers.
-    // Change handlers should send a `variable_update` message back to the server.  This message is handled 
+    // Change handlers should send a `variable_update` message back to the server.  This message is handled
     // by the control's python variable_update method.
 }
 
 sagecell.InteractControls.Checkbox.prototype.update = function (namespace, variable, control_id) {
     // If a variable in the namespace is updated (i.e., the client receives a variable update message),
-    // this method is called.  The namespace is the UUID of the namespace, the variable is the variable name as a string, 
+    // this method is called.  The namespace is the UUID of the namespace, the variable is the variable name as a string,
     // and the control_id is the UUID of the control.  This method should send a message and register a handler for the reply
     // from the control's python update_control method. The reply handler should then update the control appropriately.
 }
@@ -669,7 +669,7 @@ sagecell.InteractControls.Slider.prototype.create = function (data, block_id) {
         step: data.step,
         slide: throttle(function(event, ui) {
             if (! event.originalEvent) {return;}
-            that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value}, 
+            that.session.send_message('variable_update', {control_id: data.control_id, value: ui.value},
                                       {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
         }, sagecell.InteractControls.throttle)
     });
@@ -679,7 +679,7 @@ sagecell.InteractControls.Slider.prototype.update = function (namespace, variabl
     var that = this;
     if (this.control_id !== control_id) {
         this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                                  {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                                  {iopub: {"output": $.proxy(this.session.handle_output, this.session)},
                                    shell: {"control_update_reply": function(content, metadata) {
                                        if (content.status === 'ok') {
                                            that.control.slider('value', content.result.value);
@@ -695,7 +695,7 @@ sagecell.InteractControls.ExpressionBox.prototype.create = function (data, block
     this.control = this.session.output(ce("input", {id: data.control_id, type: 'textbox'}), block_id);
     this.control.change(function(event) {
         if (! event.originalEvent) {return;}
-        that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()}, 
+        that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).val()},
                                   {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
     });
 }
@@ -703,7 +703,7 @@ sagecell.InteractControls.ExpressionBox.prototype.create = function (data, block
 sagecell.InteractControls.ExpressionBox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)},
                                shell: {"control_update_reply": function(content, metadata) {
                                    if (content.status === 'ok') {
                                        that.control.val(content.result.value);
@@ -717,7 +717,7 @@ sagecell.InteractControls.Checkbox.prototype.create = function (data, block_id) 
     this.control = this.session.output(ce("input", {id: data.control_id, type: 'checkbox'}), block_id);
     this.control.change(function(event) {
         if (! event.originalEvent) {return;}
-        that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).prop("checked")}, 
+        that.session.send_message('variable_update', {control_id: data.control_id, value: $(this).prop("checked")},
                                   {iopub: {"output": $.proxy(that.session.handle_output, that.session)}});
     });
 }
@@ -725,7 +725,7 @@ sagecell.InteractControls.Checkbox.prototype.create = function (data, block_id) 
 sagecell.InteractControls.Checkbox.prototype.update = function (namespace, variable, control_id) {
     var that = this;
     this.session.send_message('control_update', {control_id: this.control_id, namespace: namespace, variable: variable},
-                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)}, 
+                              {iopub: {"output": $.proxy(this.session.handle_output, this.session)},
                                shell: {"control_update_reply": function(content, metadata) {
                                    if (content.status === 'ok') {
                                        that.control.prop('checked', content.result.value);
@@ -933,7 +933,7 @@ sagecell.InteractCell.prototype.placeControl = function (name) {
         div.style.width = "90%";
         rdiv.appendChild(div);
         if (this.output_block) {
-            var outRow = this.output_block.parentNode.parentNode 
+            var outRow = this.output_block.parentNode.parentNode
             outRow.parentNode.insertBefore(rdiv, outRow);
         } else {
             $(this.container).append(rdiv);
@@ -1540,7 +1540,7 @@ sagecell.InteractData.MultiSlider.prototype.rendered = function () {
         if (this.control.subtype === "continuous") {
             var textbox = ce("input", {
                 "class": "sagecell_interactValueBox",
-                "type": "number", 
+                "type": "number",
                 "min": this.control.range[i][0],
                 "max": this.control.range[i][1],
                 "step": "any"
