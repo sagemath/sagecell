@@ -243,7 +243,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             pl_qrcode.removeAttribute("src");
             sagecell.log('sending permalink request post: '+that.timer()+' ms');
             var args = {
-                "code": that.code,
+                "code": that.rawcode,
                 "language": that.language,
                 "n": ++n
             };
@@ -361,6 +361,9 @@ sagecell.Session.prototype.execute = function (code) {
     if (this.kernel.opened) {
         sagecell.log('opened and executing in kernel: '+this.timer()+' ms');
         var pre;
+        //TODO: do this wrapping of code on the server, not in javascript
+        //Maybe the system can be sent in metadata in the execute_request message
+        this.rawcode = code;
         if (this.language === "python") {
             pre = "exec ";
         } else if (this.language === "html") {
