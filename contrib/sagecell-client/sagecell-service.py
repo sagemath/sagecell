@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+# curl -k -sS -L --data-urlencode "accepted_tos=true" --data-urlencode "code=myvar,myothervar=3,4\nprint 1+2" --data-urlencode "user_variables=myvar" --data-urlencode "user_variables=myothervar" $url
+
 try:
     import urllib
     import urllib2
