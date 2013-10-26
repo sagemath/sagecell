@@ -411,6 +411,7 @@ accepted_tos=true\n""")
                 if msg["msg_type"] == "execute_reply":
                     self.success = msg["content"]["status"] == "ok"
                     self.user_variables = msg["content"].get("user_variables", [])
+                    self.execute_reply = msg['content']
                     loop.remove_timeout(self.timeout_request)
                     loop.add_callback(self.finish_request)
             self.shell_handler.msg_from_kernel_callbacks.append(done)
@@ -443,6 +444,7 @@ accepted_tos=true\n""")
         self.iopub_handler.on_close()
         retval.update(success=self.success)
         retval.update(user_variables=self.user_variables)
+        retval.update(execute_reply=self.execute_reply)
         self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
         self.set_header("Access-Control-Allow-Credentials", "true")
         self.write(retval)
