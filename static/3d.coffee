@@ -364,10 +364,10 @@ class SalvusThreeJS
                 material.opacity = myobj.material[mk].opacity
                 mesh = new THREE.Mesh(geometry, material)
                 wireframeMaterial = new THREE.MeshBasicMaterial
-                    color: 0x111111
+                    color: 0x222222
                     wireframe: true
                     transparent: true
-                    opacity:.3
+                    opacity:.2
                 multiMaterial = [material, wireframeMaterial]
                 mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
 
