@@ -291,17 +291,11 @@ class SalvusThreeJS
             face4 = myobj.face_geometry[objects].face4
             face5 = myobj.face_geometry[objects].face5
             geometry = new THREE.Geometry()
-            geometry.vertices.push(new THREE.Vector3(vertices[i],
-            vertices[i+1],vertices[i+2])) for i in [0..(vertices.length-1)] by 3
-            geometry.faces.push(new THREE.Face4(face4[k]-1,face4[k+1]-1,face4[k+2]-1,
-            face4[k+3]-1)) for k in [0..(face4.length-1)] by 4
+            geometry.vertices.push(new THREE.Vector3(vertices[i], vertices[i+1],vertices[i+2])) for i in [0..(vertices.length-1)] by 3
             geometry.faces.push(new THREE.Face3(face3[k]-1,face3[k+1]-1,face3[k+2]-1)) for k in [0..(face3.length-1)] by 3
-            geometry.faces.push(new THREE.Face4(face5[k]-1,face5[k+1]-1,face5[k+2]-1,
-            face5[k+4]-1)) + geometry.faces.push(new THREE.Face4(face5[k]-1,face5[k+1]-1,face5[k+2]-1,
-            face5[k+3]-1)) + geometry.faces.push(new THREE.Face4(face5[k]-1,face5[k+1]-1,face5[k+2]-1,
-            face5[k+4]-1)) + geometry.faces.push(new THREE.Face4(face5[k]-1,face5[k+2]-1,face5[k+3]-1,
-            face5[k+4]-1)) + geometry.faces.push(new THREE.Face4(face5[k+1]-1,face5[k+2]-1,face5[k+3]-1,
-            face5[k+4]-1))for k in [0..(face5.length-1)] by 5
+            geometry.faces.push(new THREE.Face3(face4[k]-1,face4[k+1]-1,face4[k+2]-1)) + geometry.faces.push(new THREE.Face3(face4[k]-1, face4[k+2]-1, face4[k+3]-1)) for k in [0..(face4.length-1)] by 4
+            geometry.faces.push(new THREE.Face3(face5[k]-1,face5[k+1]-1,face5[k+2]-1)) + geometry.faces.push(new THREE.Face3(face5[k]-1, face5[k+2]-1,face5[k+3]-1)) + geometry.faces.push(new THREE.Face3(face5[k]-1, face5[k+3]-1,face5[k+4]-1)) for k in [0..(face5.length-1)] by 5
+
             geometry.mergeVertices()
             geometry.computeCentroids()
             geometry.computeFaceNormals()
@@ -410,6 +404,8 @@ class SalvusThreeJS
             @frame = undefined
 
         if o.draw
+            #TODO: How do we draw a cube *without* drawing the diagonal triangle line
+            # see https://github.com/mrdoob/three.js/issues/3788
             geometry = new THREE.CubeGeometry(o.xmax-o.xmin, o.ymax-o.ymin, o.zmax-o.zmin)
             material = new THREE.MeshBasicMaterial
                 color              : o.color
@@ -417,7 +413,8 @@ class SalvusThreeJS
                 wireframeLinewidth : o.thickness
 
             # This makes a cube *centered at the origin*, so we have to move it.
-            @frame = new THREE.Mesh(geometry, material)
+            @frame = new THREE.BoxHelper(new THREE.Mesh(geometry, material))
+           
             @frame.position.set(o.xmin + (o.xmax-o.xmin)/2, o.ymin + (o.ymax-o.ymin)/2, o.zmin + (o.zmax-o.zmin)/2)
             @scene.add(@frame)
 
