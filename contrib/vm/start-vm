@@ -4,9 +4,9 @@
 VM=$1
 SSHPORT=$2
 
-STATUS=`virsh dominfo $VM | grep 'State:.*running'`
+STATUS=`virsh $QEMU_SESSION dominfo $VM | grep 'State:.*running'`
 if [ $? -ne 0 ]; then
-    virsh start $VM
+    virsh $QEMU_SESSION start $VM
     if [ $? -ne 0 ]; then
        echo "Failed to start virtual machine!"
        exit 1

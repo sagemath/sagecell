@@ -8,36 +8,48 @@ IFS='@:' read REMOTEUSER REMOTEHOST REMOTEDIR <<< "$REMOTELOGIN"
 REMOTESERVER=$REMOTEUSER@$REMOTEHOST
 REMOTEHOSTSAFE=`sed 's/\./_/g' <<< "$REMOTEHOST"`
 SSHPORT=4323
-VIRSH="virsh --connect qemu:///session"
+VIRSH="virsh $QEMU_SESSION"
 RSYNC="rsync --progress --archive --verbose --sparse --compress --protect-args --human-readable --recursive -e ssh"
 $VIRSH shutdown sagecell
 sleep 10
 $RSYNC centos.img $REMOTELOGIN/centos.img
 $RSYNC sagecell.img $REMOTELOGIN/sagecell.img
 $RSYNC vm/ $REMOTELOGIN/vm/
-ssh $REMOTESERVER -T <<EOF
+ssh $REMOTESERVER -tt <<EOF
   set -v
+  export QEMU_SESSION=$QEMU_SESSION
   cd $REMOTEDIR
   for i in 0 1 2; do
     echo Setting up server \$i
     export SERVER=$SERVERPREFIX\$i
     vm/make-shadow-vm sagecell \$SERVER
-    $VIRSH start \$SERVER
-    sleep 5
+    sleep 10
+    $VIRSH list --all | grep \$SERVER
+    echo "forwarding ssh..."
     vm/forward-port \$SERVER $SSHPORT\$i 22
-    ssh -p $SSHPORT\$i root@localhost <<EOFADMIN
+    sleep 60
+    $VIRSH list --all | grep \$SERVER
+    echo "changing hostname..."
+    ssh -oNoHostAuthenticationForLocalhost=yes -vv -p $SSHPORT\$i -tt root@localhost <<EOFADMIN
+      echo "executing sed..."
       set -v
       sed -ri 's/^HOSTNAME=.*/HOSTNAME=$REMOTEHOSTSAFE-\$SERVER/' /etc/sysconfig/network
+      cat /etc/sysconfig/network
+      shutdown -h now 
 EOFADMIN
     # remove ssh port forward by restarting server
+    echo "shutting down..."
     $VIRSH shutdown \$SERVER
     sleep 40 #TODO: wait, like the vm-start script does 
+    $VIRSH list --all | grep \$SERVER
+    echo "starting up..."
     $VIRSH start \$SERVER
     sleep 5
     vm/forward-port \$SERVER $SAGECELLPORTPREFIX\$i 8888
     vm/forward-port \$SERVER $STATICPORTPREFIX\$i 8889
     sleep 10 # so it can come up before doing the next one
   done
+  exit
 EOF
 
 #vm/deploy grout@localhost:/home/grout/images/deploy server 888 889

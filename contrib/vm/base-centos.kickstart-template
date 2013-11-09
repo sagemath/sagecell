@@ -35,7 +35,9 @@ logvol / --fstype=ext4 --name=lv_root --vgname=vg_sagecell --grow --size=1024 --
 logvol swap --name=lv_swap --vgname=vg_sagecell --grow --size=4032 --maxsize=4032
 
 repo --name="myupdates" --baseurl=http://boxen.math.washington.edu/home/jason/CentOS/6.4/updates/x86_64
-repo --name=epel --baseurl=http://mirror.pnl.gov/epel/6/x86_64/
+repo --name=epel --baseurl=http://ftp.osuosl.org/pub/fedora-epel/6/x86_64/
+#repo --name=epel --baseurl=http://mirror.pnl.gov/epel/6/x86_64/
+repo --name=atrpm --baseurl=http://dl.atrpms.net/el6-x86_64/atrpms/stable/
 
 #repo --name="CentOS"  --baseurl=file:///mnt/source --cost=100
 #repo --name="CentOS"  --baseurl=cdrom:sr0 --cost=100
@@ -63,6 +65,11 @@ epel-release
 nginx
 octave
 
+#AtRPM
+ffmpeg
+
+
+
 #extra packages Volker installs in the sage notebook server image
 kernel-headers
 make
@@ -76,6 +83,7 @@ pango-devel
 cairo-devel
 readline-devel
 libuuid-devel # for zeromq
+curl-devel
 git
 mercurial
 netcdf-devel
