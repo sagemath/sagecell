@@ -167,6 +167,10 @@ class SalvusThreeJS
 
         if @opts.light
             @set_light()
+        if @opts.trackball
+            @set_trackball_controls()
+        @_animate = false
+        @_animation_frame = false
 
     data_url: (type='png') =>   # 'png' or 'jpeg'
         return @renderer.domElement.toDataURL("image/#{type}")
@@ -174,12 +178,15 @@ class SalvusThreeJS
     set_trackball_controls: () =>
         if @controls?
             return
-        #setting up camera controls
         @controls = new THREE.TrackballControls(@camera, @renderer.domElement)
+        @controls.staticMoving = false
+        @controls.dynamicDampingFactor = 0.3
+        @controls.noRoll=true
         if @_center?
             @controls.target = @_center
-        @render_scene(true)
-
+        @controls.addEventListener('change', @controlChange)
+        @controls.addEventListener('start', (() => @_animate=true; @_animation_frame=requestAnimationFrame(@animate)))
+        @controls.addEventListener('end', (() => @_animate=false))
 
     add_camera: (opts) =>
         opts = defaults opts,
@@ -262,7 +269,6 @@ class SalvusThreeJS
             size : 1
             color: "#000000"
             sizeAttenuation : false
-        console.log("rendering a point", o)
         material = new THREE.ParticleBasicMaterial
                   color           : o.color
                   size            : o.size
@@ -442,6 +448,7 @@ class SalvusThreeJS
             my = (o.ymin+o.ymax)/2
             mz = (o.zmin+o.zmax)/2
             @_center = new THREE.Vector3(mx,my,mz)
+            @controls.target = @_center
 
             if o.draw
                 e = (o.ymax - o.ymin)*offset
@@ -461,9 +468,8 @@ class SalvusThreeJS
 
         v = new THREE.Vector3(mx, my, mz)
         @camera.lookAt(v)
-        if @controls?
-            @controls.target = @_center
-        @render_scene(true)
+        @render_scene()
+        @controls?.handleResize()
 
     add_3dgraphics_obj: (opts) =>
         opts = defaults opts,
@@ -497,66 +503,30 @@ class SalvusThreeJS
                     return
         @render_scene(true)
 
-    animate: (opts={}) =>
-        opts = defaults opts,
-            fps  : undefined
-            stop : false
-            mouseover : true
-        #console.log('anim', @opts.element.length, @opts.element.is(":visible"))
 
-        if not @opts.element.is(":visible")
-            # check again after a delay
-            setTimeout((() => @animate(opts)), 1500)
-            return
-
-        if opts.stop
-            @_stop_animating = true
-            # so next time around will start
-            return
-        if @_stop_animating
-            @_stop_animating = false
-            return
-        f = () =>
-            requestAnimationFrame((()=>@animate(opts)))
-        if opts.fps? and opts.fps
-            setTimeout(f , 1000/opts.fps)
+    animate: () =>
+        if @_animate
+            @_animation_frame = requestAnimationFrame(@animate)
         else
-            f()
-        if opts.mouseover and (not document.hasFocus() or not @opts.element.is(":hover"))
-            return
+            @_animation_frame = false
+        @controls?.update()
+
+    controlChange: () =>
+        # if there was any actual control updates, animate at least one more frame
+        if !@_animation_frame
+            @_animation_frame = requestAnimationFrame(@animate)
         @render_scene()
 
-    render_scene: (force=false) =>
-        #console.log('render', @opts.element.length)
-        if @controls?
-            @controls?.update()
-        else
-            if @opts.trackball
-                @set_trackball_controls()
-
-        pos = @camera.position
-        if not @_last_pos?
-            new_pos = true
-            @_last_pos = pos.clone()
-        else if @_last_pos.distanceToSquared(pos) > .05
-            new_pos = true
-            @_last_pos.copy(pos)
-        else
-            new_pos = false
-
-        if not new_pos and not force
-            return
-
+    render_scene: () =>
         # rescale all text in scene
-        if (new_pos or force) and @_center?
-            s = @camera.position.distanceTo(@_center) / 3
-            if @_text?
-                for sprite in @_text
-                    sprite.scale.set(s,s,s)
-            if @_frame_labels?
-                for sprite in @_frame_labels
-                    sprite.scale.set(s,s,s)
-
+        #if (new_pos or force) and @_center?
+        #    s = @camera.position.distanceTo(@_center) / 3
+        #    if @_text?
+        #        for sprite in @_text
+        #            sprite.scale.set(s,s,s)
+        #    if @_frame_labels?
+        #        for sprite in @_frame_labels
+        #            sprite.scale.set(s,s,s)
         @renderer.render(@scene, @camera)
 
 $.fn.salvus_threejs = (opts={}) ->

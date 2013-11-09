@@ -109,6 +109,7 @@
 
     function SalvusThreeJS(opts) {
       this.render_scene = __bind(this.render_scene, this);
+      this.controlChange = __bind(this.controlChange, this);
       this.animate = __bind(this.animate, this);
       this.add_3dgraphics_obj = __bind(this.add_3dgraphics_obj, this);
       this.set_frame = __bind(this.set_frame, this);
@@ -185,6 +186,11 @@
       if (this.opts.light) {
         this.set_light();
       }
+      if (this.opts.trackball) {
+        this.set_trackball_controls();
+      }
+      this._animate = false;
+      this._animation_frame = false;
     }
 
     SalvusThreeJS.prototype.data_url = function(type) {
@@ -195,14 +201,25 @@
     };
 
     SalvusThreeJS.prototype.set_trackball_controls = function() {
+      var _this = this;
       if (this.controls != null) {
         return;
       }
       this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
+      this.controls.staticMoving = false;
+      this.controls.dynamicDampingFactor = 0.3;
+      this.controls.noRoll = true;
       if (this._center != null) {
         this.controls.target = this._center;
       }
-      return this.render_scene(true);
+      this.controls.addEventListener('change', this.controlChange);
+      this.controls.addEventListener('start', (function() {
+        _this._animate = true;
+        return _this._animation_frame = requestAnimationFrame(_this.animate);
+      }));
+      return this.controls.addEventListener('end', (function() {
+        return _this._animate = false;
+      }));
     };
 
     SalvusThreeJS.prototype.add_camera = function(opts) {
@@ -307,7 +324,6 @@
         color: "#000000",
         sizeAttenuation: false
       });
-      console.log("rendering a point", o);
       material = new THREE.ParticleBasicMaterial({
         color: o.color,
         size: o.size,
@@ -345,14 +361,14 @@
         for (i = _j = 0, _ref1 = vertices.length - 1; _j <= _ref1; i = _j += 3) {
           geometry.vertices.push(new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]));
         }
-        for (k = _k = 0, _ref2 = face4.length - 1; _k <= _ref2; k = _k += 4) {
-          geometry.faces.push(new THREE.Face4(face4[k] - 1, face4[k + 1] - 1, face4[k + 2] - 1, face4[k + 3] - 1));
-        }
-        for (k = _l = 0, _ref3 = face3.length - 1; _l <= _ref3; k = _l += 3) {
+        for (k = _k = 0, _ref2 = face3.length - 1; _k <= _ref2; k = _k += 3) {
           geometry.faces.push(new THREE.Face3(face3[k] - 1, face3[k + 1] - 1, face3[k + 2] - 1));
         }
+        for (k = _l = 0, _ref3 = face4.length - 1; _l <= _ref3; k = _l += 4) {
+          geometry.faces.push(new THREE.Face3(face4[k] - 1, face4[k + 1] - 1, face4[k + 2] - 1)) + geometry.faces.push(new THREE.Face3(face4[k] - 1, face4[k + 2] - 1, face4[k + 3] - 1));
+        }
         for (k = _m = 0, _ref4 = face5.length - 1; _m <= _ref4; k = _m += 5) {
-          geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 4] - 1)) + geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 3] - 1)) + geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 4] - 1)) + geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 2] - 1, face5[k + 3] - 1, face5[k + 4] - 1)) + geometry.faces.push(new THREE.Face4(face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 3] - 1, face5[k + 4] - 1));
+          geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1)) + geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 2] - 1, face5[k + 3] - 1)) + geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 3] - 1, face5[k + 4] - 1));
         }
         geometry.mergeVertices();
         geometry.computeCentroids();
@@ -430,7 +446,7 @@
     };
 
     SalvusThreeJS.prototype.set_frame = function(opts) {
-      var e, eps, geometry, l, material, mx, my, mz, o, offset, txt, v, x, _i, _len, _ref,
+      var e, eps, geometry, l, material, mx, my, mz, o, offset, txt, v, x, _i, _len, _ref, _ref1,
         _this = this;
       o = defaults(opts, {
         xmin: required,
@@ -470,7 +486,7 @@
           wireframe: true,
           wireframeLinewidth: o.thickness
         });
-        this.frame = new THREE.Mesh(geometry, material);
+        this.frame = new THREE.BoxHelper(new THREE.Mesh(geometry, material));
         this.frame.position.set(o.xmin + (o.xmax - o.xmin) / 2, o.ymin + (o.ymax - o.ymin) / 2, o.zmin + (o.zmax - o.zmin) / 2);
         this.scene.add(this.frame);
       }
@@ -507,6 +523,7 @@
         my = (o.ymin + o.ymax) / 2;
         mz = (o.zmin + o.zmax) / 2;
         this._center = new THREE.Vector3(mx, my, mz);
+        this.controls.target = this._center;
         if (o.draw) {
           e = (o.ymax - o.ymin) * offset;
           txt(o.xmax, o.ymin - e, o.zmin, l(o.zmin));
@@ -524,10 +541,8 @@
       }
       v = new THREE.Vector3(mx, my, mz);
       this.camera.lookAt(v);
-      if (this.controls != null) {
-        this.controls.target = this._center;
-      }
-      return this.render_scene(true);
+      this.render_scene();
+      return (_ref1 = this.controls) != null ? _ref1.handleResize() : void 0;
     };
 
     SalvusThreeJS.prototype.add_3dgraphics_obj = function(opts) {
@@ -574,91 +589,24 @@
       return this.render_scene(true);
     };
 
-    SalvusThreeJS.prototype.animate = function(opts) {
-      var f,
-        _this = this;
-      if (opts == null) {
-        opts = {};
-      }
-      opts = defaults(opts, {
-        fps: void 0,
-        stop: false,
-        mouseover: true
-      });
-      if (!this.opts.element.is(":visible")) {
-        setTimeout((function() {
-          return _this.animate(opts);
-        }), 1500);
-        return;
-      }
-      if (opts.stop) {
-        this._stop_animating = true;
-        return;
-      }
-      if (this._stop_animating) {
-        this._stop_animating = false;
-        return;
-      }
-      f = function() {
-        return requestAnimationFrame((function() {
-          return _this.animate(opts);
-        }));
-      };
-      if ((opts.fps != null) && opts.fps) {
-        setTimeout(f, 1000 / opts.fps);
+    SalvusThreeJS.prototype.animate = function() {
+      var _ref;
+      if (this._animate) {
+        this._animation_frame = requestAnimationFrame(this.animate);
       } else {
-        f();
+        this._animation_frame = false;
       }
-      if (opts.mouseover && (!document.hasFocus() || !this.opts.element.is(":hover"))) {
-        return;
+      return (_ref = this.controls) != null ? _ref.update() : void 0;
+    };
+
+    SalvusThreeJS.prototype.controlChange = function() {
+      if (!this._animation_frame) {
+        this._animation_frame = requestAnimationFrame(this.animate);
       }
       return this.render_scene();
     };
 
-    SalvusThreeJS.prototype.render_scene = function(force) {
-      var new_pos, pos, s, sprite, _i, _j, _len, _len1, _ref, _ref1, _ref2;
-      if (force == null) {
-        force = false;
-      }
-      if (this.controls != null) {
-        if ((_ref = this.controls) != null) {
-          _ref.update();
-        }
-      } else {
-        if (this.opts.trackball) {
-          this.set_trackball_controls();
-        }
-      }
-      pos = this.camera.position;
-      if (this._last_pos == null) {
-        new_pos = true;
-        this._last_pos = pos.clone();
-      } else if (this._last_pos.distanceToSquared(pos) > .05) {
-        new_pos = true;
-        this._last_pos.copy(pos);
-      } else {
-        new_pos = false;
-      }
-      if (!new_pos && !force) {
-        return;
-      }
-      if ((new_pos || force) && (this._center != null)) {
-        s = this.camera.position.distanceTo(this._center) / 3;
-        if (this._text != null) {
-          _ref1 = this._text;
-          for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-            sprite = _ref1[_i];
-            sprite.scale.set(s, s, s);
-          }
-        }
-        if (this._frame_labels != null) {
-          _ref2 = this._frame_labels;
-          for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
-            sprite = _ref2[_j];
-            sprite.scale.set(s, s, s);
-          }
-        }
-      }
+    SalvusThreeJS.prototype.render_scene = function() {
       return this.renderer.render(this.scene, this.camera);
     };
 
