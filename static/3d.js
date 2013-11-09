@@ -345,14 +345,14 @@
         for (i = _j = 0, _ref1 = vertices.length - 1; _j <= _ref1; i = _j += 3) {
           geometry.vertices.push(new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]));
         }
-        for (k = _k = 0, _ref2 = face4.length - 1; _k <= _ref2; k = _k += 4) {
-          geometry.faces.push(new THREE.Face4(face4[k] - 1, face4[k + 1] - 1, face4[k + 2] - 1, face4[k + 3] - 1));
-        }
-        for (k = _l = 0, _ref3 = face3.length - 1; _l <= _ref3; k = _l += 3) {
+        for (k = _k = 0, _ref2 = face3.length - 1; _k <= _ref2; k = _k += 3) {
           geometry.faces.push(new THREE.Face3(face3[k] - 1, face3[k + 1] - 1, face3[k + 2] - 1));
         }
+        for (k = _l = 0, _ref3 = face4.length - 1; _l <= _ref3; k = _l += 4) {
+          geometry.faces.push(new THREE.Face3(face4[k] - 1, face4[k + 1] - 1, face4[k + 2] - 1)) + geometry.faces.push(new THREE.Face3(face4[k] - 1, face4[k + 2] - 1, face4[k + 3] - 1));
+        }
         for (k = _m = 0, _ref4 = face5.length - 1; _m <= _ref4; k = _m += 5) {
-          geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 4] - 1)) + geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 3] - 1)) + geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 4] - 1)) + geometry.faces.push(new THREE.Face4(face5[k] - 1, face5[k + 2] - 1, face5[k + 3] - 1, face5[k + 4] - 1)) + geometry.faces.push(new THREE.Face4(face5[k + 1] - 1, face5[k + 2] - 1, face5[k + 3] - 1, face5[k + 4] - 1));
+          geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1)) + geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 2] - 1, face5[k + 3] - 1)) + geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 3] - 1, face5[k + 4] - 1));
         }
         geometry.mergeVertices();
         geometry.computeCentroids();
@@ -415,10 +415,10 @@
           material.opacity = myobj.material[mk].opacity;
           mesh = new THREE.Mesh(geometry, material);
           wireframeMaterial = new THREE.MeshBasicMaterial({
-            color: 0x111111,
+            color: 0x222222,
             wireframe: true,
             transparent: true,
-            opacity: .3
+            opacity: .2
           });
           multiMaterial = [material, wireframeMaterial];
           mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
@@ -470,7 +470,7 @@
           wireframe: true,
           wireframeLinewidth: o.thickness
         });
-        this.frame = new THREE.Mesh(geometry, material);
+        this.frame = new THREE.BoxHelper(new THREE.Mesh(geometry, material));
         this.frame.position.set(o.xmin + (o.xmax - o.xmin) / 2, o.ymin + (o.ymax - o.ymin) / 2, o.zmin + (o.zmax - o.zmin) / 2);
         this.scene.add(this.frame);
       }

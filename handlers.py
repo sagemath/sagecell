@@ -167,7 +167,7 @@ class KernelHandler(tornado.web.RequestHandler):
                                        referer = self.request.headers.get('Referer',''),
                                        remote_ip = self.request.remote_ip,
                                        timeout = timeout)
-            data = {"ws_url": ws_url, "kernel_id": kernel_id}
+            data = {"ws_url": ws_url, "id": kernel_id}
             self.write(self.permissions(data))
             self.set_cookie("accepted_tos", "true", expires_days=365)
             self.finish()
@@ -280,7 +280,8 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
                 self._log_stats(kernel, message)
                 self.channels[kernel][channel].on_message(message)
         except KeyError:
-            logger.info("Message sent to deleted kernel: %s"%kernel)
+            jsonmessage=jsonapi.loads(message)
+            logger.info("%s message sent to deleted kernel: %s"%(jsonmessage["header"]["msg_type"], kernel))
             pass # Ignore messages to nonexistant or killed kernels
 
     def on_close(self):

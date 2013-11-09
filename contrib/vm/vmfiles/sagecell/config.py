@@ -44,8 +44,8 @@ _default_config = {"host": "localhost",
 # Note: RLIMIT_AS is more of a suggestion than a hard limit in Mac OS X
 # Note: All other resource limits seem to be working, but besides RLIMIT_CPU and
 # RLIMIT_AS they don't actually kill off offending processes
-                  "resource_limits": {"RLIMIT_CPU": 30, # CPU time in seconds
-                                      "RLIMIT_AS": 3*(2**30), #Maximum address space in bytes; this sets 2 GB
+                  "resource_limits": {"RLIMIT_CPU": 120, # CPU time in seconds
+                                      "RLIMIT_AS": 3*(2**30), #Maximum address space in bytes; this sets 3 GB
                                      },
 # The log file will be in the home directory of the untrusted account
                   "log_file": "sagecell.log",
