@@ -169,6 +169,7 @@ function install_sagecell {
   # we need to reinstall git to pick up the extra https handler
   ./sage -f git
   # we also need a more recent ipython than 1.0 for the communications API
+  set -v
   pushd local/lib/python/site-packages
   rm -rf IPython*
   rm -rf ipython*
@@ -177,7 +178,8 @@ function install_sagecell {
   git config --global user.name "Your Name"
   git clone https://github.com/ipython/ipython.git
   pushd ipython
-  git remote add -f jason https://github.com/jasongrout/ipython.git
+  git remote add jason https://github.com/jasongrout/ipython.git
+  git fetch jason
   git checkout jason/sagecell
   ../sage setup.py develop
   popd

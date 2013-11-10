@@ -17,14 +17,14 @@ virsh undefine $NAME
 sed -e "/ROOTPASSWORD/r rootpassword" -e "/ROOTPASSWORD/d"  < vm/base-centos.kickstart-template > base-centos.kickstart
 chmod go-rwx base-centos.kickstart
 
-virt-install --name $NAME \
---ram 8192 \
+virt-install --name=$NAME $QEMU_SESSION \
+--ram=8192 \
 --vcpus=14 \
 --network user,model=virtio \
 --cpu host \
 --disk path=$NAME.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=$SIZE  \
---os-type linux \
---os-variant rhel6 \
+--os-type=linux \
+--os-variant=rhel6 \
 --accelerate \
 --nographics \
 --noreboot \
