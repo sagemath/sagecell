@@ -345,7 +345,7 @@ class SalvusThreeJS
                 mesh = new THREE.Mesh(geometry, material)
             else
                 material =  new THREE.MeshPhongMaterial
-                    shininess   : "1"
+                    #shininess   : "1"
                     ambient     : 0x0ffff
                     wireframe   : false
                     transparent : myobj.material[mk].opacity < 1
@@ -353,7 +353,12 @@ class SalvusThreeJS
                     polygonOffset: true
                     polygonOffsetFactor: 1
                     polygonOffsetUnits: 1
-                    side: THREE.DoubleSide
+                    # Sage explicitly draws two sides of a double-sided face
+                    # but only one side of an enclosed object (this is a problem when zooming inside a sphere
+                    # for example
+                    # TODO: fix Sage to let us specify whether to draw the back faces or not.
+                    # TODO: test to see what performance differences there are between double-sided materials and 2 faces.
+                    #side: THREE.DoubleSide
 
                 material.color.setRGB(myobj.material[mk].color[0],
                                             myobj.material[mk].color[1],myobj.material[mk].color[2])

@@ -415,15 +415,13 @@
           mesh = new THREE.Mesh(geometry, material);
         } else {
           material = new THREE.MeshPhongMaterial({
-            shininess: "1",
             ambient: 0x0ffff,
             wireframe: false,
             transparent: myobj.material[mk].opacity < 1,
             overdraw: true,
             polygonOffset: true,
             polygonOffsetFactor: 1,
-            polygonOffsetUnits: 1,
-            side: THREE.DoubleSide
+            polygonOffsetUnits: 1
           });
           material.color.setRGB(myobj.material[mk].color[0], myobj.material[mk].color[1], myobj.material[mk].color[2]);
           material.ambient.setRGB(myobj.material[mk].ambient[mk], myobj.material[mk].ambient[1], myobj.material[0].ambient[2]);
