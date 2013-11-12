@@ -970,7 +970,13 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                 },
                 "Shift-Tab": "indentLess",
                 "Shift-Enter": closeDialog,
-                "Esc": closeDialog
+                "Esc": function(cm) {
+                    if (openedDialog) {
+                        closeDialog();
+                    } else if (cm.getOption("fullScreen")) {
+                        cm.setOption("fullScreen", false);
+                    }
+                }
             }
         });
         editorData.on("keyup", function (editor, event) {
@@ -982,6 +988,11 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         $(accordion).on("accordionactivate", function () {
             editorData.refresh();
         });
+        inputLocation.find(".sagecell_fullScreen").show();
+        inputLocation.find(".sagecell_fullScreen button").click(function() {
+            editorData.setOption("fullScreen", true);
+            editorData.focus();
+        });
     }
     return [editor, editorData];
 };
@@ -992,6 +1003,7 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
     if ($.inArray(editor, editable) !== -1) {
         if (editor === "codemirror") {
             editorData.toTextArea();
+            inputLocation.find(".sagecell_fullScreen").hide()
             editor = "textarea";
             editorData = {}
         } else {
@@ -1003,6 +1015,7 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
         if (editor === "codemirror-readonly") {
             editorData.toTextArea();
             editor = "textarea-readonly";
+            inputLocation.find(".sagecell_fullScreen").hide()
             temp = this.renderEditor(editor, inputLocation);
             editorData = temp[1];
         } else {

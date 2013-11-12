@@ -37,6 +37,8 @@ cm-runmode     = addon/runmode/runmode.js
 cm-colorize    = addon/runmode/colorize.js
 cm-hint-js     = addon/hint/show-hint.js
 cm-hint-css    = submodules/codemirror/addon/hint/show-hint.css
+cm-fullscreen-js = addon/display/fullscreen.js
+cm-fullscreen-css = submodules/codemirror/addon/display/fullscreen.css
 jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
 cssmin         = submodules/cssmin/src/cssmin.py
 jsmin          = submodules/jsmin/jsmin.c
@@ -83,10 +85,11 @@ $(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
 $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(cm-python-mode) \
            $(cm-dir)/$(cm-xml-mode) $(cm-dir)/$(cm-html-mode) $(cm-dir)/$(cm-js-mode) \
            $(cm-dir)/$(cm-css-mode) $(cm-dir)/$(cm-r-mode) $(cm-dir)/$(cm-brackets) \
-           $(cm-dir)/$(cm-runmode) $(cm-dir)/$(cm-colorize) $(cm-dir)/$(cm-hint-js)
+           $(cm-dir)/$(cm-runmode) $(cm-dir)/$(cm-colorize) $(cm-dir)/$(cm-hint-js) \
+           $(cm-dir)/$(cm-fullscreen-js)
 	cd $(cm-dir); cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
 	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
-	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) > ../../$(codemirror-cat)
+	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) $(cm-fullscreen-js) > ../../$(codemirror-cat)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
@@ -104,8 +107,8 @@ $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jque
 	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
-$(all-min-css): $(codemirror-css) $(cm-hint-css) $(sagecell-css)
-	cat $(codemirror-css) $(cm-hint-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
+$(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css)
+	cat $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
 
 $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
