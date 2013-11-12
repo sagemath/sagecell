@@ -50,6 +50,10 @@
     cursor: text;
 }
 
+.sagecell .CodeMirror-fullscreen .CodeMirror-scroll {
+    max-height: none;
+}
+
 .sagecell .CodeMirror-gutter {
     cursor: default;
 }

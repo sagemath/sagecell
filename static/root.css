@@ -39,6 +39,6 @@ ol.sagecell_toc ol {
     font-size: 80%;
 }
 
-#sagecell .CodeMirror-scroll {
-    height: 14em;
+.sagecell .CodeMirror-scroll {
+    min-height: 14em;
 }
