@@ -31,8 +31,8 @@
 }
 /*  Font Awesome styles
     ------------------------------------------------------- */
-.sagecell [class^="icon-"],
-.sagecell [class*=" icon-"] {
+.sagecell [class^="sagecell_icon-"],
+.sagecell [class*=" sagecell_icon-"] {
   font-family: FontAwesomeSagecell;
   font-weight: normal;
   font-style: normal;
@@ -49,11 +49,11 @@
   vertical-align: baseline;
   margin-top: 0;
 }
-.sagecell [class^="icon-"]:before,
-.sagecell [class*=" icon-"]:before {
+.sagecell [class^="sagecell_icon-"]:before,
+.sagecell [class*=" sagecell_icon-"]:before {
   text-decoration: inherit;
   display: inline-block;
   speak: none;
 }
-.sagecell .icon-resize-full:before		{ content: "\f021"; }
-.sagecell .icon-resize-small:before		{ content: "\f022"; }
+.sagecell .sagecell_icon-resize-full:before		{ content: "\f021"; }
+.sagecell .sagecell_icon-resize-small:before		{ content: "\f022"; }

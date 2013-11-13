@@ -946,10 +946,11 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                 }
             }, {"async": true});
         };
-        var fullscreen = $(ce("button", {title: "Toggle full-screen editor", type: "button", class: "sagecell_fullScreen icon-resize-full"}));
+        var fullscreen = $(ce("button", {title: "Toggle full-screen editor", type: "button", class: "sagecell_fullScreen sagecell_icon-resize-full"}));
         var fullscreenToggle = function(editor) {
             editor.setOption("fullScreen", !editor.getOption("fullScreen"));
-            fullscreen.toggleClass("icon-resize-full icon-resize-small");
+            fullscreen.toggleClass("sagecell_fullScreenEnabled");
+            fullscreen.toggleClass("sagecell_icon-resize-full sagecell_icon-resize-small");
         }
 
         editorData = CodeMirror.fromTextArea(commands.get(0), {

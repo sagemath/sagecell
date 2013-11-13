@@ -393,10 +393,14 @@
 }
 
 .sagecell_fullScreen {
-    display: none;
     position: absolute;
-    right: 5px;
+    right: 10px;
     top: 5px;
+    z-index: 1;
+    padding: 2px;
+}
+
+.sagecell_fullScreen.sagecell_fullScreenEnabled {
     z-index: 10;
 }
 
