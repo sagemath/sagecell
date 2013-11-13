@@ -946,6 +946,12 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                 }
             }, {"async": true});
         };
+        var fullscreen = $(ce("button", {title: "Toggle full-screen editor", type: "button", class: "sagecell_fullScreen icon-resize-full"}));
+        var fullscreenToggle = function(editor) {
+            editor.setOption("fullScreen", !editor.getOption("fullScreen"));
+            fullscreen.toggleClass("icon-resize-full icon-resize-small");
+        }
+
         editorData = CodeMirror.fromTextArea(commands.get(0), {
             mode: sagecell.modes[mode],
             viewportMargin: Infinity,
@@ -974,7 +980,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     if (openedDialog) {
                         closeDialog();
                     } else if (cm.getOption("fullScreen")) {
-                        cm.setOption("fullScreen", false);
+                        fullscreenToggle(cm);
                     }
                 }
             }
@@ -983,14 +989,17 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
             editor.save();
             if (event.which === 13 && event.shiftKey) {
                 inputLocation.find(".sagecell_evalButton").click();
+                if (editor.getOption("fullScreen")) {
+                    fullscreenToggle(editor);
+                }
             }
         });
         $(accordion).on("accordionactivate", function () {
             editorData.refresh();
         });
-        inputLocation.find(".sagecell_fullScreen").show();
-        inputLocation.find(".sagecell_fullScreen button").click(function() {
-            editorData.setOption("fullScreen", true);
+        $(editorData.getWrapperElement()).prepend(fullscreen);
+        fullscreen.click(function() {
+            fullscreenToggle(editorData);
             editorData.focus();
         });
     }
@@ -1003,7 +1012,6 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
     if ($.inArray(editor, editable) !== -1) {
         if (editor === "codemirror") {
             editorData.toTextArea();
-            inputLocation.find(".sagecell_fullScreen").hide()
             editor = "textarea";
             editorData = {}
         } else {
@@ -1015,7 +1023,6 @@ sagecell.toggleEditor = function (editor, editorData, inputLocation) {
         if (editor === "codemirror-readonly") {
             editorData.toTextArea();
             editor = "textarea-readonly";
-            inputLocation.find(".sagecell_fullScreen").hide()
             temp = this.renderEditor(editor, inputLocation);
             editorData = temp[1];
         } else {

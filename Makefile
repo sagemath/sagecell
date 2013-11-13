@@ -19,6 +19,7 @@ tos            = templates/tos.html
 tos-static     = static/tos.html
 sagecell       = static/sagecell.js
 sagecell-css   = static/sagecell.css
+fontawesome-css = static/fontawesome.css
 embed-css      = static/sagecell_embed.css
 sockjs-client  = static/sockjs.js
 codemirror-cat = static/codemirror.js
@@ -107,8 +108,10 @@ $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jque
 	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
-$(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css)
-	cat $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css) | python $(cssmin) > $(all-min-css)
+$(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css) \
+                $(fontawesome-css)
+	cat $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css) \
+            $(fontawesome-css) | python $(cssmin) > $(all-min-css)
 
 $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
