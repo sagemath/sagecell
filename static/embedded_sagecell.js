@@ -960,6 +960,8 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
             lineNumbers: true,
             matchBrackets: true,
             readOnly: readOnly,
+            foldGutter: true,
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
             extraKeys: {
                 "Tab": function (editor) {
                     var cur = editor.getCursor();

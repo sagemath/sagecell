@@ -24,10 +24,17 @@ embed-css      = static/sagecell_embed.css
 sockjs-client  = static/sockjs.js
 codemirror-cat = static/codemirror.js
 codemirror-css = submodules/codemirror/lib/codemirror.css
+fold-css       = submodules/codemirror/addon/fold/foldgutter.css
 cm-dir         = submodules/codemirror/
 cm-compress    = bin/compress
 codemirror     = lib/codemirror.js
 cm-brackets    = addon/edit/matchbrackets.js
+cm-foldcode    = addon/fold/foldcode.js
+cm-foldgutter  = addon/fold/foldgutter.js
+cm-foldbrace   = addon/fold/brace-fold.js
+cm-foldxml     = addon/fold/xml-fold.js
+cm-foldcomment = addon/fold/comment-fold.js
+cm-foldindent  = addon/fold/indent-fold.js
 cm-python-mode = mode/python/python.js
 cm-xml-mode    = mode/xml/xml.js
 cm-html-mode   = mode/htmlmixed/htmlmixed.js
@@ -87,10 +94,15 @@ $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(
            $(cm-dir)/$(cm-xml-mode) $(cm-dir)/$(cm-html-mode) $(cm-dir)/$(cm-js-mode) \
            $(cm-dir)/$(cm-css-mode) $(cm-dir)/$(cm-r-mode) $(cm-dir)/$(cm-brackets) \
            $(cm-dir)/$(cm-runmode) $(cm-dir)/$(cm-colorize) $(cm-dir)/$(cm-hint-js) \
-           $(cm-dir)/$(cm-fullscreen-js)
+           $(cm-dir)/$(cm-fullscreen-js) \
+           $(cm-dir)/$(cm-foldcode) $(cm-dir)/$(cm-foldgutter) $(cm-dir)/$(cm-foldbrace) \
+           $(cm-dir)/$(cm-foldxml) $(cm-dir)/$(cm-foldcomment) $(cm-dir)/$(cm-foldindent)
 	cd $(cm-dir); cat $(codemirror) $(cm-brackets) $(cm-python-mode) $(cm-xml-mode) \
 	    $(cm-html-mode) $(cm-js-mode) $(cm-css-mode) $(cm-r-mode) \
-	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) $(cm-fullscreen-js) > ../../$(codemirror-cat)
+	    $(cm-runmode) $(cm-colorize) $(cm-hint-js) $(cm-fullscreen-js) \
+           $(cm-foldcode) $(cm-foldgutter) $(cm-foldbrace) \
+           $(cm-foldxml) $(cm-foldcomment) $(cm-foldindent) \
+           > ../../$(codemirror-cat)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
@@ -109,9 +121,9 @@ $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jque
 	python $(fix-js) $(wrap-js)
 
 $(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css) \
-                $(fontawesome-css)
+                $(fontawesome-css) $(fold-css)
 	cat $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css) \
-            $(fontawesome-css) | python $(cssmin) > $(all-min-css)
+            $(fontawesome-css) $(fold-css) | python $(cssmin) > $(all-min-css)
 
 $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
