@@ -36,7 +36,7 @@ def uuid():
 #######################################################
 
 from comm import SageCellComm as Comm
-from uuid import uuid4 as uuid
+#from uuid import uuid4 as uuid
 noneint = lambda n : n if n is None else int(n)
 class ThreeJS(object):
     def __init__(self, renderer=None, width=None, height=None,
@@ -398,11 +398,12 @@ import os, matplotlib.figure
 
 STORED_INTERACTIVE_GRAPHICS = [];
 class InteractiveGraphics(object):
-    def __init__(self, g, events=None):
+    def __init__(self, g, events=None, renderer="sage"):
         self._g = g
         if events is None:
             events = {}
         self._events = events
+        self.renderer=renderer
 
     def figure(self, **kwds):
         if isinstance(self._g, matplotlib.figure.Figure):
@@ -415,10 +416,6 @@ class InteractiveGraphics(object):
         options.pop('dpi'); options.pop('transparent'); options.pop('fig_tight')
         fig = self._g.matplotlib(**options)
 
-        from matplotlib.backends.backend_agg import FigureCanvasAgg
-        canvas = FigureCanvasAgg(fig)
-        fig.set_canvas(canvas)
-        fig.tight_layout()  # critical, since sage does this -- if not, coords all wrong
         return fig
 
     def save(self, filename, **kwds):
@@ -433,7 +430,24 @@ class InteractiveGraphics(object):
             self._g.save(filename, **kwds)
 
     def show(self, **kwds):
+        STORED_INTERACTIVE_GRAPHICS.append(self);
+        if self.renderer=="sage":
+            return self.show_sage(**kwds)
+        elif self.renderer=="matplotlib":
+            return self.show_matplotlib(**kwds)
+
+    def show_matplotlib(self, **kwds):
+        self.fig = self.figure(**kwds)
+        CommFigure(self.fig)
+        for k,v in self._events.items():
+            self.fig.canvas.mpl_connect(k,v)
+
+    def show_sage(self, **kwds):
         fig = self.figure(**kwds)
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+        canvas = FigureCanvasAgg(fig)
+        fig.set_canvas(canvas)
+        fig.tight_layout()  # critical, since sage does this -- if not, coords all wrong
         ax = fig.axes[0]
         # upper left data coordinates
         xmin, ymax = ax.transData.inverted().transform( fig.transFigure.transform((0,1)) )
@@ -465,21 +479,77 @@ class InteractiveGraphics(object):
 
         self.comm.on_msg(on_msg)
 
-        STORED_INTERACTIVE_GRAPHICS.append(self);
 
 
+# Matplotlib's comm-based live plots.  See https://github.com/matplotlib/matplotlib/pull/2524
+from matplotlib.backends.backend_webagg_core import (
+    FigureManagerWebAgg, new_figure_manager_given_figure)
+import json
+
+from IPython.display import display,Javascript,HTML
+from base64 import b64encode
+
+class CommFigure(object):
+    def __init__(self, figure):
+        self.figure = figure
+        self.manager = new_figure_manager_given_figure(id(figure), figure)
+        self.comm = CommSocket(self.manager)
+        self.comm.open()
 
 
+class CommSocket(object):
+    """
+    A websocket for interactive communication between the plot in
+    the browser and the server.
 
+    In addition to the methods required by tornado, it is required to
+    have two callback methods:
 
+        - ``send_json(json_content)`` is called by matplotlib when
+          it needs to send json to the browser.  `json_content` is
+          a JSON tree (Python dictionary), and it is the responsibility
+          of this implementation to encode it as a string to send over
+          the socket.
 
+        - ``send_binary(blob)`` is called to send binary image data
+          to the browser.
+    """
+    supports_binary = False
 
+    def __init__(self, manager):
+        self.manager = manager
+        self.uuid = uuid()
+        #display(HTML("<div id='%s'></div>"%self.uuid))
+        self.comm = Comm('matplotlib', data={'id': self.uuid})
 
+    def open(self):
+        # Register the websocket with the FigureManager.
+        self.manager.add_web_socket(self)
+        self.comm.on_msg(self.on_message)
 
+    def on_close(self):
+        # When the socket is closed, deregister the websocket with
+        # the FigureManager.
 
+        self.manager.remove_web_socket(self)
+        self.comm.close()
 
+    def send_json(self, content):
+        self.comm.send({'data': json.dumps(content)})
 
+    def send_binary(self, blob):
+        data_uri = "data:image/png;base64,{0}".format(b64encode(blob))
+        self.comm.send({'data': data_uri})
 
+    def on_message(self, message):
+        # The 'supports_binary' message is relevant to the
+        # websocket itself.  The other messages get passed along
+        # to matplotlib as-is.
 
-
+        # Every message has a "type" and a "figure_id".
+        message = json.loads(message['content']['data'])
+        if message['type'] == 'supports_binary':
+            self.supports_binary = message['value']
+        else:
+            self.manager.handle_json(message)
 

@@ -120,6 +120,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
         this.kernel.comm_manager.register_target('threejs', IPython.utils.always_new(sagecell.SessionThreeJSWidget(this)));
         this.kernel.comm_manager.register_target('graphicswidget', IPython.utils.always_new(sagecell.SessionGraphicsWidget(this)));
+        this.kernel.comm_manager.register_target('matplotlib', IPython.utils.always_new(sagecell.MPLWidget(this)));
+
         this.kernel.session = this;
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
@@ -798,6 +800,7 @@ sagecell.SessionGraphicsWidget = function(session) {
     var that = this;
     var callbacks = {iopub : {output: $.proxy(session.handle_output, session)}};
     var div = ce("div", {style: "border: 2px solid blue;margin:0;padding:0;"});
+    var block_id = msg.metadata.interact_id || null;
 
     $(div).salvus_threejs(msg.content.data)
 
@@ -806,7 +809,8 @@ sagecell.SessionGraphicsWidget = function(session) {
                         cb: function(result) {that.obj._run_callbacks(result);
                                               that.obj = result;},
                         err: function(err) {comm.close(); console.log(err);}})
-    session.output(div, null);
+
+    session.output(div, block_id);
 
 
     comm.on_msg(function(msg) {
@@ -825,6 +829,39 @@ sagecell.SessionGraphicsWidget = function(session) {
     });
         }
     }
+
+    sagecell.MPLWidget = function(session) {
+        var callbacks = {iopub : {output: $.proxy(session.handle_output, session)}};
+        var comm_websocket = function(comm) {
+            var ws = {};
+            // MPL assumes we have a websocket that is not open yet
+            // so we run the onopen handler after they have a chance
+            // to set it.
+            ws.onopen = function() {};
+            setTimeout(ws.onopen(), 0);
+            ws.close = function() {comm.close()};
+            ws.send = function(m) {
+                comm.send(m, callbacks); 
+                console.log('sending',m);
+            };
+            comm.on_msg(function(msg) {
+                console.log('receiving', msg);
+                ws.onmessage(msg['content']['data'])
+            });
+            return ws;
+        }
+        return function(comm, msg) {
+            var id = msg.content.data.id;
+            var div = ce("div", {style: "border: 2px solid blue;margin:0;padding:0;"});
+            var block_id = msg.metadata.interact_id || null;
+            session.output(div, block_id);
+            var c = comm_websocket(comm)
+            var m = new mpl.figure(id, c,
+                                   function() {console.log('download')}, div);
+        }
+    }
+
+
 
 
 /**********************************************

@@ -64,6 +64,7 @@ sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 threejs-url    =  https://raw.github.com/jasongrout/three.js/sagecell/build/three.js
 threejs-url-control = https://raw.github.com/jasongrout/three.js/sagecell/examples/js/controls/TrackballControls.js
 threejs-url-detect =  https://raw.github.com/jasongrout/three.js/sagecell/examples/js/Detector.js
+mpl-js         = static/mpl.js
 jmol-sage      = $(sage-root)/local/share/jmol
 canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-0.10.4-py2.7.egg/sagenb/data/sage/js/canvas3d_lib.js
 
@@ -85,6 +86,9 @@ $(threejs-control):
 
 $(threejs-detect):
 	python -c "import urllib; urllib.urlretrieve('$(threejs-url-detect)', '$(threejs-detect)')"
+
+$(mpl-js):
+	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > $(mpl-js)
 
 $(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
 	cp $(codemirror-cat) $(all-min-js) $(three-min-js)
@@ -115,9 +119,9 @@ coffee: $(threed-coffee)
 	coffee -c $(threed-coffee)
 
 $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
-            $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed)
+            $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js)
 	cat $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
-	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) > $(wrap-js)
+	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
 $(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell-css) \

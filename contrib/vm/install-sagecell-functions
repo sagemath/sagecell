@@ -168,6 +168,7 @@ function install_sagecell {
   # until we recompile sage (*after* now installing the curl-devel library)
   # we need to reinstall git to pick up the extra https handler
   ./sage -f git
+
   # we also need a more recent ipython than 1.0 for the communications API
   set -v
   pushd local/lib/python/site-packages
@@ -183,6 +184,14 @@ function install_sagecell {
   git checkout jason/sagecell
   ../sage setup.py develop
   popd
+
+  # we need a cutting-edge matplotlib as well for the new interactive features
+  git clone https://github.com/jasongrout/matplotlib
+  pushd matplotlib
+  git checkout origin/sagecell
+  ../sage setup.py install
+  popd
+
   ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-08-13.spkg
   cd /home/sageserver/sage/sagecell/
   git pull origin master
