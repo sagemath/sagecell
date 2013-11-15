@@ -186,6 +186,8 @@ function install_sagecell {
   popd
 
   # we need a cutting-edge matplotlib as well for the new interactive features
+  # first, we need to install pyparsing (see http://trac.sagemath.org/ticket/14993)
+  ./sage -sh -c "easy_install pyparsing"
   git clone https://github.com/jasongrout/matplotlib
   pushd matplotlib
   git checkout origin/sagecell
