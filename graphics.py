@@ -26,6 +26,28 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 ###############################################################################
+"""
+TODO for 3d graphics:
+
+[ ] implement aspect ratio
+
+[X] some z-fighting going on:  fixed in 99d8f2e7e9365088f1a031f289f75fd60791752a
+sage: x, y = var('x y')
+sage: W = plot3d(sin(pi*((x)^2+(y)^2))/2,(x,-1,1),(y,-1,1), frame=False, color='purple', opacity=0.8) 
+sage: S = sphere((0,0,0),size=0.3, color='red', aspect_ratio=[1,1,1])
+sage: threejs(W + S, figsize=8)
+
+[X] the grid sometimes is too much---make it transparent -- fixed in 0c5fddfd08db2da3322242e130acd0fa52933a83
+
+[ ] by default, make it shiny a bit
+
+[ ] Figure out when to draw a point as a particle system, and when to draw as a small sphere.  A big particle is just a square, so it's not so pretty if you just have one point
+sage: threejs(point3d((4,3,2),size=20,color='red',opacity=.5))
+
+[ ] canvas2d lacks axis labels
+
+
+"""
 
 from uuid import uuid4
 def uuid():
