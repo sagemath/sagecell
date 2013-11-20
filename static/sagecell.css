@@ -398,6 +398,7 @@
     top: 5px;
     z-index: 1;
     padding: 2px;
+    color: rgb(128,128,128);
 }
 
 .sagecell_fullScreen.sagecell_fullScreenEnabled {
