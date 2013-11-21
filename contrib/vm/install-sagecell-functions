@@ -14,10 +14,12 @@ function upload_sage_source {
 
 
 function update_system {
+scp -P $VMPORT vm/vmfiles/sagecell/repos/* $VMSSH:/etc/yum.repos.d/
 
     $SSH <<EOF | tee -a install.log
        set -v
        echo 'Updating system'
+       yum -y install ffmpeg --enablerepo=atrpms
        yum -y update
        yum clean all
 EOF
@@ -246,7 +248,7 @@ scp -P $VMPORT vm/vmfiles/sagecell/upstart/* $VMSSH:/etc/init/
 scp -P $VMPORT vm/vmfiles/sagecell/rsyslog/* $VMSSH:/etc/rsyslog.d/
 scp -P $VMPORT vm/vmfiles/sagecell/sagecell_nginx.conf $VMSSH:/etc/nginx/conf.d/sagecell.conf
 
-    $SSH <<EOF | tee -a install.log
+$SSH <<EOF | tee -a install.log
   chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
   restorecon -R /etc/cron.d/
   restorecon -R /etc/init/
