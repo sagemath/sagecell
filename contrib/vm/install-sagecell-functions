@@ -210,7 +210,7 @@ rsync --progress -avv -e "ssh -p $VMPORT" basemap-1.0.6.tar.gz $VMSSH:/tmp/basem
 
   echo 'Installing extra python packages'
   cd /home/sageserver/sage/
-  for i in netcdf4 tables h5py pandas scikit-learn patsy statsmodels numexpr scikits-image scimath Shapely SimPy pyproj bitarray ggplot oct2py psutil lxml munkres
+  for i in netcdf4 tables h5py pandas scikit-learn patsy statsmodels numexpr scikits-image scimath Shapely SimPy pyproj bitarray ggplot oct2py psutil lxml munkres husl moss https://github.com/mwaskom/seaborn/archive/master.zip
   do
     echo $i
     ./sage -sh -c "pip install -U \$i"
