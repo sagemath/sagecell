@@ -126,6 +126,7 @@ if __name__ == "__main__":
                 pidlock.break_lock()
     try:
         pidlock.acquire(timeout=10)
+        # TODO: clean out the router-ipc directory
         application = SageCellServer(baseurl = args.baseurl)
         listen = {'port': args.port, 'xheaders': True}
         if args.interface is not None:

@@ -14,7 +14,7 @@ class AsyncSender(object):
         self._dealers = {}
         if filename is None:
             from uuid import uuid4
-            filename = 'router-%s.ipc'%uuid4()
+            filename = 'router-ipc/router-%s.ipc'%uuid4()
         self.filename = "ipc://"+filename
 
         context = zmq.Context()
