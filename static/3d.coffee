@@ -146,11 +146,10 @@ class SalvusThreeJS
         else
             @opts.element.find(".salvus-3d-viewer-renderer").text("canvas2d")
             @renderer = new THREE.CanvasRenderer(antialias:true)
-
         @renderer.setSize(@opts.width, @opts.height)
-
+        @renderer.setClearColor(0xffffff, 1);
         if not @opts.background?
-            @opts.background = "rgba(0,0,0,0)" # transparent -- looks better with themes
+            @opts.background = "rgba(1,1,1,0);" # TODO: make this transparent -- looks better with themes
             if not @opts.foreground?
                 @opts.foreground = "#000000" # black
 
