@@ -218,35 +218,48 @@ class SalvusThreeJS
         o = defaults opts,
             pos              : [0,0,0]
             text             : required
-            fontsize         : 12
+            fontsize         : 14
             fontface         : 'Arial'
             color            : "#000000"   # anything that is valid to canvas context, e.g., "rgba(249,95,95,0.7)" is also valid.
             border_thickness : 0
-            sprite_alignment : 'topLeft'
             constant_size    : true  # if true, then text is automatically resized when the camera moves;
             # WARNING: if constant_size, don't remove text from scene (or if you do, note that it is slightly inefficient still.)
-
-        o.sprite_alignment = THREE.SpriteAlignment[o.sprite_alignment]
         canvas  = document.createElement("canvas")
         context = canvas.getContext("2d")
-        context.font = "Normal " + o.fontsize + "px " + o.fontface
+
+        textHeight = o.fontsize*4 # one pt = 4 pixels
+        canvas.height = textHeight
+        font = "Normal " + textHeight + "px " + o.fontface
+
+        context.font = font
+        metrics = context.measureText(o.text);
+        textWidth = metrics.width
+        canvas.width = textWidth
+
+        context.textAlign = "center"
+        context.textBaseline = "middle"
         context.fillStyle = o.color
-        context.fillText(o.text, o.border_thickness, o.fontsize + o.border_thickness)
+        context.font = font
+        context.fillText(o.text, textWidth/2, textHeight/2)
         texture = new THREE.Texture(canvas)
         texture.needsUpdate = true
         spriteMaterial = new THREE.SpriteMaterial
             map                  : texture
-            useScreenCoordinates : false
-            alignment            : o.sprite_alignment,
-            sizeAttenuation      : true
+            transparent          : true
+
         sprite = new THREE.Sprite(spriteMaterial)
         p = o.pos
-        sprite.position.set(p[0],p[1],p[2])
+        sprite.position.set(p[0], p[1], p[2])
+        # TODO: this scaling needs to be determined somehow---right now it depends on the world coordinates in the picture
+        actualFontSize=0.2
+        sprite.scale.set(textWidth / textHeight * actualFontSize, actualFontSize, 1)
+        
         if o.constant_size
             if not @_text?
                 @_text = [sprite]
             else
                 @_text.push(sprite)
+        
         @scene.add(sprite)
         return sprite
 
