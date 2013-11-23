@@ -156,8 +156,9 @@
         });
       }
       this.renderer.setSize(this.opts.width, this.opts.height);
+      this.renderer.setClearColor(0xffffff, 1);
       if (this.opts.background == null) {
-        this.opts.background = "rgba(0,0,0,0)";
+        this.opts.background = "rgba(1,1,1,0);";
         if (this.opts.foreground == null) {
           this.opts.foreground = "#000000";
         }
@@ -243,7 +244,7 @@
       if (color == null) {
         color = 0xffffff;
       }
-      ambient = new THREE.AmbientLight();
+      ambient = new THREE.AmbientLight(0x404040);
       this.scene.add(ambient);
       directionalLight = new THREE.DirectionalLight(0xffffff);
       directionalLight.position.set(100, 100, 100).normalize();
@@ -256,34 +257,41 @@
     };
 
     SalvusThreeJS.prototype.add_text = function(opts) {
-      var canvas, context, o, p, sprite, spriteMaterial, texture;
+      var actualFontSize, canvas, context, font, metrics, o, p, sprite, spriteMaterial, textHeight, textWidth, texture;
       o = defaults(opts, {
         pos: [0, 0, 0],
         text: required,
-        fontsize: 12,
+        fontsize: 14,
         fontface: 'Arial',
         color: "#000000",
         border_thickness: 0,
-        sprite_alignment: 'topLeft',
         constant_size: true
       });
-      o.sprite_alignment = THREE.SpriteAlignment[o.sprite_alignment];
       canvas = document.createElement("canvas");
       context = canvas.getContext("2d");
-      context.font = "Normal " + o.fontsize + "px " + o.fontface;
+      textHeight = o.fontsize * 4;
+      canvas.height = textHeight;
+      font = "Normal " + textHeight + "px " + o.fontface;
+      context.font = font;
+      metrics = context.measureText(o.text);
+      textWidth = metrics.width;
+      canvas.width = textWidth;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
       context.fillStyle = o.color;
-      context.fillText(o.text, o.border_thickness, o.fontsize + o.border_thickness);
+      context.font = font;
+      context.fillText(o.text, textWidth / 2, textHeight / 2);
       texture = new THREE.Texture(canvas);
       texture.needsUpdate = true;
       spriteMaterial = new THREE.SpriteMaterial({
         map: texture,
-        useScreenCoordinates: false,
-        alignment: o.sprite_alignment,
-        sizeAttenuation: true
+        transparent: true
       });
       sprite = new THREE.Sprite(spriteMaterial);
       p = o.pos;
       sprite.position.set(p[0], p[1], p[2]);
+      actualFontSize = 0.2;
+      sprite.scale.set(textWidth / textHeight * actualFontSize, actualFontSize, 1);
       if (o.constant_size) {
         if (this._text == null) {
           this._text = [sprite];
@@ -317,36 +325,20 @@
     };
 
     SalvusThreeJS.prototype.add_point = function(opts) {
-      var geometry, material, o, p, particle, w;
+      var geometry, material, o, sphere;
       o = defaults(opts, {
         loc: [0, 0, 0],
         size: 1,
         color: "#000000",
         sizeAttenuation: false
       });
-      material = new THREE.ParticleBasicMaterial({
-        color: o.color,
-        size: o.size,
-        sizeAttenuation: o.sizeAttenuation
+      material = new THREE.MeshLambertMaterial({
+        color: o.color
       });
-      switch (this.opts.renderer) {
-        case 'webgl':
-          geometry = new THREE.Geometry();
-          geometry.vertices.push(new THREE.Vector3(o.loc[0], o.loc[1], o.loc[2]));
-          particle = new THREE.ParticleSystem(geometry, material);
-          break;
-        case 'canvas2d':
-          particle = new THREE.Particle(material);
-          particle.position.set(o.loc[0], o.loc[1], o.loc[2]);
-          if (this._frame_params != null) {
-            p = this._frame_params;
-            w = Math.min(Math.min(p.xmax - p.xmin, p.ymax - p.ymin), p.zmax - p.zmin);
-          } else {
-            w = 5;
-          }
-          particle.scale.x = particle.scale.y = Math.max(50 / this.opts.width, o.size * 5 * w / this.opts.width);
-      }
-      return this.scene.add(particle);
+      geometry = new THREE.SphereGeometry(Math.sqrt(o.size) / 50, 16, 16);
+      sphere = new THREE.Mesh(geometry, material);
+      sphere.position.set(o.loc[0], o.loc[1], o.loc[2]);
+      return this.scene.add(sphere);
     };
 
     SalvusThreeJS.prototype.add_obj = function(myobj, opts) {
@@ -427,7 +419,6 @@
           material.ambient.setRGB(myobj.material[mk].ambient[mk], myobj.material[mk].ambient[1], myobj.material[0].ambient[2]);
           material.specular.setRGB(myobj.material[mk].specular[0], myobj.material[mk].specular[1], myobj.material[mk].specular[2]);
           material.opacity = myobj.material[mk].opacity;
-          mesh = new THREE.Mesh(geometry, material);
           wireframeMaterial = new THREE.MeshBasicMaterial({
             color: 0x222222,
             wireframe: true,
@@ -444,7 +435,7 @@
     };
 
     SalvusThreeJS.prototype.set_frame = function(opts) {
-      var e, eps, geometry, l, material, mx, my, mz, o, offset, txt, v, x, _i, _len, _ref, _ref1,
+      var e, eps, geometry, l, material, mx, my, mz, o, offset, txt, v, vertices, x, _i, _len, _ref, _ref1,
         _this = this;
       o = defaults(opts, {
         xmin: required,
@@ -478,14 +469,13 @@
         this.frame = void 0;
       }
       if (o.draw) {
-        geometry = new THREE.CubeGeometry(o.xmax - o.xmin, o.ymax - o.ymin, o.zmax - o.zmin);
-        material = new THREE.MeshBasicMaterial({
-          color: o.color,
-          wireframe: true,
-          wireframeLinewidth: o.thickness
+        geometry = new THREE.Geometry();
+        vertices = [new THREE.Vector3(o.xmin, o.ymin, o.zmin), new THREE.Vector3(o.xmax, o.ymin, o.zmin), new THREE.Vector3(o.xmax, o.ymax, o.zmin), new THREE.Vector3(o.xmin, o.ymax, o.zmin), new THREE.Vector3(o.xmin, o.ymin, o.zmax), new THREE.Vector3(o.xmax, o.ymin, o.zmax), new THREE.Vector3(o.xmax, o.ymax, o.zmax), new THREE.Vector3(o.xmin, o.ymax, o.zmax)];
+        geometry.vertices.push(vertices[0], vertices[1], vertices[1], vertices[2], vertices[2], vertices[3], vertices[3], vertices[0], vertices[4], vertices[5], vertices[5], vertices[6], vertices[6], vertices[7], vertices[7], vertices[4], vertices[0], vertices[4], vertices[1], vertices[5], vertices[2], vertices[6], vertices[3], vertices[7]);
+        material = new THREE.LineBasicMaterial({
+          color: o.color
         });
-        this.frame = new THREE.BoxHelper(new THREE.Mesh(geometry, material));
-        this.frame.position.set(o.xmin + (o.xmax - o.xmin) / 2, o.ymin + (o.ymax - o.ymin) / 2, o.zmin + (o.zmax - o.zmin) / 2);
+        this.frame = new THREE.Line(geometry, material, THREE.LinePieces);
         this.scene.add(this.frame);
       }
       if (o.labels) {
@@ -540,7 +530,12 @@
       v = new THREE.Vector3(mx, my, mz);
       this.camera.lookAt(v);
       this.render_scene();
-      return (_ref1 = this.controls) != null ? _ref1.handleResize() : void 0;
+      if ((_ref1 = this.controls) != null) {
+        _ref1.handleResize();
+      }
+      if (o.draw) {
+        return this.render_scene();
+      }
     };
 
     SalvusThreeJS.prototype.add_3dgraphics_obj = function(opts) {
