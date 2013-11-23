@@ -379,7 +379,6 @@ class SalvusThreeJS
                 material.specular.setRGB(myobj.material[mk].specular[0],
                                                myobj.material[mk].specular[1],myobj.material[mk].specular[2])
                 material.opacity = myobj.material[mk].opacity
-                mesh = new THREE.Mesh(geometry, material)
                 wireframeMaterial = new THREE.MeshBasicMaterial
                     color: 0x222222
                     wireframe: true
