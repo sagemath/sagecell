@@ -427,26 +427,35 @@ class SalvusThreeJS
             @frame = undefined
 
         if o.draw
-            #TODO: How do we draw a cube *without* drawing the diagonal triangle line
-            # see https://github.com/mrdoob/three.js/issues/3788
-            ###
-            geometry = new THREE.CubeGeometry(o.xmax-o.xmin, o.ymax-o.ymin, o.zmax-o.zmin)
-            material = new THREE.MeshBasicMaterial
+            geometry = new THREE.Geometry()
+            vertices = [ new THREE.Vector3(o.xmin, o.ymin, o.zmin),
+                         new THREE.Vector3(o.xmax, o.ymin, o.zmin),
+                         new THREE.Vector3(o.xmax, o.ymax, o.zmin),
+                         new THREE.Vector3(o.xmin, o.ymax, o.zmin),
+                         new THREE.Vector3(o.xmin, o.ymin, o.zmax),
+                         new THREE.Vector3(o.xmax, o.ymin, o.zmax),
+                         new THREE.Vector3(o.xmax, o.ymax, o.zmax),
+                         new THREE.Vector3(o.xmin, o.ymax, o.zmax)]
+            geometry.vertices.push(vertices[0], vertices[1],
+                                   vertices[1], vertices[2],
+                                   vertices[2], vertices[3],
+                                   vertices[3], vertices[0],
+                                   vertices[4], vertices[5],
+                                   vertices[5], vertices[6],
+                                   vertices[6], vertices[7],
+                                   vertices[7], vertices[4],
+                                   vertices[0], vertices[4],
+                                   vertices[1], vertices[5],
+                                   vertices[2], vertices[6],
+                                   vertices[3], vertices[7]
+                                   )
+            material = new THREE.LineBasicMaterial
                 color              : o.color
-                wireframe          : true
-                wireframeLinewidth : o.thickness
-
-            # This makes a cube *centered at the origin*, so we have to move it.
-            oldframe = new THREE.Mesh(geometry, material)
-            oldframe.position.set(o.xmin + (o.xmax-o.xmin)/2, o.ymin + (o.ymax-o.ymin)/2, o.zmin + (o.zmax-o.zmin)/2)
-            @frame = new THREE.BoxHelper()
-            @frame.update(oldframe)
-            # TODO: figure out why @frame itself doesn't work
-            @frame = oldframe
+                #linewidth : o.thickness
+            @frame = new THREE.Line(geometry, material, THREE.LinePieces)
             @scene.add(@frame)
-            ###
-        if o.labels
 
+        if o.labels
             if @_frame_labels?
                 for x in @_frame_labels
                     @scene.remove(x)
