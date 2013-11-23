@@ -281,26 +281,27 @@ class SalvusThreeJS
             size : 1
             color: "#000000"
             sizeAttenuation : false
-        material = new THREE.ParticleBasicMaterial
-                  color           : o.color
-                  size            : o.size
-                  sizeAttenuation : o.sizeAttenuation
-        switch @opts.renderer
-            when 'webgl'
-                geometry = new THREE.Geometry()
-                geometry.vertices.push(new THREE.Vector3(o.loc[0], o.loc[1], o.loc[2]))
-                particle = new THREE.ParticleSystem(geometry, material)
-            when 'canvas2d'
-                particle = new THREE.Particle(material)
-                particle.position.set(o.loc[0], o.loc[1], o.loc[2])
-                if @_frame_params?
-                    p = @_frame_params
-                    w = Math.min(Math.min(p.xmax-p.xmin, p.ymax-p.ymin),p.zmax-p.zmin)
-                else
-                    w = 5 # little to go on
-                particle.scale.x = particle.scale.y = Math.max(50/@opts.width, o.size * 5 * w / @opts.width)
-
-        @scene.add(particle)
+        material =  new THREE.MeshPhongMaterial
+                 ambient     : 0x0ffff
+                 wireframe   : false
+                 overdraw    : true
+                 polygonOffset: true
+                 polygonOffsetFactor: 1
+                 polygonOffsetUnits: 1
+                 color           : o.color
+                 size            : o.size
+                 sizeAttenuation : o.sizeAttenuation
+        geometry = new THREE.SphereGeometry(o.size,16,16)
+        wireframeMaterial = new THREE.MeshBasicMaterial
+                    color: 0x222222
+                    wireframe: true
+                    transparent: true
+                    opacity:.2
+        multiMaterial = [material, wireframeMaterial]
+        mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
+        sphere = new THREE.Mesh(geometry,multiMaterial)
+        sphere.position.set(o.loc[0], o.loc[1], o.loc[2])
+        @scene.add(sphere)
 
     add_obj: (myobj, opts)=>
         vertices = myobj.vertex_geometry
@@ -379,7 +380,6 @@ class SalvusThreeJS
                 material.specular.setRGB(myobj.material[mk].specular[0],
                                                myobj.material[mk].specular[1],myobj.material[mk].specular[2])
                 material.opacity = myobj.material[mk].opacity
-                mesh = new THREE.Mesh(geometry, material)
                 wireframeMaterial = new THREE.MeshBasicMaterial
                     color: 0x222222
                     wireframe: true
@@ -429,6 +429,7 @@ class SalvusThreeJS
         if o.draw
             #TODO: How do we draw a cube *without* drawing the diagonal triangle line
             # see https://github.com/mrdoob/three.js/issues/3788
+            ###
             geometry = new THREE.CubeGeometry(o.xmax-o.xmin, o.ymax-o.ymin, o.zmax-o.zmin)
             material = new THREE.MeshBasicMaterial
                 color              : o.color
@@ -436,11 +437,14 @@ class SalvusThreeJS
                 wireframeLinewidth : o.thickness
 
             # This makes a cube *centered at the origin*, so we have to move it.
-            @frame = new THREE.BoxHelper(new THREE.Mesh(geometry, material))
-           
-            @frame.position.set(o.xmin + (o.xmax-o.xmin)/2, o.ymin + (o.ymax-o.ymin)/2, o.zmin + (o.zmax-o.zmin)/2)
+            oldframe = new THREE.Mesh(geometry, material)
+            oldframe.position.set(o.xmin + (o.xmax-o.xmin)/2, o.ymin + (o.ymax-o.ymin)/2, o.zmin + (o.zmax-o.zmin)/2)
+            @frame = new THREE.BoxHelper()
+            @frame.update(oldframe)
+            # TODO: figure out why @frame itself doesn't work
+            @frame = oldframe
             @scene.add(@frame)
-
+            ###
         if o.labels
 
             if @_frame_labels?
@@ -487,6 +491,8 @@ class SalvusThreeJS
         @camera.lookAt(v)
         @render_scene()
         @controls?.handleResize()
+        if o.draw
+            @render_scene()
 
     add_3dgraphics_obj: (opts) =>
         opts = defaults opts,
