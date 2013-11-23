@@ -281,26 +281,27 @@ class SalvusThreeJS
             size : 1
             color: "#000000"
             sizeAttenuation : false
-        material = new THREE.ParticleBasicMaterial
-                  color           : o.color
-                  size            : o.size
-                  sizeAttenuation : o.sizeAttenuation
-        switch @opts.renderer
-            when 'webgl'
-                geometry = new THREE.Geometry()
-                geometry.vertices.push(new THREE.Vector3(o.loc[0], o.loc[1], o.loc[2]))
-                particle = new THREE.ParticleSystem(geometry, material)
-            when 'canvas2d'
-                particle = new THREE.Particle(material)
-                particle.position.set(o.loc[0], o.loc[1], o.loc[2])
-                if @_frame_params?
-                    p = @_frame_params
-                    w = Math.min(Math.min(p.xmax-p.xmin, p.ymax-p.ymin),p.zmax-p.zmin)
-                else
-                    w = 5 # little to go on
-                particle.scale.x = particle.scale.y = Math.max(50/@opts.width, o.size * 5 * w / @opts.width)
-
-        @scene.add(particle)
+        material =  new THREE.MeshPhongMaterial
+                 ambient     : 0x0ffff
+                 wireframe   : false
+                 overdraw    : true
+                 polygonOffset: true
+                 polygonOffsetFactor: 1
+                 polygonOffsetUnits: 1
+                 color           : o.color
+                 size            : o.size
+                 sizeAttenuation : o.sizeAttenuation
+        geometry = new THREE.SphereGeometry(o.size,16,16)
+        wireframeMaterial = new THREE.MeshBasicMaterial
+                    color: 0x222222
+                    wireframe: true
+                    transparent: true
+                    opacity:.2
+        multiMaterial = [material, wireframeMaterial]
+        mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
+        sphere = new THREE.Mesh(geometry,multiMaterial)
+        sphere.position.set(o.loc[0], o.loc[1], o.loc[2])
+        @scene.add(sphere)
 
     add_obj: (myobj, opts)=>
         vertices = myobj.vertex_geometry
