@@ -203,7 +203,7 @@ class SalvusThreeJS
         @camera.up = new THREE.Vector3(0,0,1)
 
     set_light: (color= 0xffffff) =>
-        ambient = new THREE.AmbientLight( )
+        ambient = new THREE.AmbientLight(0x404040)
         @scene.add( ambient )
         directionalLight = new THREE.DirectionalLight( 0xffffff )
         directionalLight.position.set( 100, 100, 100 ).normalize()
@@ -281,25 +281,10 @@ class SalvusThreeJS
             size : 1
             color: "#000000"
             sizeAttenuation : false
-        material =  new THREE.MeshPhongMaterial
-                 ambient     : 0x0ffff
-                 wireframe   : false
-                 overdraw    : true
-                 polygonOffset: true
-                 polygonOffsetFactor: 1
-                 polygonOffsetUnits: 1
+        material =  new THREE.MeshLambertMaterial
                  color           : o.color
-                 size            : o.size
-                 sizeAttenuation : o.sizeAttenuation
-        geometry = new THREE.SphereGeometry(o.size,16,16)
-        wireframeMaterial = new THREE.MeshBasicMaterial
-                    color: 0x222222
-                    wireframe: true
-                    transparent: true
-                    opacity:.2
-        multiMaterial = [material, wireframeMaterial]
-        mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
-        sphere = new THREE.Mesh(geometry,multiMaterial)
+        geometry = new THREE.SphereGeometry(Math.sqrt(o.size)/50,16,16)
+        sphere = new THREE.Mesh(geometry, material);
         sphere.position.set(o.loc[0], o.loc[1], o.loc[2])
         @scene.add(sphere)
 
