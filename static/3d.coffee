@@ -428,6 +428,7 @@ class SalvusThreeJS
         if o.draw
             #TODO: How do we draw a cube *without* drawing the diagonal triangle line
             # see https://github.com/mrdoob/three.js/issues/3788
+            ###
             geometry = new THREE.CubeGeometry(o.xmax-o.xmin, o.ymax-o.ymin, o.zmax-o.zmin)
             material = new THREE.MeshBasicMaterial
                 color              : o.color
@@ -435,11 +436,14 @@ class SalvusThreeJS
                 wireframeLinewidth : o.thickness
 
             # This makes a cube *centered at the origin*, so we have to move it.
-            @frame = new THREE.BoxHelper(new THREE.Mesh(geometry, material))
-           
-            @frame.position.set(o.xmin + (o.xmax-o.xmin)/2, o.ymin + (o.ymax-o.ymin)/2, o.zmin + (o.zmax-o.zmin)/2)
+            oldframe = new THREE.Mesh(geometry, material)
+            oldframe.position.set(o.xmin + (o.xmax-o.xmin)/2, o.ymin + (o.ymax-o.ymin)/2, o.zmin + (o.zmax-o.zmin)/2)
+            @frame = new THREE.BoxHelper()
+            @frame.update(oldframe)
+            # TODO: figure out why @frame itself doesn't work
+            @frame = oldframe
             @scene.add(@frame)
-
+            ###
         if o.labels
 
             if @_frame_labels?
@@ -486,6 +490,8 @@ class SalvusThreeJS
         @camera.lookAt(v)
         @render_scene()
         @controls?.handleResize()
+        if o.draw
+            @render_scene()
 
     add_3dgraphics_obj: (opts) =>
         opts = defaults opts,
