@@ -2,7 +2,7 @@ from untrusted_kernel_manager import UntrustedMultiKernelManager
 import zmq
 from zmq import ssh
 import sys
-from misc import Timer
+from misc import Timer, sage_json
 
 class Receiver(object):
     def __init__(self, filename, ip, tmp_dir):
@@ -265,6 +265,11 @@ from sagenb.misc.support import automatic_names
         def send_message(stream, msg_type, content, parent, **kwargs):
             ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
         _sage_.send_message = send_message
+
+        # Enable Sage types to be sent via session messages
+        import zmq
+        from zmq.utils import jsonapi
+        ka.kernel.session.pack = lambda x: jsonapi.dumps(x, default=sage_json)
 
         sys._sage_ = _sage_
         user_ns = ka.kernel.shell.user_module.__dict__

@@ -184,11 +184,18 @@ def reset_kernel_timeout(timeout):
 def javascript(code):
     sys._sage_.display_message({'application/javascript': code, 'text/plain': 'javascript code'})
 
-def json_default(obj):
+
+def sage_json(obj):
+    import sage.all
     if isinstance(obj, datetime):
         return obj.isoformat()
+    elif isinstance(obj, sage.rings.integer.Integer):
+        return int(obj)
+    elif isinstance(obj, (sage.rings.real_mpfr.RealLiteral, sage.rings.real_mpfr.RealNumber, sage.rings.real_double.RealDoubleElement)):
+        return float(obj)
     else:
-        raise TypeError, 'Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj))
+        raise TypeError("Object of type %s with value of %s is not JSON serializable" % (type(obj), repr(obj)))
+
 ##########################################
 ## Unit Testing Misc Functions
 ##########################################

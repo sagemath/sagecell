@@ -112,11 +112,15 @@
       this.controlChange = __bind(this.controlChange, this);
       this.animate = __bind(this.animate, this);
       this.add_3dgraphics_obj = __bind(this.add_3dgraphics_obj, this);
+      this.make_object = __bind(this.make_object, this);
       this.set_frame = __bind(this.set_frame, this);
-      this.add_obj = __bind(this.add_obj, this);
+      this.add_index_face_set = __bind(this.add_index_face_set, this);
+      this.make_group = __bind(this.make_group, this);
+      this.make_sphere = __bind(this.make_sphere, this);
       this.add_point = __bind(this.add_point, this);
       this.add_line = __bind(this.add_line, this);
-      this.add_text = __bind(this.add_text, this);
+      this.make_text = __bind(this.make_text, this);
+      this.make_material = __bind(this.make_material, this);
       this.set_light = __bind(this.set_light, this);
       this.add_camera = __bind(this.add_camera, this);
       this.set_trackball_controls = __bind(this.set_trackball_controls, this);
@@ -244,19 +248,38 @@
       if (color == null) {
         color = 0xffffff;
       }
-      ambient = new THREE.AmbientLight(0x404040);
+      ambient = new THREE.AmbientLight(0xdddddd);
       this.scene.add(ambient);
-      directionalLight = new THREE.DirectionalLight(0xffffff);
-      directionalLight.position.set(100, 100, 100).normalize();
+      directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(1, 1, 1);
       this.scene.add(directionalLight);
-      directionalLight = new THREE.DirectionalLight(0xffffff);
-      directionalLight.position.set(-100, -100, -100).normalize();
+      directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(-1, -1, -1);
       this.scene.add(directionalLight);
       this.light = new THREE.PointLight(0xffffff);
       return this.light.position.set(0, 10, 0);
     };
 
-    SalvusThreeJS.prototype.add_text = function(opts) {
+    SalvusThreeJS.prototype.make_material = function(opts) {
+      var o;
+      o = defaults(opts, {
+        opacity: 1,
+        ambient: 0x222222,
+        diffuse: 0x222222,
+        specular: 0xffffff,
+        color: required,
+        emmissive: 0x222222,
+        shininess: 100,
+        overdraw: true,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1
+      });
+      o.transparent = o.opacity < 1;
+      return new THREE.MeshPhongMaterial(o);
+    };
+
+    SalvusThreeJS.prototype.make_text = function(opts) {
       var actualFontSize, canvas, context, font, metrics, o, p, sprite, spriteMaterial, textHeight, textWidth, texture;
       o = defaults(opts, {
         pos: [0, 0, 0],
@@ -299,7 +322,6 @@
           this._text.push(sprite);
         }
       }
-      this.scene.add(sprite);
       return sprite;
     };
 
@@ -321,7 +343,7 @@
         color: opts.color,
         linewidth: o.thickness
       }));
-      return this.scene.add(line);
+      return line;
     };
 
     SalvusThreeJS.prototype.add_point = function(opts) {
@@ -338,13 +360,41 @@
       geometry = new THREE.SphereGeometry(Math.sqrt(o.size) / 50, 16, 16);
       sphere = new THREE.Mesh(geometry, material);
       sphere.position.set(o.loc[0], o.loc[1], o.loc[2]);
-      return this.scene.add(sphere);
+      return sphere;
     };
 
-    SalvusThreeJS.prototype.add_obj = function(myobj, opts) {
-      var c, color, face3, face4, face5, geometry, i, item, k, line_width, material, mesh, mk, multiMaterial, name, objects, vertices, wireframeMaterial, _i, _j, _k, _l, _m, _n, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _results;
+    SalvusThreeJS.prototype.make_sphere = function(opts) {
+      var o;
+      o = defaults(opts, {
+        radius: 1,
+        position: [0, 0, 0]
+      });
+      return new THREE.SphereGeometry(o.radius, 20, 20);
+    };
+
+    SalvusThreeJS.prototype.make_group = function(opts) {
+      var i, m, o, obj, _i, _len, _ref;
+      o = defaults(opts, {
+        matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        children: required
+      });
+      obj = new THREE.Object3D();
+      m = o.matrix;
+      obj.matrixAutoUpdate = false;
+      obj.matrix.set(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15]);
+      console.log('made transform', m, obj.matrix);
+      _ref = o.children;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        i = _ref[_i];
+        obj.add(this.make_object(i));
+      }
+      return obj;
+    };
+
+    SalvusThreeJS.prototype.add_index_face_set = function(myobj, opts) {
+      var c, color, face3, face4, face5, geometry, i, item, k, line_width, material, mesh, mk, multiMaterial, name, objects, vertices, wireframeMaterial, _i, _j, _k, _l, _m, _n, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+      console.log(myobj);
       vertices = myobj.vertex_geometry;
-      _results = [];
       for (objects = _i = 0, _ref = myobj.face_geometry.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; objects = 0 <= _ref ? ++_i : --_i) {
         face3 = myobj.face_geometry[objects].face3;
         face4 = myobj.face_geometry[objects].face4;
@@ -429,9 +479,8 @@
           mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
         }
         mesh.position.set(0, 0, 0);
-        _results.push(this.scene.add(mesh));
+        return mesh;
       }
-      return _results;
     };
 
     SalvusThreeJS.prototype.set_frame = function(opts) {
@@ -498,13 +547,16 @@
           return (z * 1).toString();
         };
         txt = function(x, y, z, text) {
-          return _this._frame_labels.push(_this.add_text({
+          var t;
+          t = _this.make_text({
             pos: [x, y, z],
             text: text,
             fontsize: o.fontsize,
             color: o.color,
             constant_size: false
-          }));
+          });
+          _this._frame_labels.push(t);
+          return _this.scene.add(t);
         };
         offset = 0.075;
         mx = (o.xmin + o.xmax) / 2;
@@ -538,47 +590,39 @@
       }
     };
 
+    SalvusThreeJS.prototype.make_object = function(obj) {
+      var geometry, geometry_type, handlers, material, o, type;
+      handlers = {
+        text: this.make_text,
+        index_face_set: this.make_index_face_set,
+        line: this.make_line,
+        point: this.make_point,
+        sphere: this.make_sphere
+      };
+      type = obj.type;
+      delete obj.type;
+      o = false;
+      console.log('making', obj);
+      if (type === 'group') {
+        o = this.make_group(obj);
+      } else if (type === 'object') {
+        geometry_type = obj.geometry.type;
+        delete obj.geometry.type;
+        geometry = handlers[geometry_type](obj.geometry);
+        material = this.make_material(obj.texture);
+        o = new THREE.Mesh(geometry, material);
+      }
+      console.log('created', o);
+      return o;
+    };
+
     SalvusThreeJS.prototype.add_3dgraphics_obj = function(opts) {
-      var o, _i, _len, _ref;
       opts = defaults(opts, {
         obj: required,
         wireframe: false
       });
-      _ref = opts.obj;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        o = _ref[_i];
-        switch (o.type) {
-          case 'text':
-            this.add_text({
-              pos: o.pos,
-              text: o.text,
-              color: o.color,
-              fontsize: o.fontsize,
-              fontface: o.fontface,
-              constant_size: o.constant_size
-            });
-            break;
-          case 'index_face_set':
-            this.add_obj(o, opts);
-            if (o.mesh && !o.wireframe) {
-              o.color = '#000000';
-              o.wireframe = o.mesh;
-              this.add_obj(o, opts);
-            }
-            break;
-          case 'line':
-            delete o.type;
-            this.add_line(o);
-            break;
-          case 'point':
-            delete o.type;
-            this.add_point(o);
-            break;
-          default:
-            console.log("ERROR: no renderer for model number = " + o.id);
-            return;
-        }
-      }
+      console.log('adding', opts);
+      this.scene.add(this.make_object(opts.obj));
       return this.render_scene(true);
     };
 

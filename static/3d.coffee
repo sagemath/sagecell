@@ -203,18 +203,35 @@ class SalvusThreeJS
         @camera.up = new THREE.Vector3(0,0,1)
 
     set_light: (color= 0xffffff) =>
-        ambient = new THREE.AmbientLight(0x404040)
+        ambient = new THREE.AmbientLight(0xdddddd)
         @scene.add( ambient )
-        directionalLight = new THREE.DirectionalLight( 0xffffff )
-        directionalLight.position.set( 100, 100, 100 ).normalize()
+        directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+        directionalLight.position.set( 1, 1, 1 )
         @scene.add( directionalLight )
-        directionalLight = new THREE.DirectionalLight( 0xffffff )
-        directionalLight.position.set( -100, -100, -100 ).normalize()
+        directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+        directionalLight.position.set( -1, -1, -1 )
         @scene.add( directionalLight )
         @light = new THREE.PointLight(0xffffff)
         @light.position.set(0,10,0)
 
-    add_text: (opts) =>
+    make_material: (opts) =>
+        o = defaults opts,
+            opacity: 1
+            ambient: 0x222222
+            diffuse: 0x222222
+            specular: 0xffffff
+            color: required
+            emmissive: 0x222222
+            shininess: 100
+            overdraw: true
+            polygonOffset: true
+            polygonOffsetFactor: 1
+            polygonOffsetUnits: 1
+            #side: THREE.DoubleSide
+        o.transparent = o.opacity < 1
+        return new THREE.MeshPhongMaterial(o)
+
+    make_text: (opts) =>
         o = defaults opts,
             pos              : [0,0,0]
             text             : required
@@ -260,7 +277,6 @@ class SalvusThreeJS
             else
                 @_text.push(sprite)
         
-        @scene.add(sprite)
         return sprite
 
     add_line : (opts) =>
@@ -273,7 +289,7 @@ class SalvusThreeJS
         for a in o.points
             geometry.vertices.push(new THREE.Vector3(a[0],a[1],a[2]))
         line = new THREE.Line(geometry, new THREE.LineBasicMaterial(color:opts.color, linewidth:o.thickness))
-        @scene.add(line)
+        return line
 
     add_point: (opts) =>
         o = defaults opts,
@@ -286,9 +302,30 @@ class SalvusThreeJS
         geometry = new THREE.SphereGeometry(Math.sqrt(o.size)/50,16,16)
         sphere = new THREE.Mesh(geometry, material);
         sphere.position.set(o.loc[0], o.loc[1], o.loc[2])
-        @scene.add(sphere)
+        return sphere
 
-    add_obj: (myobj, opts)=>
+    make_sphere: (opts) =>
+        o = defaults opts,
+            radius: 1
+            position: [0,0,0]
+        return new THREE.SphereGeometry(o.radius, 20, 20)
+
+    make_group: (opts) =>
+        o = defaults opts,
+            matrix : [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+            children : required
+        obj = new THREE.Object3D()
+        m = o.matrix
+        obj.matrixAutoUpdate = false # tell three.js to not update the matrix based on position, rotation, etc.
+        obj.matrix.set(m[0], m[1], m[2], m[3],
+                            m[4], m[5], m[6], m[7],
+                            m[8], m[9], m[10], m[11],
+                            m[12], m[13], m[14], m[15])
+        obj.add(@make_object(i)) for i in o.children
+        return obj
+
+    ######
+    add_index_face_set: (myobj, opts)=>
         vertices = myobj.vertex_geometry
         for objects in [0..myobj.face_geometry.length-1]
             face3 = myobj.face_geometry[objects].face3
@@ -374,7 +411,8 @@ class SalvusThreeJS
                 mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
 
             mesh.position.set(0,0,0)
-            @scene.add(mesh)
+            return mesh
+    ##########
 
     # always call this after adding things to the scene to make sure track
     # controls are sorted out, etc.   Set draw:false, if you don't want to
@@ -456,7 +494,9 @@ class SalvusThreeJS
                 return (z*1).toString()
 
             txt = (x,y,z,text) =>
-                @_frame_labels.push(@add_text(pos:[x,y,z], text:text, fontsize:o.fontsize, color:o.color, constant_size:false))
+                t = @make_text(pos:[x,y,z], text:text, fontsize:o.fontsize, color:o.color, constant_size:false)
+                @_frame_labels.push(t)
+                @scene.add(t)
 
             offset = 0.075
             mx = (o.xmin+o.xmax)/2
@@ -488,38 +528,33 @@ class SalvusThreeJS
         if o.draw
             @render_scene()
 
+    make_object: (obj) =>
+        handlers =
+          text: @make_text
+          index_face_set: @make_index_face_set
+          line: @make_line
+          point: @make_point
+          sphere: @make_sphere
+        type = obj.type
+        delete obj.type
+        o = false
+        if type == 'group'
+            o = @make_group(obj)
+        else if type == 'object'
+            geometry_type = obj.geometry.type
+            delete obj.geometry.type
+            geometry = handlers[geometry_type](obj.geometry)
+            material = @make_material(obj.texture)
+            o = new THREE.Mesh(geometry, material)
+        return o
+
     add_3dgraphics_obj: (opts) =>
         opts = defaults opts,
             obj       : required
             wireframe : false
 
-        for o in opts.obj
-            switch o.type
-                when 'text'
-                    @add_text
-                        pos:o.pos
-                        text:o.text
-                        color:o.color
-                        fontsize:o.fontsize
-                        fontface:o.fontface
-                        constant_size:o.constant_size
-                when 'index_face_set'
-                    @add_obj(o, opts)
-                    if o.mesh and not o.wireframe  # draw a wireframe mesh on top of the surface we just drew.
-                        o.color='#000000'
-                        o.wireframe = o.mesh
-                        @add_obj(o, opts)
-                when 'line'
-                    delete o.type
-                    @add_line(o)
-                when 'point'
-                    delete o.type
-                    @add_point(o)
-                else
-                    console.log("ERROR: no renderer for model number = #{o.id}")
-                    return
+        @scene.add(@make_object(opts.obj))
         @render_scene(true)
-
 
     animate: () =>
         if @_animate

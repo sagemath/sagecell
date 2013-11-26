@@ -98,7 +98,8 @@ class ThreeJS(object):
         kwds = graphics3d._process_viewing_options(kwds)
         self._frame = kwds.get('frame',False)
         self._graphics.append(graphics3d)
-        self.send('add', {'obj':graphics3d_to_jsonable(graphics3d), 
+        obj = graphics3d_to_jsonable(graphics3d)
+        self.send('add', {'obj': obj,
                         'wireframe':jsonable(kwds.get('wireframe'))})
         self.set_frame(draw = self._frame)  # update the frame
     def render_scene(self, force=True):
@@ -156,6 +157,9 @@ def jsonable(x):
     return x
 
 def graphics3d_to_jsonable(p):
+    return p.scenetree_json()
+
+def old_graphics3d_to_jsonable(p):
 
     obj_list = []
 

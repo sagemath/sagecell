@@ -23,7 +23,7 @@ try:
     }
 except ImportError:
     trait_names = {}
-from misc import json_default, Timer, Config
+from misc import sage_json, Timer, Config
 config = Config()
 import logging
 logger = logging.getLogger('sagecell')
@@ -481,8 +481,8 @@ class ZMQStreamHandler(object):
         """
         # can't encode buffers, so let's get rid of them if they exist
         msg.pop("buffers", None)
-        # json_default handles things like encoding dates
-        return jsonapi.dumps(msg, default=json_default)
+        # sage_json handles things like encoding dates and sage types
+        return jsonapi.dumps(msg, default=sage_json)
 
     def _on_zmq_reply(self, msg_list):
         try:
