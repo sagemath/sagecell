@@ -385,7 +385,7 @@
         position: [0, 0, 0],
         size: 1
       });
-      geometry = new THREE.SphereGeometry(Math.sqrt(o.size) / 50, 16, 16);
+      geometry = new THREE.SphereGeometry(Math.sqrt(o.size) / 50, 8, 8);
       m = this.make_lambert_material(material);
       mesh = new THREE.Mesh(geometry, m);
       mesh.position.set(o.position[0], o.position[1], o.position[2]);
