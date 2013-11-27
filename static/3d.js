@@ -111,16 +111,18 @@
       this.render_scene = __bind(this.render_scene, this);
       this.controlChange = __bind(this.controlChange, this);
       this.animate = __bind(this.animate, this);
+      this.set_frame = __bind(this.set_frame, this);
       this.add_3dgraphics_obj = __bind(this.add_3dgraphics_obj, this);
       this.make_object = __bind(this.make_object, this);
-      this.set_frame = __bind(this.set_frame, this);
-      this.add_index_face_set = __bind(this.add_index_face_set, this);
+      this.make_index_face_set = __bind(this.make_index_face_set, this);
       this.make_group = __bind(this.make_group, this);
       this.make_sphere = __bind(this.make_sphere, this);
-      this.add_point = __bind(this.add_point, this);
-      this.add_line = __bind(this.add_line, this);
+      this.make_point = __bind(this.make_point, this);
+      this.make_line = __bind(this.make_line, this);
       this.make_text = __bind(this.make_text, this);
-      this.make_material = __bind(this.make_material, this);
+      this.make_wireframe_material = __bind(this.make_wireframe_material, this);
+      this.make_phong_material = __bind(this.make_phong_material, this);
+      this.make_lambert_material = __bind(this.make_lambert_material, this);
       this.set_light = __bind(this.set_light, this);
       this.add_camera = __bind(this.add_camera, this);
       this.set_trackball_controls = __bind(this.set_trackball_controls, this);
@@ -211,9 +213,7 @@
         return;
       }
       this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
-      this.controls.staticMoving = false;
       this.controls.dynamicDampingFactor = 0.3;
-      this.controls.noRoll = true;
       if (this._center != null) {
         this.controls.target = this._center;
       }
@@ -260,7 +260,7 @@
       return this.light.position.set(0, 10, 0);
     };
 
-    SalvusThreeJS.prototype.make_material = function(opts) {
+    SalvusThreeJS.prototype.make_lambert_material = function(opts) {
       var o;
       o = defaults(opts, {
         opacity: 1,
@@ -273,17 +273,49 @@
         overdraw: true,
         polygonOffset: true,
         polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1
+        polygonOffsetUnits: 1,
+        side: THREE.DoubleSide
+      });
+      o.transparent = o.opacity < 1;
+      return new THREE.MeshLambertMaterial(o);
+    };
+
+    SalvusThreeJS.prototype.make_phong_material = function(opts) {
+      var o;
+      o = defaults(opts, {
+        opacity: 1,
+        ambient: 0x222222,
+        diffuse: 0x222222,
+        specular: 0xffffff,
+        color: required,
+        emmissive: 0x222222,
+        shininess: 100,
+        overdraw: true,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
+        side: THREE.DoubleSide
       });
       o.transparent = o.opacity < 1;
       return new THREE.MeshPhongMaterial(o);
     };
 
-    SalvusThreeJS.prototype.make_text = function(opts) {
+    SalvusThreeJS.prototype.make_wireframe_material = function() {
+      var o;
+      o = defaults({}, {
+        color: 0x222222,
+        transparent: true,
+        opacity: .2
+      });
+      o.wireframe = true;
+      return new THREE.MeshBasicMaterial(o);
+    };
+
+    SalvusThreeJS.prototype.make_text = function(opts, material) {
       var actualFontSize, canvas, context, font, metrics, o, p, sprite, spriteMaterial, textHeight, textWidth, texture;
       o = defaults(opts, {
         pos: [0, 0, 0],
-        text: required,
+        string: required,
         fontsize: 14,
         fontface: 'Arial',
         color: "#000000",
@@ -296,14 +328,14 @@
       canvas.height = textHeight;
       font = "Normal " + textHeight + "px " + o.fontface;
       context.font = font;
-      metrics = context.measureText(o.text);
+      metrics = context.measureText(o.string);
       textWidth = metrics.width;
       canvas.width = textWidth;
       context.textAlign = "center";
       context.textBaseline = "middle";
       context.fillStyle = o.color;
       context.font = font;
-      context.fillText(o.text, textWidth / 2, textHeight / 2);
+      context.fillText(o.string, textWidth / 2, textHeight / 2);
       texture = new THREE.Texture(canvas);
       texture.needsUpdate = true;
       spriteMaterial = new THREE.SpriteMaterial({
@@ -325,13 +357,15 @@
       return sprite;
     };
 
-    SalvusThreeJS.prototype.add_line = function(opts) {
-      var a, geometry, line, o, _i, _len, _ref;
+    SalvusThreeJS.prototype.make_line = function(opts, material) {
+      var a, geometry, m, o, _i, _len, _ref;
       o = defaults(opts, {
         points: required,
         thickness: 1,
-        color: "#000000",
-        arrow_head: false
+        arrowhead: false
+      });
+      m = defaults(material, {
+        color: required
       });
       geometry = new THREE.Geometry();
       _ref = o.points;
@@ -339,37 +373,35 @@
         a = _ref[_i];
         geometry.vertices.push(new THREE.Vector3(a[0], a[1], a[2]));
       }
-      line = new THREE.Line(geometry, new THREE.LineBasicMaterial({
-        color: opts.color,
-        linewidth: o.thickness
+      return new THREE.Line(geometry, new THREE.LineBasicMaterial({
+        thickness: o.thickness,
+        color: m.color
       }));
-      return line;
     };
 
-    SalvusThreeJS.prototype.add_point = function(opts) {
-      var geometry, material, o, sphere;
+    SalvusThreeJS.prototype.make_point = function(opts, material) {
+      var geometry, m, mesh, o;
       o = defaults(opts, {
-        loc: [0, 0, 0],
-        size: 1,
-        color: "#000000",
-        sizeAttenuation: false
-      });
-      material = new THREE.MeshLambertMaterial({
-        color: o.color
+        position: [0, 0, 0],
+        size: 1
       });
       geometry = new THREE.SphereGeometry(Math.sqrt(o.size) / 50, 16, 16);
-      sphere = new THREE.Mesh(geometry, material);
-      sphere.position.set(o.loc[0], o.loc[1], o.loc[2]);
-      return sphere;
+      m = this.make_lambert_material(material);
+      mesh = new THREE.Mesh(geometry, m);
+      mesh.position.set(o.position[0], o.position[1], o.position[2]);
+      return mesh;
     };
 
-    SalvusThreeJS.prototype.make_sphere = function(opts) {
-      var o;
+    SalvusThreeJS.prototype.make_sphere = function(opts, material) {
+      var geometry, m1, m2, o;
       o = defaults(opts, {
         radius: 1,
         position: [0, 0, 0]
       });
-      return new THREE.SphereGeometry(o.radius, 20, 20);
+      geometry = new THREE.SphereGeometry(o.radius, 20, 20);
+      m1 = this.make_lambert_material(material);
+      m2 = this.make_wireframe_material();
+      return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2]);
     };
 
     SalvusThreeJS.prototype.make_group = function(opts) {
@@ -382,7 +414,6 @@
       m = o.matrix;
       obj.matrixAutoUpdate = false;
       obj.matrix.set(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15]);
-      console.log('made transform', m, obj.matrix);
       _ref = o.children;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         i = _ref[_i];
@@ -391,96 +422,77 @@
       return obj;
     };
 
-    SalvusThreeJS.prototype.add_index_face_set = function(myobj, opts) {
-      var c, color, face3, face4, face5, geometry, i, item, k, line_width, material, mesh, mk, multiMaterial, name, objects, vertices, wireframeMaterial, _i, _j, _k, _l, _m, _n, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
-      console.log(myobj);
-      vertices = myobj.vertex_geometry;
-      for (objects = _i = 0, _ref = myobj.face_geometry.length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; objects = 0 <= _ref ? ++_i : --_i) {
-        face3 = myobj.face_geometry[objects].face3;
-        face4 = myobj.face_geometry[objects].face4;
-        face5 = myobj.face_geometry[objects].face5;
-        geometry = new THREE.Geometry();
-        for (i = _j = 0, _ref1 = vertices.length - 1; _j <= _ref1; i = _j += 3) {
-          geometry.vertices.push(new THREE.Vector3(vertices[i], vertices[i + 1], vertices[i + 2]));
-        }
-        for (k = _k = 0, _ref2 = face3.length - 1; _k <= _ref2; k = _k += 3) {
-          geometry.faces.push(new THREE.Face3(face3[k] - 1, face3[k + 1] - 1, face3[k + 2] - 1));
-        }
-        for (k = _l = 0, _ref3 = face4.length - 1; _l <= _ref3; k = _l += 4) {
-          geometry.faces.push(new THREE.Face3(face4[k] - 1, face4[k + 1] - 1, face4[k + 2] - 1)) + geometry.faces.push(new THREE.Face3(face4[k] - 1, face4[k + 2] - 1, face4[k + 3] - 1));
-        }
-        for (k = _m = 0, _ref4 = face5.length - 1; _m <= _ref4; k = _m += 5) {
-          geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 1] - 1, face5[k + 2] - 1)) + geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 2] - 1, face5[k + 3] - 1)) + geometry.faces.push(new THREE.Face3(face5[k] - 1, face5[k + 3] - 1, face5[k + 4] - 1));
-        }
-        geometry.mergeVertices();
-        geometry.computeCentroids();
-        geometry.computeFaceNormals();
-        geometry.computeBoundingSphere();
-        name = myobj.face_geometry[objects].material_name;
-        mk = 0;
-        for (item = _n = 0, _ref5 = myobj.material.length - 1; 0 <= _ref5 ? _n <= _ref5 : _n >= _ref5; item = 0 <= _ref5 ? ++_n : --_n) {
-          if (name === myobj.material[item].name) {
-            mk = item;
-            break;
-          }
-        }
-        if (opts.wireframe || myobj.wireframe) {
-          if (myobj.color) {
-            color = myobj.color;
-          } else {
-            c = myobj.material[mk].color;
-            color = "rgb(" + (c[0] * 255) + "," + (c[1] * 255) + "," + (c[2] * 255) + ")";
-          }
-          if (typeof myobj.wireframe === 'number') {
-            line_width = myobj.wireframe;
-          } else if (typeof opts.wireframe === 'number') {
-            line_width = opts.wireframe;
-          } else {
-            line_width = 1;
-          }
-          material = new THREE.MeshBasicMaterial({
-            wireframe: true,
-            color: color,
-            wireframeLinewidth: line_width
-          });
-          mesh = new THREE.Mesh(geometry, material);
-        } else if (myobj.material[mk] == null) {
-          console.log("BUG -- couldn't get material for ", myobj);
-          material = new THREE.MeshBasicMaterial({
-            wireframe: false,
-            color: "#000000",
-            overdraw: true,
-            polygonOffset: true,
-            polygonOffsetFactor: 1,
-            polygonOffsetUnits: 1
-          });
-          mesh = new THREE.Mesh(geometry, material);
-        } else {
-          material = new THREE.MeshPhongMaterial({
-            ambient: 0x0ffff,
-            wireframe: false,
-            transparent: myobj.material[mk].opacity < 1,
-            overdraw: true,
-            polygonOffset: true,
-            polygonOffsetFactor: 1,
-            polygonOffsetUnits: 1
-          });
-          material.color.setRGB(myobj.material[mk].color[0], myobj.material[mk].color[1], myobj.material[mk].color[2]);
-          material.ambient.setRGB(myobj.material[mk].ambient[mk], myobj.material[mk].ambient[1], myobj.material[0].ambient[2]);
-          material.specular.setRGB(myobj.material[mk].specular[0], myobj.material[mk].specular[1], myobj.material[mk].specular[2]);
-          material.opacity = myobj.material[mk].opacity;
-          wireframeMaterial = new THREE.MeshBasicMaterial({
-            color: 0x222222,
-            wireframe: true,
-            transparent: true,
-            opacity: .2
-          });
-          multiMaterial = [material, wireframeMaterial];
-          mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
-        }
-        mesh.position.set(0, 0, 0);
-        return mesh;
+    SalvusThreeJS.prototype.make_index_face_set = function(opts, material) {
+      var f, geometry, m1, m2, o, v, _i, _j, _k, _l, _len, _len1, _len2, _len3, _ref, _ref1, _ref2, _ref3;
+      o = defaults(opts, {
+        vertices: [],
+        face3: [],
+        face4: [],
+        face5: []
+      });
+      geometry = new THREE.Geometry();
+      _ref = opts.vertices;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        v = _ref[_i];
+        geometry.vertices.push(new THREE.Vector3(v[0], v[1], v[2]));
       }
+      _ref1 = opts.face3;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        f = _ref1[_j];
+        geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]));
+      }
+      _ref2 = opts.face4;
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        f = _ref2[_k];
+        geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]));
+        geometry.faces.push(new THREE.Face3(f[0], f[2], f[3]));
+      }
+      _ref3 = opts.face5;
+      for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+        f = _ref3[_l];
+        geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]));
+        geometry.faces.push(new THREE.Face3(f[0], f[2], f[3]));
+        geometry.faces.push(new THREE.Face3(f[0], f[3], f[4]));
+      }
+      geometry.mergeVertices();
+      geometry.computeCentroids();
+      geometry.computeFaceNormals();
+      geometry.computeVertexNormals();
+      geometry.computeBoundingSphere();
+      m1 = this.make_lambert_material(material);
+      m2 = this.make_wireframe_material();
+      return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2]);
+    };
+
+    SalvusThreeJS.prototype.make_object = function(obj) {
+      var geometry_type, handlers, o, type;
+      handlers = {
+        text: this.make_text,
+        index_face_set: this.make_index_face_set,
+        line: this.make_line,
+        point: this.make_point,
+        sphere: this.make_sphere
+      };
+      type = obj.type;
+      delete obj.type;
+      o = false;
+      if (type === 'group') {
+        o = this.make_group(obj);
+      } else if (type === 'object') {
+        geometry_type = obj.geometry.type;
+        delete obj.geometry.type;
+        o = handlers[geometry_type](obj.geometry, obj.texture);
+      }
+      return o;
+    };
+
+    SalvusThreeJS.prototype.add_3dgraphics_obj = function(opts) {
+      opts = defaults(opts, {
+        obj: required,
+        wireframe: false
+      });
+      this.scene.add(this.make_object(opts.obj));
+      return this.render_scene(true);
     };
 
     SalvusThreeJS.prototype.set_frame = function(opts) {
@@ -550,11 +562,11 @@
           var t;
           t = _this.make_text({
             pos: [x, y, z],
-            text: text,
+            string: text,
             fontsize: o.fontsize,
             color: o.color,
             constant_size: false
-          });
+          }, {});
           _this._frame_labels.push(t);
           return _this.scene.add(t);
         };
@@ -588,42 +600,6 @@
       if (o.draw) {
         return this.render_scene();
       }
-    };
-
-    SalvusThreeJS.prototype.make_object = function(obj) {
-      var geometry, geometry_type, handlers, material, o, type;
-      handlers = {
-        text: this.make_text,
-        index_face_set: this.make_index_face_set,
-        line: this.make_line,
-        point: this.make_point,
-        sphere: this.make_sphere
-      };
-      type = obj.type;
-      delete obj.type;
-      o = false;
-      console.log('making', obj);
-      if (type === 'group') {
-        o = this.make_group(obj);
-      } else if (type === 'object') {
-        geometry_type = obj.geometry.type;
-        delete obj.geometry.type;
-        geometry = handlers[geometry_type](obj.geometry);
-        material = this.make_material(obj.texture);
-        o = new THREE.Mesh(geometry, material);
-      }
-      console.log('created', o);
-      return o;
-    };
-
-    SalvusThreeJS.prototype.add_3dgraphics_obj = function(opts) {
-      opts = defaults(opts, {
-        obj: required,
-        wireframe: false
-      });
-      console.log('adding', opts);
-      this.scene.add(this.make_object(opts.obj));
-      return this.render_scene(true);
     };
 
     SalvusThreeJS.prototype.animate = function() {

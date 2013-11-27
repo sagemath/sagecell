@@ -178,9 +178,7 @@ class SalvusThreeJS
         if @controls?
             return
         @controls = new THREE.TrackballControls(@camera, @renderer.domElement)
-        @controls.staticMoving = false
         @controls.dynamicDampingFactor = 0.3
-        @controls.noRoll=true
         if @_center?
             @controls.target = @_center
         @controls.addEventListener('change', @controlChange)
@@ -214,7 +212,7 @@ class SalvusThreeJS
         @light = new THREE.PointLight(0xffffff)
         @light.position.set(0,10,0)
 
-    make_material: (opts) =>
+    make_lambert_material: (opts) =>
         o = defaults opts,
             opacity: 1
             ambient: 0x222222
@@ -227,14 +225,39 @@ class SalvusThreeJS
             polygonOffset: true
             polygonOffsetFactor: 1
             polygonOffsetUnits: 1
-            #side: THREE.DoubleSide
+            side: THREE.DoubleSide
+        o.transparent = o.opacity < 1
+        return new THREE.MeshLambertMaterial(o)
+
+    make_phong_material: (opts) =>
+        o = defaults opts,
+            opacity: 1
+            ambient: 0x222222
+            diffuse: 0x222222
+            specular: 0xffffff
+            color: required
+            emmissive: 0x222222
+            shininess: 100
+            overdraw: true
+            polygonOffset: true
+            polygonOffsetFactor: 1
+            polygonOffsetUnits: 1
+            side: THREE.DoubleSide
         o.transparent = o.opacity < 1
         return new THREE.MeshPhongMaterial(o)
 
-    make_text: (opts) =>
+    make_wireframe_material: () =>
+        o = defaults {},
+            color: 0x222222
+            transparent: true
+            opacity: .2
+        o.wireframe = true
+        return new THREE.MeshBasicMaterial(o)
+
+    make_text: (opts, material) =>
         o = defaults opts,
             pos              : [0,0,0]
-            text             : required
+            string           : required
             fontsize         : 14
             fontface         : 'Arial'
             color            : "#000000"   # anything that is valid to canvas context, e.g., "rgba(249,95,95,0.7)" is also valid.
@@ -249,7 +272,7 @@ class SalvusThreeJS
         font = "Normal " + textHeight + "px " + o.fontface
 
         context.font = font
-        metrics = context.measureText(o.text);
+        metrics = context.measureText(o.string);
         textWidth = metrics.width
         canvas.width = textWidth
 
@@ -257,7 +280,7 @@ class SalvusThreeJS
         context.textBaseline = "middle"
         context.fillStyle = o.color
         context.font = font
-        context.fillText(o.text, textWidth/2, textHeight/2)
+        context.fillText(o.string, textWidth/2, textHeight/2)
         texture = new THREE.Texture(canvas)
         texture.needsUpdate = true
         spriteMaterial = new THREE.SpriteMaterial
@@ -279,36 +302,44 @@ class SalvusThreeJS
         
         return sprite
 
-    add_line : (opts) =>
+    make_line : (opts, material) =>
         o = defaults opts,
             points     : required
             thickness  : 1
-            color      : "#000000"
-            arrow_head : false  # TODO
+            arrowhead : false  # TODO
+        m = defaults material,
+            color: required
         geometry = new THREE.Geometry()
         for a in o.points
             geometry.vertices.push(new THREE.Vector3(a[0],a[1],a[2]))
-        line = new THREE.Line(geometry, new THREE.LineBasicMaterial(color:opts.color, linewidth:o.thickness))
-        return line
+        return new THREE.Line(geometry, new THREE.LineBasicMaterial({thickness: o.thickness, color: m.color}))
 
-    add_point: (opts) =>
+    make_point: (opts, material) =>
         o = defaults opts,
-            loc  : [0,0,0]
-            size : 1
-            color: "#000000"
-            sizeAttenuation : false
-        material =  new THREE.MeshLambertMaterial
-                 color           : o.color
+            position: [0,0,0]
+            size: 1
         geometry = new THREE.SphereGeometry(Math.sqrt(o.size)/50,16,16)
-        sphere = new THREE.Mesh(geometry, material);
-        sphere.position.set(o.loc[0], o.loc[1], o.loc[2])
-        return sphere
+        m = @make_lambert_material(material)
+        mesh = new THREE.Mesh(geometry, m)
+        mesh.position.set(o.position[0], o.position[1], o.position[2])
+        return mesh
 
-    make_sphere: (opts) =>
+    make_sphere: (opts, material) =>
         o = defaults opts,
             radius: 1
             position: [0,0,0]
-        return new THREE.SphereGeometry(o.radius, 20, 20)
+        geometry = new THREE.SphereGeometry(o.radius, 20, 20)
+        m1 = @make_lambert_material(material)
+        m2 = @make_wireframe_material()
+        return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+
+    ####
+    # TODO:
+    # command_name: sage_example : options
+    # make_box: threejs(sage.plot.plot3d.shapes.Box([1,2,3])) : {'size': [x, y, z]}
+    # make_cone: threejs(sage.plot.plot3d.shapes.Cone(1, 1, closed=False) :  {'bottomradius': self.radius, 'height': self.height, 'closed': self.closed}
+    # make_cylinder: threejs(sage.plot.plot3d.shapes.Cylinder(3/2, 1) : {'radius': self.radius, 'height': self.height}
+    ####
 
     make_group: (opts) =>
         o = defaults opts,
@@ -324,95 +355,61 @@ class SalvusThreeJS
         obj.add(@make_object(i)) for i in o.children
         return obj
 
-    ######
-    add_index_face_set: (myobj, opts)=>
-        vertices = myobj.vertex_geometry
-        for objects in [0..myobj.face_geometry.length-1]
-            face3 = myobj.face_geometry[objects].face3
-            face4 = myobj.face_geometry[objects].face4
-            face5 = myobj.face_geometry[objects].face5
-            geometry = new THREE.Geometry()
-            geometry.vertices.push(new THREE.Vector3(vertices[i], vertices[i+1],vertices[i+2])) for i in [0..(vertices.length-1)] by 3
-            geometry.faces.push(new THREE.Face3(face3[k]-1,face3[k+1]-1,face3[k+2]-1)) for k in [0..(face3.length-1)] by 3
-            geometry.faces.push(new THREE.Face3(face4[k]-1,face4[k+1]-1,face4[k+2]-1)) + geometry.faces.push(new THREE.Face3(face4[k]-1, face4[k+2]-1, face4[k+3]-1)) for k in [0..(face4.length-1)] by 4
-            geometry.faces.push(new THREE.Face3(face5[k]-1,face5[k+1]-1,face5[k+2]-1)) + geometry.faces.push(new THREE.Face3(face5[k]-1, face5[k+2]-1,face5[k+3]-1)) + geometry.faces.push(new THREE.Face3(face5[k]-1, face5[k+3]-1,face5[k+4]-1)) for k in [0..(face5.length-1)] by 5
+    make_index_face_set: (opts, material)=>
+        o = defaults opts,
+            vertices: []
+            face3: []
+            face4: []
+            face5: []
 
-            geometry.mergeVertices()
-            geometry.computeCentroids()
-            geometry.computeFaceNormals()
-            #geometry.computeVertexNormals()
-            geometry.computeBoundingSphere()
-            #finding material key(mk)
-            name = myobj.face_geometry[objects].material_name
-            mk = 0
-            for item in [0..myobj.material.length-1]
-                if name == myobj.material[item].name
-                    mk = item
-                    break
+        geometry = new THREE.Geometry()
+        for v in opts.vertices
+            geometry.vertices.push(new THREE.Vector3(v[0], v[1], v[2]))
+        for f in opts.face3
+            geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]))
+        for f in opts.face4
+            geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]))
+            geometry.faces.push(new THREE.Face3(f[0], f[2], f[3]))
+        for f in opts.face5
+            geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]))
+            geometry.faces.push(new THREE.Face3(f[0], f[2], f[3]))
+            geometry.faces.push(new THREE.Face3(f[0], f[3], f[4]))
 
-            if opts.wireframe or myobj.wireframe
-                if myobj.color
-                    color = myobj.color
-                else
-                    c = myobj.material[mk].color
-                    color = "rgb(#{c[0]*255},#{c[1]*255},#{c[2]*255})"
-                if typeof myobj.wireframe == 'number'
-                    line_width = myobj.wireframe
-                else if typeof opts.wireframe == 'number'
-                    line_width = opts.wireframe
-                else
-                    line_width = 1
+        geometry.mergeVertices()
+        geometry.computeCentroids()
+        geometry.computeFaceNormals()
+        geometry.computeVertexNormals()
+        geometry.computeBoundingSphere()
 
-                material = new THREE.MeshBasicMaterial
-                    wireframe          : true
-                    color              : color
-                    wireframeLinewidth : line_width
-                mesh = new THREE.Mesh(geometry, material)
-            else if not myobj.material[mk]?
-                console.log("BUG -- couldn't get material for ", myobj)
-                material = new THREE.MeshBasicMaterial
-                    wireframe : false
-                    color     : "#000000"
-                    overdraw    : true
-                    polygonOffset: true
-                    polygonOffsetFactor: 1
-                    polygonOffsetUnits: 1
-                mesh = new THREE.Mesh(geometry, material)
-            else
-                material =  new THREE.MeshPhongMaterial
-                    #shininess   : "1"
-                    ambient     : 0x0ffff
-                    wireframe   : false
-                    transparent : myobj.material[mk].opacity < 1
-                    overdraw    : true
-                    polygonOffset: true
-                    polygonOffsetFactor: 1
-                    polygonOffsetUnits: 1
-                    # Sage explicitly draws two sides of a double-sided face
-                    # but only one side of an enclosed object (this is a problem when zooming inside a sphere
-                    # for example
-                    # TODO: fix Sage to let us specify whether to draw the back faces or not.
-                    # TODO: test to see what performance differences there are between double-sided materials and 2 faces.
-                    #side: THREE.DoubleSide
+        m1 = @make_lambert_material(material)
+        m2 = @make_wireframe_material()
+        return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
 
-                material.color.setRGB(myobj.material[mk].color[0],
-                                            myobj.material[mk].color[1],myobj.material[mk].color[2])
-                material.ambient.setRGB(myobj.material[mk].ambient[mk],
-                                              myobj.material[mk].ambient[1],myobj.material[0].ambient[2])
-                material.specular.setRGB(myobj.material[mk].specular[0],
-                                               myobj.material[mk].specular[1],myobj.material[mk].specular[2])
-                material.opacity = myobj.material[mk].opacity
-                wireframeMaterial = new THREE.MeshBasicMaterial
-                    color: 0x222222
-                    wireframe: true
-                    transparent: true
-                    opacity:.2
-                multiMaterial = [material, wireframeMaterial]
-                mesh = THREE.SceneUtils.createMultiMaterialObject(geometry, multiMaterial);
+    make_object: (obj) =>
+        handlers =
+          text: @make_text
+          index_face_set: @make_index_face_set
+          line: @make_line
+          point: @make_point
+          sphere: @make_sphere
+        type = obj.type
+        delete obj.type
+        o = false
+        if type == 'group'
+            o = @make_group(obj)
+        else if type == 'object'
+            geometry_type = obj.geometry.type
+            delete obj.geometry.type
+            o = handlers[geometry_type](obj.geometry, obj.texture)
+        return o
 
-            mesh.position.set(0,0,0)
-            return mesh
-    ##########
+    add_3dgraphics_obj: (opts) =>
+        opts = defaults opts,
+            obj       : required
+            wireframe : false
+
+        @scene.add(@make_object(opts.obj))
+        @render_scene(true)
 
     # always call this after adding things to the scene to make sure track
     # controls are sorted out, etc.   Set draw:false, if you don't want to
@@ -494,7 +491,7 @@ class SalvusThreeJS
                 return (z*1).toString()
 
             txt = (x,y,z,text) =>
-                t = @make_text(pos:[x,y,z], text:text, fontsize:o.fontsize, color:o.color, constant_size:false)
+                t = @make_text(pos:[x,y,z], string:text, fontsize:o.fontsize, color:o.color, constant_size:false, {})
                 @_frame_labels.push(t)
                 @scene.add(t)
 
@@ -527,34 +524,6 @@ class SalvusThreeJS
         @controls?.handleResize()
         if o.draw
             @render_scene()
-
-    make_object: (obj) =>
-        handlers =
-          text: @make_text
-          index_face_set: @make_index_face_set
-          line: @make_line
-          point: @make_point
-          sphere: @make_sphere
-        type = obj.type
-        delete obj.type
-        o = false
-        if type == 'group'
-            o = @make_group(obj)
-        else if type == 'object'
-            geometry_type = obj.geometry.type
-            delete obj.geometry.type
-            geometry = handlers[geometry_type](obj.geometry)
-            material = @make_material(obj.texture)
-            o = new THREE.Mesh(geometry, material)
-        return o
-
-    add_3dgraphics_obj: (opts) =>
-        opts = defaults opts,
-            obj       : required
-            wireframe : false
-
-        @scene.add(@make_object(opts.obj))
-        @render_scene(true)
 
     animate: () =>
         if @_animate

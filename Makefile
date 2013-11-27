@@ -62,9 +62,9 @@ ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
 jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 mpl-js         = static/mpl.js
-threejs-url    =  https://raw.github.com/mrdoob/three.js/r63/build/three.js
-threejs-url-control = https://raw.github.com/mrdoob/three.js/r63/examples/js/controls/TrackballControls.js
-threejs-url-detect =  https://raw.github.com/mrdoob/three.js/r63/examples/js/Detector.js
+threejs-url    =  https://raw.github.com/jasongrout/three.js/sagecell/build/three.js
+threejs-url-control = https://raw.github.com/jasongrout/three.js/sagecell/examples/js/controls/TrackballControls.js
+threejs-url-detect =  https://raw.github.com/jasongrout/three.js/sagecell/examples/js/Detector.js
 jmol-sage      = $(sage-root)/local/share/jmol
 canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-0.10.4-py2.7.egg/sagenb/data/sage/js/canvas3d_lib.js
 
