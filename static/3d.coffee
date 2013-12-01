@@ -386,7 +386,7 @@ class SalvusThreeJS
         o = defaults opts,
             radius: 1
             position: [0,0,0]
-        geometry = new THREE.SphereGeometry(o.radius, 20, 20)
+        geometry = new THREE.SphereGeometry(o.radius, 40,24)
         m1 = @make_lambert_material(material)
         m2 = @make_wireframe_material()
         return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
