@@ -94,6 +94,10 @@ class ThreeJS(object):
         d = {'msg_type': msg_type}
         d.update(data)
         self.comm.send(d)
+
+    def lights(self, lights):
+        self.send('lights', {'lights': [l.scenetree_json() for l in lights]})
+
     def add(self, graphics3d, **kwds):
         kwds = graphics3d._process_viewing_options(kwds)
         self._frame = kwds.get('frame',False)
@@ -138,7 +142,10 @@ def show_3d_plot_using_threejs(g, **kwds):
     b = g.bounding_box()
     if 'camera_distance' not in kwds:
         kwds['camera_distance'] = 2 * max([abs(x) for x in list(b[0])+list(b[1])])
+    import sage.plot.plot3d.light as light
+    lights=kwds.pop('lights', light.DEFAULTS['sage'])
     t = ThreeJS(**kwds)
+    t.lights(lights)
     t.set_frame(b[0][0],b[1][0],b[0][1],b[1][1],b[0][2],b[1][2],draw=False)
     t.add(g, **kwds)
     t.animate()

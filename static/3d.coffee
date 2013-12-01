@@ -163,13 +163,20 @@ class SalvusThreeJS
             @opts.foreground = rgb_to_hex(z[0], z[1], z[2])
 
         @add_camera(distance:@opts.camera_distance)
-
-        if @opts.light
-            @set_light()
         if @opts.trackball
             @set_trackball_controls()
+
+        @lights = {static: [], rotating: []}
+        @controls.addEventListener('change', @controlChange)
+
         @_animate = false
         @_animation_frame = false
+
+        ###
+        # This is purely for debugging
+        window.MYSCENE=this
+        @three = THREE
+        ###
 
     data_url: (type='png') =>   # 'png' or 'jpeg'
         return @renderer.domElement.toDataURL("image/#{type}")
@@ -179,6 +186,7 @@ class SalvusThreeJS
             return
         @controls = new THREE.TrackballControls(@camera, @renderer.domElement)
         @controls.dynamicDampingFactor = 0.3
+        @controls.noRoll=true
         if @_center?
             @controls.target = @_center
         @controls.addEventListener('change', @controlChange)
@@ -199,23 +207,72 @@ class SalvusThreeJS
         @camera.position.set(opts.distance, opts.distance, opts.distance)
         @camera.lookAt(@scene.position)
         @camera.up = new THREE.Vector3(0,0,1)
+        @camera.updateMatrix()
 
-    set_light: (color= 0xffffff) =>
-        ambient = new THREE.AmbientLight(0xdddddd)
-        @scene.add( ambient )
-        directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-        directionalLight.position.set( 1, 1, 1 )
-        @scene.add( directionalLight )
-        directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-        directionalLight.position.set( -1, -1, -1 )
-        @scene.add( directionalLight )
-        @light = new THREE.PointLight(0xffffff)
-        @light.position.set(0,10,0)
+    add_lights: (obj) =>
+        handlers =
+            ambient: @make_ambient_light
+            directional: @make_directional_light
+            point: @make_point_light
+            spot: @make_spot_light
+        for l in obj.lights
+            type = l.light_type
+            delete l.light_type
+            fixed = l.fixed
+            delete l.fixed
+            delete l.type # should always be 'light'
+            light = handlers[type](l)
+            if fixed=="camera"
+                # convert the light coordinates (which are world coordinates)
+                # to camera coordinates before adding the light to the camera
+                #light.up = @camera.up
+                m = new THREE.Matrix4()
+                light.position.applyMatrix4(m.getInverse(@camera.matrix))
+                @lights.rotating.push(light)
+                @camera.add(light)
+            else
+                @lights.static.push(light)
+                @scene.add(light)
+        @render_scene()
+
+    make_ambient_light: (opts) =>
+        o = defaults opts,
+            color: 0x444444
+        return new THREE.AmbientLight(o.color)
+    make_directional_light: (opts) =>
+        o = defaults opts,
+            position: required
+            intensity: 1.0
+            color: 0xffffff
+        light = new THREE.DirectionalLight(o.color, o.intensity)
+        light.position.set(o.position[0], o.position[1], o.position[2])
+        return light
+    make_point_light: (opts) =>
+        o = defaults opts,
+            position: required
+            intensity: 1.0
+            color: 0xffffff
+            distance: undefined
+        light = new THREE.PointLight(o.color, o.intensity, o.distance)
+        light.position.set(o.position[0], o.position[1], o.position[2])
+        return light
+    make_spot_light: (opts) =>
+        o = defaults opts,
+            position: required
+            intensity: 1.0
+            color: 0xffffff
+            distance: undefined
+            angle: undefined
+            exponent: undefined
+        light = new THREE.SpotLight(o.color, o.intensity, o.distance, o.angle, o.exponent)
+        light.position.set(o.position[0], o.position[1], o.position[2])
+        return light
 
     make_lambert_material: (opts) =>
         o = defaults opts,
             opacity: 1
-            ambient: 0x222222
+            #ambient: 0x444444
+            ambient: 0xffffff
             diffuse: 0x222222
             specular: 0xffffff
             color: required
@@ -233,6 +290,7 @@ class SalvusThreeJS
         o = defaults opts,
             opacity: 1
             ambient: 0x222222
+            #ambient: 0xffffff
             diffuse: 0x222222
             specular: 0xffffff
             color: required

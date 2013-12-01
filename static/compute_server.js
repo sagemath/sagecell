@@ -825,6 +825,8 @@ sagecell.SessionGraphicsWidget = function(session) {
             that.obj.set_frame(data);
         }  else if (type==='animate') {
             that.obj.animate(data);
+        } else if (type==='lights') {
+            that.obj.add_lights(data);
         }
     });
         }
