@@ -162,11 +162,12 @@ class SalvusThreeJS
             z = (255-parseInt(a) for a in c.slice(4,i).split(','))
             @opts.foreground = rgb_to_hex(z[0], z[1], z[2])
 
+        @_center = @scene.position
         @add_camera(distance:@opts.camera_distance)
         if @opts.trackball
             @set_trackball_controls()
 
-        @lights = {static: [], rotating: []}
+        @lights = {static: [], rotating: [], camera_distance: @camera.position.distanceTo(@_center)}
         @controls.addEventListener('change', @controlChange)
 
         @_animate = false
@@ -182,6 +183,11 @@ class SalvusThreeJS
         return @renderer.domElement.toDataURL("image/#{type}")
 
     set_trackball_controls: () =>
+        ###
+        # other options: rotate object instead of camera
+        # see: https://github.com/mrdoob/three.js/issues/1220#issuecomment-3753576
+        # see: https://github.com/mrdoob/three.js/issues/781
+        ###
         if @controls?
             return
         @controls = new THREE.TrackballControls(@camera, @renderer.domElement)
@@ -215,6 +221,7 @@ class SalvusThreeJS
             directional: @make_directional_light
             point: @make_point_light
             spot: @make_spot_light
+        @lights.camera_distance = @camera.position.distanceTo(@_center)
         for l in obj.lights
             type = l.light_type
             delete l.light_type
@@ -300,7 +307,7 @@ class SalvusThreeJS
             polygonOffset: true
             polygonOffsetFactor: 1
             polygonOffsetUnits: 1
-            side: THREE.DoubleSide
+            #side: THREE.DoubleSide
         o.transparent = o.opacity < 1
         return new THREE.MeshPhongMaterial(o)
 
@@ -590,10 +597,20 @@ class SalvusThreeJS
             @_animation_frame = false
         @controls?.update()
 
+    update_rotating_lights: () =>
+        camera_distance = @camera.position.distanceTo(@_center)
+        # we may want relative error here in case we have an extremely small plot
+        if Math.abs(camera_distance - @lights.camera_distance)>1e-6
+            camera_ratio = camera_distance/@lights.camera_distance
+            for l in @lights.rotating
+                l.position.setLength(l.position.distanceTo(@_center)*camera_ratio)
+            @lights.camera_distance = camera_distance
+
     controlChange: () =>
         # if there was any actual control updates, animate at least one more frame
         if !@_animation_frame
             @_animation_frame = requestAnimationFrame(@animate)
+        @update_rotating_lights()
         @render_scene()
 
     render_scene: () =>

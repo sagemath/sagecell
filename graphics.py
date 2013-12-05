@@ -143,10 +143,10 @@ def show_3d_plot_using_threejs(g, **kwds):
     if 'camera_distance' not in kwds:
         kwds['camera_distance'] = 2 * max([abs(x) for x in list(b[0])+list(b[1])])
     import sage.plot.plot3d.light as light
-    lights=kwds.pop('lights', light.DEFAULTS['sage'])
+    lights=kwds.pop('lights', light.lights['sage'])
     t = ThreeJS(**kwds)
-    t.lights(lights)
     t.set_frame(b[0][0],b[1][0],b[0][1],b[1][1],b[0][2],b[1][2],draw=False)
+    t.lights(lights)
     t.add(g, **kwds)
     t.animate()
     return t

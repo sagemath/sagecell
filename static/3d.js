@@ -110,6 +110,7 @@
     function SalvusThreeJS(opts) {
       this.render_scene = __bind(this.render_scene, this);
       this.controlChange = __bind(this.controlChange, this);
+      this.update_rotating_lights = __bind(this.update_rotating_lights, this);
       this.animate = __bind(this.animate, this);
       this.set_frame = __bind(this.set_frame, this);
       this.add_3dgraphics_obj = __bind(this.add_3dgraphics_obj, this);
@@ -123,7 +124,11 @@
       this.make_wireframe_material = __bind(this.make_wireframe_material, this);
       this.make_phong_material = __bind(this.make_phong_material, this);
       this.make_lambert_material = __bind(this.make_lambert_material, this);
-      this.set_light = __bind(this.set_light, this);
+      this.make_spot_light = __bind(this.make_spot_light, this);
+      this.make_point_light = __bind(this.make_point_light, this);
+      this.make_directional_light = __bind(this.make_directional_light, this);
+      this.make_ambient_light = __bind(this.make_ambient_light, this);
+      this.add_lights = __bind(this.add_lights, this);
       this.add_camera = __bind(this.add_camera, this);
       this.set_trackball_controls = __bind(this.set_trackball_controls, this);
       this.data_url = __bind(this.data_url, this);
@@ -187,17 +192,23 @@
         })();
         this.opts.foreground = rgb_to_hex(z[0], z[1], z[2]);
       }
+      this._center = this.scene.position;
       this.add_camera({
         distance: this.opts.camera_distance
       });
-      if (this.opts.light) {
-        this.set_light();
-      }
       if (this.opts.trackball) {
         this.set_trackball_controls();
       }
+      this.lights = {
+        "static": [],
+        rotating: [],
+        camera_distance: this.camera.position.distanceTo(this._center)
+      };
+      this.controls.addEventListener('change', this.controlChange);
       this._animate = false;
       this._animation_frame = false;
+      window.MYSCENE = this;
+      this.three = THREE;
     }
 
     SalvusThreeJS.prototype.data_url = function(type) {
@@ -208,12 +219,19 @@
     };
 
     SalvusThreeJS.prototype.set_trackball_controls = function() {
+      /*
+      # other options: rotate object instead of camera
+      # see: https://github.com/mrdoob/three.js/issues/1220#issuecomment-3753576
+      # see: https://github.com/mrdoob/three.js/issues/781
+      */
+
       var _this = this;
       if (this.controls != null) {
         return;
       }
       this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
       this.controls.dynamicDampingFactor = 0.3;
+      this.controls.noRoll = true;
       if (this._center != null) {
         this.controls.target = this._center;
       }
@@ -240,31 +258,94 @@
       this.scene.add(this.camera);
       this.camera.position.set(opts.distance, opts.distance, opts.distance);
       this.camera.lookAt(this.scene.position);
-      return this.camera.up = new THREE.Vector3(0, 0, 1);
+      this.camera.up = new THREE.Vector3(0, 0, 1);
+      return this.camera.updateMatrix();
     };
 
-    SalvusThreeJS.prototype.set_light = function(color) {
-      var ambient, directionalLight;
-      if (color == null) {
-        color = 0xffffff;
+    SalvusThreeJS.prototype.add_lights = function(obj) {
+      var fixed, handlers, l, light, m, type, _i, _len, _ref;
+      handlers = {
+        ambient: this.make_ambient_light,
+        directional: this.make_directional_light,
+        point: this.make_point_light,
+        spot: this.make_spot_light
+      };
+      this.lights.camera_distance = this.camera.position.distanceTo(this._center);
+      _ref = obj.lights;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        l = _ref[_i];
+        type = l.light_type;
+        delete l.light_type;
+        fixed = l.fixed;
+        delete l.fixed;
+        delete l.type;
+        light = handlers[type](l);
+        if (fixed === "camera") {
+          m = new THREE.Matrix4();
+          light.position.applyMatrix4(m.getInverse(this.camera.matrix));
+          this.lights.rotating.push(light);
+          this.camera.add(light);
+        } else {
+          this.lights["static"].push(light);
+          this.scene.add(light);
+        }
       }
-      ambient = new THREE.AmbientLight(0xdddddd);
-      this.scene.add(ambient);
-      directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(1, 1, 1);
-      this.scene.add(directionalLight);
-      directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      directionalLight.position.set(-1, -1, -1);
-      this.scene.add(directionalLight);
-      this.light = new THREE.PointLight(0xffffff);
-      return this.light.position.set(0, 10, 0);
+      return this.render_scene();
+    };
+
+    SalvusThreeJS.prototype.make_ambient_light = function(opts) {
+      var o;
+      o = defaults(opts, {
+        color: 0x444444
+      });
+      return new THREE.AmbientLight(o.color);
+    };
+
+    SalvusThreeJS.prototype.make_directional_light = function(opts) {
+      var light, o;
+      o = defaults(opts, {
+        position: required,
+        intensity: 1.0,
+        color: 0xffffff
+      });
+      light = new THREE.DirectionalLight(o.color, o.intensity);
+      light.position.set(o.position[0], o.position[1], o.position[2]);
+      return light;
+    };
+
+    SalvusThreeJS.prototype.make_point_light = function(opts) {
+      var light, o;
+      o = defaults(opts, {
+        position: required,
+        intensity: 1.0,
+        color: 0xffffff,
+        distance: void 0
+      });
+      light = new THREE.PointLight(o.color, o.intensity, o.distance);
+      light.position.set(o.position[0], o.position[1], o.position[2]);
+      return light;
+    };
+
+    SalvusThreeJS.prototype.make_spot_light = function(opts) {
+      var light, o;
+      o = defaults(opts, {
+        position: required,
+        intensity: 1.0,
+        color: 0xffffff,
+        distance: void 0,
+        angle: void 0,
+        exponent: void 0
+      });
+      light = new THREE.SpotLight(o.color, o.intensity, o.distance, o.angle, o.exponent);
+      light.position.set(o.position[0], o.position[1], o.position[2]);
+      return light;
     };
 
     SalvusThreeJS.prototype.make_lambert_material = function(opts) {
       var o;
       o = defaults(opts, {
         opacity: 1,
-        ambient: 0x222222,
+        ambient: 0xffffff,
         diffuse: 0x222222,
         specular: 0xffffff,
         color: required,
@@ -293,8 +374,7 @@
         overdraw: true,
         polygonOffset: true,
         polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1,
-        side: THREE.DoubleSide
+        polygonOffsetUnits: 1
       });
       o.transparent = o.opacity < 1;
       return new THREE.MeshPhongMaterial(o);
@@ -398,7 +478,7 @@
         radius: 1,
         position: [0, 0, 0]
       });
-      geometry = new THREE.SphereGeometry(o.radius, 20, 20);
+      geometry = new THREE.SphereGeometry(o.radius, 40, 24);
       m1 = this.make_lambert_material(material);
       m2 = this.make_wireframe_material();
       return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2]);
@@ -612,10 +692,25 @@
       return (_ref = this.controls) != null ? _ref.update() : void 0;
     };
 
+    SalvusThreeJS.prototype.update_rotating_lights = function() {
+      var camera_distance, camera_ratio, l, _i, _len, _ref;
+      camera_distance = this.camera.position.distanceTo(this._center);
+      if (Math.abs(camera_distance - this.lights.camera_distance) > 1e-6) {
+        camera_ratio = camera_distance / this.lights.camera_distance;
+        _ref = this.lights.rotating;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          l = _ref[_i];
+          l.position.setLength(l.position.distanceTo(this._center) * camera_ratio);
+        }
+        return this.lights.camera_distance = camera_distance;
+      }
+    };
+
     SalvusThreeJS.prototype.controlChange = function() {
       if (!this._animation_frame) {
         this._animation_frame = requestAnimationFrame(this.animate);
       }
+      this.update_rotating_lights();
       return this.render_scene();
     };
 
