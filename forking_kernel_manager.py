@@ -81,8 +81,7 @@ class ForkingKernelManager(object):
             config = Config({"ip": self.ip})
         if resource_limits is None:
             resource_limits = {}
-        # TODO: the hist_file setting should be pushed up to receiver.py
-        config.HistoryManager.hist_file = ':memory:'
+        config.HistoryManager.enabled = False
 
         dir = os.path.join(self.dir, kernel_id)
         try:
