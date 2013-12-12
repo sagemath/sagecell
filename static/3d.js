@@ -447,9 +447,9 @@
         thickness: 1,
         arrowhead: false
       });
-      m = defaults(material, {
-        color: required
-      });
+      console.log('making line', opts, material);
+      m = material || {};
+      m.color = m.color || 0;
       geometry = new THREE.Geometry();
       _ref = o.points;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -457,7 +457,7 @@
         geometry.vertices.push(new THREE.Vector3(a[0], a[1], a[2]));
       }
       return new THREE.Line(geometry, new THREE.LineBasicMaterial({
-        thickness: o.thickness,
+        linewidth: o.thickness,
         color: m.color
       }));
     };

@@ -372,12 +372,12 @@ class SalvusThreeJS
             points     : required
             thickness  : 1
             arrowhead : false  # TODO
-        m = defaults material,
-            color: required
+        m = material || {}
+        m.color = m.color || 0
         geometry = new THREE.Geometry()
         for a in o.points
             geometry.vertices.push(new THREE.Vector3(a[0],a[1],a[2]))
-        return new THREE.Line(geometry, new THREE.LineBasicMaterial({thickness: o.thickness, color: m.color}))
+        return new THREE.Line(geometry, new THREE.LineBasicMaterial({linewidth: o.thickness, color: m.color}))
 
     make_point: (opts, material) =>
         o = defaults opts,
