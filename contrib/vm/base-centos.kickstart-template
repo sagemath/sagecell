@@ -3,7 +3,7 @@
 #version=DEVEL
 install
 #cdrom
-url --url=http://boxen.math.washington.edu/home/jason/CentOS/6.4/os/x86_64
+url --url=http://boxen.math.washington.edu/home/jason/CentOS/6.5/os/x86_64
 lang en_US.UTF-8
 keyboard us
 timezone US/Pacific
@@ -34,14 +34,14 @@ volgroup vg_sagecell --pesize=4096 pv.008002
 logvol / --fstype=ext4 --name=lv_root --vgname=vg_sagecell --grow --size=1024 --maxsize=51200 --fsoptions="usrjquota=aquota.user,jqfmt=vfsv0"
 logvol swap --name=lv_swap --vgname=vg_sagecell --grow --size=4032 --maxsize=4032
 
-repo --name="myupdates" --baseurl=http://boxen.math.washington.edu/home/jason/CentOS/6.4/updates/x86_64
+repo --name="myupdates" --baseurl=http://boxen.math.washington.edu/home/jason/CentOS/6.5/updates/x86_64
 repo --name=epel --baseurl=http://ftp.osuosl.org/pub/fedora-epel/6/x86_64/
 #repo --name=epel --baseurl=http://mirror.pnl.gov/epel/6/x86_64/
 #repo --name=atrpm --baseurl=http://dl.atrpms.net/el6-x86_64/atrpms/stable/
 
 #repo --name="CentOS"  --baseurl=file:///mnt/source --cost=100
 #repo --name="CentOS"  --baseurl=cdrom:sr0 --cost=100
-#repo --name="CentOS" --baseurl=http://mirrors.xmission.com/centos/6.4/os/x86_64/
+#repo --name="CentOS" --baseurl=http://mirrors.xmission.com/centos/6.5/os/x86_64/
 
 poweroff
 
