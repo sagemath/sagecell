@@ -129,7 +129,8 @@ function install_sage {
   # export SAGE_FAT_BINARY="yes"
   # export SAGE_ATLAS_ARCH=fast
   git remote rm jason
-  git remote add -f jason https://github.com/jasongrout/sage.git 
+  git remote add jason https://github.com/jasongrout/sage.git 
+  git fetch jason
   git checkout jason/sagecell
   if [ ! -f upstream/ipython-1.0.0.tar.gz ]; then
     pushd upstream
