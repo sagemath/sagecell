@@ -235,6 +235,7 @@
       }
       this.controls = new THREE.TrackballControls(this.camera, this.renderer.domElement);
       this.controls.dynamicDampingFactor = 0.3;
+      this.controls.noRoll = true;
       if (this._center != null) {
         this.controls.target = this._center;
       }
@@ -447,7 +448,6 @@
         thickness: 1,
         arrowhead: false
       });
-      console.log('making line', opts, material);
       m = material || {};
       m.color = m.color || 0;
       geometry = new THREE.Geometry();
