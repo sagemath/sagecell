@@ -192,7 +192,7 @@ class SalvusThreeJS
             return
         @controls = new THREE.TrackballControls(@camera, @renderer.domElement)
         @controls.dynamicDampingFactor = 0.3
-        @controls.noRoll=true
+        #@controls.noRoll=true
         if @_center?
             @controls.target = @_center
         @controls.addEventListener('change', @controlChange)
