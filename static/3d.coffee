@@ -252,7 +252,7 @@ class SalvusThreeJS
             intensity: 1.0
             color: 0xffffff
         light = new THREE.DirectionalLight(o.color, o.intensity)
-        light.position.set(o.position[0], o.position[1], o.position[2])
+        light.position.fromArray(o.position)
         return light
     make_point_light: (opts) =>
         o = defaults opts,
@@ -261,7 +261,7 @@ class SalvusThreeJS
             color: 0xffffff
             distance: undefined
         light = new THREE.PointLight(o.color, o.intensity, o.distance)
-        light.position.set(o.position[0], o.position[1], o.position[2])
+        light.position.fromArray(o.position)
         return light
     make_spot_light: (opts) =>
         o = defaults opts,
@@ -272,7 +272,7 @@ class SalvusThreeJS
             angle: undefined
             exponent: undefined
         light = new THREE.SpotLight(o.color, o.intensity, o.distance, o.angle, o.exponent)
-        light.position.set(o.position[0], o.position[1], o.position[2])
+        light.position.fromArray(o.position)
         return light
 
     make_lambert_material: (opts) =>
@@ -354,7 +354,7 @@ class SalvusThreeJS
 
         sprite = new THREE.Sprite(spriteMaterial)
         p = o.pos
-        sprite.position.set(p[0], p[1], p[2])
+        sprite.position.fromArray(p)
         # TODO: this scaling needs to be determined somehow---right now it depends on the world coordinates in the picture
         actualFontSize=0.2
         sprite.scale.set(textWidth / textHeight * actualFontSize, actualFontSize, 1)
@@ -386,7 +386,7 @@ class SalvusThreeJS
         geometry = new THREE.SphereGeometry(Math.sqrt(o.size)/50,8,8)
         m = @make_lambert_material(material)
         mesh = new THREE.Mesh(geometry, m)
-        mesh.position.set(o.position[0], o.position[1], o.position[2])
+        mesh.position.fromArray(o.position)
         return mesh
 
     make_sphere: (opts, material) =>
@@ -444,10 +444,7 @@ class SalvusThreeJS
         obj = new THREE.Object3D()
         m = o.matrix
         obj.matrixAutoUpdate = false # tell three.js to not update the matrix based on position, rotation, etc.
-        obj.matrix.set(m[0], m[1], m[2], m[3],
-                            m[4], m[5], m[6], m[7],
-                            m[8], m[9], m[10], m[11],
-                            m[12], m[13], m[14], m[15])
+        obj.matrix.fromArray(m)
         obj.add(@make_object(i)) for i in o.children
         return obj
 

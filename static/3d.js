@@ -316,7 +316,7 @@
         color: 0xffffff
       });
       light = new THREE.DirectionalLight(o.color, o.intensity);
-      light.position.set(o.position[0], o.position[1], o.position[2]);
+      light.position.fromArray(o.position);
       return light;
     };
 
@@ -329,7 +329,7 @@
         distance: void 0
       });
       light = new THREE.PointLight(o.color, o.intensity, o.distance);
-      light.position.set(o.position[0], o.position[1], o.position[2]);
+      light.position.fromArray(o.position);
       return light;
     };
 
@@ -344,7 +344,7 @@
         exponent: void 0
       });
       light = new THREE.SpotLight(o.color, o.intensity, o.distance, o.angle, o.exponent);
-      light.position.set(o.position[0], o.position[1], o.position[2]);
+      light.position.fromArray(o.position);
       return light;
     };
 
@@ -432,7 +432,7 @@
       });
       sprite = new THREE.Sprite(spriteMaterial);
       p = o.pos;
-      sprite.position.set(p[0], p[1], p[2]);
+      sprite.position.fromArray(p);
       actualFontSize = 0.2;
       sprite.scale.set(textWidth / textHeight * actualFontSize, actualFontSize, 1);
       if (o.constant_size) {
@@ -475,7 +475,7 @@
       geometry = new THREE.SphereGeometry(Math.sqrt(o.size) / 50, 8, 8);
       m = this.make_lambert_material(material);
       mesh = new THREE.Mesh(geometry, m);
-      mesh.position.set(o.position[0], o.position[1], o.position[2]);
+      mesh.position.fromArray(o.position);
       return mesh;
     };
 
@@ -541,7 +541,7 @@
       obj = new THREE.Object3D();
       m = o.matrix;
       obj.matrixAutoUpdate = false;
-      obj.matrix.set(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15]);
+      obj.matrix.fromArray(m);
       _ref = o.children;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         i = _ref[_i];
