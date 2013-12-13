@@ -117,6 +117,9 @@
       this.make_object = __bind(this.make_object, this);
       this.make_index_face_set = __bind(this.make_index_face_set, this);
       this.make_group = __bind(this.make_group, this);
+      this.make_cone = __bind(this.make_cone, this);
+      this.make_cylinder = __bind(this.make_cylinder, this);
+      this.make_box = __bind(this.make_box, this);
       this.make_sphere = __bind(this.make_sphere, this);
       this.make_point = __bind(this.make_point, this);
       this.make_line = __bind(this.make_line, this);
@@ -378,7 +381,8 @@
         overdraw: true,
         polygonOffset: true,
         polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1
+        polygonOffsetUnits: 1,
+        side: THREE.DoubleSide
       });
       o.transparent = o.opacity < 1;
       return new THREE.MeshPhongMaterial(o);
@@ -487,6 +491,47 @@
       return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2]);
     };
 
+    SalvusThreeJS.prototype.make_box = function(opts, material) {
+      var geometry, m1, m2, o;
+      o = defaults(opts, {
+        size: required
+      });
+      geometry = new THREE.CubeGeometry(o.size[0], o.size[1], o.size[2]);
+      m1 = this.make_lambert_material(material);
+      m2 = this.make_wireframe_material();
+      return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2]);
+    };
+
+    SalvusThreeJS.prototype.make_cylinder = function(opts, material) {
+      var geometry, m1, m2, o, s;
+      o = defaults(opts, {
+        radius: 1,
+        height: 1,
+        closed: true
+      });
+      geometry = new THREE.CylinderGeometry(o.radius, o.radius, o.height, 20, 1, !o.closed);
+      m1 = this.make_lambert_material(material);
+      m2 = this.make_wireframe_material();
+      s = THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2]);
+      s.rotateX(Math.PI / 2).translateY(o.height / 2);
+      return s;
+    };
+
+    SalvusThreeJS.prototype.make_cone = function(opts, material) {
+      var geometry, m1, m2, o, s;
+      o = defaults(opts, {
+        bottomradius: 1,
+        height: 1,
+        closed: true
+      });
+      geometry = new THREE.CylinderGeometry(0, o.bottomradius, o.height, 20, 1, !o.closed);
+      m1 = this.make_lambert_material(material);
+      m2 = this.make_wireframe_material();
+      s = THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2]);
+      s.rotateX(Math.PI / 2).translateY(o.height / 2);
+      return s;
+    };
+
     SalvusThreeJS.prototype.make_group = function(opts) {
       var i, m, o, obj, _i, _len, _ref;
       o = defaults(opts, {
@@ -554,7 +599,10 @@
         index_face_set: this.make_index_face_set,
         line: this.make_line,
         point: this.make_point,
-        sphere: this.make_sphere
+        sphere: this.make_sphere,
+        cone: this.make_cone,
+        cylinder: this.make_cylinder,
+        box: this.make_box
       };
       type = obj.type;
       delete obj.type;

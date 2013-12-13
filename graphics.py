@@ -39,12 +39,10 @@ sage: threejs(W + S, figsize=8)
 
 [X] the grid sometimes is too much---make it transparent -- fixed in 0c5fddfd08db2da3322242e130acd0fa52933a83
 
-[ ] by default, make it shiny a bit
-
-[ ] Figure out when to draw a point as a particle system, and when to draw as a small sphere.  A big particle is just a square, so it's not so pretty if you just have one point
+[X] Figure out when to draw a point as a particle system, and when to draw as a small sphere.  A big particle is just a square, so it's not so pretty if you just have one point
 sage: threejs(point3d((4,3,2),size=20,color='red',opacity=.5))
 
-[ ] canvas2d lacks axis labels
+[X] canvas2d lacks axis labels
 
 
 """

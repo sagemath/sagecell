@@ -307,7 +307,7 @@ class SalvusThreeJS
             polygonOffset: true
             polygonOffsetFactor: 1
             polygonOffsetUnits: 1
-            #side: THREE.DoubleSide
+            side: THREE.DoubleSide
         o.transparent = o.opacity < 1
         return new THREE.MeshPhongMaterial(o)
 
@@ -390,6 +390,7 @@ class SalvusThreeJS
         return mesh
 
     make_sphere: (opts, material) =>
+        # centered at the origin
         o = defaults opts,
             radius: 1
             position: [0,0,0]
@@ -398,13 +399,43 @@ class SalvusThreeJS
         m2 = @make_wireframe_material()
         return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
 
-    ####
-    # TODO:
-    # command_name: sage_example : options
-    # make_box: threejs(sage.plot.plot3d.shapes.Box([1,2,3])) : {'size': [x, y, z]}
-    # make_cone: threejs(sage.plot.plot3d.shapes.Cone(1, 1, closed=False) :  {'bottomradius': self.radius, 'height': self.height, 'closed': self.closed}
-    # make_cylinder: threejs(sage.plot.plot3d.shapes.Cylinder(3/2, 1) : {'radius': self.radius, 'height': self.height}
-    ####
+    make_box: (opts, material) =>
+        # centered at the origin
+        o = defaults opts,
+            size: required
+
+        geometry = new THREE.CubeGeometry(o.size[0], o.size[1], o.size[2])
+        m1 = @make_lambert_material(material)
+        m2 = @make_wireframe_material()
+        return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+
+    make_cylinder: (opts, material) =>
+        o = defaults opts,
+            radius:    1
+            height:       1
+            closed: true
+
+        geometry = new THREE.CylinderGeometry(o.radius, o.radius, o.height, 20, 1, !o.closed)
+        m1 = @make_lambert_material(material)
+        m2 = @make_wireframe_material()
+        s = THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+        # Sage assumes base is on the xy plane pointing up the z-axis
+        s.rotateX(Math.PI/2).translateY(o.height/2)
+        return s
+        
+    make_cone: (opts, material) =>
+        o = defaults opts,
+            bottomradius:    1
+            height:    1
+            closed: true
+
+        geometry = new THREE.CylinderGeometry(0, o.bottomradius, o.height, 20, 1, !o.closed)
+        m1 = @make_lambert_material(material)
+        m2 = @make_wireframe_material()
+        s = THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+        # Sage assumes base is on the xy plane pointing up the z-axis
+        s.rotateX(Math.PI/2).translateY(o.height/2)
+        return s
 
     make_group: (opts) =>
         o = defaults opts,
@@ -457,6 +488,9 @@ class SalvusThreeJS
           line: @make_line
           point: @make_point
           sphere: @make_sphere
+          cone: @make_cone
+          cylinder: @make_cylinder
+          box: @make_box
         type = obj.type
         delete obj.type
         o = false
