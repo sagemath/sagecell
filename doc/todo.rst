@@ -138,4 +138,10 @@ Summer 2013
     [X] Set up centos servers on combinat
     [X] Set up test servers
 
+Christmas 2014
+==========
 
+- [ ] implement IPython widgets in the cell server
+   - design issue problem: they have the widget manager as a global object, which means they are assuming only one kernel per page (since the widget manager has only one kernel.  Possible ways around this:
+       - create a widget manager for each kernel.  Then registerint widgets gets a little trickier, but no trickier than registering comm handlers
+       - store multiple kernels in one widget manager.

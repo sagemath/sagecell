@@ -59,6 +59,9 @@ ip-events      = $(ip-static)/base/js/events.js
 ip-utils       = $(ip-static)/base/js/utils.js
 ip-comm        = $(ip-static)/services/kernels/js/comm.js
 ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
+require-base   = static/require
+ip-widgets     = $(require-base)/build/widgets.js
+ip-require     = $(require-base)/build/require.js
 jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 mpl-js         = static/mpl.js
@@ -87,12 +90,15 @@ $(threejs-control):
 $(threejs-detect):
 	python -c "import urllib; urllib.urlretrieve('$(threejs-url-detect)', '$(threejs-detect)')"
 
+$(ip-widgets): $(require-base)/main.js
+	r.js -o $(require-base)/main.js
+
 $(mpl-js):
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > $(mpl-js)
 
-$(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
-	cp $(codemirror-cat) $(all-min-js) $(three-min-js)
+$(all-min-js): $(jsmin-bin) $(all-js)
 	$(jsmin-bin) < $(all-js) >> $(all-min-js)
+
 
 $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(cm-python-mode) \
            $(cm-dir)/$(cm-xml-mode) $(cm-dir)/$(cm-html-mode) $(cm-dir)/$(cm-js-mode) \
@@ -109,10 +115,12 @@ $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(
            > ../../$(codemirror-cat)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
-           $(sockjs-client) $(compute_server) $(sagecell)
+           $(sockjs-client) $(compute_server) $(sagecell) $(ip-widgets)
+	cat $(codemirror-cat) >> $(all-js)
 	cat $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
+#cat $(ip-require) $(ip-widgets) >> $(all-js)
 
 # not run by default
 coffee: $(threed-coffee)
@@ -130,7 +138,6 @@ $(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell
             $(fontawesome-css) $(fold-css) | python $(cssmin) > $(all-min-css)
 
 $(jsmin-bin):  $(jsmin)
-	gcc -o $(jsmin-bin) $(jsmin)
 
 $(jmol-js): $(jmol-sage)
 	rm -f $(jmol)
