@@ -131,9 +131,10 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             // assumes that this.kernel_url is a relative url when it
             // constructs the websocket URL
             var absolute_kernel = this.kernel_url;
-            this.kernel_url = absolute_kernel.substr(sagecell.URLs.root.length);
+            this.kernel_url = absolute_kernel.substr(IPython.utils.encode_uri_components(sagecell.URLs.root).length);
             $.proxy(IPython.Kernel.prototype.start_channels, this)();
-            this.kernel_url = absolute_kernel;
+	    // un-urlencode the root portion of the kernel_url
+            this.kernel_url = sagecell.URLs.root+this.kernel_url;
         }
 
     /**
@@ -431,10 +432,10 @@ sagecell.Session.prototype.clear = function (block_id, changed) {
 };
 
 sagecell.Session.prototype.output = function(html, block_id) {
-    // Return a DOM element for new content.  The html is appended to the html block, and then the last child of the output region is returned.
+    // Return a DOM element for new content.  The html is appended to the html block and the newly appended content element is returned
     var output_block=$(block_id === null ? this.output_block : interacts[block_id].output_block);
     if (output_block.length===0) {return;}
-    return output_block.append(html).children().last();
+    return $(html).appendTo(output_block);
 };
 
 sagecell.Session.prototype.handle_message_reply = function(msg) {
