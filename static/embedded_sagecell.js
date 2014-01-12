@@ -261,6 +261,15 @@ sagecell.makeSagecell = function (args, k) {
                             sagecell.sendRequest("DELETE", this.kernel_url);
                         }
                     }
+		    IPython.WidgetManager.prototype.display_view = function(msg, model) {
+			var session = this.comm_manager.kernel.session;
+			var block_id = msg.metadata.interact_id || null;
+			var view = this.create_view(model, {cell: session})
+			if (view === undefined) {
+			    console.error("Could not find widget view for model", model);
+			}
+			session.output(view.$el, block_id);
+		    }
                 });
             }
             setTimeout(waitForLoad, 100);

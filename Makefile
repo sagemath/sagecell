@@ -97,7 +97,8 @@ $(mpl-js):
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > $(mpl-js)
 
 $(all-min-js): $(jsmin-bin) $(all-js)
-	$(jsmin-bin) < $(all-js) >> $(all-min-js)
+	cat $(codemirror-cat) > $(all-min-js)
+	cat < $(all-js) >> $(all-min-js)
 
 
 $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(cm-python-mode) \
@@ -115,20 +116,18 @@ $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(
            > ../../$(codemirror-cat)
 
 $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
-           $(sockjs-client) $(compute_server) $(sagecell) $(ip-widgets)
-	cat $(codemirror-cat) >> $(all-js)
+           $(sockjs-client) $(compute_server) $(sagecell)
 	cat $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
-#cat $(ip-require) $(ip-widgets) >> $(all-js)
 
 # not run by default
 coffee: $(threed-coffee)
 	coffee -c $(threed-coffee)
 
-$(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
+$(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(ip-widgets) $(jquery-ui) $(jquery-ui-tp) \
             $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js)
-	cat $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
+	cat $(ip-events) $(ip-utils) $(ip-require) $(ip-widgets) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
