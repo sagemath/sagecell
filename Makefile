@@ -97,7 +97,7 @@ $(mpl-js):
 
 $(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
 	cat $(codemirror-cat) > $(all-min-js)
-	cat < $(all-js) >> $(all-min-js)
+	$(jsmin-bin) < $(all-js) >> $(all-min-js)
 
 
 $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(cm-python-mode) \
