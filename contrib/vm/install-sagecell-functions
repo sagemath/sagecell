@@ -160,6 +160,8 @@ EOF
 function install_sagecell {
 
     $SSH <<EOF | tee -a install.log
+  echo 'Installing npm packages'
+  npm install -g inherits requirejs coffee-script
   su -l sageserver
   cd /home/sageserver/sage
   echo 'Installing sagecell'
