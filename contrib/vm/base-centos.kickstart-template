@@ -64,6 +64,7 @@ yum-cron
 epel-release
 nginx
 octave
+npm
 
 #extra packages Volker installs in the sage notebook server image
 kernel-headers

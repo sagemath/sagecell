@@ -132,6 +132,7 @@ function install_sage {
   git remote add jason https://github.com/jasongrout/sage.git 
   git fetch jason
   git checkout jason/sagecell
+  mkdir -p upstream
   if [ ! -f upstream/ipython-1.0.0.tar.gz ]; then
     pushd upstream
     wget -O ipython-1.0.0.tar.gz https://github.com/ipython/ipython/releases/download/rel-1.0.0/ipython-1.0.0.tar.gz
@@ -160,6 +161,8 @@ EOF
 function install_sagecell {
 
     $SSH <<EOF | tee -a install.log
+  echo 'Installing npm packages'
+  npm install -g inherits requirejs coffee-script
   su -l sageserver
   cd /home/sageserver/sage
   echo 'Installing sagecell'
