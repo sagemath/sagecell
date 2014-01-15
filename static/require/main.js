@@ -1,5 +1,5 @@
 {
-    appDir: "/Users/grout/projects/ipython-upstream/IPython/html/static",
+    //appDir: "IPYTHONDIR/IPython/html/static",
     baseUrl: ".",
     dir: "build",
 
@@ -26,9 +26,9 @@
 
 optimize: 'none',
 paths: {
-    'underscore': 'components/underscore/underscore',
-    'backbone': 'components/backbone/backbone',
-    'requireLib': 'components/requirejs/require'
+    'underscore': 'build/components/underscore/underscore',
+    'backbone': 'build/components/backbone/backbone',
+    'requireLib': 'build/components/requirejs/require'
 },
 
 shim: {
@@ -41,13 +41,13 @@ modules: [ {name: "widgets",
 	    insertRequire: ["notebook/js/widgets/init"],
 	    override: {
 		wrap: {
-		    start: "(function(requirejs, require, define, IPython) {",
-		    end: "})(sagecell.requirejs, sagecell.require, sagecell.define, IPython);"
+		    start: "(function(IPython) {",
+		    end: "sagecell.require = require; })(IPython);"
 		}
 	    },
 		
 	   },
-	   {name: "require",
+	   /*{name: "require",
 	    create: true,
 	    include: ["requireLib"],
 	    override: {
@@ -56,7 +56,7 @@ modules: [ {name: "widgets",
 	       end: "sagecell.requirejs=requirejs; sagecell.require=require; sagecell.define=define;})();"
 	       }
 	    }
-	   }
+	   }*/
 
 	 ],
 }

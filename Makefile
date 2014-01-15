@@ -61,7 +61,6 @@ ip-comm        = $(ip-static)/services/kernels/js/comm.js
 ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
 require-base   = static/require
 ip-widgets     = $(require-base)/build/widgets.js
-ip-require     = $(require-base)/build/require.js
 jquery-url     = http://code.jquery.com/jquery-2.0.3.min.js
 sockjs-url     = http://cdn.sockjs.org/sockjs-0.3.js
 mpl-js         = static/mpl.js
@@ -91,7 +90,7 @@ $(threejs-detect):
 	python -c "import urllib; urllib.urlretrieve('$(threejs-url-detect)', '$(threejs-detect)')"
 
 $(ip-widgets): $(require-base)/main.js
-	r.js -o $(require-base)/main.js
+	r.js -o $(require-base)/main.js appDir=$(ip-static)
 
 $(mpl-js):
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > $(mpl-js)
@@ -127,7 +126,7 @@ coffee: $(threed-coffee)
 
 $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(ip-widgets) $(jquery-ui) $(jquery-ui-tp) \
             $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js)
-	cat $(ip-events) $(ip-utils) $(ip-require) $(ip-widgets) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
+	cat $(ip-events) $(ip-utils) $(ip-widgets) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
