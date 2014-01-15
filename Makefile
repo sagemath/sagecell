@@ -95,7 +95,7 @@ $(ip-widgets): $(require-base)/main.js
 $(mpl-js):
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > $(mpl-js)
 
-$(all-min-js): $(jsmin-bin) $(all-js)
+$(all-min-js): $(jsmin-bin) $(all-js) $(codemirror-cat)
 	cat $(codemirror-cat) > $(all-min-js)
 	cat < $(all-js) >> $(all-min-js)
 
