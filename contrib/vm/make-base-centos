@@ -3,7 +3,8 @@
 # ./make-base-centos NAME LOCATION_OF_ISO_MOUNT
 
 NAME=$1
-LOCATION=$2
+ISO=$2
+LOCATION=mnt
 SIZE=25
 
 rm $NAME.img
@@ -12,6 +13,7 @@ qemu-img create -f qcow2 $NAME.img ${SIZE}G
 virsh destroy $NAME
 virsh undefine $NAME
 
+fuseiso -p $ISO $LOCATION
 # rootpassword is a file that looks like:
 # rootpw --iscrypted <CRYPTED PASSWORD>
 sed -e "/ROOTPASSWORD/r rootpassword" -e "/ROOTPASSWORD/d"  < vm/base-centos.kickstart-template > base-centos.kickstart
@@ -28,8 +30,9 @@ virt-install --name=$NAME $QEMU_SESSION \
 --accelerate \
 --nographics \
 --noreboot \
---location $2 \
+--location $LOCATION \
 --initrd-inject=base-centos.kickstart \
 --extra-args="cmdline ks=file:/base-centos.kickstart console=ttyS0"
 #--noautoconsole \
 
+fusermount -u $LOCATION
