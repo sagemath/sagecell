@@ -42,7 +42,7 @@ modules: [ {name: "widgets",
 	    override: {
 		wrap: {
 		    start: "(function(IPython) {",
-		    end: "sagecell.require = require; })(IPython);"
+		    end: ";sagecell.require = require; sagecell.requirejs=requirejs; sagecell.define=define; })(IPython);"
 		}
 	    },
 		

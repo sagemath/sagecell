@@ -489,13 +489,12 @@ sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
         // this reaches into the inner workings of output
         var last_output = this.last_output(block_id);
         if (last_output && last_output.hasClass("sagecell_" + content.name)) {
-            // passing in an empty html string will actually return the last child of the output region
-            var html = "";
+            last_output.text(last_output.text()+content.data)
         } else {
-            var html = "<pre class='sagecell_" + content.name + "'></pre>";
+            var html = ce('pre', {class: 'sagecell_'+content.name},
+                             [content.data]);
+            this.output(html, block_id);
         }
-        var out = this.output(html, block_id);
-        if (out) {out.text(out.text() + content.data);}
         break;
 
     case "pyout":
