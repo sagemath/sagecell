@@ -1,4 +1,4 @@
 #!/bin/sh
 
 #./forward-port VM HOSTPORT VMPORT
-virsh $QEMU_SESSION qemu-monitor-command $1 --hmp "hostfwd_add ::$2-:$3"
+virsh qemu-monitor-command $1 --hmp "hostfwd_add ::$2-:$3"

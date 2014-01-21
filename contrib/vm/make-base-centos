@@ -19,7 +19,7 @@ fuseiso -p $ISO $LOCATION
 sed -e "/ROOTPASSWORD/r rootpassword" -e "/ROOTPASSWORD/d"  < vm/base-centos.kickstart-template > base-centos.kickstart
 chmod go-rwx base-centos.kickstart
 
-virt-install --name=$NAME $QEMU_SESSION \
+virt-install --name=$NAME \
 --ram=8192 \
 --vcpus=14 \
 --network user,model=virtio \
