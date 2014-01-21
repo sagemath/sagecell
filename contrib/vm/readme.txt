@@ -1,11 +1,11 @@
 Parts of these files were taken from or inspired by Volker Braun's scripts to build a Sage virtual appliance: https://bitbucket.org/vbraun/sage-virtual-appliance-buildscript/
 
 # Make base centos image
-vm/make-base-centos centos iso/CentOS-6.4-x86_64-bin-DVD1.iso
+vm/make-base-centos centos CentOS-6.5-x86_64-bin-DVD1.iso
 
 # For database/logging server
 vm/make-shadow-vm centos database
-vm/install-database database sage-5.12-built.tar.gz
+vm/install-database database sage-git-built.tar.gz
 virsh shutdown database
 
 
@@ -28,11 +28,11 @@ vm/forward-port deploy-database 4444 22
 
 # sagecell server
 vm/make-shadow-vm centos sagecell
-vm/install-sagecell sagecell sage-5.12-built.tar.gz
+vm/install-sagecell sagecell sage-git-built.tar.gz
 virsh shutdown sagecell
 
 # deploy out to production
-vm/deploy grout@localhost:/home/grout/images/deploy server 888 889 system
+vm/deploy grout@sage3:/home/grout/deploy server 888 889 system
 
 vm/deploy jason@combinat.math.washington.edu:/scratch/jason/sagecellvm server 888 889 session
 
