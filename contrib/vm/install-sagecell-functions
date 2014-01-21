@@ -1,6 +1,9 @@
 #/bin/bash
 
-SSH="ssh -oNoHostAuthenticationForLocalhost=yes -T -p $VMPORT $VMSSH"
+SSHOPTIONS="-oNoHostAuthenticationForLocalhost=yes -p $VMPORT"
+SSH="ssh $SSHOPTIONS -T $VMSSH"
+SSHTTY="ssh $SSHOPTIONS -tt $VMSSH"
+SCP="scp -oNoHostAuthenticationForLocalhost=yes -P $VMPORT"
 function upload_sage_source {
 ### The Sage version
      if [ -z $SAGE_SOURCE ] || [ ! -f $SAGE_SOURCE ] ; then
@@ -9,12 +12,12 @@ function upload_sage_source {
     fi
 
     echo 'Syncing sage source'
-    rsync --progress -avv -e "ssh -p $VMPORT" $SAGE_SOURCE $VMSSH:/home/sage-source.tar.gz
+    rsync --progress -avv -e "ssh $SSHOPTIONS" $SAGE_SOURCE $VMSSH:/home/sage-source.tar.gz
 }
 
 
 function update_system {
-scp -P $VMPORT vm/vmfiles/sagecell/repos/* $VMSSH:/etc/yum.repos.d/
+$SCP vm/vmfiles/sagecell/repos/* $VMSSH:/etc/yum.repos.d/
 
     $SSH <<EOF | tee -a install.log
        set -v
@@ -85,7 +88,7 @@ function set_up_sageworker_account {
   chmod o+rx /home/sageserver
 EOF
 
-ssh -p $VMPORT $VMSSH -tt <<EOF
+$SSHTTY <<EOF
   # get the localhost in the known_hosts file
   su -l sageserver -c 'ssh -q -oStrictHostKeyChecking=no sageworker@localhost echo done'
   exit
@@ -206,7 +209,7 @@ EOF
 }
 
 function install_extra_python_packages {
-rsync --progress -avv -e "ssh -p $VMPORT" basemap-1.0.6.tar.gz $VMSSH:/tmp/basemap-1.0.6.tar.gz
+rsync --progress -avv -e "ssh $SSHOPTIONS" basemap-1.0.6.tar.gz $VMSSH:/tmp/basemap-1.0.6.tar.gz
     $SSH <<EOF | tee -a install.log
   su -l sageserver
   export NETCDF4_LIBDIR=/usr/lib64/
@@ -243,11 +246,11 @@ EOF
 }
 
 function copy_sagecell_system_files {
-scp -P $VMPORT vm/vmfiles/sagecell/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
-scp -P $VMPORT vm/vmfiles/sagecell/cron/* $VMSSH:/etc/cron.d/
-scp -P $VMPORT vm/vmfiles/sagecell/upstart/* $VMSSH:/etc/init/
-scp -P $VMPORT vm/vmfiles/sagecell/rsyslog/* $VMSSH:/etc/rsyslog.d/
-scp -P $VMPORT vm/vmfiles/sagecell/sagecell_nginx.conf $VMSSH:/etc/nginx/conf.d/sagecell.conf
+$SCP vm/vmfiles/sagecell/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
+$SCP vm/vmfiles/sagecell/cron/* $VMSSH:/etc/cron.d/
+$SCP vm/vmfiles/sagecell/upstart/* $VMSSH:/etc/init/
+$SCP vm/vmfiles/sagecell/rsyslog/* $VMSSH:/etc/rsyslog.d/
+$SCP vm/vmfiles/sagecell/sagecell_nginx.conf $VMSSH:/etc/nginx/conf.d/sagecell.conf
 
 $SSH <<EOF | tee -a install.log
   chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
@@ -260,9 +263,9 @@ EOF
 }
 
 function copy_database_system_files {
-scp -P $VMPORT vm/vmfiles/database/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
-scp -P $VMPORT vm/vmfiles/database/upstart/* $VMSSH:/etc/init/
-scp -P $VMPORT vm/vmfiles/database/rsyslog/* $VMSSH:/etc/rsyslog.d/
+$SCP vm/vmfiles/database/config.py $VMSSH:/home/sageserver/sage/sagecell/config.py
+$SCP vm/vmfiles/database/upstart/* $VMSSH:/etc/init/
+$SCP vm/vmfiles/database/rsyslog/* $VMSSH:/etc/rsyslog.d/
 
     $SSH <<EOF | tee -a install.log
   chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
