@@ -1,6 +1,6 @@
 #/bin/bash
 
-SSH="ssh -T -p $VMPORT $VMSSH"
+SSH="ssh -oNoHostAuthenticationForLocalhost=yes -T -p $VMPORT $VMSSH"
 function upload_sage_source {
 ### The Sage version
      if [ -z $SAGE_SOURCE ] || [ ! -f $SAGE_SOURCE ] ; then
