@@ -18,6 +18,7 @@ $RSYNC vm/ $REMOTELOGIN/vm/
 ssh $REMOTESERVER -tt <<EOF
   set -v
   export LIBVIRT_DEFAULT_URI=$LIBVIRT_DEFAULT_URI
+  export VIRSH_DEFAULT_CONNECT_URI=$LIBVIRT_DEFAULT_URI
   cd $REMOTEDIR
   for i in 0 1 2; do
     echo Setting up server \$i

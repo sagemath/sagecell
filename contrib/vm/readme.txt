@@ -37,3 +37,4 @@ vm/deploy grout@sage3:/home/grout/deploy server 888 889 system
 vm/deploy jason@combinat.math.washington.edu:/scratch/jason/sagecellvm server 888 889 session
 
 export LIBVIRT_DEFAULT_URI='qemu:///session'
+export VIRSH_DEFAULT_CONNECT_URI=$LIBVIRT_DEFAULT_URI
