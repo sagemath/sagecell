@@ -1,7 +1,7 @@
 Parts of these files were taken from or inspired by Volker Braun's scripts to build a Sage virtual appliance: https://bitbucket.org/vbraun/sage-virtual-appliance-buildscript/
 
 # Make base centos image
-vm/make-base-centos centos mnt
+vm/make-base-centos centos iso/CentOS-6.4-x86_64-bin-DVD1.iso
 
 # For database/logging server
 vm/make-shadow-vm centos database
