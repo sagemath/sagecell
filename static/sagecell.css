@@ -48,6 +48,7 @@
     min-height: 3em;
     max-height: 14em;
     cursor: text;
+    height: auto;
 }
 
 .sagecell .CodeMirror-fullscreen .CodeMirror-scroll {
