@@ -261,15 +261,41 @@ sagecell.makeSagecell = function (args, k) {
                             sagecell.sendRequest("DELETE", this.kernel_url);
                         }
                     }
-		    IPython.WidgetManager.prototype.display_view = function(msg, model) {
-			var session = this.comm_manager.kernel.session;
-			var block_id = msg.metadata.interact_id || null;
-			var view = this.create_view(model, {cell: session})
-			if (view === undefined) {
-			    console.error("Could not find widget view for model", model);
-			}
-			session.output(view.$el, block_id);
-		    }
+                    IPython.WidgetManager.prototype.display_view = function(msg, model) {
+                        var session = this.comm_manager.kernel.session;
+                        var block_id = msg.metadata.interact_id || null;
+                        var view = this.create_view(model, {cell: session})
+                        if (view === undefined) {
+                            console.error("Could not find widget view for model", model);
+                        }
+                        session.output(view.$el, block_id);
+                    }
+                    IPython.WidgetManager.prototype.callbacks = function (view) {
+                        // callback handlers specific a view
+                        var callbacks = {};
+                        var session = view.options.cell;
+                        if (session !== null) {
+                            // Create callback dict using what is known
+                            callbacks = {
+                                iopub : {
+                                    output : $.proxy(session.handle_output, session),
+                                    clear_output : null,
+
+                                    // Special function only registered by widget messages.
+                                    // Allows us to get the cell for a message so we know
+                                    // where to add widgets if the code requires it.
+                                    get_cell : function () {
+                                          return session;
+                                    },
+                                },
+                            };
+                        }
+                        return callbacks;
+                    };
+                    
+                    // this is a total hack that should go away when the call to this function in the widget create_view function is 
+                    // deleted
+                    IPython.keyboard_manager = {register_events: function() {}};
                 });
             }
             setTimeout(waitForLoad, 100);

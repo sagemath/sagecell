@@ -74,7 +74,7 @@ class Receiver(object):
             import misc
             def widget_show(self, *args, **kwargs):
                 misc.reset_kernel_timeout(float('inf'))
-                self._repr_widget_(*args, **kwargs)
+                self._ipython_display_(*args, **kwargs)
             Widget.show = widget_show
 
             import StringIO
