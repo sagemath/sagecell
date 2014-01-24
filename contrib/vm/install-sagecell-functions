@@ -304,13 +304,17 @@ function set_up_database_firewall {
 $SSH <<EOF
   iptables --flush INPUT
   iptables -A INPUT -i lo -j ACCEPT # open up loopback for all traffic
+  #iptables -A INPUT --dport 6514 -m conntrack --ctstate ESTABLISHED,RELATED -j LOG --log-prefix "established/related: "
   iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT # allow established connections
+  #iptables -A INPUT -p tcp --dport 8889 -j LOG --log-prefix "permalink connection: "
   iptables -A INPUT -p tcp --dport 8889 -j ACCEPT # open up incoming web connections to database
+  #iptables -A INPUT -p tcp --dport 6514 -j LOG --log-prefix "rsyslog connection: "
   iptables -A INPUT -p tcp --dport 6514 -s sage1.math.washington.edu -j ACCEPT # open up rsyslog connections to sage compute server
   iptables -A INPUT -p tcp --dport 6514 -s sage2.math.washington.edu -j ACCEPT # open up rsyslog connections to sage compute server
   iptables -A INPUT -p tcp --dport 6514 -s sage3.math.washington.edu -j ACCEPT # open up rsyslog connections to sage compute server
   iptables -A INPUT -p tcp --dport 6514 -s sage4.math.washington.edu -j ACCEPT # open up rsyslog connections to sage compute server
-  iptables -A INPUT -p tcp --dport 22 -s sage3.math.washington.edu -j ACCEPT # open up ssh
+  #iptables -A INPUT -p tcp --dport 22 -j LOG --log-prefix "ssh connectionn: " # open up ssh
+  iptables -A INPUT -p tcp --dport 22 -s 10.0.2.2 -j ACCEPT # open up ssh
   iptables -P INPUT DROP
   /sbin/service iptables save
 EOF
