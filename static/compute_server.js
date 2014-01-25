@@ -342,7 +342,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         }
         that.interact_vals = [];
     });
-    $([IPython.events]).on("status_dead.Kernel", function (evt, data) {
+    var killkernel = function (evt, data) {
         if (data.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
@@ -352,7 +352,9 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             data.kernel.iopub_channel = {};
             sagecell.kernels[k] = null;
         }
-    });
+    }
+    $([IPython.events]).on("status_dead.Kernel", killkernel);
+    $([IPython.events]).on("websocket_closed.Kernel", killkernel);
     this.lock_output = false;
     this.files = {};
     this.eventHandlers = {};
@@ -1939,7 +1941,11 @@ sagecell.InteractData.control_types = {
 
 sagecell.MultiSockJS = function (url, prefix) {
     sagecell.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
-    if (!sagecell.MultiSockJS.channels) {
+    if (!sagecell.MultiSockJS.sockjs
+        || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSING
+        || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSED) {
+
+        sagecell.log("Initializing MultiSockJS to "+sagecell.URLs.sockjs);
         sagecell.MultiSockJS.channels = {};
         sagecell.MultiSockJS.to_init = [];
         sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, sagecell.sockjs_options || {});
@@ -1964,6 +1970,7 @@ sagecell.MultiSockJS = function (url, prefix) {
                     sagecell.MultiSockJS.channels[prefix].onclose(e);
                 }
             }
+            // Maybe we should just remove the sockjs object from sagecell.MultiSockJS now
         }
     }
     this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1] : prefix;
