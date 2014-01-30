@@ -29,6 +29,9 @@ _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 import handlers
 import permalink
 
+
+systemlogger = logging.getLogger('sagecell.system')
+
 class SageCellServer(tornado.web.Application):
     def __init__(self, baseurl=""):
         self.config = misc.Config()
@@ -132,6 +135,7 @@ if __name__ == "__main__":
         if args.interface is not None:
             listen['address']=get_ip_address(args.interface)
         logger.info("Listening configuration: %s"%(listen,))
+        systemlogger.warning('START')
         application.listen(**listen)
         application.ioloop.start()
     except KeyboardInterrupt:
@@ -142,3 +146,4 @@ if __name__ == "__main__":
             logging.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")
     finally:
         pidlock.release()
+        systemlogger.warning('SHUTDOWN')

@@ -438,14 +438,16 @@ accepted_tos=true\n""")
             self.application.km.end_session(self.kernel_id)
         except:
             pass
-
         #statslogger.info(StatMessage(kernel_id = self.kernel_id, '%r SERVICE DONE'%self.kernel_id)
         retval = self.iopub_handler.streams
         self.shell_handler.on_close()
         self.iopub_handler.on_close()
-        retval.update(success=self.success)
-        retval.update(user_variables=self.user_variables)
-        retval.update(execute_reply=self.execute_reply)
+        # if the timeout is calling the finish_request, the success and other attributes may not be set
+        retval.update(success=getattr(self, 'success', 'abort'))
+        if hasattr(self, 'user_variables'):
+            retval.update(user_variables=self.user_variables)
+        if hasattr(self, 'execute_reply'):
+            retval.update(execute_reply=self.execute_reply)
         self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
         self.set_header("Access-Control-Allow-Credentials", "true")
         self.write(retval)

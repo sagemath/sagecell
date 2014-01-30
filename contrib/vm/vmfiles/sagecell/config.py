@@ -61,9 +61,11 @@ for i in xrange(4):
 
 import logging
 from logging.handlers import SysLogHandler
-statslogger = logging.getLogger('sagecell.stats')
-import sys
-h = SysLogHandler(address='/dev/log',
-                  facility=SysLogHandler.LOG_LOCAL3)
+h = SysLogHandler(address='/dev/log', facility=SysLogHandler.LOG_LOCAL3)
 h.setFormatter(logging.Formatter('%(asctime)s %(name)s %(process)d: %(message)s'))
-statslogger.addHandler(h)
+logging.getLogger('sagecell.stats').addHandler(h)
+
+systemlog_handler = SysLogHandler(address='/dev/log', facility=SysLogHandler.LOG_LOCAL4)
+systemlog_handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(process)d: %(message)r'))
+logging.getLogger("tornado.application").addHandler(systemlog_handler)
+logging.getLogger('sagecell.system').addHandler(systemlog_handler)
