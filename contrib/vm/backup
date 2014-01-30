@@ -3,9 +3,11 @@
 DATABASEPORT=$1
 
 rsync --progress --archive --verbose --compress --human-readable --recursive -e "ssh -p $DATABASEPORT" root@localhost:/var/log/sagecell-remote* .
+rsync --progress --archive --verbose --compress --human-readable --recursive -e "ssh -p $DATABASEPORT" root@localhost:/var/log/sagecellsystem-remote* .
 rsync --progress --archive --verbose --compress --human-readable --recursive -e "ssh -p $DATABASEPORT" root@localhost:/home/sageserver/permalinks.db .
 sqlite3 permalinks.db .dump > permalinks.sql
 git add sagecell-remote*
+git add sagecellsystem-remote*
 git add permalinks.sql
 git commit -m "Automated backup"
 
