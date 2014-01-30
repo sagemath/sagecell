@@ -292,10 +292,8 @@ sagecell.makeSagecell = function (args, k) {
                         }
                         return callbacks;
                     };
-                    
-                    // this is a total hack that should go away when the call to this function in the widget create_view function is 
-                    // deleted
-                    IPython.keyboard_manager = {register_events: function() {}};
+                    // override IPython notebookisms
+                    IPython.WidgetManager.prototype._handle_new_view = function() {/*do nothing*/};
                 });
             }
             setTimeout(waitForLoad, 100);
