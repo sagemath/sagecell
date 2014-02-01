@@ -188,6 +188,7 @@ function install_sagecell {
   git remote add jason https://github.com/jasongrout/ipython.git
   git fetch jason
   git checkout jason/sagecell
+  git submodule update
   ../sage setup.py develop
   popd
 
