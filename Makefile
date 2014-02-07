@@ -120,8 +120,11 @@ $(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
-# not run by default
+# not run by default---we keep this for backwards compatibility until people remove the 'make coffee' line in their scripts
 coffee: $(threed-coffee)
+	coffee -c $(threed-coffee)
+
+$(threed): $(threed-coffee)
 	coffee -c $(threed-coffee)
 
 $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(ip-widgets) $(jquery-ui) $(jquery-ui-tp) \
