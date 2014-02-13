@@ -653,7 +653,7 @@ class IOPubHandler(ZMQStreamHandler):
 
             self._hb_periodic_callback = ioloop.PeriodicCallback(ping_or_dead, self.beat_interval*1000, loop)
 
-            loop.add_timeout(time.time()+self.first_beat, self._really_start_hb)
+            self._start_hb_handle = loop.add_timeout(time.time()+self.first_beat, self._really_start_hb)
             self._beating= True
 
     def _really_start_hb(self):
@@ -669,6 +669,7 @@ class IOPubHandler(ZMQStreamHandler):
         if self._beating:
             self._beating = False
             self._hb_periodic_callback.stop()
+            ioloop.IOLoop.instance().remove_timeout(self._start_hb_handle)
             if not self.hb_stream.closed():
                 self.hb_stream.on_recv(None)
                 self.hb_stream.close()
