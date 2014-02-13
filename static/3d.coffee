@@ -444,7 +444,8 @@ class SalvusThreeJS
         obj = new THREE.Object3D()
         m = o.matrix
         obj.matrixAutoUpdate = false # tell three.js to not update the matrix based on position, rotation, etc.
-        obj.matrix.fromArray(m)
+        # Sage matrix is the transpose of the three.js matrix
+        obj.matrix.fromArray(m).transpose()
         obj.add(@make_object(i)) for i in o.children
         return obj
 
