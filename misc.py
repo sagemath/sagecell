@@ -178,6 +178,11 @@ def display_message(data, metadata=None):
     content = {'data': data, 'source': 'sagecell'}
     session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header, metadata=metadata)
 
+def stream_message(stream, data, metadata=None):
+    session = sys.stdout.session
+    content = dict(name=stream, data=data)
+    session.send(sys.stdout.pub_socket, 'stream', content=content, parent = sys.stdout.parent_header, metadata=metadata)
+
 def reset_kernel_timeout(timeout):
     sys.stdout.session.send(sys.stdout.pub_socket, 'kernel_timeout', content={'timeout': float(timeout)}, parent = sys.stdout.parent_header)
 
