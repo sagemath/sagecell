@@ -290,7 +290,7 @@ class TrustedMultiKernelManager(object):
                 if reply["type"] == "success":
                     kernel_id = reply["content"]["kernel_id"]
                     self._setup_session(reply, comp_id)
-                    kernel_info = self._kernels[preforked_kernel_id]
+                    kernel_info = self._kernels[kernel_id]
                     kernel_info["referer"] = referer
                     kernel_info["remote_ip"] = remote_ip
                     logger.info("Activated kernel %s on computer %s", kernel_id, comp_id)
