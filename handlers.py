@@ -416,7 +416,7 @@ accepted_tos=true\n""")
                     loop.remove_timeout(self.timeout_request)
                     loop.add_callback(self.finish_request)
             self.shell_handler.msg_from_kernel_callbacks.append(done)
-            self.timeout_request = loop.add_timeout(time.time()+default_timeout, self.finish_request)
+            self.timeout_request = loop.add_timeout(time.time()+default_timeout, self.timeout_request)
             exec_message = {"parent_header": {},
                             "header": {"msg_id": str(uuid.uuid4()),
                                        "username": "",
@@ -433,6 +433,8 @@ accepted_tos=true\n""")
                             }
             self.shell_handler.on_message(jsonapi.dumps(exec_message))
 
+    def timeout_request(self):
+        ioloop.IOLoop.instance().add_callback(self.finish_request)
     def finish_request(self):
         try: # in case kernel has already been killed
             self.application.km.end_session(self.kernel_id)
