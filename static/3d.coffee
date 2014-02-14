@@ -217,10 +217,10 @@ class SalvusThreeJS
 
     add_lights: (obj) =>
         handlers =
-            ambient: @make_ambient_light
-            directional: @make_directional_light
-            point: @make_point_light
-            spot: @make_spot_light
+            ambient: [@make_ambient_light, null]
+            directional: [@make_directional_light, THREE.DirectionalLightHelper]
+            point: [@make_point_light, THREE.PointLightHelper]
+            spot: [@make_spot_light, THREE.SpotLightHelper]
         @lights.camera_distance = @camera.position.distanceTo(@_center)
         for l in obj.lights
             type = l.light_type
@@ -228,11 +228,15 @@ class SalvusThreeJS
             fixed = l.fixed
             delete l.fixed
             delete l.type # should always be 'light'
-            light = handlers[type](l)
+            helper = l.helper
+            delete l.helper
+            h = handlers[type]
+            light = h[0](l)
+            if helper and h[1]!=null
+                @scene.add(new h[1](light))
             if fixed=="camera"
                 # convert the light coordinates (which are world coordinates)
                 # to camera coordinates before adding the light to the camera
-                #light.up = @camera.up
                 m = new THREE.Matrix4()
                 light.position.applyMatrix4(m.getInverse(@camera.matrix))
                 @lights.rotating.push(light)
