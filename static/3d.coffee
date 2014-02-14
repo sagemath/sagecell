@@ -389,50 +389,42 @@ class SalvusThreeJS
         mesh.position.fromArray(o.position)
         return mesh
 
-    make_sphere: (opts, material) =>
+    make_sphere: (opts, material, extra) =>
         # centered at the origin
         o = defaults opts,
             radius: 1
             position: [0,0,0]
         geometry = new THREE.SphereGeometry(o.radius, 40,24)
-        m1 = @make_lambert_material(material)
-        m2 = @make_wireframe_material()
-        return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+        return @make_mesh(geometry, @make_lambert_material(material), extra)
 
-    make_box: (opts, material) =>
+    make_box: (opts, material, extra) =>
         # centered at the origin
         o = defaults opts,
             size: required
 
         geometry = new THREE.CubeGeometry(o.size[0], o.size[1], o.size[2])
-        m1 = @make_lambert_material(material)
-        m2 = @make_wireframe_material()
-        return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+        return @make_mesh(geometry, @make_lambert_material(material), extra)
 
-    make_cylinder: (opts, material) =>
+    make_cylinder: (opts, material, extra) =>
         o = defaults opts,
             radius:    1
             height:       1
             closed: true
 
         geometry = new THREE.CylinderGeometry(o.radius, o.radius, o.height, 20, 1, !o.closed)
-        m1 = @make_lambert_material(material)
-        m2 = @make_wireframe_material()
-        s = THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+        s = @make_mesh(geometry, @make_lambert_material(material), extra)
         # Sage assumes base is on the xy plane pointing up the z-axis
         s.rotateX(Math.PI/2).translateY(o.height/2)
         return s
         
-    make_cone: (opts, material) =>
+    make_cone: (opts, material, extra) =>
         o = defaults opts,
             bottomradius:    1
             height:    1
             closed: true
 
         geometry = new THREE.CylinderGeometry(0, o.bottomradius, o.height, 20, 1, !o.closed)
-        m1 = @make_lambert_material(material)
-        m2 = @make_wireframe_material()
-        s = THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+        s = @make_mesh(geometry, @make_lambert_material(material), extra)
         # Sage assumes base is on the xy plane pointing up the z-axis
         s.rotateX(Math.PI/2).translateY(o.height/2)
         return s
@@ -449,7 +441,7 @@ class SalvusThreeJS
         obj.add(@make_object(i)) for i in o.children
         return obj
 
-    make_index_face_set: (opts, material)=>
+    make_index_face_set: (opts, material, extra)=>
         o = defaults opts,
             vertices: []
             face3: []
@@ -475,9 +467,7 @@ class SalvusThreeJS
         geometry.computeVertexNormals()
         geometry.computeBoundingSphere()
 
-        m1 = @make_lambert_material(material)
-        m2 = @make_wireframe_material()
-        return THREE.SceneUtils.createMultiMaterialObject(geometry, [m1, m2])
+        return @make_mesh(geometry, @make_lambert_material(material), extra)
 
     make_object: (obj) =>
         handlers =
@@ -497,8 +487,22 @@ class SalvusThreeJS
         else if type == 'object'
             geometry_type = obj.geometry.type
             delete obj.geometry.type
-            o = handlers[geometry_type](obj.geometry, obj.texture)
+            geometry = obj.geometry
+            texture = obj.texture
+            delete obj.geometry
+            delete obj.texture
+            o = handlers[geometry_type](geometry, texture, obj)
         return o
+
+    make_mesh: (geometry, material, extra) =>
+        extra = defaults extra,
+            mesh : false
+        if extra.mesh
+            wireframe = @make_wireframe_material()
+            obj = new THREE.SceneUtils.createMultiMaterialObject(geometry, [material, wireframe])
+        else
+            obj = new THREE.Mesh(geometry, material)
+        return obj
 
     add_3dgraphics_obj: (opts) =>
         opts = defaults opts,
