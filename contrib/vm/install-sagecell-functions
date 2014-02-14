@@ -170,7 +170,7 @@ function install_sagecell {
   cd /home/sageserver/sage
   echo 'Installing sagecell'
   ./sage -sh -c "easy_install pip"
-  ./sage -i zeromq
+  ./sage -i http://boxen.math.washington.edu/home/jason/zeromq-4.0.3.spkg
   ./sage -i pyzmq
   # we need a more recent pyzmq than Sage provides
   ./sage -sh -c "pip install -U pyzmq"
