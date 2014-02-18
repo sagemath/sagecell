@@ -13,9 +13,31 @@ VIRSH="virsh"
 RSYNC="rsync --progress --archive --verbose --sparse --compress --protect-args --human-readable --recursive -e ssh"
 $VIRSH shutdown sagecell
 sleep 10
+ssh $REMOTESERVER <<EOF
+  set -v
+  export LIBVIRT_DEFAULT_URI=$LIBVIRT_DEFAULT_URI
+  export VIRSH_DEFAULT_CONNECT_URI=$LIBVIRT_DEFAULT_URI
+  cd $REMOTEDIR
+
+  # First, take all of the servers out of rotation
+  for i in 0 1 2; do
+    echo Setting up server \$i
+    export SERVER=$SERVERPREFIX\$i
+
+    vm/forward-port \$SERVER $SSHPORT\$i 22
+    # take server out of load balancing
+    ssh -oNoHostAuthenticationForLocalhost=yes -vv -p $SSHPORT\$i root@localhost <<EOFADMIN
+    ./healthcheck off
+EOFADMIN
+  done
+  exit
+EOF
+
+sleep 300 # 5 more minutes of time for clients to clear off before moving forward with update
 $RSYNC centos.img $REMOTELOGIN/centos.img
 $RSYNC sagecell.img $REMOTELOGIN/sagecell.img
 $RSYNC vm/ $REMOTELOGIN/vm/
+
 ssh $REMOTESERVER -tt <<EOF
   set -v
   export LIBVIRT_DEFAULT_URI=$LIBVIRT_DEFAULT_URI
@@ -54,5 +76,3 @@ EOFADMIN
   done
   exit
 EOF
-
-#vm/deploy grout@localhost:/home/grout/images/deploy server 888 889
