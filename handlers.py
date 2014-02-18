@@ -119,6 +119,9 @@ class RootHandler(tornado.web.RequestHandler):
             interacts = urllib.quote(interacts)
         self.render("root.html", code=code, lang=language, interacts=interacts, autoeval=autoeval)
 
+    def options(self):
+        self.set_status(200)
+
 class KernelHandler(tornado.web.RequestHandler):
     """
     Kernel startup request handler.
