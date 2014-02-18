@@ -6,8 +6,7 @@
 case "$1" in
     on)
      iptables -t nat --flush PREROUTING
-     iptables -t nat -A PREROUTING -p tcp --dport 9888 -j REDIRECT --to-ports 888
-88
+     iptables -t nat -A PREROUTING -p tcp --dport 9888 -j REDIRECT --to-ports 8888
      # don't save so reboots require reenabling health check redirect
      echo 'ENABLING health check on port 9888'
      ;;
