@@ -32,9 +32,10 @@ vm/install-sagecell sagecell sage-git-built.tar.gz
 virsh shutdown sagecell
 
 # deploy out to production
-vm/deploy grout@sage3:/home/grout/deploy server 888 889 system
+vm/deploy grout@sage3:/home/grout/deploy server 888 889 988
+vm/deploy grout@sage1:/home/grout/deploy server 888 889 988
 
-vm/deploy jason@combinat.math.washington.edu:/scratch/jason/sagecellvm server 888 889 session
+#vm/deploy jason@combinat.math.washington.edu:/scratch/jason/sagecellvm server 888 889 session
 
 export LIBVIRT_DEFAULT_URI='qemu:///session'
 export VIRSH_DEFAULT_CONNECT_URI=$LIBVIRT_DEFAULT_URI

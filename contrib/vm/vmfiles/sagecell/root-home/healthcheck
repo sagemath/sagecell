@@ -1,0 +1,16 @@
+#!/bin/sh
+
+
+# for health check, following the ideas in http://www.igvita.com/2008/12/02/zero-downtime-restarts-with-haproxy/
+
+case "$1" in
+    on)
+     iptables -t nat -A PREROUTING -p tcp --dport 9888 -j REDIRECT --to-ports 8888
+     /sbin/service iptables save
+     echo 'ENABLING health check on port 9888'
+     ;;
+    off)
+     iptables -t nat -D PREROUTING -p tcp --dport 9888 -j REDIRECT --to-ports 8888
+     /sbin/service iptables save
+     echo 'DISABLING health check on port 9888'
+esac

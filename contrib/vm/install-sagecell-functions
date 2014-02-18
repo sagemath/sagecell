@@ -252,6 +252,7 @@ $SCP vm/vmfiles/sagecell/cron/* $VMSSH:/etc/cron.d/
 $SCP vm/vmfiles/sagecell/upstart/* $VMSSH:/etc/init/
 $SCP vm/vmfiles/sagecell/rsyslog/* $VMSSH:/etc/rsyslog.d/
 $SCP vm/vmfiles/sagecell/sagecell_nginx.conf $VMSSH:/etc/nginx/conf.d/sagecell.conf
+$SCP vm/vmfiles/sagecell/root-home/healthcheck $VMSSH:/root/healthcheck
 
 $SSH <<EOF | tee -a install.log
   chown sageserver.sageserver /home/sageserver/sage/sagecell/config.py
