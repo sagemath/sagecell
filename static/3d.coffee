@@ -232,8 +232,6 @@ class SalvusThreeJS
             delete l.helper
             h = handlers[type]
             light = h[0](l)
-            if helper and h[1]!=null
-                @scene.add(new h[1](light))
             if fixed=="camera"
                 # convert the light coordinates (which are world coordinates)
                 # to camera coordinates before adding the light to the camera
@@ -244,7 +242,9 @@ class SalvusThreeJS
             else
                 @lights.static.push(light)
                 @scene.add(light)
-        @render_scene()
+            if helper and h[1]!=null
+                @scene.add(new h[1](light))
+            @render_scene()
 
     make_ambient_light: (opts) =>
         o = defaults opts,
