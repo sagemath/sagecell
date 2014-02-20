@@ -13,4 +13,12 @@ case "$1" in
     off)
      iptables -t nat --flush PREROUTING
      echo 'DISABLING health check on port 9888'
+     ;;
+    status)
+     # exit status 0---health enabled
+     # exit status 1---health disabled
+     # from http://superuser.com/questions/360094/how-can-i-check-if-an-iptables-rule-already-exists
+     # we should switch to using iptables -C when we upgrade to a newer iptables (maybe in centos 7)
+     iptables-save | grep -q -- '-A PREROUTING -p tcp -m tcp --dport 9888 -j REDIRECT --to-ports 8888'
+     ;;
 esac
