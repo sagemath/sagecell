@@ -5,13 +5,13 @@
 
 case "$1" in
     on)
-     iptables -t nat --flush PREROUTING
-     iptables -t nat -A PREROUTING -p tcp --dport 9888 -j REDIRECT --to-ports 8888
+     /sbin/iptables -t nat --flush PREROUTING
+     /sbin/iptables -t nat -A PREROUTING -p tcp --dport 9888 -j REDIRECT --to-ports 8888
      # don't save so reboots require reenabling health check redirect
      echo 'ENABLING health check on port 9888'
      ;;
     off)
-     iptables -t nat --flush PREROUTING
+     /sbin/iptables -t nat --flush PREROUTING
      echo 'DISABLING health check on port 9888'
      ;;
     status)
@@ -19,6 +19,6 @@ case "$1" in
      # exit status 1---health disabled
      # from http://superuser.com/questions/360094/how-can-i-check-if-an-iptables-rule-already-exists
      # we should switch to using iptables -C when we upgrade to a newer iptables (maybe in centos 7)
-     iptables-save | grep -q -- '-A PREROUTING -p tcp -m tcp --dport 9888 -j REDIRECT --to-ports 8888'
+     /sbin/iptables-save | /bin/grep -q -- '-A PREROUTING -p tcp -m tcp --dport 9888 -j REDIRECT --to-ports 8888'
      ;;
 esac
