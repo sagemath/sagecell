@@ -8,8 +8,12 @@ import json
 import sys
 from random import randint
 import time
+from datetime import datetime
 
 retries = 3
+
+def message(s):
+    print "%s: %s"%(datetime.now(), s)
 
 for i in range(retries):
     reply = {'success': False, 'msg': 'default message'}
@@ -32,11 +36,12 @@ for i in range(retries):
             assert a+b == answer
             break
         else:
+            message("stdout not in reply on try %d; retrying..."%i)
             time.sleep(0.5)
             continue
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print "Reply: ",reply
+        message("Reply: %s"%reply)
         exit(1)
