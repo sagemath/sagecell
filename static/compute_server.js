@@ -23,6 +23,31 @@ var proxy = sagecell.util.proxy;
 var throttle = sagecell.util.throttle;
 var interacts = {};
 
+/* IPython url_join_encode and url_path_join is used in the cell server with URLs with hostnames, so we make it handle those correctly 
+    this is a temporary kludge.  A much better fix would be to introduce a kernel_base_url parameter in the kernel
+    initialization, which would default to the empty string, and would be prepended to every kernel request.  Also, the 
+    ws_host attribute would derive from the kernel_base_url parameter.
+
+    Right now, the IPython websocket connection urls are messed up (they prepend a phony ws_host), but that's okay because the regexp
+    pulls out the kernel id and everything is fine.
+*/
+var url_parts = new RegExp("^((([^:/?#]+):)?(//([^/?#]*))?)?(.*)");
+var strip_hostname = function(f) {
+    return function() {
+        // override IPython function to account for leading protocol and hostname
+        // assume that the first argument has the part to strip off, if any
+        var hostname = '';
+        if (arguments.length>0) {
+            var parts = arguments[0].match(url_parts);
+            hostname = parts[1]; // everything up to the url path
+            arguments[0] = parts[6]; // url path
+        }
+        return hostname+f.apply(null,arguments);
+    }
+}
+IPython.utils.url_join_encode = strip_hostname(IPython.utils.url_join_encode);
+IPython.utils.url_path_join = strip_hostname(IPython.utils.url_path_join);
+
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
    //var a = 0;
@@ -126,17 +151,6 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
         window.WebSocket = old_ws;
-        this.kernel.start_channels = function() {
-            // wrap the IPython start_channels function, since it
-            // assumes that this.kernel_url is a relative url when it
-            // constructs the websocket URL
-            var absolute_kernel = this.kernel_url;
-            this.kernel_url = absolute_kernel.substr(IPython.utils.encode_uri_components(sagecell.URLs.root).length);
-            $.proxy(IPython.Kernel.prototype.start_channels, this)();
-	    // un-urlencode the root portion of the kernel_url
-            this.kernel_url = sagecell.URLs.root+this.kernel_url;
-        }
-
     /**
      * Copied from IPython and slightly modified (comment out session_id send, add deferred code execution
      * Handle a websocket entering the open state
@@ -162,20 +176,6 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         // all events ready, trigger started event.
         $([IPython.events]).trigger('status_started.Kernel', {kernel: this});
     };
-
-        this.kernel.start = function(params) {
-            // Override the IPython start kernel function since we want to send extra data, like a default timeout
-            var that = this;
-            if (!this.running) {
-                var qs = $.param(params);
-                var url = this.base_url + '?' + qs;
-                $.post(url,
-                       $.proxy(that._kernel_started,that),
-                       'json'
-                      );
-            }
-
-        }
 
         this.kernel.start({notebook: IPython.utils.uuid(), timeout: linked ? 'inf' : 0});
     }
