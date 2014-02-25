@@ -406,7 +406,7 @@ class SalvusThreeJS
         o = defaults opts,
             size: required
 
-        geometry = new THREE.CubeGeometry(o.size[0], o.size[1], o.size[2])
+        geometry = new THREE.BoxGeometry(o.size[0], o.size[1], o.size[2])
         return @make_mesh(geometry, @make_lambert_material(material), extra)
 
     make_cylinder: (opts, material, extra) =>
