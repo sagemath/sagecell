@@ -142,6 +142,19 @@ Christmas 2014
 ==============
 
 - [X] implement IPython widgets in the cell server: http://sagecell.sagemath.org/?q=rgppxi (including my new start of a three.js widget)
+- [X] install haproxy dev for ssl:
+    * compiled haproxy 1.5dev19 from source and installed into /usr/local/sbin
+      * I installed libpcre3-dev and compiled haproxy with `make TARGET=linux2628 CPU=native USE_PCRE=1 USE_OPENSSL=1 USE_ZLIB=1`
+    * make install
+    * renamed /usr/sbin/haproxy to /usr/sbin/haproxy-1.4, and made /usr/sbin/haproxy a symbolic link to /usr/local/sbin/haproxy
+    * sudo apt-get --purge remove stunnel4
+    * modify /etc/haproxy/haproxy.cfg to take care of ssl:
+
+    frontend http_server
+            bind *:80
+            bind :443 ssl crt <CERT_PATH> # and move the pem file to <CERT_PATH> 
+
+
 
 
 Spring 2014
