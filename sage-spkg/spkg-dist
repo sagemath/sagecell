@@ -62,7 +62,8 @@ print "Fetching the required packages"
 pkg_index = PackageIndex()
 tmp_dir = mkdtemp()
 # in order of dependencies
-required_packages = ('paramiko',
+required_packages = ('ecdsa', 
+                     'paramiko',
                      'tornado',
                      'sockjs-tornado',
                      'lockfile',
