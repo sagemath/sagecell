@@ -201,7 +201,7 @@ function install_sagecell {
   ../sage setup.py install
   popd
 
-  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2013-08-13.spkg
+  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2014-03-01.spkg
   cd /home/sageserver/sage/sagecell/
   git pull origin master
   ../sage -sh -c "make -B"
