@@ -139,6 +139,7 @@ $(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell
             $(fontawesome-css) $(fold-css) | python $(cssmin) > $(all-min-css)
 
 $(jsmin-bin):  $(jsmin)
+	gcc -o $(jsmin-bin) $(jsmin)
 
 $(jmol-js): $(jmol-sage)
 	rm -f $(jmol)
