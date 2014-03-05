@@ -466,7 +466,6 @@ class SalvusThreeJS
             geometry.faces.push(new THREE.Face3(f[0], f[3], f[4]))
 
         geometry.mergeVertices()
-        geometry.computeCentroids()
         geometry.computeFaceNormals()
         geometry.computeVertexNormals()
         geometry.computeBoundingSphere()
@@ -626,7 +625,7 @@ class SalvusThreeJS
         v = new THREE.Vector3(mx, my, mz)
         @camera.lookAt(v)
         @render_scene()
-        @controls?.handleResize()
+        @controls?.handleResize?()
         if o.draw
             @render_scene()
 
