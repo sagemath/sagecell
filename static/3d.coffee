@@ -450,7 +450,7 @@ class SalvusThreeJS
             vertices: []
             face3: []
             face4: []
-            face5: []
+            facen: []
 
         geometry = new THREE.Geometry()
         for v in opts.vertices
@@ -460,10 +460,9 @@ class SalvusThreeJS
         for f in opts.face4
             geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]))
             geometry.faces.push(new THREE.Face3(f[0], f[2], f[3]))
-        for f in opts.face5
-            geometry.faces.push(new THREE.Face3(f[0], f[1], f[2]))
-            geometry.faces.push(new THREE.Face3(f[0], f[2], f[3]))
-            geometry.faces.push(new THREE.Face3(f[0], f[3], f[4]))
+        for f in opts.facen
+            for i in [1...f.length-1]
+                geometry.faces.push(new THREE.Face3(f[0], f[i], f[i+1]))
 
         geometry.mergeVertices()
         geometry.computeFaceNormals()
