@@ -91,6 +91,7 @@ $(threejs-detect):
 
 $(ip-widgets): $(require-base)/main.js
 	r.js -o $(require-base)/main.js appDir=$(ip-static)
+	rm -rf $(require-base)/build/components/.git
 
 $(mpl-js):
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > $(mpl-js)
