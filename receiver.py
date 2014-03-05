@@ -77,7 +77,7 @@ class Receiver(object):
             sage.misc.display.register('image', display_image)
             sage.misc.display.register('image_link', image_link)
             sage.misc.display.register('jmol', display_jmol)
-            sage.misc.display_register('canvas3d', display_canvas3d)
+            sage.misc.display.register('canvas3d', display_canvas3d)
 
             # override matplotlib and pylab show functions
             # TODO: use something like IPython's inline backend
