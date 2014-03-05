@@ -52,6 +52,32 @@ class Receiver(object):
             import sage
             import sage.all
             sage.misc.misc.EMBEDDED_MODE = {'frontend': 'sagecell'}
+            def display_html(s):
+                misc.display_message({'text/plain': 'html',
+                                      'text/html': s})
+            def display_file(path, mimetype=None):
+                path = os.path.relpath(path)
+                if mimetype is None:
+                    mimetype = 'application/x-file'
+                msg = {'text/plain': '%s file'%mimetype, mimetype: path}
+                misc.display_message(msg)
+                sys._sage_.sent_files[path] = os.path.getmtime(path)
+            def display_image(path):
+                display_file(path, 'text/image-filename')
+            def display_jmol(path):
+                display_file(path, 'application/x-jmol')
+            def display_canvas3d(path):
+                display_file(path, 'application/x-canvas3d')
+            def image_link(path):
+                sys._sage_.sent_files[path] = os.path.getmtime(path)
+                return "<img src='cell://%s'>"%path
+
+            sage.misc.display.register('html', display_html)
+            sage.misc.display.register('file', display_file)
+            sage.misc.display.register('image', display_image)
+            sage.misc.display.register('image_link', image_link)
+            sage.misc.display.register('jmol', display_jmol)
+            sage.misc.display_register('canvas3d', display_canvas3d)
 
             # override matplotlib and pylab show functions
             # TODO: use something like IPython's inline backend
