@@ -190,7 +190,7 @@ class SalvusThreeJS
         ###
         if @controls?
             return
-        @controls = new THREE.TrackballControls(@camera, @renderer.domElement)
+        @controls = new THREE.OrbitControls(@camera, @renderer.domElement)
         @controls.dynamicDampingFactor = 0.3
         @controls.noRoll=true
         if @_center?
