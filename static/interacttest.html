@@ -11,10 +11,25 @@
     <script>$(function () {sagecell.makeSagecell({inputLocation:  '.sage'});});</script>
   </head>
   <body>
-  <h1>Test Interacts</h1>
+  <h1>Test</h1>
 
   <ol>
 
+    <li>ThreeJS Example
+    <div class="sage"><script type="text/x-sage">
+var("u,v,x,y,z")
+S = parametric_plot3d((cos(u), sin(u) + cos(v), sin(v)), (u, 0, 2*pi), (v, -pi, pi), color='green', opacity=0.75, plot_points=[30,30])
+C = parametric_plot3d((cos(u), sin(u) + 1, 0), (u, 0, 2*pi), color='red', opacity=0.75, thickness=20)
+I = implicit_plot3d(x^2+y^4+z^6==4, (x,-2,2), (y,-2,2), (z,-2,2), color="yellow", opacity=0.75, mesh=True)
+A = arrow3d([0,0,0], [3,0,0])
+T = text3d("Testing text above green, to the left from yellow!", [0,0,2])
+p = S + C + A + T
+p += A.translate([0,3,0])
+p += point3d([0,3,0], color="black", size=10)
+p += I.translate([-2,2,0])
+threejs(p, frame=False, aspect_ratio=1)
+</script></div>
+    
     <li><br/>One line example
     <div class="sage">1+2</div>
 
