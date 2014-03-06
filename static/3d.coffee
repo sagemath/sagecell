@@ -173,12 +173,10 @@ class SalvusThreeJS
         @_animate = false
         @_animation_frame = false
 
-        ###
         # This is purely for debugging
         window.MYSCENE=this
         @three = THREE
-        ###
-
+        
     data_url: (type='png') =>   # 'png' or 'jpeg'
         return @renderer.domElement.toDataURL("image/#{type}")
 
@@ -442,6 +440,7 @@ class SalvusThreeJS
         obj.matrixAutoUpdate = false # tell three.js to not update the matrix based on position, rotation, etc.
         # Sage matrix is the transpose of the three.js matrix
         obj.matrix.fromArray(m).transpose()
+        obj.matrixWorldNeedsUpdate = true # tell three.js to apply the matrix we just set
         obj.add(@make_object(i)) for i in o.children
         return obj
 
