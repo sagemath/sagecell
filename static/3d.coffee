@@ -665,7 +665,7 @@ class SalvusThreeJS
 $.fn.salvus_threejs = (opts={}) ->
     @each () ->
         elt = $(this)
-        e = $(".salvus-3d-templates .salvus-3d-viewer").clone()
+        e = $(".salvus-3d-templates .salvus-3d-viewer").eq(0).clone()
         elt.empty().append(e)
         opts.element = e
         elt.data('salvus-threejs', new SalvusThreeJS(opts))
