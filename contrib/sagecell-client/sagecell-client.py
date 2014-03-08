@@ -19,10 +19,10 @@ class SageCell(object):
         req = urllib2.Request(url=url+'kernel', data='accepted_tos=true',headers={'Accept': 'application/json'})
         response = json.loads(urllib2.urlopen(req).read())
 
-        # RESPONSE: {"kernel_id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
+        # RESPONSE: {"id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
         # construct the iopub and shell websocket channel urls from that
 
-        self.kernel_url = response['ws_url']+'kernel/'+response['kernel_id']+'/'
+        self.kernel_url = response['ws_url']+'kernel/'+response['id']+'/'
         websocket.setdefaulttimeout(timeout)
         print self.kernel_url
         self._shell = websocket.create_connection(self.kernel_url+'shell')
