@@ -273,8 +273,8 @@ sagecell.makeSagecell = function (args, k) {
                     IPython.WidgetManager.prototype.callbacks = function (view) {
                         // callback handlers specific a view
                         var callbacks = {};
-                        var session = view.options.cell;
-                        if (session !== null) {
+                        if (view && view.options && view.options.cell) {
+                            var session = view.options.cell;
                             // Create callback dict using what is known
                             callbacks = {
                                 iopub : {
@@ -285,9 +285,9 @@ sagecell.makeSagecell = function (args, k) {
                                     // Allows us to get the cell for a message so we know
                                     // where to add widgets if the code requires it.
                                     get_cell : function () {
-                                          return session;
+                                        return session;
                                     },
-                                },
+                                }
                             };
                         }
                         return callbacks;
