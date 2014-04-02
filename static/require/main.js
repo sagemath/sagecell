@@ -37,8 +37,8 @@ shim: {
 },
 modules: [ {name: "widgets",
 	    create: true,
-	    include: ["requireLib","notebook/js/widgetmanager", "notebook/js/widgets/init"],
-	    insertRequire: ["notebook/js/widgets/init"],
+	    include: ["requireLib","widgets/js/manager", "widgets/js/init"],
+	    insertRequire: ["widgets/js/init"],
 	    override: {
 		wrap: {
 		    start: "(function(IPython) {",
