@@ -32,9 +32,9 @@ pool.connect(function(err){
 	app.use(express.errorHandler());
     }
 
-    app.post('/', set_permalink);
+    app.post('/', express.bodyParser(), set_permalink);
     app.get('/', get_permalink);
-    app.post('/permalink', set_permalink);
+    app.post('/permalink', express.bodyParser(), set_permalink);
     app.get('/permalink', get_permalink);
 
     http.createServer(app).listen(app.get('port'), function(){
@@ -134,6 +134,7 @@ function insert_permalink(ident, code, language, interacts, cb) {
     var query = 'INSERT INTO cellserver.permalinks (ident, code, language, interacts, created, last_access) VALUES (?, ?, ?, ?, dateof(now()), dateof(now())) IF NOT EXISTS;';
     var params = [ident, code, language, interacts];
     pool.cql(query, params, function(err, results) {
+        if (err || results.length<1) {return cb(err, false);}
         var success = results[0].get('[applied]').value;
         cb(err, success);
     });
