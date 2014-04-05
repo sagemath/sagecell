@@ -42,7 +42,7 @@ pool.connect(function(err){
     });
 });
 
-function set_permalink(req, res){
+function set_permalink(req, res, next){
     var retval = {query: null, zip: null}
     if (req.body.code === undefined) {
 	res.send(400);
@@ -53,13 +53,13 @@ function set_permalink(req, res){
     var interacts = req.body.interacts || "";
     var query_ident = null;
     actions = {
-	zip: async.apply(async.waterfall, 
+	zip: async.apply(async.waterfall,
 			 [async.apply(zlib.deflate, code),
 			 function(b, cb) {cb(null, b.toString('base64'))}]),
 	query: async.apply(store_permalink, code, language, interacts)
     }
     if (req.body.interacts) {
-	actions.interacts = async.apply(async.waterfall, 
+	actions.interacts = async.apply(async.waterfall,
 					[async.apply(zlib.deflate, code),
 					 function(b, cb) {cb(null, b.toString('base64'))}]);
     }
@@ -106,27 +106,22 @@ function retrieve_permalink(ident, cb) {
 function store_permalink(code, language, interacts, cb) {
     // calls cb(err, ident)
     var count = 0;
-    debugger;
     var ident = null;
     async.whilst(
         function () { return (ident === null) && (count < 3); },
         function (callback) {
             count++;
             async.waterfall([
-                async.apply(random_string, count),
+                async.apply(random_string, 5+count),
                 function(id, cb) {
                     console.log(count, id);
-                    insert_permalink(id, code, language, interacts, function(err, results) {
-                        console.log(err, results[0].get('ident'));
-                        if (err || !results[0].get('[applied]')) {
-                            // continue
-                            callback();
-                        } else {
-                            // break
-                            ident = id;
-                            callback();
-                        }
-                    })
+                    insert_permalink(id, code, language, interacts,
+                                     function(err, success) {
+                                         // error handling if err is not null
+                                         if (err) {callback(err);}
+                                         if (success) {ident = id;}
+                                         callback();
+                                     });
                 }
             ]);
         },
@@ -141,17 +136,25 @@ function store_permalink(code, language, interacts, cb) {
 }
 
 function insert_permalink(ident, code, language, interacts, cb) {
+    // calls cb(err, success), where success is true
+    // if insert was successful, false otherwise
+    // (probably because the record exists already)
+
     var query = 'INSERT INTO cellserver.permalinks (ident, code, language, interacts, created, last_access) VALUES (?, ?, ?, ?, dateof(now()), dateof(now())) IF NOT EXISTS;';
     var params = [ident, code, language, interacts];
-    pool.cql(query, params, cb);
+    pool.cql(query, params, function(err, results) {
+        var success = results[0].get('[applied]').value;
+        cb(err, success);
+    });
 }
 
 function random_string(ident_len, cb) {
-    var valid_chars = "012345679";//"abcdefghijklmnopqrstuwxyz";
+    var valid_chars = "abcdefghijklmnopqrstuwxyz";
     var num_valid = valid_chars.length;
     var value = new Array(ident_len);
     async.waterfall([
-        // pseudoRandom because we don't want to error out---just give us non-crypto random bytes, please
+        // pseudoRandom because we don't want to error out
+        // just give us non-crypto random bytes, please
         async.apply(crypto.pseudoRandomBytes, ident_len),
         function (randbytes, cb) {
             // construct id
@@ -161,4 +164,3 @@ function random_string(ident_len, cb) {
             cb(null, value.join(''));
         }], cb);
 }
-
