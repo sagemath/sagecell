@@ -109,7 +109,10 @@ function store_permalink(code, language, interacts, cb) {
                     insert_permalink(id, code, language, interacts,
                                      function(err, success) {
                                          // error handling if err is not null
-                                         if (err) {callback(err);}
+                                         if (err) {
+                                             console.log('error inserting permalink',err, success);
+                                             return callback(err);
+                                         }
                                          if (success) {ident = id;}
                                          callback();
                                      });
