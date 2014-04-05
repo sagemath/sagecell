@@ -80,28 +80,19 @@ function set_permalink(req, res, next){
     );
 };
 
-function get_permalink (req, res) {
-    async.series([
-	function(cb) {
-	    var results = '"Looked up"'+req.query.q;
-	    // TODO actually look up results in database
-	    cb(null, results);
-	}], function(err, results) {
-	    res.set("Access-Control-Allow-Origin", req.get("Origin") || "*");
-	    res.set("Access-Control-Allow-Credentials", "true");
-	    res.jsonp(results);
-	})
+function get_permalink (req, res, next) {
+    async.waterfall([async.apply(retrieve_permalink,req.query.q)], 
+                    function(err, results) {
+                        if(err===1) {
+                            res.status(404).send("ID not found in permalink database");
+                        }
+                        if(err) {return next(err);}
+	                res.set("Access-Control-Allow-Origin", req.get("Origin") || "*");
+	                res.set("Access-Control-Allow-Credentials", "true");
+	                res.jsonp(results);
+	            })
 }
 
-function retrieve_permalink(ident, cb) {
-/*
-- select on ident; return error if ident is not found
-- update last_access record
-- update permalink_count record
-- return code, language, interacts fields
-*/
-
-}
 
 function store_permalink(code, language, interacts, cb) {
     // calls cb(err, ident)
@@ -147,6 +138,29 @@ function insert_permalink(ident, code, language, interacts, cb) {
         cb(err, success);
     });
 }
+
+function retrieve_permalink(ident, cb) {
+/*
+- select on ident; return error if ident is not found
+- update last_access record
+- update permalink_count record
+- return code, language, interacts fields
+
+- returns err===1 if there are no results
+*/
+    var query = 'SELECT ident, code, language, interacts FROM cellserver.permalinks WHERE ident=?;';
+    var params = [ident];
+    pool.cql(query, params, function(err, results) {
+        if(err) {return cb(err, results);}
+        if (results.length<1) {return cb(1, results);}
+        var row = results[0];
+        var code = row.get('code').value || '';
+        var language = row.get('language').value || '';
+        var interacts = row.get('interacts').value || '';
+        cb(err, {code:code, language:language, interacts:interacts});
+    });
+}
+
 
 function random_string(ident_len, cb) {
     var valid_chars = "abcdefghijklmnopqrstuwxyz";
