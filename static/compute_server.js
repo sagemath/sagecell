@@ -99,11 +99,6 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": sagecell.log};
     
-    $.post = function (url, callback) {
-        sagecell.sendRequest("POST", url, {}, function (data) {
-            callback(JSON.parse(data));
-        });
-    }
     this.interacts = [];
     if (window.addEventListener) {
         // Prevent Esc key from closing WebSockets and XMLHttpRequests in Firefox
@@ -151,6 +146,10 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         this.kernel.opened = false;
         this.kernel.deferred_code = [];
         window.WebSocket = old_ws;
+
+        this.kernel.post = function (url, callback) {
+            sagecell.sendRequest("POST", url, {}, function (data) { callback(JSON.parse(data)); });
+        }
     /**
      * Copied from IPython and slightly modified (comment out session_id send, add deferred code execution
      * Handle a websocket entering the open state
