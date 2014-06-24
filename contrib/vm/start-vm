@@ -1,27 +1,22 @@
-#!/bin/sh
+#!/bin/bash
+set -o errexit
+set -o nounset
+#set -o xtrace
 
-#set -v
 VM=$1
 SSHPORT=$2
 
-STATUS=`virsh dominfo $VM | grep 'State:.*running'`
-if [ $? -ne 0 ]; then
-    virsh start $VM
-    if [ $? -ne 0 ]; then
-       echo "Failed to start virtual machine!"
+if [[ `virsh domstate $VM` != "running" ]]; then
+    if ! virsh start $VM; then
+       echo "Failed to start $VM!"
        exit 1
     fi
-    STATUS="booting"
     echo "Booting $VM"
-    sleep 2
+    sleep 5
 fi
 
-sleep 3
-
 ./vm/forward-port $VM $SSHPORT 22
-STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $SSHPORT echo "ready"`
-while [ "$STATUS" != "ready" ]; do
-    echo "Waiting for VM to start."
+while [[ `ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $SSHPORT echo "ready"` != "ready" ]]; do
+    echo "Waiting for $VM to start."
     sleep 5
-    STATUS=`ssh -oNoHostAuthenticationForLocalhost=yes root@localhost -p $SSHPORT echo "ready"`
 done

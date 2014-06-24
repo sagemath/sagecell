@@ -1,39 +1,41 @@
-#/bin/bash
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+set -o xtrace
 
 SSHOPTIONS="-oNoHostAuthenticationForLocalhost=yes -p $VMPORT"
 SSH="ssh $SSHOPTIONS -T $VMSSH"
 SSHTTY="ssh $SSHOPTIONS -tt $VMSSH"
 SCP="scp -oNoHostAuthenticationForLocalhost=yes -P $VMPORT"
-function upload_sage_source {
-### The Sage version
-     if [ -z $SAGE_SOURCE ] || [ ! -f $SAGE_SOURCE ] ; then
-        echo "Cannot find Sage source archive $SAGE_SOURCE."
-        exit 1
-    fi
-
-    echo 'Syncing sage source'
-    rsync --progress -avv -e "ssh $SSHOPTIONS" $SAGE_SOURCE $VMSSH:/home/sage-source.tar.gz
-}
-
-
-function update_system {
-$SCP vm/vmfiles/sagecell/repos/* $VMSSH:/etc/yum.repos.d/
-
-    $SSH <<EOF | tee -a install.log
-       set -v
-       echo 'Updating system'
-       yum -y install ffmpeg --enablerepo=atrpms
-       yum -y update
-       yum clean all
-EOF
-}
 
 function remove_install_log {
     rm -f install.log
 }
 
-function remove_accounts {
+function update_system {
+    $SSH <<EOF | tee -a install.log
+        echo 'Updating system'
+        yum -y update
+        yum clean all
+EOF
+}
 
+function install_extra_system_packages {
+    $SCP vm/vmfiles/sagecell/repos/* $VMSSH:/etc/yum.repos.d/
+    $SSH <<EOF | tee -a install.log
+        echo 'Installing extra system packages'
+        yum -y install ffmpeg --enablerepo=atrpms
+EOF
+}
+
+function kill_monitor {
+    $SSH <<EOF | tee -a install.log
+        echo "Removing cron scripts"
+        rm -rf /etc/cron.d/sagecell*
+EOF
+}
+
+function remove_accounts {
     $SSH <<EOF | tee -a install.log
   echo 'Removing sage accounts'
   killall -u sageworker -SIGKILL
@@ -61,10 +63,7 @@ function set_up_sageserver_account {
   fi
   restorecon -R /home/sageserver/.ssh
 EOF
-
-
 }
-
 
 function set_up_sageworker_account {
     $SSH <<EOF | tee -a install.log
@@ -95,13 +94,6 @@ $SSHTTY <<EOF
 EOF
 }
 
-function kill_monitor {
-    $SSH <<EOF | tee -a install.log
-      echo "Removing cron scripts"
-      rm -rf /etc/cron.d/sagecell*
-EOF
-}
-
 function make_tmp_dir {
 
     $SSH <<EOF | tee -a install.log
@@ -113,136 +105,124 @@ function make_tmp_dir {
 EOF
 }
 
-function install_sage {
-
+function upload_repositories {
+    echo 'Copying repositories'
+    rsync -av -e "ssh $SSHOPTIONS" github $VMSSH:/home/sageserver
     $SSH <<EOF | tee -a install.log
-  echo 'Extracting sage'
-  su -l sageserver
-  #set -v
-  rm -rf sage
-  tar xf /home/sage-source.tar.gz
+        chown -R sageserver:sageserver /home/sageserver/github
+EOF
+}
 
-  echo 'Compiling Sage'
-  # downloading the optional git spkg requires the .sage directory
-  mkdir .sage
-  cd sage
-  export SAGE_ATLAS_LIB=/usr/lib64/atlas/
-  export SAGE_KEEP_BUILT_SPKGS=yes
-  export MAKE='make -j16'
-  # export SAGE_FAT_BINARY="yes"
-  # export SAGE_ATLAS_ARCH=fast
-  git remote rm jason
-  git remote add jason https://github.com/jasongrout/sage.git 
-  git fetch jason
-  git checkout jason/sagecell
-  mkdir -p upstream
-  if [ ! -f upstream/ipython-1.0.0.tar.gz ]; then
-    pushd upstream
-    wget -O ipython-1.0.0.tar.gz https://github.com/ipython/ipython/releases/download/rel-1.0.0/ipython-1.0.0.tar.gz
-    popd
-  fi 
-  make
-  # install extra sage packages
-  yes | ./sage -i qepcad
-  # fix permissions on qepcad
-  chmod go+r local/bin/qepcad.help
-  #make test
-  ./sage <<EOFSAGE
-     octave.eval('1+2') # make appropriate octave directory
-     # make appropriate qepcad directory
-     var('a,b,c,d,x,y,z')
-     qf = qepcad_formula
-     ellipse = 3*x^2 + 2*x*y + y^2 - x + y - 7
-     F = qf.exists(y, ellipse == 0)
-     qepcad(F)
-     quit
+function install_sage {
+    $SSH <<EOF | tee -a install.log
+        su -l sageserver
+        rm -rf sage
+        mv github/sage .
+        echo 'Compiling Sage'
+        cd sage
+        export SAGE_ATLAS_LIB=/usr/lib64/atlas/
+        export SAGE_KEEP_BUILT_SPKGS=yes
+        export MAKE='make -j16'
+        make start
+        # install extra sage packages
+        yes | ./sage -i qepcad
+        # fix permissions on qepcad
+        chmod go+r local/bin/qepcad.help
+        ./sage <<EOFSAGE
+            octave.eval('1+2') # make appropriate octave directory
+            # make appropriate qepcad directory
+            var('a,b,c,d,x,y,z')
+            qf = qepcad_formula
+            ellipse = 3*x^2 + 2*x*y + y^2 - x + y - 7
+            F = qf.exists(y, ellipse == 0)
+            qepcad(F)
+            quit
 EOFSAGE
 EOF
-
 }
 
 function install_sagecell {
-
     $SSH <<EOF | tee -a install.log
-  echo 'Installing npm packages'
-  npm install -g inherits requirejs coffee-script
-  su -l sageserver
-  cd /home/sageserver/sage
-  echo 'Installing sagecell'
-  ./sage -sh -c "easy_install pip"
-  ./sage -i http://boxen.math.washington.edu/home/jason/zeromq-4.0.3.spkg
-  ./sage -i pyzmq
-  # we need a more recent pyzmq than Sage provides
-  ./sage -sh -c "pip install -U pyzmq"
+        echo 'Installing npm packages'
+        npm install -g inherits requirejs coffee-script
+        su -l sageserver
+        cd sage
+        echo 'Installing sagecell'
+        ./sage -sh -c "easy_install pip"
+        ./sage -i http://boxen.math.washington.edu/home/jason/zeromq-4.0.3.spkg
+        ./sage -i pyzmq
+        # we need a more recent pyzmq than Sage provides
+        ./sage -sh -c "pip install -U pyzmq"
+        # we also need a more recent ipython than 1.0 for the communications API
+        pushd local/lib/python/site-packages
+        rm -rf IPython*
+        rm -rf ipython*
+        popd
+        mv ../github/ipython .
+        pushd ipython
+        ../sage setup.py develop
+        popd
+        # we need a cutting-edge matplotlib as well for the new interactive features
+        mv ../github/matplotlib .
+        pushd matplotlib
+        ../sage setup.py install
+        popd
 
-  # we also need a more recent ipython than 1.0 for the communications API
-  set -v
-  pushd local/lib/python/site-packages
-  rm -rf IPython*
-  rm -rf ipython*
-  popd
-  git config --global user.email "you@example.com"
-  git config --global user.name "Your Name"
-  git clone https://github.com/ipython/ipython.git
-  pushd ipython
-  git remote add jason https://github.com/jasongrout/ipython.git
-  git fetch jason
-  git checkout jason/sagecell
-  git submodule update
-  ../sage setup.py develop
-  popd
-
-  # we need a cutting-edge matplotlib as well for the new interactive features
-  # first, we need to install pyparsing (see http://trac.sagemath.org/ticket/14993)
-  ./sage -sh -c "easy_install pyparsing"
-  git clone https://github.com/jasongrout/matplotlib
-  pushd matplotlib
-  git checkout origin/sagecell
-  ../sage setup.py install
-  popd
-
-  ./sage -i http://sage.math.washington.edu/home/jason/sagecell-spkg/sagecell-2014-03-01.spkg
-  cd /home/sageserver/sage/sagecell/
-  git pull origin master
-  ../sage -sh -c "make -B"
+        ./sage -sh -c "easy_install ecdsa"
+        ./sage -sh -c "easy_install paramiko"
+        ./sage -sh -c "easy_install sockjs-tornado"
+        ./sage -sh -c "easy_install lockfile"
+       
+        mv ../github/sagecell .
+        cd sagecell/static
+        ln -s ../../local/share/jmol .
+        cd ..
+        ../sage -sh -c "make -B"
 EOF
-
 }
 
 function install_extra_python_packages {
-rsync --progress -avv -e "ssh $SSHOPTIONS" basemap-1.0.6.tar.gz $VMSSH:/tmp/basemap-1.0.6.tar.gz
     $SSH <<EOF | tee -a install.log
-  su -l sageserver
-  export NETCDF4_LIBDIR=/usr/lib64/
+        su -l sageserver
+        cd sage
+        export MAKE="make -j16"
+        export NETCDF4_LIBDIR=/usr/lib64/
+        echo 'Installing extra python packages'
+        for i in requests netcdf4 h5py pandas scikit-learn patsy statsmodels numexpr tables scikits-image scimath Shapely SimPy pyproj bitarray ggplot oct2py psutil lxml munkres husl moss https://github.com/mwaskom/seaborn/archive/master.zip
+        do
+            echo "Installing Python package \$i"
+            ./sage -sh -c "pip install -U \$i"
+        done
+EOF
+}
 
-  echo 'Installing extra python packages'
-  cd /home/sageserver/sage/
-  for i in requests netcdf4 tables h5py pandas scikit-learn patsy statsmodels numexpr scikits-image scimath Shapely SimPy pyproj bitarray ggplot oct2py psutil lxml munkres husl moss https://github.com/mwaskom/seaborn/archive/master.zip
-  do
-    echo $i
-    ./sage -sh -c "pip install -U \$i"
-  done
-
-  if ! ./sage -c "import mpl_toolkits.basemap"; then 
-    cd /tmp
-    export BASEMAP=basemap-1.0.6
-    export GEOS_DIR=/home/sageserver/sage/local/
-    if [ -f \$BASEMAP.tar.gz ];
-    then
-       echo "Basemap already downloaded"
-    else
-       echo "Downloading basemap"
-       wget --progress=dot:mega http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/\$BASEMAP/\$BASEMAP.tar.gz
+function install_basemap {
+    BASEMAP=basemap-1.0.7
+    GEOS_DIR=/home/sageserver/sage/local/
+    if ! [ -f $BASEMAP.tar.gz ]; then
+        wget --progress=dot:mega http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/$BASEMAP/$BASEMAP.tar.gz
     fi
-    tar xf \$BASEMAP.tar.gz
-    cd \$BASEMAP
-    cd geos-3.3.3
-    /home/sageserver/sage/sage -sh -c "export GEOS_DIR=\$GEOS_DIR && ./configure --prefix=\$GEOS_DIR && make && make install"
-    cd ..
-    /home/sageserver/sage/sage setup.py install
-    cd /tmp
-    rm -rf \$BASEMAP
-  fi
+    rsync --progress -avv -e "ssh $SSHOPTIONS" $BASEMAP.tar.gz $VMSSH:/tmp/
+    $SSH <<EOF | tee -a install.log
+        su -l sageserver
+        if ! sage/sage -c "import mpl_toolkits.basemap"; then 
+            echo "Installing $BASEMAP"
+            export GEOS_DIR=$GEOS_DIR
+            cd /tmp
+            tar -xf $BASEMAP.tar.gz
+            cd $BASEMAP/geos-3.3.3
+            /home/sageserver/sage/sage -sh
+                export GEOS_DIR=$GEOS_DIR
+                ./configure --prefix=$GEOS_DIR
+                make
+                make install
+                exit
+            cd ..
+            /home/sageserver/sage/sage setup.py install
+        fi
+        exit
+        cd /tmp
+        rm -rf $BASEMAP.tar.gz
 EOF
 }
 
@@ -278,11 +258,14 @@ EOF
 
 function lock_down_sageworker {
     $SSH <<EOF | tee -a install.log
-  # set the .sage and init.sage to be immutable.  We do this to prevent
-  # someone from making *everyone* execute code at the start of their sessions
-  su -l sageworker -c "echo 'DihedralGroup(4).cayley_graph()' | /home/sageserver/sage/sage"
-  touch /home/sageworker/.sage/init.sage
-  chattr +i /home/sageworker/.sage /home/sageworker/.sage/init.sage
+    # set the .sage and init.sage to be immutable.  We do this to prevent
+    # someone from making *everyone* execute code at the start of their sessions
+    su -l sageworker
+    echo 'DihedralGroup(4).cayley_graph()' | /home/sageserver/sage/sage
+    touch .sage/init.sage
+    mkdir .sage/.python-eggs
+    exit
+    chattr +i /home/sageworker/.sage /home/sageworker/.sage/init.sage
 EOF
 }
 

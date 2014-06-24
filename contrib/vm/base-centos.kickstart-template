@@ -34,7 +34,7 @@ volgroup vg_sagecell --pesize=4096 pv.008002
 logvol / --fstype=ext4 --name=lv_root --vgname=vg_sagecell --grow --size=1024 --maxsize=51200 --fsoptions="usrjquota=aquota.user,jqfmt=vfsv0"
 logvol swap --name=lv_swap --vgname=vg_sagecell --grow --size=4032 --maxsize=4032
 
-repo --name="myupdates" --baseurl=http://boxen.math.washington.edu/home/jason/CentOS/6.5/updates/x86_64
+#repo --name="myupdates" --baseurl=http://boxen.math.washington.edu/home/jason/CentOS/6.5/updates/x86_64
 repo --name=epel --baseurl=http://ftp.osuosl.org/pub/fedora-epel/6/x86_64/
 #repo --name=epel --baseurl=http://mirror.pnl.gov/epel/6/x86_64/
 #repo --name=atrpm --baseurl=http://dl.atrpms.net/el6-x86_64/atrpms/stable/
@@ -132,6 +132,9 @@ netcdf-devel
 
 %post
 
+yum -y update
+yum clean all
+
 #exec < /dev/tty6 > /dev/tty6 2> /dev/tty6
 #chvt 6
 
@@ -168,6 +171,7 @@ mkdir /root/.ssh
 chmod 700 /root/.ssh
 echo  ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOOd7GgLTZnpmklZzV+8K31+8ZyC1jIm1t6N6it5ODUA6IibTC8dqnFWzUBE6W33lS6U/OQyhPzhJoy2VLGEsQApHZDB0hKpgEDh0RAT7mlRkG4urg9rRX/U40DFvd1FkOjkEpdpSn/odJfWeeZ1uFiFuIckjzQ0W3CDmllxRpDluGdj5Yt53eNeb4Uac0wcnIgmQWcOsTxm17mouXv/goglViPLgS8pOEN4kYOq7Yc4AHtJpNLWfxaq7YvflkbPE9KNjBcgm/NLiasE0ctvVKdoWiphMT/58P6/K8P2hkip9hBxEEMvqCOVplS6TIuzd9LZZ4FsMxJNZj6DuDF6Sb grout@08salvus > /root/.ssh/authorized_keys
 echo ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAoSXyTjfqckORNSqQ5XvJlvu7GnWBzczes65DHmBc2Vo3HKVJ2fA7FVjf1GuRffUtjFGCscaz7qePMCuAQ8chuYbXGAaTkr41+4B/MHBuSt/O91XKpSH8ruULlM4JvatKS/72cDPBL6eRC9JOgmM6iKmGcu6xJov5WPJsrJ/LieKvuXWwVHdjlg4EcgbR5ie7+R7JQQW6GMOJ8LguA/kNPidz4BL0mCwZCymc8PboIQGmb9m3XIlOgO1Jk0mJe1IanWFfFsPnZdiZPLxrFJ54LKvBtjMPWnVPOmcwGS7X4AWBJHN8QSGpkiVHLd9Pvm9l/U+rMtk0awzphoB6bMe+Bw== jason@boxen >> /root/.ssh/authorized_keys
+echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC/5dKFdUXF8qVNb8L6l/vCzE3mPAbCTC7Q+O3I+TIsRbSZYaE7xsK+Gn3+Qqf+ff7n0asaoBVp2i0a4pzrAdMDMDCyoA8Au2rBatCDaw+rm+KEViRHeAtI657iBDzqnDLrwujNhOUua6puTs48nECqhugNdOn/H4XQ7e71tYFEeHXYezHgldcae/yzbsF5PK1c1rvIfzht/O3a/pTeeLlcxyXaWTe7lZISDLL1K+OMe16YkqlgTEzI2PBGyBDwU81ApZj5N7ndxL1Rgg3gNAoEmLtoYKyOhBZVIWxRnP1umncCWih8BF4grhtN62a+V0SRtTWoq5Oi2jX1XNUVD/0L novoselt@sage1 >> /root/.ssh/authorized_keys
 chmod 600 /root/.ssh/authorized_keys
 restorecon -R /root/.ssh
 

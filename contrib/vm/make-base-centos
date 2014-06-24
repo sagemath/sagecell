@@ -1,17 +1,20 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+set -o xtrace
 
-# ./make-base-centos NAME LOCATION_OF_ISO_MOUNT
+# ./make-base-centos NEW_VM_NAME LOCATION_OF_ISO_MOUNT
 
-NAME=$1
+VM=$1
 ISO=$2
 LOCATION=mnt
 SIZE=25
 
-rm $NAME.img
-qemu-img create -f qcow2 $NAME.img ${SIZE}G
+rm -f $VM.img
+qemu-img create -f qcow2 $VM.img ${SIZE}G
 
-virsh destroy $NAME
-virsh undefine $NAME
+virsh destroy $VM || true
+virsh undefine $VM || true
 
 fuseiso -p $ISO $LOCATION
 # rootpassword is a file that looks like:
@@ -19,12 +22,12 @@ fuseiso -p $ISO $LOCATION
 sed -e "/ROOTPASSWORD/r rootpassword" -e "/ROOTPASSWORD/d"  < vm/base-centos.kickstart-template > base-centos.kickstart
 chmod go-rwx base-centos.kickstart
 
-virt-install --name=$NAME \
+virt-install --name=$VM \
 --ram=8192 \
 --vcpus=14 \
 --network user,model=virtio \
 --cpu host \
---disk path=$NAME.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=$SIZE  \
+--disk path=$VM.img,device=disk,bus=virtio,format=qcow2,cache=writeback,size=$SIZE  \
 --os-type=linux \
 --os-variant=rhel6 \
 --accelerate \
@@ -36,3 +39,4 @@ virt-install --name=$NAME \
 #--noautoconsole \
 
 fusermount -u $LOCATION
+
