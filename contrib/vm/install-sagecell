@@ -7,10 +7,11 @@ set -o xtrace
 VM=$1
 VMSSH=root@localhost
 VMPORT=2555
+VIRSH="virsh --connect qemu:///session"
 
-./vm/start-vm $VM $VMPORT
+vm/start $VM $VMPORT
 
-source ./vm/install-sagecell-functions
+source vm/install-sagecell-functions
 
 remove_install_log
 update_system
@@ -33,4 +34,4 @@ copy_sagecell_system_files
 lock_down_sageworker
 set_up_sagecell_firewall
 #compress_zero
-virsh shutdown $VM
+$VIRSH shutdown $VM

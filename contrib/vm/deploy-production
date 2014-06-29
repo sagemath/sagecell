@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+set -o xtrace
+
+# Login to the server where a new test machine was set up and go to that folder.
+# From there vm/deploy-production
+
+SERVERPREFIX=server
+SAGECELLPORTPREFIX=888
+STATICPORTPREFIX=889
+HEALTHPORTPREFIX=988
+HOSTNAME=`hostname`
+HOSTSAFE=`sed 's/\./_/g' <<< $HOSTNAME`
+SSHPORT=4323
+VIRSH="virsh  --connect qemu:///session"
+
+if ! [[ -f test-centos.img && -f test-sagecell.img ]]; then
+    echo "NO TEST MACHINE WAS DEPLOYED YET, CANNOT PUSH IT TO PRODUCTION!!!"
+    exit 1
+fi
+
+# Take production servers out of rotation
+for i in 0 1 2; do
+    SERVER=$SERVERPREFIX$i
+    if [[ `$VIRSH domstate $SERVER` == "running" ]]; then
+        vm/forward-port $SERVER $SSHPORT$i 22
+        ssh -oNoHostAuthenticationForLocalhost=yes -i sagecell_rsa -p $SSHPORT$i root@localhost "./healthcheck off"
+    fi
+done
+
+vm/stop test
+sleep 300 # 5 more minutes of time for clients to clear off before moving forward with update
+for i in 0 1 2; do
+    vm/stop $SERVERPREFIX$i
+done
+
+ln -f centos.img centos.img.old || true
+ln -f sagecell.img sagecell.img.old || true
+ln -f test-centos.img centos.img
+ln -f test-sagecell.img sagecell.img
+qemu-img rebase -u -b centos.img sagecell.img
+
+for i in 0 1 2; do
+    SERVER=$SERVERPREFIX$i
+    echo "Setting up $SERVER"
+    vm/make-shadow-vm sagecell $SERVER
+    sleep 60
+    vm/forward-port $SERVER $SSHPORT 22
+    echo "changing hostname..."
+    ssh -oNoHostAuthenticationForLocalhost=yes -i sagecell_rsa -p $SSHPORT -T root@localhost <<EOFADMIN
+      echo "executing sed..."
+      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$HOSTSAFE-$SERVER/' /etc/sysconfig/network
+      cat /etc/sysconfig/network
+      exit
+EOFADMIN
+    # remove ssh port forward by restarting server
+    vm/stop $SERVER
+    $VIRSH start $SERVER
+    sleep 30
+    vm/forward-port $SERVER $SAGECELLPORTPREFIX$i 8888
+    vm/forward-port $SERVER $STATICPORTPREFIX$i 8889
+    vm/forward-port $SERVER $HEALTHPORTPREFIX$i 9888
+    sleep 10 # so it can come up before doing the next one
+done
+

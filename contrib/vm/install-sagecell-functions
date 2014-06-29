@@ -3,10 +3,11 @@ set -o errexit
 set -o nounset
 set -o xtrace
 
-SSHOPTIONS="-oNoHostAuthenticationForLocalhost=yes -p $VMPORT"
-SSH="ssh $SSHOPTIONS -T $VMSSH"
-SSHTTY="ssh $SSHOPTIONS -tt $VMSSH"
-SCP="scp -oNoHostAuthenticationForLocalhost=yes -P $VMPORT"
+SSHOPTIONS="-oNoHostAuthenticationForLocalhost=yes -i sagecell_rsa"
+SSH="ssh $SSHOPTIONS -p $VMPORT -T $VMSSH"
+SSHTTY="ssh $SSHOPTIONS -p $VMPORT -tt $VMSSH"
+SCP="scp $SSHOPTIONS -P $VMPORT"
+MAKE="make -j4"
 
 function remove_install_log {
     rm -f install.log
@@ -107,7 +108,7 @@ EOF
 
 function upload_repositories {
     echo 'Copying repositories'
-    rsync -av -e "ssh $SSHOPTIONS" github $VMSSH:/home/sageserver
+    rsync -av -e "ssh $SSHOPTIONS -p $VMPORT" github $VMSSH:/home/sageserver
     $SSH <<EOF | tee -a install.log
         chown -R sageserver:sageserver /home/sageserver/github
 EOF
@@ -122,7 +123,7 @@ function install_sage {
         cd sage
         export SAGE_ATLAS_LIB=/usr/lib64/atlas/
         export SAGE_KEEP_BUILT_SPKGS=yes
-        export MAKE='make -j16'
+        export MAKE="$MAKE"
         make start
         # install extra sage packages
         yes | ./sage -i qepcad
@@ -143,6 +144,7 @@ EOF
 
 function install_sagecell {
     $SSH <<EOF | tee -a install.log
+        export MAKE="$MAKE"
         echo 'Installing npm packages'
         npm install -g inherits requirejs coffee-script
         su -l sageserver
@@ -153,7 +155,7 @@ function install_sagecell {
         ./sage -i pyzmq
         # we need a more recent pyzmq than Sage provides
         ./sage -sh -c "pip install -U pyzmq"
-        # we also need a more recent ipython than 1.0 for the communications API
+        # We need IPython stuff not present in spkg.
         pushd local/lib/python/site-packages
         rm -rf IPython*
         rm -rf ipython*
@@ -185,7 +187,7 @@ function install_extra_python_packages {
     $SSH <<EOF | tee -a install.log
         su -l sageserver
         cd sage
-        export MAKE="make -j16"
+        export MAKE="$MAKE"
         export NETCDF4_LIBDIR=/usr/lib64/
         echo 'Installing extra python packages'
         for i in requests netcdf4 h5py pandas scikit-learn patsy statsmodels numexpr tables scikits-image scimath Shapely SimPy pyproj bitarray ggplot oct2py psutil lxml munkres husl moss https://github.com/mwaskom/seaborn/archive/master.zip
@@ -202,11 +204,12 @@ function install_basemap {
     if ! [ -f $BASEMAP.tar.gz ]; then
         wget --progress=dot:mega http://downloads.sourceforge.net/project/matplotlib/matplotlib-toolkits/$BASEMAP/$BASEMAP.tar.gz
     fi
-    rsync --progress -avv -e "ssh $SSHOPTIONS" $BASEMAP.tar.gz $VMSSH:/tmp/
+    rsync --progress -avv -e "ssh $SSHOPTIONS -p $VMPORT" $BASEMAP.tar.gz $VMSSH:/tmp/
     $SSH <<EOF | tee -a install.log
         su -l sageserver
         if ! sage/sage -c "import mpl_toolkits.basemap"; then 
             echo "Installing $BASEMAP"
+            export MAKE="$MAKE"
             export GEOS_DIR=$GEOS_DIR
             cd /tmp
             tar -xf $BASEMAP.tar.gz

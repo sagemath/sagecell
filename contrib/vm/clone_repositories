@@ -29,9 +29,11 @@ done
 EOF
 popd
 
-git clone https://github.com/jasongrout/ipython.git
+# So far we still need IPython repositories with its submodules, otherwise 
+# SageCell does not build.
+git clone https://github.com/ipython/ipython.git
 pushd ipython
-git checkout sagecell
+git checkout rel-2.1.0
 git submodule update --init --recursive
 popd
 

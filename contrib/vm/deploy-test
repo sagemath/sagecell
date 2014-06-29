@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+set -o xtrace
+
+REMOTELOGIN=$1
+SERVER=test
+SAGECELLPORT=8330
+STATICPORT=8340
+HEALTHPORT=9330
+IFS='@:' read REMOTEUSER REMOTEHOST REMOTEDIR <<< "$REMOTELOGIN"
+REMOTESERVER=$REMOTEUSER@$REMOTEHOST
+REMOTEHOSTSAFE=`sed 's/\./_/g' <<< "$REMOTEHOST"`
+SSHPORT=4323
+VIRSH="virsh --connect qemu:///session"
+RSYNC="rsync --progress --archive --verbose --sparse --protect-args --human-readable"
+
+vm/stop sagecell
+vm/stop $SERVER $REMOTESERVER
+$RSYNC vm/ $REMOTELOGIN/vm/
+$RSYNC centos.img $REMOTELOGIN/$SERVER-centos.img
+$RSYNC sagecell.img $REMOTELOGIN/$SERVER-sagecell.img
+$RSYNC sagecell_rsa* $REMOTELOGIN/
+
+ssh $REMOTESERVER -tt <<EOF
+    cd $REMOTEDIR
+    qemu-img rebase -u -b $SERVER-centos.img $SERVER-sagecell.img
+    vm/make-shadow-vm $SERVER-sagecell $SERVER
+    vm/forward-port $SERVER $SSHPORT 22
+    ssh -oNoHostAuthenticationForLocalhost=yes -i sagecell_rsa -p $SSHPORT -T root@localhost <<EOFADMIN
+      sed -ri 's/^HOSTNAME=.*/HOSTNAME=$REMOTEHOSTSAFE-$SERVER/' /etc/sysconfig/network
+      cat /etc/sysconfig/network
+      exit
+EOFADMIN
+    vm/stop $SERVER
+    $VIRSH start $SERVER
+    sleep 30
+    vm/forward-port $SERVER $SAGECELLPORT 8888
+    vm/forward-port $SERVER $STATICPORT 8889
+    vm/forward-port $SERVER $HEALTHPORT 9888
+    exit
+EOF

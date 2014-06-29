@@ -1,4 +1,12 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -o errexit
+#set -o nounset
+set -o xtrace
 
 #./forward-port VM HOSTPORT VMPORT
-virsh qemu-monitor-command $1 --hmp "hostfwd_add ::$2-:$3"
+
+r=`virsh --connect qemu:///session qemu-monitor-command $1 --hmp "hostfwd_add ::$2-:$3"`
+if [[ -n "$r" ]]; then
+    echo $r
+    exit 1
+fi

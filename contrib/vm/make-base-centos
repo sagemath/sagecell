@@ -9,12 +9,13 @@ VM=$1
 ISO=$2
 LOCATION=mnt
 SIZE=25
+VIRSH="virsh --connect=qemu:///session"
 
 rm -f $VM.img
 qemu-img create -f qcow2 $VM.img ${SIZE}G
 
-virsh destroy $VM || true
-virsh undefine $VM || true
+$VIRSH destroy $VM || true
+$VIRSH undefine $VM || true
 
 fuseiso -p $ISO $LOCATION
 # rootpassword is a file that looks like:
@@ -22,7 +23,9 @@ fuseiso -p $ISO $LOCATION
 sed -e "/ROOTPASSWORD/r rootpassword" -e "/ROOTPASSWORD/d"  < vm/base-centos.kickstart-template > base-centos.kickstart
 chmod go-rwx base-centos.kickstart
 
-virt-install --name=$VM \
+virt-install \
+--connect=qemu:///session \
+--name=$VM \
 --ram=8192 \
 --vcpus=14 \
 --network user,model=virtio \

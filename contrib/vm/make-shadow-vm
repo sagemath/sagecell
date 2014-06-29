@@ -1,17 +1,19 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -o errexit
+set -o nounset
+set -o xtrace
 
 BASE=$1
 NAME=$2
+VIRSH="virsh --connect qemu:///session"
 
-if virsh shutdown $BASE; then
-    sleep 10
-fi
-virsh destroy $NAME
-virsh undefine $NAME
+vm/stop $NAME
+$VIRSH undefine $NAME || true
 
 rm -f $NAME.img
 qemu-img create -b $BASE.img -f qcow2 $NAME.img
 virt-install \
+ --connect qemu:///session \
  --name $NAME \
  --ram=8192 \
  --vcpus=4 \
