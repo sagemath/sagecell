@@ -62,6 +62,7 @@ class ForkingKernelManager(object):
             ka.initialize([])
         except:
             logging.exception("Error initializing IPython kernel")
+            # FIXME: What's the point in proceeding after?!
         try:
             if self.update_function is not None:
                 self.update_function(ka)
@@ -73,6 +74,15 @@ class ForkingKernelManager(object):
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
                 "stdin_port": ka.stdin_port, "hb_port": ka.hb_port, "iopub_port": ka.iopub_port})
         pipe.close()
+        # The following line will erase JSON connection file with ports and
+        # other numbers. Since we do not reuse the kernels, we don't really need
+        # these files. And new kernels set atexit hook to delete the file, but
+        # it does not get called, perhaps because kernels are stopped by system
+        # signals. The result is accumulation of files leading to disk quota
+        # issues AND attempts to use stale files to connect to non-existing
+        # kernels that eventually crash the server. TODO: figure out a better
+        # fix, perhaps kernels have to be stopped in a more gentle fashion?
+        ka.cleanup_connection_file()
         ka.start()
 
     def start_kernel(self, kernel_id=None, config=None, resource_limits=None, logfile = None):
