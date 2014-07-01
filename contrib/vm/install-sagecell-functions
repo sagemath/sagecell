@@ -29,6 +29,15 @@ function install_extra_system_packages {
 EOF
 }
 
+function configure_system {
+    # Default limits of 1024 are too small for multiple requests at once
+    $SSH <<EOF | tee -a install.log
+        echo 'Adjusting system configuration'
+        echo -e "* soft nproc 32768\nroot soft nproc unlimited" > /etc/security/limits.d/90-nproc.conf
+        echo "* - nofile 32768" > /etc/security/limits.d/90-nofile.conf
+EOF
+}
+
 function kill_monitor {
     $SSH <<EOF | tee -a install.log
         echo "Removing cron scripts"

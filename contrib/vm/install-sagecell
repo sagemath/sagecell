@@ -16,6 +16,7 @@ source vm/install-sagecell-functions
 remove_install_log
 update_system
 install_extra_system_packages
+configure_system
 kill_monitor
 remove_accounts
 set_up_sageserver_account
