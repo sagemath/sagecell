@@ -5,7 +5,7 @@ This is a Sage computation web service.
 Installation
 ============
 
-.. WARNING::
+.. warning::
 
     These instructions (as well as other variants) may be outdated.
     
