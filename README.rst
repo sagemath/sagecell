@@ -5,6 +5,12 @@ This is a Sage computation web service.
 Installation
 ============
 
+.. WARNING::
+
+    These instructions (as well as other variants) may be outdated.
+    
+    The most reliable source of build instructions at the moment is in contib/vm scripts.
+
 1. Make sure you have git; if you're on Ubuntu, you’ll also need the UUID dev package for ØMQ (`uuid-dev` on Ubuntu, `libuuid-devel` on Redhat).
 2. Compile Sage 5.10.rc1 (download it from http://www.sagemath.org/download-latest.html).
 3. Delete the IPython installation in Sage: go to ``SAGE_ROOT/local/lib/python/site-packages/`` and delete the IPython directory and the ipython egg.
