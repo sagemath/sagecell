@@ -2,7 +2,7 @@ This is a Sage computation web service.
 
 # Warning
 
-Installation instructions below (as well as other variants) may be outdated. The most reliable source of build instructions at the moment is in contib/vm scripts.
+Installation instructions below (as well as other variants) may be outdated. The most reliable source of build instructions at the moment is in [contib/vm scripts](contrib/vm).
     
 # Simple Installation
 
