@@ -12,13 +12,16 @@ If you are going to run a world accessible Sage Cell server, we also assume that
 
 1. Make sure you have a recent enough version of git: 1.8.5 is good enough, while 1.7.9 isn't.
 2. Install required npm packages:
+
 ```bash
 sudo apt-get install npm
 # On Debian based systems we need to make an alias
 sudo ln -s /usr/bin/nodejs /usr/bin/node
 sudo npm install -g inherits requirejs coffee-script
 ```
+
 3. Download repositories from GitHub:
+
 ```bash
 # Create a directory for building images and go there.
 mkdir sc_build
@@ -28,14 +31,18 @@ wget https://github.com/sagemath/sagecell/raw/master/contrib/vm/clone_repositori
 chmod u+x clone_repositories
 ./clone_repositories
 ```
-Note: these are the largest downloads that happen during installation, but not the only ones - you have to have Internet access during the following steps as well.
-4. Build Sage (`export MAKE="make -j8"` or something similar can speed things up):
-```bash
-mv github/sage .
-cd sage
-make start
-```
-Note that we are building a special branch of Sage for the Cell server, do NOT use your regular Sage installation!
+   Note: these are the largest downloads that happen during installation, but not the only ones - you have to have Internet access during the following steps as well.
+
+4.  Build Sage (`export MAKE="make -j8"` or something similar can speed things up):
+
+    ```bash
+    mv github/sage .
+    cd sage
+    make start
+    ```
+
+    Note that we are building a special branch of Sage for the Cell server, do NOT use your regular Sage installation!
+    
 5. Prepare Sage for Sage Cell:
 ```bash
 ./sage -sh -c "easy_install pip"
