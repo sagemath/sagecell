@@ -1,14 +1,18 @@
-This is a Sage computation web service.
+This is Sage Cell - a Sage computation web service.
 
-# Warning
+Please note that installation instructions below may be outdated. The most reliable source of build instructions at the moment is in [contib/vm scripts](contrib/vm).
 
-Installation instructions below (as well as other variants) may be outdated. The most reliable source of build instructions at the moment is in [contib/vm scripts](contrib/vm).
+
+# Security Warning
+
+If you are going to run a world accessible Sage Cell server, you must understand security implications and should be able to implement reasonable precautions.
+
+The worker account (which is your own one by default) will be able to execute arbitrary code, which may be malicious. Make **sure** that you are securing the account properly. Working with a professional IT person is a very good idea here. Since the untrusted accounts can be on any computer, one way to isolate these accounts is to host them in a virtual machine that can be reset if the machine is compromised.
+
     
 # Simple Installation
 
-We assume that you have access to the Internet and can install any needed dependencies (e.g. git). If you need to know more precisely what tools are needed, please consult the scripts for building virtual machine images in contrib/vm
-
-If you are going to run a world accessible Sage Cell server, we also assume that you understand security implications and can implement reasonable precautions.
+We assume that you have access to the Internet and can install any needed dependencies (e.g. git). If you need to know more precisely what tools are needed, please consult the scripts for building virtual machine images in [contib/vm scripts](contrib/vm).
 
 1.  Make sure you have a recent enough version of git: 1.8.5 is good enough, while 1.7.9 isn't.
 2.  Install required npm packages:
@@ -84,18 +88,19 @@ If you are going to run a world accessible Sage Cell server, we also assume that
 
 # Configuration
 
-1.  Go into the ``sage/sagecell`` directory (you are there in the end of the above instructions).
-2.  Copy ``config_default.py`` to ``config.py``.
-3.  Edit ``config.py`` according to your needs. Of particular interest are ``host`` and ``username`` entries of the ``_default_config`` dictionary: you should be able to SSH to ``username@host`` *without typing in a password*. For example, by default, it assumes you can do ``ssh localhost`` without typing in a password. Unless you are running a private and **firewalled** server for youself, you’ll want to change this to a more restrictive account; otherwise **anyone will be able to execute any code under your username**. You can set up a passwordless account using SSH: type “ssh passwordless login” into Google to find lots of guides for doing this, like http://www.debian-administration.org/articles/152.
+1.  Go into the `sage/sagecell` directory (you are there in the end of the above instructions).
+2.  Copy `config_default.py` to `config.py`.
+3.  Edit `config.py` according to your needs. Of particular interest are `host` and `username` entries of the `_default_config` dictionary: you should be able to SSH to `username@host` *without typing in a password*. For example, by default, it assumes you can do `ssh localhost` without typing in a password. Unless you are running a private and **firewalled** server for youself, you’ll want to change this to a more restrictive account; otherwise **anyone will be able to execute any code under your username**. You can set up a passwordless account using SSH: type “ssh passwordless login” into Google to find lots of guides for doing this, like http://www.debian-administration.org/articles/152. You may also wish to adjust `db_config["uri"]` (make the database files readable *only* by the trusted account).
 4.  Start the server via
 
     ```bash
-    ../sage web_server.py
+    ../sage web_server.py [-p <PORT_NUMBER>]
     ```
     
-    and stop it by pressing ``Ctrl+C`` in the same terminal.
+    where the default `<PORT_NUMBER>` is `8888` and go to `http://localhost:<PORT_NUMBER>` to use the Sage Cell server.
+    
+    When you want to shut down the server, press `Ctrl-C` in the same terminal.
 
-Once again: **the default configuration is not secure**, so you'll need to do more work to harden the system to open it up to outside users. But at least the above instructions should get you up and running for a personal/development server. See the [Advanced Installation](doc/advanced_installation.rst) guide for more details about configuring and running a server.
 
 # License
 
