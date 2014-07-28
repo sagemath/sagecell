@@ -18,6 +18,9 @@ ssh-keygen -q -t rsa -N "" -f sagecell_rsa
 # Get OS image: we are at the moment using
 # CentOS-6.5-x86_64-bin-DVD1.iso
 # which just got outdated. The plan is to migrate to another base soon.
+#
+# Create a file rootpassword with encrypted root password
+# (see make-base-centos for the format)
 
 # Make base VM image.
 vm/make-base-centos centos CentOS-6.5-x86_64-bin-DVD1.iso
