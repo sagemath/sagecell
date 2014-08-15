@@ -1,0 +1,1 @@
+*/2 * * * * root /root/check_sagecell http://localhost:8888 >> /root/check_sagecell.log 2>&1
