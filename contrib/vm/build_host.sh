@@ -38,17 +38,18 @@ virt-install \
 --noreboot \
 
 # For a dedicated partition use
-#--disk path=/dev/sd?? \
+#--disk path=/dev/???,bus=virtio \
     
 # Make a script to SSH inside, assuming that IP will not change
-virsh start $VM_NAME
+virsh --connect qemu:///system start $VM_NAME
 sleep 30
-IP=`arp -n|grep $MAC|grep -Eo "^[0-9.]{7,15}"`
+# While it is in sbin, regular users can run arp -n anyway.
+IP=`/usr/sbin/arp -n|grep $MAC|grep -Eo "^[0-9.]{7,15}"`
 cat <<EOF > ssh_host.sh
 #!/usr/bin/env bash
 
-if [[ \`virsh domstate $VM_NAME\` != "running" ]]; then
-    if ! virsh start $VM_NAME; then
+if [[ \`virsh --connect qemu:///system domstate $VM_NAME\` != "running" ]]; then
+    if ! virsh --connect qemu:///system start $VM_NAME; then
        echo "Failed to start $VM_NAME"
        exit 1
     fi
