@@ -230,7 +230,7 @@ def update_repositories():
         if not os.path.exists(repository):
             git("clone https://github.com/{}/{}.git".format(user, repository))
         os.chdir(repository)
-        if "sagecell" in check_output("git branch --list sagecell"):
+        if "sagecell" in check_output("git branch --list -a *sagecell"):
             git("checkout sagecell")
         git("pull")
         git("submodule update --init --recursive")
@@ -658,12 +658,14 @@ logging.config.dictConfig(yaml.load("""
         class: logging.FileHandler
         formatter: file
         filename: container_manager.log
+        level: DEBUG
       console:
         class: logging.StreamHandler
         formatter: console
         stream: ext://sys.stdout
+        level: INFO
     root:
-      level: INFO
+      level: DEBUG
       handlers: [file, console]
     """))
 log = logging.getLogger(__name__)
