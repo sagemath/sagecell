@@ -4,22 +4,18 @@
 if [ $? -ne 0 ]
   then
     # health check disabled; print message to that effect and exit normally
-    echo "Health check disabled; skipping status check `date`"
+    echo "`date` Health check disabled; skipping status check"
     exit 0
 fi
 
 # Start Sage as the server user, otherwise directory permissions get messed up.
-su -l {server} sage/sage sagecell/contrib/sagecell-client/sagecell-service.py $1
+su -l sc_serv sage/sage sagecell/contrib/sagecell-client/sagecell-service.py $1
 if [ $? -ne 0 ]
- then
-   echo Error in server. Restarting... `date`
-   /sbin/initctl stop sagecell
-   sleep 5
-   # kill everything just to make sure
-   su -s /bin/sh -c 'exec "$0" "$@"' {server} -- kill -9 -1
-   sleep 5
-   /sbin/initctl start sagecell
-   echo Restarted `date`
+then
+   echo "`date` Error in server. Restarting..."
+   stop sagecell
+   start sagecell
+   echo "`date` Restarted."
    echo "************"
    exit 1
 fi
