@@ -59,3 +59,5 @@ fi
 ssh -i ${VM_NAME}_rsa root@$IP
 EOF
 chmod u+x ssh_host.sh
+# Power cycle VM, otherwise bash completion does not work for LXC.
+virsh --connect qemu:///system shutdown $VM_NAME
