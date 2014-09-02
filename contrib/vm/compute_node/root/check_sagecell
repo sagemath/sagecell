@@ -2,7 +2,7 @@
 
 /root/healthcheck status
 if [ $? -ne 0 ]
-  then
+then
     # health check disabled; print message to that effect and exit normally
     echo "`date` Health check disabled; skipping status check"
     exit 0
@@ -13,8 +13,8 @@ su -l sc_serv sage/sage sagecell/contrib/sagecell-client/sagecell-service.py $1
 if [ $? -ne 0 ]
 then
    echo "`date` Error in server. Restarting..."
-   stop sagecell
-   start sagecell
+   /sbin/initctl stop sagecell
+   /sbin/initctl start sagecell
    echo "`date` Restarted."
    echo "************"
    exit 1
