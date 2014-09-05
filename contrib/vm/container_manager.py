@@ -633,7 +633,7 @@ def restart_haproxy(all_nodes):
                 lines.append(l)
     if SCLXC(lxcn_tester).is_defined():
         test = HAProxy_section.replace("{port}", "8888")
-        test = test.replace("{suffix}", "test")
+        test = test.replace("{suffix}", "_test")
         lines.append(test.replace("{node}", lxcn_tester))
     lines.append(HAProxy_stats)
     with open("/etc/haproxy/haproxy.cfg", "w") as f:
@@ -687,6 +687,8 @@ parser.add_argument("-t", "--tester", action="store_true",
                     help="rebuild 'testing' container")
 parser.add_argument("--deploy", action="store_true",
                     help="rotate deployed containers based on current master")
+parser.add_argument("--nodelay", action="store_true",
+                    help="don't wait for old containers to be out of use")
 args = parser.parse_args()
 
 # Do it only once and let users change it later.
@@ -731,9 +733,12 @@ if args.deploy:
         if n.is_defined():
             need_to_wait = True
             n.inside("/root/healthcheck off")
-    if need_to_wait:
+    if need_to_wait and not args.nodelay:
         log.info("waiting for users to stop working with old containers...")
         timer_delay(deploy_delay)
+        # Make sure sagecell has an associated IP for restart_haproxy
+        sagecell.start()
+        sagecell.shutdown()
     for n in old_nodes:
         n.destroy()
 
