@@ -545,8 +545,13 @@ class SCLXC(object):
                 raise RuntimeError("failed to execute {} with arguments {}"
                                    .format(command, args))
 
-    def install_sagecell(self):
+    def install_sagecell(self, keeprepos=False):
         r"""
+        INPUT:
+
+        - ``keeprepos`` -- if ``True``, GitHub repositories will NOT be updated
+          and set to proper state (useful for development).
+
         Set up SageCell to run on startup.
         """
         create_host_users()
@@ -557,7 +562,8 @@ class SCLXC(object):
                     users["server_ID"], users["GID"])
         self.inside(os.chmod, "/tmp/sagecell", stat.S_ISGID)
         # Copy repositories into container
-        update_repositories()
+        if not keeprepos:
+            update_repositories()
         log.info("uploading repositories to %s", self.name)
         root = self.c.get_config_item("lxc.rootfs")
         shutil.copytree("github",
@@ -683,6 +689,8 @@ parser.add_argument("-b", "--base", action="store_true",
                     help="rebuild 'OS and standard packages' container")
 parser.add_argument("-m", "--master", action="store_true",
                     help="rebuild 'Sage and SageCell' container")
+parser.add_argument("--keeprepos", action="store_true",
+                    help="keep GitHub repositories at their present state")
 parser.add_argument("-t", "--tester", action="store_true",
                     help="rebuild 'testing' container")
 parser.add_argument("--deploy", action="store_true",
@@ -706,7 +714,7 @@ if sagecell.is_defined() and not args.master:
     sagecell.update()
 else:
     sagecell = SCLXC(lxcn_base).clone(lxcn_sagecell, update=True)
-    sagecell.install_sagecell()
+    sagecell.install_sagecell(args.keeprepos)
 
 if args.tester:
     sagecell.clone(lxcn_tester, autostart=True).start()
