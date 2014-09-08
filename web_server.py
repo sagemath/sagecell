@@ -3,7 +3,6 @@
 # System imports
 import os
 
-from hashlib import sha1
 # Sage Cell imports
 import misc
 
@@ -15,7 +14,6 @@ logging.basicConfig(format='%(asctime)s %(name)s:%(levelname)s %(message)s',leve
 logger = logging.getLogger('sagecell')
 
 # Tornado / zmq imports
-import zmq
 from zmq.eventloop import ioloop
 import tornado.web
 
@@ -75,7 +73,6 @@ class SageCellServer(tornado.web.Application):
 import socket
 import fcntl
 import struct
-import sys
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -105,11 +102,20 @@ if __name__ == "__main__":
         logging.getLogger("tornado.access").setLevel(logging.DEBUG)
         logging.getLogger("tornado.application").setLevel(logging.DEBUG)
         logging.getLogger("tornado.general").setLevel(logging.DEBUG)
+        
+    class TornadoFilter(logging.Filter):
+        """
+        Drop HA-Proxy healthchecks.
+        """
+        def filter(self, record):
+            return len(record.args) != 3 or \
+                record.args[:2] != (200, 'OPTIONS / (10.0.3.1)')
+            
+    logging.getLogger("tornado.access").addFilter(TornadoFilter())        
 
     tmp_dir = args.tmp_dir
 
     logger.info("starting tornado web server")
-    import lockfile
     from lockfile.pidlockfile import PIDLockFile
     pidfile_path = config.get_config('pid_file')
     pidlock = PIDLockFile(pidfile_path)

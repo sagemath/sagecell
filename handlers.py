@@ -1,4 +1,4 @@
-import time, string, urllib, zlib, base64, uuid, json, os.path, re
+import time, urllib, zlib, base64, uuid, json, os.path
 
 import tornado.web
 import tornado.websocket
@@ -7,11 +7,6 @@ import sockjs.tornado
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 import math
-try:
-    from IPython.kernel.zmq.session import Session
-except ImportError:
-    # old IPython
-    from IPython.zmq.session import Session
 try:
     from sage.all import gap, gp, maxima, r, singular
     trait_names = {
@@ -396,11 +391,15 @@ accepted_tos=true\n""")
                                             timeout=0)
             if not (remote_ip=="::1" and referer==""
                     and cron.match(code) is not None):
-                statslogger.info(StatsMessage(kernel_id = self.kernel_id,
-                                              remote_ip = remote_ip,
-                                              referer = referer,
-                                              code = code,
-                                              execute_type = 'service'))
+                sm = StatsMessage(kernel_id=self.kernel_id,
+                                  remote_ip=remote_ip,
+                                  referer=referer,
+                                  code=code,
+                                  execute_type='service')
+                if remote_ip == "127.0.0.1" and self.kernel_id:
+                    statslogger.debug(sm)
+                else:
+                    statslogger.info(sm)
 
             self.shell_handler = ShellServiceHandler(self.application)
             self.iopub_handler = IOPubServiceHandler(self.application)
