@@ -61,6 +61,7 @@ m4
 nginx
 npm
 texlive
+unattended-upgrades
 """.split()
 # Due to (other's) bugs, some packages cannot be installed during installation.
 # Let's also use it to separate "standard tools" and "extra stuff".
