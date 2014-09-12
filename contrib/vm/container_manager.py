@@ -168,9 +168,7 @@ backend static{suffix}
 
 backend compute{suffix}
     log /dev/log local0 debug
-    cookie  SAGECELL_SERVER insert indirect postonly
-    stick-table type ip size 500k expire 120m
-    stick on src
+    cookie  SAGECELL_SERVER insert indirect postonly maxidle 2h
     option httpchk
 
     server {node} {node}:8888 cookie {node} check port 9888
