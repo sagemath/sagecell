@@ -92,7 +92,7 @@ patsy
 statsmodels
 numexpr
 tables
-scikits-image
+scikit-image
 scimath
 Shapely
 SimPy
