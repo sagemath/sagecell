@@ -2,6 +2,7 @@
 
 import argparse
 import datetime
+import fnmatch
 import grp
 import logging
 import logging.config
@@ -198,6 +199,18 @@ def check_output(command):
                                    universal_newlines=True)
 
 
+def remove_pattern(path, pattern):
+    r"""
+    Remove all files and directories at ``path`` matching ``pattern``.
+    """
+    for name in fnmatch.filter(os.listdir(path), pattern):
+        full = os.path.join(path, name)
+        if os.path.isdir(full):
+            shutil.rmtree(full)
+        else:
+            os.remove(full)
+
+
 def timer_delay(delay):
     r"""
     Wait with a countdown timer.
@@ -369,15 +382,15 @@ def install_sagecell():
     check_call("sage/sage -i pyzmq")
     # We need IPython stuff not present in spkg and there are issues with 2.1
     log.info("replacing IPython in Sage")
-    check_call("rm -rf sage/local/lib/python/site-packages/IPython*")
-    check_call("rm -rf sage/local/lib/python/site-packages/ipython*")
+    remove_pattern("sage/local/lib/python/site-packages", "IPython*")
+    remove_pattern("sage/local/lib/python/site-packages", "ipython*")
     shutil.move("github/ipython", ".")
     os.chdir("ipython")
     check_call("../sage/sage setup.py develop")
     os.chdir("..")
     # We need a cutting-edge matplotlib for the new interactive features.
     log.info("replacing matplotlib in Sage")
-    check_call("rm -rf sage/local/lib/python/site-packages/matplotlib*")
+    remove_pattern("sage/local/lib/python/site-packages", "matplotlib*")
     shutil.move("github/matplotlib", ".")
     os.chdir("matplotlib")
     check_call("../sage/sage setup.py install")
