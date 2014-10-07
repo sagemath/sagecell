@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 A small client illustrating how to interact with the Sage Cell Server, version 2
 
@@ -7,26 +8,39 @@ Requires the websocket-client package: http://pypi.python.org/pypi/websocket-cli
 import websocket
 import threading
 import json
-import urllib2
+import requests
+
 
 class SageCell(object):
+
     def __init__(self, url, timeout=10):
         if not url.endswith('/'):
             url+='/'
         # POST or GET <url>/kernel
         # if there is a terms of service agreement, you need to
         # indicate acceptance in the data parameter below (see the API docs)
-        req = urllib2.Request(url=url+'kernel', data='accepted_tos=true',headers={'Accept': 'application/json'})
-        response = json.loads(urllib2.urlopen(req).read())
+
+        reply = requests.post(
+            url+'kernel',
+            data={'accepted_tos':'true'},
+            headers={'Accept': 'application/json'},
+        )
+
+        # Subsequent connections (including websocket) must preserve
+        # the cookies for the backend to route to the right server
+        cookie = ''
+        for key, value in reply.cookies.items():
+            cookie += '{0}={1}; '.format(key, value)
 
         # RESPONSE: {"id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
         # construct the iopub and shell websocket channel urls from that
+        response = reply.json()
 
         self.kernel_url = response['ws_url']+'kernel/'+response['id']+'/'
         websocket.setdefaulttimeout(timeout)
         print self.kernel_url
-        self._shell = websocket.create_connection(self.kernel_url+'shell')
-        self._iopub = websocket.create_connection(self.kernel_url+'iopub')
+        self._shell = websocket.create_connection(self.kernel_url+'shell', cookie=cookie)
+        self._iopub = websocket.create_connection(self.kernel_url+'iopub', cookie=cookie)
 
         # initialize our list of messages
         self.shell_messages = []
@@ -75,11 +89,24 @@ class SageCell(object):
         session = str(uuid4())
 
         # Here is the general form for an execute_request message
-        execute_request = {'header': {'msg_type': 'execute_request', 'msg_id': str(uuid4()), 'username': '', 'session': session},
-                            'parent_header':{},
-                            'metadata': {},
-                            'content': {'code': code, 'silent': False, 'user_variables': [], 'user_expressions': {'_sagecell_files': 'sys._sage_.new_files()'}, 'allow_stdin': False}}
-
+        execute_request = {
+            'header': {
+                'msg_type': 'execute_request',
+                'msg_id': str(uuid4()), 
+                'username': '', 'session': session,
+            },
+            'parent_header':{},
+            'metadata': {},
+            'content': {
+                'code': code, 
+                'silent': False, 
+                'user_variables': [], 
+                'user_expressions': {
+                    '_sagecell_files': 'sys._sage_.new_files()',
+                }, 
+                'allow_stdin': False,
+            }
+        }
         return json.dumps(execute_request)
 
     def close(self):
@@ -89,7 +116,11 @@ class SageCell(object):
 
 if __name__ == "__main__":
     import sys
-    # argv[1] is the web address
-    a=SageCell(sys.argv[1])
+    if len(sys.argv) >= 2:
+        # argv[1] is the web address
+        url = sys.argv[1]
+    else:
+        url = 'http://sagecell.sagemath.org'
+    a = SageCell(url)
     import pprint
     pprint.pprint(a.execute_request('factorial(2012)'))
