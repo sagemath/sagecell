@@ -8,7 +8,7 @@ from random import randint
 import time
 from datetime import datetime
 
-retries = 3
+retries = 2
 
 def message(s):
     print "%s: %s"%(datetime.now(), s)
@@ -41,9 +41,9 @@ for i in range(retries):
             time.sleep(0.5)
 
     except Exception as e:
+        # Even exceptions may be transient...
         import traceback
-        traceback.print_exc()
-        exit(1)
+        message(traceback.format_exc())
 
 message("%d unsuccessful attempts, the server is not working!" % retries)
 exit(1)
