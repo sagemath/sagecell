@@ -40,13 +40,13 @@ users = {"group": "sagecell", "GID": 8888,
          "server": "sc_serv", "server_ID": 8888,
          "worker": "sc_work", "worker_ID": 9999}
 
-# Github repositories as (user, repository)
+# Github repositories as (user, repository, branch)
 repositories = [
-    ("novoselt", "sage"),
-    ("jasongrout", "ipython"),
-    ("jasongrout", "matplotlib"),
-    ("sagemath", "sagecell"),
-    ("matplotlib", "basemap"),
+    ("novoselt", "sage", "sagecell"),
+    ("jasongrout", "ipython", "sagecell"),
+    ("jasongrout", "matplotlib", "sagecell"),
+    ("sagemath", "sagecell", "master"),
+    ("matplotlib", "basemap", "master"),
 ]
 
 # Packages to be installed in the base container
@@ -168,7 +168,6 @@ backend static{suffix}
     server {node}-static {node}:8889 check
 
 backend compute{suffix}
-    log /dev/log local0 debug
     cookie  SAGECELL_SERVER insert indirect postonly maxidle 2h
     option httpchk
 
@@ -237,13 +236,12 @@ def update_repositories():
         os.mkdir("github")
     os.chdir("github")
     git = lambda command: check_call("git " + command)
-    for user, repository in repositories:
+    for user, repository, branch in repositories:
         log.info("updating repository %s", repository)
         if not os.path.exists(repository):
             git("clone https://github.com/{}/{}.git".format(user, repository))
         os.chdir(repository)
-        if "sagecell" in check_output("git branch --list -a *sagecell"):
-            git("checkout sagecell")
+        git("checkout " + branch)
         git("pull")
         git("submodule update --init --recursive")
         if repository == "sage":
