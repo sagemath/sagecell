@@ -241,6 +241,7 @@ def update_repositories():
         if not os.path.exists(repository):
             git("clone https://github.com/{}/{}.git".format(user, repository))
         os.chdir(repository)
+        git("fetch")
         git("checkout " + branch)
         git("pull")
         git("submodule update --init --recursive")
