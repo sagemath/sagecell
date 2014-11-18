@@ -616,7 +616,7 @@ class SCLXC(object):
         """
         log.info("updating packages in %s", self.name)
         self.inside("apt-get update")
-        self.inside("apt-get dist-upgrade -y")
+        self.inside("apt-get dist-upgrade -y --auto-remove")
 
 
 def restart_haproxy(all_nodes):
