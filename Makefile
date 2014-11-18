@@ -68,7 +68,7 @@ threejs-url    =  https://raw.github.com/jasongrout/three.js/sagecell/build/thre
 threejs-url-control = https://raw.github.com/jasongrout/three.js/sagecell/examples/js/controls/OrbitControls.js
 threejs-url-detect =  https://raw.github.com/jasongrout/three.js/sagecell/examples/js/Detector.js
 jmol-sage      = $(sage-root)/local/share/jmol
-canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-0.10.*.egg/sagenb/data/sage/js/canvas3d_lib.js
+canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-*.egg/sagenb/data/sage/js/canvas3d_lib.js
 
 all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
 
