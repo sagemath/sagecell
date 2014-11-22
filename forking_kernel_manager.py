@@ -44,8 +44,8 @@ class ForkingKernelManager(object):
         :arg dict resource_limits: a dict with keys resource.RLIMIT_* (see config_default documentation for explanation of valid options) and values of the limit for the given resource to be set in the kernel process
         """
         os.setpgrp()
-        logging.basicConfig(filename=self.filename,format=str(uuid.uuid4()).split('-')[0]+': %(asctime)s %(message)s',level=logging.DEBUG)
-        logging.debug("kernel forked; now starting and configuring")
+        logger = logging.getLogger("sagecell.kernel.%s" % str(uuid.uuid4())[:4])
+        logger.debug("kernel forked; now starting and configuring")
         try:
             ka = IPKernelApp.instance(config=config, ip=config["ip"])
             from namespace import InstrumentedNamespace
@@ -61,14 +61,14 @@ class ForkingKernelManager(object):
             ka.parent_handle = True
             ka.initialize([])
         except:
-            logging.exception("Error initializing IPython kernel")
+            logger.exception("Error initializing IPython kernel")
             # FIXME: What's the point in proceeding after?!
         try:
             if self.update_function is not None:
                 self.update_function(ka)
         except:
-            logging.exception("Error configuring up kernel")
-        logging.debug("finished updating")
+            logger.exception("Error configuring up kernel")
+        logger.debug("finished updating")
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,

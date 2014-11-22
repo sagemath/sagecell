@@ -20,21 +20,15 @@ except ImportError:
     trait_names = {}
 from misc import sage_json, Timer, Config
 config = Config()
-import logging
-logger = logging.getLogger('sagecell')
 
 import re
 cron = re.compile("^print [-]?\d+\+[-]?\d+$")
 
-
+import logging
+logger = logging.getLogger('sagecell')
 statslogger = logging.getLogger('sagecell.stats')
-statslogger.propagate=False
-import sys
-#h = logging.FileHandler('stats.log','a')
-h = logging.StreamHandler(sys.stdout)
-h.setFormatter(logging.Formatter('%(asctime)s %(name)s %(process)d: %(message)s'))
-statslogger.addHandler(h)
 from log import StatsMessage
+
 
 class RootHandler(tornado.web.RequestHandler):
     """

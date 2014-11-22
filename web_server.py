@@ -1,17 +1,12 @@
 #! /usr/bin/env python
 
-# System imports
 import os
+import logging
+logger = logging.getLogger('sagecell')
 
 # Sage Cell imports
 import misc
-
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
-
-import logging
-logging.basicConfig(format='%(asctime)s %(name)s:%(levelname)s %(message)s',level=logging.INFO)
-
-logger = logging.getLogger('sagecell')
 
 # Tornado / zmq imports
 from zmq.eventloop import ioloop
@@ -27,8 +22,6 @@ _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
 import handlers
 import permalink
 
-
-systemlogger = logging.getLogger('sagecell.system')
 
 class SageCellServer(tornado.web.Application):
     def __init__(self, baseurl=""):
@@ -141,7 +134,7 @@ if __name__ == "__main__":
         if args.interface is not None:
             listen['address']=get_ip_address(args.interface)
         logger.info("Listening configuration: %s"%(listen,))
-        systemlogger.warning('START')
+        logger.warning('START')
         application.listen(**listen)
         application.ioloop.start()
     except KeyboardInterrupt:
@@ -149,7 +142,7 @@ if __name__ == "__main__":
         try:
             application.km.shutdown()
         except KeyboardInterrupt:
-            logging.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")
+            logger.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")
     finally:
         pidlock.release()
-        systemlogger.warning('SHUTDOWN')
+        logger.warning('SHUTDOWN')

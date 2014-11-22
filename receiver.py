@@ -35,10 +35,10 @@ class Receiver(object):
                 msg["content"] = {}
 
             self.timer()
-            logging.debug("Start %s"%(msg_type,))
+            logger.debug("Start %s"%(msg_type,))
             handler = getattr(self, msg_type)
             response = handler(msg["content"])
-            logging.debug("Finished handler %s: %s"%(msg_type, self.timer))
+            logger.debug("Finished handler %s: %s"%(msg_type, self.timer))
 
             self.dealer.send(source, zmq.SNDMORE)
             self.dealer.send_pyobj(response)
@@ -110,7 +110,7 @@ class Receiver(object):
             try:
                 sage.all.plot(lambda x: x, (0,1)).save(StringIO.StringIO())
             except Exception as e:
-                logging.debug('plotting exception: %s'%e)
+                logger.debug('plotting exception: %s'%e)
             self.sage_dict = {'sage': sage}
             sage_code = """
 from sage.all import *
@@ -363,7 +363,7 @@ set_random_seed()
             reply_content = self.km.start_kernel(resource_limits=resource_limits)
             return self._form_message(reply_content)
         except Exception as e:
-            logging.exception("Error starting kernel")
+            logger.exception("Error starting kernel")
             return self._form_message(str(e), error=True)
 
     def kill_kernel(self, msg_content):
@@ -414,8 +414,8 @@ if __name__ == '__main__':
     tmp_dir = sys.argv[4]
     import logging
     import uuid
-    logging.basicConfig(filename=filename,format=comp_id[:4]+': %(asctime)s %(message)s',level=logging.DEBUG)
-    logging.debug('started')
+    logger = logging.getLogger("sagecell.receiver.%s" % comp_id[:4])
+    logger.debug('started')
     receiver = Receiver(filename, ip, tmp_dir)
     receiver.start()
-    logging.debug('ended')
+    logger.debug('ended')
