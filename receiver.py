@@ -412,9 +412,9 @@ if __name__ == '__main__':
     filename = sys.argv[2]
     comp_id = sys.argv[3]
     tmp_dir = sys.argv[4]
-    import logging
+    from log import receiver_logger
     import uuid
-    logger = logging.getLogger("sagecell.receiver.%s" % comp_id[:4])
+    logger = receiver_logger.getChild(comp_id[:4])
     logger.debug('started')
     receiver = Receiver(filename, ip, tmp_dir)
     receiver.start()

@@ -9,7 +9,9 @@ except ImportError:
     from IPython.zmq.ipkernel import IPKernelApp
 from IPython.config.loader import Config
 from multiprocessing import Process, Pipe
-import logging
+
+from log import kernel_logger
+
 
 def makedirs(path):
     import errno
@@ -44,7 +46,7 @@ class ForkingKernelManager(object):
         :arg dict resource_limits: a dict with keys resource.RLIMIT_* (see config_default documentation for explanation of valid options) and values of the limit for the given resource to be set in the kernel process
         """
         os.setpgrp()
-        logger = logging.getLogger("sagecell.kernel.%s" % str(uuid.uuid4())[:4])
+        logger = kernel_logger.getChild(str(uuid.uuid4())[:4])
         logger.debug("kernel forked; now starting and configuring")
         try:
             ka = IPKernelApp.instance(config=config, ip=config["ip"])

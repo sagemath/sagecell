@@ -24,10 +24,7 @@ config = Config()
 import re
 cron = re.compile("^print [-]?\d+\+[-]?\d+$")
 
-import logging
-logger = logging.getLogger('sagecell')
-statslogger = logging.getLogger('sagecell.stats')
-from log import StatsMessage
+from log import StatsMessage, logger, stats_logger
 
 
 class RootHandler(tornado.web.RequestHandler):
@@ -284,7 +281,7 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
     def _log_stats(self, kernel, msg):
         msg=json.loads(msg)
         if msg["header"]["msg_type"] == "execute_request":
-            statslogger.info(StatsMessage(kernel_id = kernel,
+            stats_logger.info(StatsMessage(kernel_id = kernel,
                                           remote_ip = self.kernel_info['remote_ip'],
                                           referer = self.kernel_info['referer'],
                                           code = msg["content"]["code"],
@@ -391,9 +388,9 @@ accepted_tos=true\n""")
                                   code=code,
                                   execute_type='service')
                 if remote_ip == "127.0.0.1" and self.kernel_id:
-                    statslogger.debug(sm)
+                    stats_logger.debug(sm)
                 else:
-                    statslogger.info(sm)
+                    stats_logger.info(sm)
 
             self.shell_handler = ShellServiceHandler(self.application)
             self.iopub_handler = IOPubServiceHandler(self.application)

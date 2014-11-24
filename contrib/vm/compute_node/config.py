@@ -58,10 +58,3 @@ _default_config = {"host": "localhost",
 
 for i in range(4):
     computers.append(_default_config)
-
-import logging
-from logging.handlers import SysLogHandler
-h = SysLogHandler(address='/dev/log', facility=SysLogHandler.LOG_LOCAL3)
-h.setFormatter(logging.Formatter('%(asctime)s %(name)s %(process)5d: %(message)s'))
-logging.getLogger('sagecell').addHandler(h)
-logging.getLogger("tornado.application").addHandler(h)

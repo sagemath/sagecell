@@ -1,10 +1,9 @@
 #! /usr/bin/env python
 
 import os
-import logging
-logger = logging.getLogger('sagecell')
 
 # Sage Cell imports
+from log import logger
 import misc
 from trusted_kernel_manager import TrustedMultiKernelManager as TMKM
 
@@ -84,27 +83,11 @@ if __name__ == "__main__":
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-p', '--port', type=int, default=8888,
                         help='port to launch the server')
-    parser.add_argument('-d', '--debug', action='store_true', help='debug messages')
     parser.add_argument('-b', '--baseurl', default="", help="base url")
     parser.add_argument('--interface', default=None, help="interface to listen on (default all)")
     parser.add_argument('--tmp_dir', default=config.get_config("tmp_dir"), help="temporary directory for calculations")
 
     args = parser.parse_args()
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-        logging.getLogger("tornado.access").setLevel(logging.DEBUG)
-        logging.getLogger("tornado.application").setLevel(logging.DEBUG)
-        logging.getLogger("tornado.general").setLevel(logging.DEBUG)
-        
-    class TornadoFilter(logging.Filter):
-        """
-        Drop HA-Proxy healthchecks.
-        """
-        def filter(self, record):
-            return len(record.args) != 3 or \
-                record.args[:2] != (200, 'OPTIONS / (10.0.3.1)')
-            
-    logging.getLogger("tornado.access").addFilter(TornadoFilter())        
 
     tmp_dir = args.tmp_dir
 
