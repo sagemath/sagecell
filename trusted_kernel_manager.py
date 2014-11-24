@@ -13,9 +13,10 @@ import os
 import time
 import sys
 from Queue import Queue, Empty
-import logging
-logger = logging.getLogger('sagecell')
 import sender
+
+from log import logger
+
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """

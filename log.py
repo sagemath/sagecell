@@ -16,20 +16,18 @@ class StatsMessage(object):
 
 syslog = SysLogHandler(address="/dev/log", facility=SysLogHandler.LOG_LOCAL3)
 syslog.setFormatter(logging.Formatter(
-    "%(asctime)s %(process)5d %(name)22s: %(message)s"))
+    "%(asctime)s %(process)5d %(name)-22s: %(message)s"))
 
 # Default logger for SageCell
 logger = logging.getLogger("sagecell")
-logger.addHandler(syslog)
-logger.setLevel(LOG_LEVEL)
 stats_logger = logger.getChild("stats")
 # Intermediate loggers to be parents for actual receivers and kernels.
 receiver_logger = logger.getChild("receiver")
 kernel_logger = logger.getChild("kernel")
 
-tornado = logging.getLogger("tornado")
-tornado.addHandler(syslog)
-tornado.setLevel(LOG_LEVEL)
+root = logging.getLogger()
+root.addHandler(syslog)
+root.setLevel(LOG_LEVEL)
 
 class TornadoFilter(logging.Filter):
     """
