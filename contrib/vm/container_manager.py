@@ -61,6 +61,7 @@ iptables
 m4
 nginx
 npm
+rsyslog-relp
 texlive
 unattended-upgrades
 """.split()
@@ -111,14 +112,27 @@ moss
 
 # rsyslog configuration for the host - will not be overwritten later
 rsyslog_conf = """\
-$MaxMessageSize 64k # must be *before* loading imtcp
-# Provides TCP syslog reception
-$ModLoad imtcp
-$InputTCPServerRun 514
-if $syslogfacility-text == 'local3' then /var/log/sagecell-stats.log
-& ~
-if $syslogfacility-text == 'local4' then /var/log/sagecell-system.log
-& ~
+global(maxMessageSize="64k")
+
+module(load="imrelp")
+input(type="imrelp" port="12514")
+
+template(name="sagecell" type="list") {
+    property(name="hostname")
+    constant(value=" ")
+    property(name="syslogtag")
+    property(name="msg" spifno1stsp="on")
+    property(name="msg" droplastlf="on")
+    constant(value="\n")
+    }
+
+if $syslogfacility-text == "local3" then
+    {
+    action(type="omfile"
+           file="/var/log/sagecell.stats.log"
+           template="sagecell")
+    stop
+    }
 """
 
 
