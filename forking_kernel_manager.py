@@ -30,15 +30,14 @@ class KernelError(Exception):
 
 class ForkingKernelManager(object):
     """ A class for managing multiple kernels and forking on the untrusted side. """
-    def __init__(self, filename, ip, update_function=None, tmp_dir = None):
+    def __init__(self, ip, update_function=None, tmp_dir = None):
         self.kernels = {}
         self.ip = ip
-        self.filename = filename
         self.update_function = update_function
         self.dir = tmp_dir
         makedirs(self.dir)
 
-    def fork_kernel(self, config, pipe, resource_limits, logfile):
+    def fork_kernel(self, config, pipe, resource_limits):
         """ A function to be set as the target for the new kernel processes forked in ForkingKernelManager.start_kernel. This method forks and initializes a new kernel, uses the update_function to update the kernel's namespace, sets resource limits for the kernel, and sends kernel connection information through the Pipe object.
 
         :arg IPython.config.loader config: kernel configuration
@@ -87,7 +86,7 @@ class ForkingKernelManager(object):
         ka.cleanup_connection_file()
         ka.start()
 
-    def start_kernel(self, kernel_id=None, config=None, resource_limits=None, logfile = None):
+    def start_kernel(self, kernel_id=None, config=None, resource_limits=None):
         """ A function for starting new kernels by forking.
 
         :arg str kernel_id: the id of the kernel to be started. if no id is passed, a uuid will be generated
@@ -115,7 +114,7 @@ class ForkingKernelManager(object):
         os.chdir(dir)
 
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits, logfile))
+        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits))
         proc.start()
         os.chdir(currdir)
         # todo: yield back to the message processing while we wait
@@ -191,7 +190,7 @@ class ForkingKernelManager(object):
 if __name__ == "__main__":
     def f(a,b,c,d):
         return 1
-    a = ForkingKernelManager("/dev/null", f)
+    a = ForkingKernelManager(f)
     x = a.start_kernel()
     y = a.start_kernel()
     import time

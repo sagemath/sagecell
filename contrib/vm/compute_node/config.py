@@ -47,8 +47,6 @@ _default_config = {"host": "localhost",
                   "resource_limits": {"RLIMIT_CPU": 120, # CPU time in seconds
                                       "RLIMIT_AS": 3*(2**30), #Maximum address space in bytes; this sets 3 GB
                                      },
-# The log file will be in the home directory of the untrusted account
-                  "log_file": "sagecell.log",
                   "max_kernels": 30,
                   "preforked_kernels": 5,
 # These set paramaters for a heartbeat channel checking whether a given kernel is alive.

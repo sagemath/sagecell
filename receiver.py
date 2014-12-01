@@ -5,7 +5,7 @@ import sys
 from misc import Timer, sage_json
 
 class Receiver(object):
-    def __init__(self, filename, ip, tmp_dir):
+    def __init__(self, ip, tmp_dir):
         self.context = zmq.Context()
         self.dealer = self.context.socket(zmq.DEALER)
         self.port = self.dealer.bind_to_random_port("tcp://%s" % ip)
@@ -14,9 +14,8 @@ class Receiver(object):
         self.sage_mode = self.setup_sage()
         print self.sage_mode
         sys.stdout.flush()
-        self.km = UntrustedMultiKernelManager(filename, ip,
+        self.km = UntrustedMultiKernelManager(ip,
                 update_function=self.update_dict_with_sage, tmp_dir=tmp_dir)
-        self.filename = filename
         self.timer = Timer("", reset=True)
 
     def start(self):
@@ -409,13 +408,12 @@ set_random_seed()
 
 if __name__ == '__main__':
     ip = sys.argv[1]
-    filename = sys.argv[2]
-    comp_id = sys.argv[3]
-    tmp_dir = sys.argv[4]
+    comp_id = sys.argv[2]
+    tmp_dir = sys.argv[3]
     from log import receiver_logger
     import uuid
     logger = receiver_logger.getChild(comp_id[:4])
     logger.debug('started')
-    receiver = Receiver(filename, ip, tmp_dir)
+    receiver = Receiver(ip, tmp_dir)
     receiver.start()
     logger.debug('ended')

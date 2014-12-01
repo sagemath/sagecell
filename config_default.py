@@ -47,8 +47,6 @@ _default_config = {"host": "localhost",
                   "resource_limits": {"RLIMIT_CPU": 30, # CPU time in seconds
                                       "RLIMIT_AS": 2048*(2**20), #Maximum address space in bytes; this sets 1024 MB
                                      },
-# The log file will be in the home directory of the untrusted account
-                  "log_file": "sagecell.log",
                   "max_kernels": 10,
                   "preforked_kernels": 3,
 # These set paramaters for a heartbeat channel checking whether a given kernel is alive.
@@ -56,5 +54,5 @@ _default_config = {"host": "localhost",
                   "beat_interval": 0.5,
                   "first_beat": 1.0}
 
-for i in xrange(1):
+for i in range(1):
     computers.append(_default_config)

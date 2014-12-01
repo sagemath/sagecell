@@ -88,9 +88,8 @@ class TrustedMultiKernelManager(object):
         return ssh_client
 
     def _ssh_untrusted(self, cfg, client, comp_id):
-        logfile = cfg.get("log_file", os.devnull)
         ip = socket.gethostbyname(cfg["host"])
-        code = "%s '%s/receiver.py' '%s' '%s' '%s' '%s'"%(cfg["python"], cfg["location"], ip, logfile, comp_id, self.tmp_dir)
+        code = "%s '%s/receiver.py' '%s' '%s' '%s'"%(cfg["python"], cfg["location"], ip, comp_id, self.tmp_dir)
         logger.debug(code)
         ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
         stdout_channel = ssh_stdout.channel
