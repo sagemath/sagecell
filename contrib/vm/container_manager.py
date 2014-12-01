@@ -23,6 +23,7 @@ number_of_compute_nodes = 3
 
 # Container names
 lxcn_base = "base"      # OS and packages
+lxcn_precell = "precell"    # Everything but SageCell and system configuration
 lxcn_sagecell = "sagecell"      # Sage and SageCell
 lxcn_tester = "sctest"  # Accessible via special port, for testing
 lxcn_prefix = "sc-"     # Prefix for main compute nodes
@@ -384,9 +385,9 @@ def install_sage():
 #            """)
 
 
-def install_sagecell():
+def install_packages():
     r"""
-    Install SageCell, assuming Sage is already installed.
+    Assuming Sage is already installed, install remaining packages.
     """
     become_server()
     # These 3 may become standard in the future
@@ -420,6 +421,12 @@ def install_sagecell():
         check_call("sage/sage -sh -c 'pip install --no-deps --upgrade {}'"
                    .format(package))
 
+
+def install_sagecell():
+    r"""
+    Install SageCell, assuming Sage and other packages are already installed.
+    """
+    become_server()
     log.info("compiling SageCell")
     shutil.move("github/sagecell", ".")
     shutil.rmtree("github")
@@ -570,14 +577,14 @@ class SCLXC(object):
                 raise RuntimeError("failed to execute {} with arguments {}"
                                    .format(command, args))
 
-    def install_sagecell(self, keeprepos=False):
+    def prepare_for_sagecell(self, keeprepos=False):
         r"""
+        Set up everything necessary for SageCell installation.
+
         INPUT:
 
         - ``keeprepos`` -- if ``True``, GitHub repositories will NOT be updated
           and set to proper state (useful for development).
-
-        Set up SageCell to run on startup.
         """
         create_host_users()
         self.inside(setup_container_users)
@@ -595,8 +602,13 @@ class SCLXC(object):
                         os.path.join(root, "home", users["server"], "github"),
                         symlinks=True)
         self.inside("chown -R {server}:{group} /home/{server}/github")
-
         self.inside(install_sage)
+        self.inside(install_packages)
+
+    def install_sagecell(self):
+        r"""
+        Set up SageCell to run on startup.
+        """
         self.inside(install_sagecell)
         self.inside(install_config_files)
         self.inside(lock_down_worker)
@@ -712,6 +724,8 @@ parser = argparse.ArgumentParser(description="manage SageCell LXC containers",
     restarts HA-Proxy to resolve container names to new IP addresses.""")
 parser.add_argument("-b", "--base", action="store_true",
                     help="rebuild 'OS and standard packages' container")
+parser.add_argument("-p", "--useprecell", action="store_true",
+                    help="don't rebuild Sage and extra packages for master")
 parser.add_argument("-m", "--master", action="store_true",
                     help="rebuild 'Sage and SageCell' container")
 parser.add_argument("--keeprepos", action="store_true",
@@ -738,8 +752,13 @@ sagecell = SCLXC(lxcn_sagecell)
 if sagecell.is_defined() and not args.master:
     sagecell.update()
 else:
-    sagecell = SCLXC(lxcn_base).clone(lxcn_sagecell, update=True)
-    sagecell.install_sagecell(args.keeprepos)
+    if args.useprecell:
+        sagecell = SCLXC(lxcn_precell).clone(lxcn_sagecell, update=True)
+    else:
+        precell = SCLXC(lxcn_base).clone(lxcn_precell, update=True)
+        precell.prepare_for_sagecell(args.keeprepos)
+        sagecell = precell.clone(lxcn_sagecell)
+    sagecell.install_sagecell()
 
 if args.tester:
     sagecell.clone(lxcn_tester, autostart=True).start()
