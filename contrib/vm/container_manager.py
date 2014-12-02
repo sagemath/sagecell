@@ -112,8 +112,7 @@ moss
 
 
 # rsyslog configuration for the host - will not be overwritten later
-rsyslog_conf = """\
-global(maxMessageSize="64k")
+rsyslog_conf = r"""global(maxMessageSize="64k")
 
 module(load="imrelp")
 input(type="imrelp" port="12514")
