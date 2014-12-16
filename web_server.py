@@ -2,6 +2,8 @@
 
 import os
 
+import psutil
+
 # Sage Cell imports
 from log import logger
 import misc
@@ -96,19 +98,30 @@ if __name__ == "__main__":
     pidfile_path = config.get_config('pid_file')
     pidlock = PIDLockFile(pidfile_path)
     if pidlock.is_locked():
-        # try killing the process that has the lock
-        pid = pidlock.read_pid()
-        logger.info("Killing PID %d"%pid)
+        old_pid = pidlock.read_pid()
+        logger.info("Lock file exists for PID %d." % old_pid)
         try:
-            os.kill(pid, 9)
-        except OSError, (code, text):
-            import errno
-            if code != errno.ESRCH:
-                raise
+            old = psutil.Process(old_pid)
+            if os.path.basename(__file__) in old.cmdline():
+                try:
+                    logger.info("Trying to terminate old instance...")
+                    old.terminate()
+                    try:
+                        old.wait(10)
+                    except psutil.TimeoutExpired:
+                        logger.info("Trying to kill old instance.")
+                        old.kill()
+                except psutil.AccessDenied:
+                    logger.error("The process seems to be SageCell, but "
+                                 "can not be stopped. Its command line: %s"
+                                 % old.cmdline())
             else:
-                # process doesn't exist anymore
-                logger.info("Old process %d already gone"%pid)
-                pidlock.break_lock()
+                logger.info("Process does not seem to be SageCell.")
+        except psutil.NoSuchProcess:
+            pass
+            logger.info("No such process exist anymore.")
+        logger.info("Breaking old lock.")
+        pidlock.break_lock()
     try:
         pidlock.acquire(timeout=10)
         # TODO: clean out the router-ipc directory
