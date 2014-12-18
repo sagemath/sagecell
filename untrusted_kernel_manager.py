@@ -1,5 +1,5 @@
 from forking_kernel_manager import ForkingKernelManager, KernelError
-import logging
+from log import kernel_logger
 
 class UntrustedMultiKernelManager(object):
     def __init__(self, ip, update_function=None, tmp_dir=None):
@@ -14,10 +14,10 @@ class UntrustedMultiKernelManager(object):
                 break
             except KernelError as e:
                 retry -=1
-                logging.debug("kernel error--trying again %s"%retry)
+                kernel_logger.debug("kernel error--trying again %s"%retry)
                 if not retry:
-                    logging.debug("kernel error--giving up %s"%retry)
-                    logging.exception(e)
+                    kernel_logger.debug("kernel error--giving up %s"%retry)
+                    kernel_logger.exception(e)
                     raise
         self._kernels.add(x["kernel_id"])
         return x
