@@ -111,6 +111,13 @@ moss
 """.split()
 
 
+# limits configuration for the host - will not be overwritten later
+limits_conf = """\
+* - nofile 32768
+root - nofile 32768
+"""
+
+
 # rsyslog configuration for the host - will not be overwritten later
 rsyslog_conf = r"""global(maxMessageSize="64k")
 
@@ -738,6 +745,13 @@ parser.add_argument("--nodelay", action="store_true",
 args = parser.parse_args()
 
 # Do it only once and let users change it later.
+if not os.path.exists("/etc/security/limits.d/sagecell.conf"):
+    log.info("setting up security limits configuration file")
+    with open("/etc/security/limits.d/sagecell.conf", "w") as f:
+        f.write(limits_conf)
+    log.info("Finish this session and start a new one for system configuration"
+             " changes to take effect.")
+    exit()
 if not os.path.exists("/etc/rsyslog.d/sagecell.conf"):
     log.info("setting up rsyslog configuration file")
     with open("/etc/rsyslog.d/sagecell.conf", "w") as f:
