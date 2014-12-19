@@ -765,12 +765,15 @@ sagecell = SCLXC(lxcn_sagecell)
 if sagecell.is_defined() and not args.master:
     sagecell.update()
 else:
-    if args.useprecell:
-        sagecell = SCLXC(lxcn_precell).clone(lxcn_sagecell, update=True)
+    precell = SCLXC(lxcn_precell)
+    if sagecell.is_defined() and args.useprecell:
+        precell.update()
+        precell.inside(
+            "su -c 'git -C /home/{server}/github/sagecell pull' {server}")
     else:
         precell = SCLXC(lxcn_base).clone(lxcn_precell, update=True)
         precell.prepare_for_sagecell(args.keeprepos)
-        sagecell = precell.clone(lxcn_sagecell)
+    sagecell = precell.clone(lxcn_sagecell)
     sagecell.install_sagecell()
 
 if args.tester:
