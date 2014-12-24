@@ -100,26 +100,29 @@ if __name__ == "__main__":
     if pidlock.is_locked():
         old_pid = pidlock.read_pid()
         logger.info("Lock file exists for PID %d." % old_pid)
-        try:
-            old = psutil.Process(old_pid)
-            if os.path.basename(__file__) in old.cmdline():
-                try:
-                    logger.info("Trying to terminate old instance...")
-                    old.terminate()
+        if os.getpid() == old_pid:
+            logger.info("Stale lock since we have the same PID.")
+        else:
+            try:
+                old = psutil.Process(old_pid)
+                if os.path.basename(__file__) in old.cmdline():
                     try:
-                        old.wait(10)
-                    except psutil.TimeoutExpired:
-                        logger.info("Trying to kill old instance.")
-                        old.kill()
-                except psutil.AccessDenied:
-                    logger.error("The process seems to be SageCell, but "
-                                 "can not be stopped. Its command line: %s"
-                                 % old.cmdline())
-            else:
-                logger.info("Process does not seem to be SageCell.")
-        except psutil.NoSuchProcess:
-            pass
-            logger.info("No such process exist anymore.")
+                        logger.info("Trying to terminate old instance...")
+                        old.terminate()
+                        try:
+                            old.wait(10)
+                        except psutil.TimeoutExpired:
+                            logger.info("Trying to kill old instance.")
+                            old.kill()
+                    except psutil.AccessDenied:
+                        logger.error("The process seems to be SageCell, but "
+                                     "can not be stopped. Its command line: %s"
+                                     % old.cmdline())
+                else:
+                    logger.info("Process does not seem to be SageCell.")
+            except psutil.NoSuchProcess:
+                pass
+                logger.info("No such process exist anymore.")
         logger.info("Breaking old lock.")
         pidlock.break_lock()
     try:
