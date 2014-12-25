@@ -89,10 +89,16 @@ class ForkingKernelManager(object):
     def start_kernel(self, kernel_id=None, config=None, resource_limits=None):
         """ A function for starting new kernels by forking.
 
-        :arg str kernel_id: the id of the kernel to be started. if no id is passed, a uuid will be generated
-        :arg Ipython.config.loader config: kernel configuration
-        :arg dict resource_limits: a dict with keys resource.RLIMIT_* (see config_default documentation for explanation of valid options) and values of the limit for the given resource to be set in the kernel process
-        :returns: kernel id and connection information which includes the kernel's ip, session key, and shell, heartbeat, stdin, and iopub port numbers
+        :arg str kernel_id: the id of the kernel to be started.
+            If no id is passed, a uuid will be generated.
+        :arg Ipython.config.loader config: kernel configuration.
+        :arg dict resource_limits: a dict with keys resource.RLIMIT_*
+            (see config_default documentation for explanation of valid options)
+            and values of the limit for the given resource to be set in the
+            kernel process
+        :returns: kernel id and connection information which includes the
+            kernel's ip, session key, and shell, heartbeat, stdin, and iopub
+            port numbers
         :rtype: dict
         """
         if kernel_id is None:
@@ -118,19 +124,21 @@ class ForkingKernelManager(object):
         proc.start()
         os.chdir(currdir)
         # todo: yield back to the message processing while we wait
-        if p.poll(2):
-            connection = p.recv()
-            p.close()
-            self.kernels[kernel_id] = (proc, connection)
-            return {"kernel_id": kernel_id, "connection": connection}
-        else:
-            p.close()
-            self.kill_process(proc)
-            raise KernelError("Could not start kernel")
+        for i in range(5):
+            if p.poll(1):
+                connection = p.recv()
+                p.close()
+                self.kernels[kernel_id] = (proc, connection)
+                return {"kernel_id": kernel_id, "connection": connection}
+            else:
+                kernel_logger.info("Kernel %s did not start after %d seconds."
+                                   % (kernel_id[:4], i))
+        p.close()
+        self.kill_process(proc)
+        raise KernelError("Kernel start timeout.")
 
     def kill_process(self, proc):
         try:
-            success = True
             os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             # todo: yield back to message processing loop while we join
             proc.join()
@@ -139,8 +147,8 @@ class ForkingKernelManager(object):
             # terminated. Ignore it.
             from errno import ESRCH
             if e.errno !=  ESRCH:
-                success = False
-        return success
+                return False
+        return True
 
     def kill_kernel(self, kernel_id):
         """ A function for ending running kernel processes.
@@ -149,14 +157,12 @@ class ForkingKernelManager(object):
         :returns: whether or not the kernel process was successfully killed
         :rtype: bool
         """
-        success = False
-
         if kernel_id in self.kernels:
             proc = self.kernels[kernel_id][0]
-            success = self.kill_process(proc)
-            if success:
+            if self.kill_process(proc):
                 del self.kernels[kernel_id]
-        return success
+                return True
+        return False
 
     def interrupt_kernel(self, kernel_id):
         """ A function for interrupting running kernel processes.

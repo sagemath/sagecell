@@ -34,7 +34,7 @@ class Receiver(object):
                 msg["content"] = {}
 
             self.timer()
-            logger.debug("Start %s"%(msg_type,))
+            logger.debug("Start handler %s" % msg_type)
             handler = getattr(self, msg_type)
             response = handler(msg["content"])
             logger.debug("Finished handler %s: %s"%(msg_type, self.timer))
