@@ -510,6 +510,10 @@ class SCLXC(object):
             clone.c.set_config_item("lxc.start.auto", "1")
             clone.c.set_config_item("lxc.start.delay", str(start_delay))
             clone.c.save_config()
+        logdir = clone.c.get_config_item("lxc.rootfs") + "/var/log/"
+        for logfile in ["sagecell.log", "sagecell-console.log"]:
+            if os.path.exists(logdir + logfile):
+                os.remove(logdir + logfile)
         return clone
 
     def create(self):
@@ -628,6 +632,22 @@ class SCLXC(object):
 
     def is_defined(self):
         return self.c.defined
+
+    def save_logs(self):
+        stamp_length = len("2014-12-28 15:00:02,315")
+        root = self.c.get_config_item("lxc.rootfs")
+        logname = root + "/var/log/sagecell.log"
+        if not os.path.exists(logname):
+            return
+        with open(logname, "rb") as f:
+            start = f.read(stamp_length).decode()
+            f.seek(0, os.SEEK_END)
+            f.seek(max(f.tell() - 2**16, 0))
+            end = f.readlines()[-1][:stamp_length].decode()
+        if not os.path.exists("container_logs"):
+            os.mkdir("container_logs")
+        shutil.copy(logname,
+                    "container_logs/%s to %s on %s" % (start, end, self.name))
 
     def shutdown(self):
         if self.c.running and not self.c.shutdown(timeout):
@@ -808,6 +828,7 @@ if args.deploy:
         sagecell.start()
         sagecell.shutdown()
     for n in old_nodes:
+        n.save_logs()
         n.destroy()
 
 restart_haproxy(all_nodes)
