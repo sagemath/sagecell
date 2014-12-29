@@ -506,6 +506,7 @@ class ShellHandler(ZMQStreamHandler):
     stream of an IPython kernel.
     """
     def open(self, kernel_id):
+        logger.debug("entered ShellHandler.open for kernel %s", kernel_id)
         super(ShellHandler, self).open(kernel_id)
         self.kill_kernel = False
         self.shell_stream = self.km.create_shell_stream(self.kernel_id)
@@ -546,6 +547,7 @@ class ShellHandler(ZMQStreamHandler):
         execute code in a kernel between the time that the kernel is killed
         and the time that the browser receives the "kernel killed" message.
         """
+        logger.debug("entered ShellHandler._on_zmq_reply for kernel %s", self.kernel_id)
         super(ShellHandler, self)._on_zmq_reply(msg_list)
         if self.kill_kernel:
             self.shell_stream.flush()
@@ -561,6 +563,7 @@ class IOPubHandler(ZMQStreamHandler):
     stream fails.
     """
     def open(self, kernel_id):
+        logger.debug("entered IOPubHandler.open for kernel %s", kernel_id)
         super(IOPubHandler, self).open(kernel_id)
 
         self._kernel_alive = True
@@ -571,6 +574,7 @@ class IOPubHandler(ZMQStreamHandler):
         self.iopub_stream = self.km.create_iopub_stream(self.kernel_id)
         self.iopub_stream.on_recv(self._on_zmq_reply)
         self.kernel["kill"] = self.kernel_died
+        logger.debug("set kill handler for kernel %s", kernel_id)
 
         self.hb_stream = self.km.create_hb_stream(self.kernel_id)
         self.start_hb(self.kernel_died)
