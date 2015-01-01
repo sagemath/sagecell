@@ -263,8 +263,8 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
                 self.channels[kernel] = \
                     {"shell": ShellSockJSHandler(kernel, self.send, application),
                      "iopub": IOPubSockJSHandler(kernel, self.send, application)}
-                self.channels[kernel]["shell"].open(kernel)
                 self.channels[kernel]["iopub"].open(kernel)
+                self.channels[kernel]["shell"].open(kernel)
             if kernel != "complete":
                 self._log_stats(kernel, message)
                 self.channels[kernel][channel].on_message(message)
@@ -394,9 +394,8 @@ accepted_tos=true\n""")
 
             self.shell_handler = ShellServiceHandler(self.application)
             self.iopub_handler = IOPubServiceHandler(self.application)
-            
-            self.shell_handler.open(self.kernel_id)
             self.iopub_handler.open(self.kernel_id)
+            self.shell_handler.open(self.kernel_id)
 
             loop = ioloop.IOLoop.instance()
 
