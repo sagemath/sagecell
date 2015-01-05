@@ -239,53 +239,52 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
         self.channels = {}
 
     def on_message(self, message):
-        prefix, message = message.split(",", 1)
+        prefix, json_message = message.split(",", 1)
         kernel, channel = prefix.split("/", 1)
-        if channel=="stdin":
+        if channel == "stdin":
             # TODO: Support the stdin channel
             # See http://ipython.org/ipython-doc/dev/development/messaging.html
             return
+        application = self.session.handler.application
+        message = jsonapi.loads(json_message)
+        if kernel == "complete":
+            if message["header"]["msg_type"] in ("complete_request",
+                                                 "object_info_request"):
+                application.completer.registerRequest(self, message)
+            return
         try:
-            if kernel == "complete":
-                application = self.session.handler.application
-                message = jsonapi.loads(message)
-                if message["header"]["msg_type"] in ("complete_request", "object_info_request"):
-                    application.completer.registerRequest(self, message)
-            elif kernel not in self.channels:
+            if kernel not in self.channels:
                 # handler may be None in certain circumstances (it seems to only be set
                 # in GET requests, not POST requests, so even using it here may
                 # only work with JSONP because of a race condition)
-                application = self.session.handler.application
                 kernel_info = application.km.kernel_info(kernel)
                 self.kernel_info = {'remote_ip': kernel_info['remote_ip'],
                                     'referer': kernel_info['referer'],
                                     'timeout': kernel_info['timeout']}
+            if message["header"]["msg_type"] == "execute_request":
+                stats_logger.info(StatsMessage(
+                    kernel_id=kernel,
+                    remote_ip=self.kernel_info['remote_ip'],
+                    referer=self.kernel_info['referer'],
+                    code=message["content"]["code"],
+                    execute_type='request'))
+            if kernel not in self.channels:
                 self.channels[kernel] = \
-                    {"shell": ShellSockJSHandler(kernel, self.send, application),
-                     "iopub": IOPubSockJSHandler(kernel, self.send, application)}
+                    {"iopub": IOPubSockJSHandler(kernel, self.send, application),
+                     "shell": ShellSockJSHandler(kernel, self.send, application)}
                 self.channels[kernel]["iopub"].open(kernel)
                 self.channels[kernel]["shell"].open(kernel)
-            if kernel != "complete":
-                self._log_stats(kernel, message)
-                self.channels[kernel][channel].on_message(message)
+            self.channels[kernel][channel].on_message(json_message)
         except KeyError:
-            jsonmessage=jsonapi.loads(message)
-            logger.info("%s message sent to deleted kernel: %s"%(jsonmessage["header"]["msg_type"], kernel))
-            pass # Ignore messages to nonexistant or killed kernels
+            # Ignore messages to nonexistent or killed kernels.
+            logger.info("%s message sent to nonexistent kernel: %s" %
+                        (message["header"]["msg_type"], kernel))
 
     def on_close(self):
         for channel in self.channels.itervalues():
             channel["shell"].on_close()
             channel["iopub"].on_close()
 
-    def _log_stats(self, kernel, msg):
-        msg=json.loads(msg)
-        if msg["header"]["msg_type"] == "execute_request":
-            stats_logger.info(StatsMessage(kernel_id = kernel,
-                                          remote_ip = self.kernel_info['remote_ip'],
-                                          referer = self.kernel_info['referer'],
-                                          code = msg["content"]["code"],
-                                          execute_type='request'))
 
 KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
