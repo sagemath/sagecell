@@ -563,20 +563,14 @@ class IOPubHandler(ZMQStreamHandler):
     def open(self, kernel_id):
         logger.debug("entered IOPubHandler.open for kernel %s", kernel_id)
         super(IOPubHandler, self).open(kernel_id)
-
         self._kernel_alive = True
         self._beating = False
-        self.iopub_stream = None
-        self.hb_stream = None
-
         self.iopub_stream = self.km.create_iopub_stream(self.kernel_id)
         self.iopub_stream.on_recv(self._on_zmq_reply)
         self.kernel["kill"] = self.kernel_died
         logger.debug("set kill handler for kernel %s", kernel_id)
-
         self.hb_stream = self.km.create_hb_stream(self.kernel_id)
         self.start_hb(self.kernel_died)
-
         self.msg_from_kernel_callbacks.append(self._reset_timeout)
 
     def _reset_timeout(self, msg):
@@ -595,10 +589,10 @@ class IOPubHandler(ZMQStreamHandler):
         pass
 
     def on_close(self):
-        if self.iopub_stream is not None and not self.iopub_stream.closed():
+        if hasattr(self, "iopub_stream") and not self.iopub_stream.closed():
             self.iopub_stream.on_recv(None)
             self.iopub_stream.close()
-        if self.hb_stream is not None and not self.hb_stream.closed():
+        if hasattr(self, "hb_stream") and not self.hb_stream.closed():
             self.stop_hb()
         super(IOPubHandler, self).on_close()
 
