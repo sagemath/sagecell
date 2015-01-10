@@ -533,7 +533,7 @@ class ShellHandler(ZMQStreamHandler):
             self.session.send(self.shell_stream, msg)
 
     def on_close(self):
-        if self.shell_stream is not None and not self.shell_stream.closed():
+        if hasattr(self, "shell_stream") and not self.shell_stream.closed():
             self.shell_stream.close()
         super(ShellHandler, self).on_close()
 
