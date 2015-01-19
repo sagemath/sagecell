@@ -206,6 +206,12 @@ listen stats
 """
 
 
+def call(command):
+    command = command.format_map(users)
+    log.debug("executing %s", command)
+    return subprocess.call(shlex.split(command))
+
+
 def check_call(command):
     command = command.format_map(users)
     log.debug("executing %s", command)
@@ -264,7 +270,8 @@ def update_repositories():
         os.chdir(repository)
         git("fetch")
         git("checkout " + branch)
-        git("pull")
+        if call("git symbolic-ref -q HEAD") == 0:
+            git("pull")
         git("submodule update --init --recursive")
         if repository == "sage":
             log.info("downloading Sage standard packages")
