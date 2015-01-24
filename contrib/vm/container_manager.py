@@ -795,8 +795,9 @@ else:
     precell = SCLXC(lxcn_precell)
     if sagecell.is_defined() and args.useprecell:
         precell.update()
-        precell.inside(
-            "su -c 'git -C /home/{server}/github/sagecell pull' {server}")
+        if not args.keeprepos:
+            precell.inside(
+                "su -c 'git -C /home/{server}/github/sagecell pull' {server}")
     else:
         precell = SCLXC(lxcn_base).clone(lxcn_precell, update=True)
         precell.prepare_for_sagecell(args.keeprepos)
