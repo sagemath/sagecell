@@ -115,9 +115,12 @@ $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(
            $(cm-foldxml) $(cm-foldcomment) $(cm-foldindent) \
            > ../../$(codemirror-cat)
 
-$(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
+#$(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
+
+$(all-js): $(ip-namespace) $(wrap-js) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
+#	cat $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
+	cat $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 

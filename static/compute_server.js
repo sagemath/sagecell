@@ -2004,7 +2004,7 @@ sagecell.MultiSockJS.prototype.close = function () {
 
 // Initialize jmol
 // TODO: move to a better place
-jmolInitialize(sagecell.URLs.root + 'static/jmol');
-jmolSetCallback("menuFile", sagecell.URLs.root + "static/jmol/appletweb/SageMenu.mnu");
+//jmolInitialize(sagecell.URLs.root + 'static/jmol');
+//jmolSetCallback("menuFile", sagecell.URLs.root + "static/jmol/appletweb/SageMenu.mnu");
 
 })(sagecell.jQuery);
