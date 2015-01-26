@@ -25,6 +25,7 @@ number_of_compute_nodes = 3
 lxcn_base = "base"      # OS and packages
 lxcn_precell = "precell"    # Everything but SageCell and system configuration
 lxcn_sagecell = "sagecell"      # Sage and SageCell
+lxcn_backup = "sagecell-backup"     # Saved master for restoration if necessary
 lxcn_tester = "sctest"  # Accessible via special port, for testing
 lxcn_prefix = "sc-"     # Prefix for main compute nodes
 lxcn_version_prefix = "sage-"       # Prefix for fixed version compute nodes
@@ -504,7 +505,7 @@ class SCLXC(object):
         Create self, destroy old clone, and create it again.
         """
         if not self.c.defined:
-            self.create()
+            raise RuntimeError("cannot clone a non-existing container")
         if update:
             self.update()
         self.shutdown()
@@ -757,12 +758,17 @@ parser = argparse.ArgumentParser(description="manage SageCell LXC containers",
     restarts HA-Proxy to resolve container names to new IP addresses.""")
 parser.add_argument("-b", "--base", action="store_true",
                     help="rebuild 'OS and standard packages' container")
-parser.add_argument("-p", "--useprecell", action="store_true",
-                    help="don't rebuild Sage and extra packages for master")
-parser.add_argument("-m", "--master", action="store_true",
-                    help="rebuild 'Sage and SageCell' container")
 parser.add_argument("--keeprepos", action="store_true",
                     help="keep GitHub repositories at their present state")
+parser.add_argument("-p", "--useprecell", action="store_true",
+                    help="don't rebuild Sage and extra packages for master")
+parser.add_argument("--savemaster", action="store_true",
+                    help="save existing master container")
+group = parser.add_mutually_exclusive_group()
+group.add_argument("-m", "--master", action="store_true",
+                    help="rebuild 'Sage and SageCell' container")
+group.add_argument("--restoremaster", action="store_true",
+                    help="restore previously saved master container")
 parser.add_argument("-t", "--tester", action="store_true",
                     help="rebuild 'testing' container")
 parser.add_argument("--deploy", action="store_true",
@@ -785,25 +791,37 @@ if not os.path.exists("/etc/rsyslog.d/sagecell.conf"):
         f.write(rsyslog_conf)
     check_call("service rsyslog restart")
 
+# Main chain: base -- precell -- (sagecell, backup)
 if args.base:
     SCLXC(lxcn_base).create()
 
 sagecell = SCLXC(lxcn_sagecell)
-if sagecell.is_defined() and not args.master:
-    sagecell.update()
-else:
+if args.savemaster:
+    sagecell.clone(lxcn_backup)
+if args.restoremaster:
+    sagecell = SCLXC(lxcn_backup).clone(lxcn_sagecell)
+
+if args.master or not sagecell.is_defined():
     precell = SCLXC(lxcn_precell)
-    if sagecell.is_defined() and args.useprecell:
+    if precell.is_defined() and args.useprecell:
         precell.update()
         if not args.keeprepos:
             precell.inside(
                 "su -c 'git -C /home/{server}/github/sagecell pull' {server}")
     else:
-        precell = SCLXC(lxcn_base).clone(lxcn_precell, update=True)
+        base = SCLXC(lxcn_base)
+        if base.is_defined():
+            base.update()
+        else:
+            base.create()
+        precell = base.clone(lxcn_precell)
         precell.prepare_for_sagecell(args.keeprepos)
     sagecell = precell.clone(lxcn_sagecell)
     sagecell.install_sagecell()
+else:
+    sagecell.update()
 
+# Autostart containers: tester and deployed nodes.
 if args.tester:
     sagecell.clone(lxcn_tester, autostart=True).start()
 
