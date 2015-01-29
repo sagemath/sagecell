@@ -444,7 +444,6 @@ def install_sagecell():
     log.info("compiling SageCell")
     shutil.move("github/sagecell", ".")
     shutil.rmtree("github")
-    os.symlink("sage/local/share/jmol", "sagecell/static/jmol")
     os.chdir("sagecell")
     check_call("../sage/sage -sh -c 'make -B'")
     log.info("successfully compiled SageCell")

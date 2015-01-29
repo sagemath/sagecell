@@ -52,10 +52,8 @@ We assume that you have access to the Internet and can install any needed depend
 
     ```bash
     ./sage -sh -c "easy_install pip"
-    ./sage -i http://boxen.math.washington.edu/home/jason/zeromq-4.0.3.spkg
+    ./sage -i zeromq
     ./sage -i pyzmq
-    # we need a more recent pyzmq than Sage provides
-    ./sage -sh -c "pip install -U pyzmq"
     # We need IPython stuff not present in spkg.
     pushd local/lib/python/site-packages
     rm -rf IPython*
@@ -79,9 +77,7 @@ We assume that you have access to the Internet and can install any needed depend
 
     ```bash
     mv ../github/sagecell .
-    cd sagecell/static
-    ln -s ../../local/share/jmol .
-    cd ..
+    cd sagecell
     ../sage -sh -c "make -B"
     ```
 

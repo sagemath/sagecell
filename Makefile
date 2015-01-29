@@ -10,8 +10,9 @@ threejs-control= static/OrbitControls.js
 threejs-detect = static/Detector.js
 threed         = static/3d.js
 threed-coffee  = static/3d.coffee
-jmol           = static/jmol
-jmol-js        = $(jmol)/appletweb/Jmol.js
+jsmol-sage     = $(sage-root)/local/share/jsmol
+jsmol-path     = static/jsmol
+jsmol          = $(jsmol-path)/JSmol.min.nojq.js
 jquery         = static/jquery.min.js
 jquery-ui      = static/jquery-ui/js/jquery-ui-1.10.2.custom.min.js
 tos-default    = templates/tos_default.html
@@ -61,13 +62,12 @@ ip-comm        = $(ip-static)/services/kernels/js/comm.js
 ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
 require-base   = static/require
 ip-widgets     = $(require-base)/build/widgets.js
-jquery-url     = http://code.jquery.com/jquery-2.1.0.min.js
+jquery-url     = http://code.jquery.com/jquery-2.1.3.min.js
 sockjs-url     = https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js
 mpl-js         = static/mpl.js
 threejs-url    =  https://raw.github.com/jasongrout/three.js/sagecell/build/three.js
 threejs-url-control = https://raw.github.com/jasongrout/three.js/sagecell/examples/js/controls/OrbitControls.js
 threejs-url-detect =  https://raw.github.com/jasongrout/three.js/sagecell/examples/js/Detector.js
-jmol-sage      = $(sage-root)/local/share/jmol
 canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-*.egg/sagenb/data/sage/js/canvas3d_lib.js
 
 all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
@@ -115,12 +115,9 @@ $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(
            $(cm-foldxml) $(cm-foldcomment) $(cm-foldindent) \
            > ../../$(codemirror-cat)
 
-#$(all-js): $(ip-namespace) $(wrap-js) $(jmol-js) $(canvas3d)\
-
-$(all-js): $(ip-namespace) $(wrap-js) $(canvas3d)\
+$(all-js): $(ip-namespace) $(wrap-js) $(jsmol) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
-#	cat $(jmol-js) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
-	cat $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
+	cat $(jsmol) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
@@ -145,9 +142,8 @@ $(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell
 $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
 
-$(jmol-js): $(jmol-sage)
-	rm -f $(jmol)
-	ln -s $(jmol-sage) $(jmol)
+$(jsmol): $(jsmol-sage)
+	ln -sfn $(jsmol-sage) $(jsmol-path)
 
 $(tos-static): $(tos-default)
 	@[ -e $(tos) ] && cp $(tos) $(tos-static) || cp $(tos-default) $(tos-static)
