@@ -562,8 +562,20 @@ sagecell.Session.prototype.display_handlers = {
     ,'text/image-filename': function(data, block_id, filepath) {this.output("<img src='"+filepath+data+"'/>", block_id);}
     ,'image/png': function(data, block_id, filepath) {this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);}
     ,'application/x-jmol': function(data, block_id, filepath) {
-        jmolSetDocument(false);
-        this.output(jmolApplet(500, 'set defaultdirectory "'+filepath+data+'";\n script SCRIPT;\n'),block_id); }
+        Jmol.setDocument(false);
+        var info = {
+            color: "white",
+            addSelectionOptions: false,
+            use: "HTML5 WebGL Java", //This should probably only be HTML5
+            jarPath: "/static/jsmol/java", //path to applet .jar files on server.
+            j2sPath: "/static/jsmol/j2s",//path to javascript version.
+            jarFile: "JmolAppletSigned0.jar",
+            isSigned: true,
+            z: 5,
+            zIndexBase: 5,
+            script: 'script ' + filepath + data,
+        }
+        this.output(Jmol.getAppletHtml("scJmol", info), block_id);}
     ,"application/x-canvas3d": function (data, block_id, filepath) {
         var div = this.output(document.createElement("div"), block_id);
         var old_cw = [window.hasOwnProperty("cell_writer"), window.cell_writer],

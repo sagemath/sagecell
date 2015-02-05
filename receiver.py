@@ -64,6 +64,13 @@ class Receiver(object):
             def display_image(path):
                 display_file(path, 'text/image-filename')
             def display_jmol(path):
+                kid = os.path.basename(os.path.dirname(os.path.abspath(path)))
+                with open(path, 'r') as f:
+                    jmol_script = f.read().replace(
+                        'defaultdirectory "',
+                        'defaultdirectory "kernel/{}/files/'.format(kid))
+                with open(path, 'w') as f:
+                    f.write(jmol_script)
                 display_file(path, 'application/x-jmol')
             def display_canvas3d(path):
                 display_file(path, 'application/x-canvas3d')
