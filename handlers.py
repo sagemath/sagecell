@@ -751,3 +751,7 @@ class FileHandler(StaticHandler):
     """
     def get(self, kernel_id, file_path):
         super(FileHandler, self).get('%s/%s'%(kernel_id, file_path))
+
+    def get_cache_time(self, path, modified, mime_type):
+        # Jmol archives may be requested hundreds of times!
+        return 60*60*2 if path.endswith(".jmol.zip") else 0
