@@ -404,10 +404,6 @@ def install_packages():
     Assuming Sage is already installed, install remaining packages.
     """
     become_server()
-    # These 3 may become standard in the future
-    check_call("sage/sage -sh -c 'easy_install pip'")
-    check_call("sage/sage -i zeromq")
-    check_call("sage/sage -i pyzmq")
     # We need IPython stuff not present in spkg and there are issues with 2.1
     log.info("replacing IPython in Sage")
     remove_pattern("sage/local/lib/python/site-packages", "IPython*")
@@ -430,9 +426,11 @@ def install_packages():
     check_call("../sage/sage setup.py install")
     os.chdir("..")
 
+    # Upgrade to >=6 to use cache
+    check_call("sage/sage -pip install --upgrade pip")
     log.info("installing pip packages")
     for package in python_packages:
-        check_call("sage/sage -sh -c 'pip install --no-deps --upgrade {}'"
+        check_call("sage/sage -pip install --no-deps --upgrade {}"
                    .format(package))
 
 
