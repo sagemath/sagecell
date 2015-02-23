@@ -10,7 +10,6 @@ threejs-control= static/OrbitControls.js
 threejs-detect = static/Detector.js
 threed         = static/3d.js
 threed-coffee  = static/3d.coffee
-jsmol-sage     = $(sage-root)/local/share/jsmol
 jsmol-path     = static/jsmol
 jsmol          = $(jsmol-path)/JSmol.min.nojq.js
 jquery         = static/jquery.min.js
@@ -142,8 +141,9 @@ $(all-min-css): $(codemirror-css) $(cm-hint-css) $(cm-fullscreen-css) $(sagecell
 $(jsmin-bin):  $(jsmin)
 	gcc -o $(jsmin-bin) $(jsmin)
 
-$(jsmol): $(jsmol-sage)
-	ln -sfn $(jsmol-sage) $(jsmol-path)
+$(jsmol):
+	ln -sfn $(sage-root)/local/share/jsmol $(jsmol-path)
+	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
 
 $(tos-static): $(tos-default)
 	@[ -e $(tos) ] && cp $(tos) $(tos-static) || cp $(tos-default) $(tos-static)

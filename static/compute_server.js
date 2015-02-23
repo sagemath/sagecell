@@ -564,16 +564,15 @@ sagecell.Session.prototype.display_handlers = {
     ,'application/x-jmol': function(data, block_id, filepath) {
         Jmol.setDocument(false);
         var info = {
+            height: 500,
+            width: 500,
             color: "white",
-            addSelectionOptions: false,
-            use: "HTML5 WebGL Java", //This should probably only be HTML5
-            jarPath: "/static/jsmol/java", //path to applet .jar files on server.
-            j2sPath: "/static/jsmol/j2s",//path to javascript version.
-            jarFile: "JmolAppletSigned0.jar",
-            isSigned: true,
-            z: 5,
-            zIndexBase: 5,
+            j2sPath: "/static/jsmol/j2s",
+            coverImage: filepath + "/.jmol_images/" + data + ".png",
+            deferUncover: true,
+            disableInitialConsole: true,
             script: 'script ' + filepath + data,
+            menuFile: "/static/SageMenu.mnu",
         }
         this.output(Jmol.getAppletHtml("scJmol", info), block_id);}
     ,"application/x-canvas3d": function (data, block_id, filepath) {
