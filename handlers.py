@@ -136,8 +136,8 @@ class KernelHandler(tornado.web.RequestHandler):
         elif method == "OPTIONS":
             self.options(*args, **kwargs)
         else:
-            if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
-                self.get_argument("accepted_tos", "false") != "true":
+            if config.get_config("requires_tos") and \
+                    self.get_argument("accepted_tos", "false") != "true":
                 self.set_status(403)
                 self.finish()
                 return
@@ -158,7 +158,6 @@ class KernelHandler(tornado.web.RequestHandler):
                                        timeout = timeout)
             data = {"ws_url": ws_url, "id": kernel_id}
             self.write(self.permissions(data))
-            self.set_cookie("accepted_tos", "true", expires_days=365)
             self.finish()
 
 
@@ -301,17 +300,16 @@ class TOSHandler(tornado.web.RequestHandler):
         tos_json = json.dumps(tos_html)
     
     def post(self):
-        cookie_set = self.get_cookie("accepted_tos") == "true" or not self.tos
         if len(self.get_arguments("callback")) == 0:
-            if cookie_set:
-                self.set_status(204)
-            else:
+            if self.tos:
                 self.write(self.tos_html)
+            else:
+                self.set_status(204)
             self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
             self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "text/html")
         else:
-            resp = '""' if cookie_set else self.tos_json
+            resp = self.tos_json if self.tos else '""'
             self.write("%s(%s);" % (self.get_argument("callback"), resp))
             self.set_header("Content-Type", "application/javascript")
 
@@ -356,10 +354,10 @@ class ServiceHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @gen.engine
     def post(self):
-        if config.get_config("requires_tos") and self.get_cookie("accepted_tos") != "true" and \
-            self.get_argument("accepted_tos", "false") != "true":
+        if config.get_config("requires_tos") and \
+                self.get_argument("accepted_tos", "false") != "true":
             self.write("""When evaluating code, you must acknowledge your acceptance
-of the terms of service at /static/tos.html by passing the parameter or cookie
+of the terms of service at /static/tos.html by passing the parameter
 accepted_tos=true\n""")
             self.set_status(403)
             self.finish()

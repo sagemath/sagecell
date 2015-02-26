@@ -72,7 +72,6 @@ sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
 sagecell.URLs.cell = sagecell.URLs.root + "sagecell.html";
 sagecell.URLs.completion = sagecell.URLs.root + "complete";
 sagecell.URLs.terms = sagecell.URLs.root + "tos.html";
-sagecell.URLs.cookie = sagecell.URLs.root + "static/set_cookie.html";
 sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
 sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
@@ -456,7 +455,7 @@ sagecell.makeSagecell = function (args, k) {
 
 
 var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
-var accepted_tos = false;
+var accepted_tos = localStorage.accepted_tos;
 
 sagecell.initCell = (function (sagecellInfo, k) {
     var inputLocation = $(sagecellInfo.inputLocation);
@@ -595,9 +594,6 @@ sagecell.initCell = (function (sagecellInfo, k) {
         outputLocation.find(".sagecell_output_elements").show();
     };
     sagecellInfo.submit = function (evt) {
-        if (!isXDomain && document.cookie.split(";").indexOf("accepted_tos=true") !== -1) {
-            accepted_tos = true;
-        }
         if (accepted_tos || sagecellInfo.requires_tos === false) {
             startEvaluation(evt);
             return false;
@@ -621,16 +617,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
                             "Accept": function () {
                                 $(this).dialog("close");
                                 accepted_tos = true;
-                                if (isXDomain) {
-                                    var iframe = sagecell.util.createElement("iframe",
-                                        {"src": sagecell.URLs.cookie + "?rand=" + Math.random()});
-                                    window.addEventListener("message", function listen(event) {
-                                        document.body.removeChild(iframe);
-                                        window.removeEventListener("message", listen);
-                                    });
-                                    iframe.style.display = "none";
-                                    document.body.appendChild(iframe);
-                                }
+                                localStorage.accepted_tos = true;
                                 for (var i = 0; i < deferred_eval.length; i++) {
                                     deferred_eval[i][0](deferred_eval[i][1]);
                                 }
