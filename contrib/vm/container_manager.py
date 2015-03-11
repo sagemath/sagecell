@@ -152,6 +152,7 @@ global
     group haproxy
     user haproxy
     log /dev/log local0
+    stats socket /var/run/haproxy.sock mode 600
 
 
 defaults
@@ -174,8 +175,8 @@ defaults
     errorfile 504 /etc/haproxy/errors/504.http
 """
 
-# {suffix} and {port} have to be set once
-# lines with {node} should be repeated for each
+# {suffix} {port} {hostname} {peer_port} have to be set once
+# lines with {node} and {id} should be repeated for each server
 HAProxy_section = """
 frontend http{suffix}
     bind *:{port}
@@ -183,18 +184,21 @@ frontend http{suffix}
     use_backend static{suffix} if { path_beg /static }
     use_backend compute{suffix}
 
+peers local{suffix}
+    peer {hostname} {hostname}:{peer_port}
+
 backend permalink{suffix}
     server central{suffix} sagecell.sagemath.org
 
 backend static{suffix}
-    server {node}-static {node}:8889 check
+    server {node} {node}:8889 id {id} check
 
 backend compute{suffix}
-    cookie  SAGECELL_SERVER insert indirect postonly maxidle 2h
+    stick-table type string size 1m expire 2h peers local{suffix}
+    stick on hdr(X-Forwarded-For)
     option httpchk
 
-    server {node} {node}:8888 cookie {node} check port 9888
-    server {node}-backup {node}:8888 cookie {node} check backup
+    server {node} {node}:8888 id {id} check port 9888
 """
 
 HAProxy_stats = """
@@ -676,7 +680,7 @@ class SCLXC(object):
         self.inside("apt-get dist-upgrade -y --auto-remove")
 
 
-def restart_haproxy(all_nodes):
+def restart_haproxy(names, backup_names=[]):
     r"""
     Regenerate HA-Proxy configuration file and restart it.
     """
@@ -697,24 +701,39 @@ def restart_haproxy(all_nodes):
 
     log.debug("generating HAProxy configuration file")
     lines = [HAProxy_header]
-    nodes = [n for n in all_nodes if SCLXC(n).is_defined()]
-    if nodes:
-        main = HAProxy_section.replace("{port}", "80").replace("{suffix}", "")
-        for l in main.splitlines():
-            if "{node}" in l:
-                lines.append("\n".join(l.replace("{node}", n) for n in nodes))
-            else:
+    if names:
+        shift = lambda n: 1 if n.endswith("A") else number_of_compute_nodes + 1
+        section = HAProxy_section
+        for k, v in {"port" : 80,
+                     "suffix": "",
+                     "peer_port": 1080,
+                     "hostname": check_output("hostname").strip()}.items():
+            section = section.replace("{" + k + "}", str(v))
+        for l in section.splitlines():
+            if "{node}" not in l:
                 lines.append(l)
+            else:
+                for i, n in enumerate(names):
+                    lines.append(l.format(node=n, id=i + shift(n)))
+                l += " backup"
+                for i, n in enumerate(backup_names):
+                    lines.append(l.format(node=n, id=i + shift(n)))
     if SCLXC(lxcn_tester).is_defined():
-        test = HAProxy_section.replace("{port}", "8888")
-        test = test.replace("{suffix}", "_test")
-        lines.append(test.replace("{node}", lxcn_tester))
+        section = HAProxy_section
+        for k, v in {"port" : 8888,
+                     "suffix": "_test",
+                     "node": lxcn_tester,
+                     "id": 1,
+                     "peer_port": 1088,
+                     "hostname": check_output("hostname").strip()}.items():
+            section = section.replace("{" + k + "}", str(v))
+        lines.append(section)
     lines.append(HAProxy_stats)
     with open("/etc/haproxy/haproxy.cfg", "w") as f:
         f.write("\n".join(lines))
     check_call("service haproxy reload")
     with open("/etc/cron.d/haproxy", "w") as f:
-        delay = start_delay * (len(nodes) + 2)
+        delay = start_delay * (len(up_names) + 2)
         f.write("@reboot root sleep %d; service haproxy start\n" % delay)
         # HA-Proxy is likely to fail to start after reboot since container
         # names are not resolvable until they have started.
@@ -822,36 +841,35 @@ else:
 if args.tester:
     sagecell.clone(lxcn_tester, autostart=True).start()
 
-new_suffix, old_suffix = "A", "B"
-new_nodes = ["{}{}{}".format(lxcn_prefix, n, new_suffix)
+A_names = ["{}{}{}".format(lxcn_prefix, n, "A")
              for n in range(number_of_compute_nodes)]
-old_nodes = ["{}{}{}".format(lxcn_prefix, n, old_suffix)
+B_names = ["{}{}{}".format(lxcn_prefix, n, "B")
              for n in range(number_of_compute_nodes)]
-all_nodes = new_nodes + old_nodes
+if all(SCLXC(n).is_defined() for n in A_names):
+    up_names, old_names = A_names, B_names
+elif all(SCLXC(n).is_defined() for n in B_names):
+    up_names, old_names = B_names, A_names
+else:
+    up_names, old_names = [], A_names
 
 if args.deploy:
-    if all(SCLXC(n).is_defined() for n in new_nodes):
-        new_suffix, old_suffix = old_suffix, new_suffix
-        new_nodes, old_nodes = old_nodes, new_nodes
-    for n in new_nodes:
+    up_names, old_names = old_names, up_names
+    for n in up_names:
         sagecell.clone(n, autostart=True).start()
-    restart_haproxy(all_nodes)
     log.info("waiting for new containers to fully initialize...")
     timer_delay(start_delay)
-    old_nodes = [SCLXC(n) for n in old_nodes]
-    need_to_wait = False
-    for n in old_nodes:
-        if n.is_defined():
-            need_to_wait = True
-            n.inside("/root/healthcheck off")
-    if need_to_wait and not args.nodelay:
+    old_nodes = list(map(SCLXC, old_names))
+    if old_nodes and not args.nodelay:
+        restart_haproxy(up_names, old_names)
         log.info("waiting for users to stop working with old containers...")
         timer_delay(deploy_delay)
         # Make sure sagecell has an associated IP for restart_haproxy
         sagecell.start()
         sagecell.shutdown()
+
+restart_haproxy(up_names)
+
+if args.deploy:
     for n in old_nodes:
         n.save_logs()
         n.destroy()
-
-restart_haproxy(all_nodes)
