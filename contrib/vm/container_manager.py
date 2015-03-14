@@ -80,6 +80,45 @@ octave
 """.split()
 # For ATLAS on Ubuntu 14.04: libatlas3-base libatlas3-base-dev liblapack-dev
 
+# Optional Sage packages to be installed
+sage_optional_packages = """
+4ti2
+biopython
+cbc
+chomp
+cluster_seed
+coxeter3
+cryptominisat
+cunningham_tables
+database_cremona_ellcurve
+database_gap
+database_jones_numfield
+database_kohel
+database_odlyzko_zeta
+database_pari
+database_symbolic_data
+dot2tex
+gap_packages
+gnuplotpy
+guppy
+kash3
+lie
+lrs
+mcqd
+nauty
+normaliz
+nose
+nzmath
+ore_algebra
+p_group_cohomology
+phc
+pybtex
+pycryptoplus
+pyx
+qhull
+topcom
+""".split()
+
 # Python packages to be installed into Sage (via pip) - the order is important!
 python_packages = """
 ecdsa
@@ -279,10 +318,15 @@ def update_repositories():
             git("pull")
         git("submodule update --init --recursive")
         if repository == "sage":
-            log.info("downloading Sage standard packages")
+            log.info("downloading standard Sage packages")
             with open("build/install") as f:
                 for pkg in re.findall(r"`newest_version (\w*)`", f.read()):
                     check_call("src/bin/sage-spkg -d {}".format(pkg))
+            log.info("downloading optional Sage packages")
+            for pkg in sage_optional_packages:
+                # Apparently, this only works for "new style" packages...
+                # So use call rather than check_call
+                call("src/bin/sage-spkg -d {}".format(pkg))
         os.chdir(os.pardir)
     os.chdir(os.pardir)
 
@@ -408,6 +452,9 @@ def install_packages():
     Assuming Sage is already installed, install remaining packages.
     """
     become_server()
+    log.info("installing optional Sage packages")
+    for package in sage_optional_packages:
+        check_call("sage/sage -i {}".format(package))
     # We need IPython stuff not present in spkg and there are issues with 2.1
     log.info("replacing IPython in Sage")
     remove_pattern("sage/local/lib/python/site-packages", "IPython*")
