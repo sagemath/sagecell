@@ -54,6 +54,7 @@ repositories = [
 # Packages to be installed in the base container
 packages = """
 automake
+bison
 build-essential
 dvipng
 gfortran
@@ -66,6 +67,7 @@ npm
 rsyslog-relp
 texlive
 unattended-upgrades
+unzip
 """.split()
 # Due to (other's) bugs, some packages cannot be installed during installation.
 # Let's also use it to separate "standard tools" and "extra stuff".
@@ -81,43 +83,43 @@ octave
 # For ATLAS on Ubuntu 14.04: libatlas3-base libatlas3-base-dev liblapack-dev
 
 # Optional Sage packages to be installed
-sage_optional_packages = """
-4ti2
-biopython
-cbc
-chomp
-cluster_seed
-coxeter3
-cryptominisat
-cunningham_tables
-database_cremona_ellcurve
-database_gap
-database_jones_numfield
-database_kohel
-database_odlyzko_zeta
-database_pari
-database_symbolic_data
-dot2tex
-gap_packages
-gnuplotpy
-guppy
-kash3
-lie
-lrs
-mcqd
-nauty
-normaliz
-nose
-nzmath
-ore_algebra
-p_group_cohomology
-phc
-pybtex
-pycryptoplus
-pyx
-qhull
-topcom
-""".split()
+sage_optional_packages = [
+"4ti2",
+"biopython",
+"cbc",
+"chomp",
+"cluster_seed",
+"coxeter3",
+"cryptominisat",
+#"cunningham_tables",
+"database_cremona_ellcurve",
+"database_gap",
+#"database_jones_numfield",
+#"database_kohel",
+#"database_odlyzko_zeta",
+"database_pari",
+"database_symbolic_data",
+"dot2tex",
+"gap_packages",
+"gnuplotpy",
+"guppy",
+"kash3",
+"lie",  # needs bison
+"lrs",
+"mcqd",
+"nauty",
+"normaliz",
+"nose",
+"nzmath",
+"ore_algebra",
+#"p_group_cohomology",
+"phc",
+"pybtex",   # needs unzip
+"pycryptoplus",
+"pyx",
+"qhull",
+"topcom",
+]
 
 # Python packages to be installed into Sage (via pip) - the order is important!
 python_packages = """
