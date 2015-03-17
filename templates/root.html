@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
-    <meta name="description" content="A simple, embeddable interface for the Sage mathematics software">
+    <meta name="description" content="A simple, embeddable interface for SageMath">
     <link rel="icon" href="{{ static_url('favicon.ico') }}">
     <script src="{{ static_url('jquery.min.js') }}"></script>
 <title>Sage Cell Server</title>
@@ -11,10 +11,10 @@
   </head>
   <body id="sagecell_main">
     <link rel="stylesheet" href="{{ static_url('root.css') }}">
-<h1><a href="http://www.sagemath.org">Sage</a> Cell Server</h1>
+<h1>SageMathCell</h1>
     Type some Sage code below and press Evaluate.
     <div id="sagecell"></div>
-    <a href="{{ static_url('about.html') }}" id="sagecell_about" target="_blank">About Sage Cell Server</a>
+    <a href="{{ static_url('about.html') }}" id="sagecell_about" target="_blank">About SageMathCell</a>
 <script>
 $(function () {
     sagecell.makeSagecell({inputLocation: '#sagecell',
@@ -29,13 +29,17 @@ $(function () {
 });
 </script>
 
+    <h1>About</h1>
+
+    <a href="https://github.com/sagemath/sagecell">SageMathCell</a> project is an easy-to-use web interface to a free open-source mathematics software system <a href="http://sagemath.org">SageMath</a>. It allows <strong>embedding Sage computations into any webpage</strong>: check out <a href="{{ static_url('about.html') }}">short instructions</a> or <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">comprehensive description of capabilities</a>. You can also <a href="https://github.com/sagemath/sagecell/tree/master/contrib/vm/README.md">run it on your own server</a>.
+
     <h1>General Questions on Using Sage</h1>
 
     There are <a href="http://sagemath.org/help.html">a lot of resources</a> available to help you use Sage. In particular, you may ask questions on <a href="http://groups.google.com/group/sage-support">sage-support</a> discussion group or <a href="http://ask.sagemath.org/questions/">ask.sagemath.org</a> website.
-    
-    <h1>Technical Problems and Suggestions</h1>
 
-    Sage Cell Server is expected to work with any modern browser and without any downtime. If you are experiencing any technical problems or have suggestions on improving the service (e.g. you want some extra packages to be available), please email <a href="mailto:novoselt@gmail.com?Subject=SageCellServer">Andrey Novoseltsev</a>.
+    <h1>Problems and Suggestions</h1>
+
+    If you experience any problems or have suggestions on improving this service (e.g., you want a package installed), please email <a href="mailto:novoselt@gmail.com?Subject=SageMathCell">Andrey Novoseltsev</a>. SageMathCell is expected to work with any modern browser and without any downtime.
 
     </body>
 </html>

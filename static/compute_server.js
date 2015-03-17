@@ -213,10 +213,9 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
                 ce("a", {"href": sagecell.URLs.help, "target": "_blank"},
                     ["Help"]),
                 " | Powered by ",
-                ce("a", {"href": "http://www.sagemath.org"}, [
-                    ce("img", {"src": sagecell.URLs.sage_logo, "alt": "Sage"})
+                ce("a", {"href": "http://www.sagemath.org", "target": "_blank"},
+                    ["SageMath"]),
                 ]),
-            ]),
             this.session_files = ce("div", {"class": "sagecell_sessionFiles"})
         ])
     );
