@@ -403,11 +403,14 @@ sagecell.makeSagecell = function (args, k) {
                 sagecell.log("Running the Sage Cell in debug mode!");
             } else {
                 var hideAdvanced = {};
-                var hideable = {"in": {"editor": true,        "editorToggle": true,
-                                       "files": true,         "evalButton": true,
+                var hideable = {"in": {"editor": true,
+                                       "files": true,
+                                       "evalButton": true,
                                        "language": true},
-                                "out": {"output": true,       "messages": true,
-                                        "sessionFiles": true, "permalink": true}};
+                                "out": {"output": true,
+                                        "messages": true,
+                                        "sessionFiles": true,
+                                        "permalink": true}};
                 var hidden_out = [];
                 var out_class = "output_" + IPython.utils.uuid();
                 outputLocation.addClass(out_class);
@@ -468,19 +471,10 @@ sagecell.initCell = (function (sagecellInfo, k) {
     var langSelect = inputLocation.find(".sagecell_language select");
     //var files = [];
     var editorData, temp;
-    if (editor === "textarea" || editor === "textarea-readonly") {
-        inputLocation.find(".sagecell_editorToggle input").attr("checked", false);
-    }
     temp = this.renderEditor(editor, inputLocation, collapse);
     editor = temp[0];
     editorData = temp[1];
     editorData.k = k;
-    inputLocation.find(".sagecell_editorToggle input").change(function () {
-        temp = sagecell.toggleEditor(editor, editorData, inputLocation);
-        editor = temp[0];
-        editorData = temp[1];
-        editorData.k = k;
-    });
     inputLocation.find(".sagecell_advancedTitle").click(function () {
         inputLocation.find(".sagecell_advancedFields").slideToggle();
         return false;
@@ -907,7 +901,6 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         ]);
         header.style.paddingLeft = "2.2em";
         $(accordion).insertBefore(commands);
-        $(code).append(commands, inputLocation.find(".sagecell_editorToggle"));
         $(accordion).accordion({"active": (collapse ? false : header),
                                 "collapsible": true,
                                 "header": header});
@@ -1030,42 +1023,14 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
     return [editor, editorData];
 };
 
-sagecell.toggleEditor = function (editor, editorData, inputLocation) {
-    var editable = ["textarea", "codemirror"];
-    var temp;
-    if ($.inArray(editor, editable) !== -1) {
-        if (editor === "codemirror") {
-            editorData.toTextArea();
-            editor = "textarea";
-            editorData = {}
-        } else {
-            editor = "codemirror";
-            temp = this.renderEditor(editor, inputLocation);
-            editorData = temp[1];
-        }
-    } else {
-        if (editor === "codemirror-readonly") {
-            editorData.toTextArea();
-            editor = "textarea-readonly";
-            temp = this.renderEditor(editor, inputLocation);
-            editorData = temp[1];
-        } else {
-            editor = "codemirror-readonly";
-            temp = this.renderEditor(editor, inputLocation);
-            editorData = temp[1];
-        }
-    }
-    return [editor, editorData];
-};
-
 sagecell.templates = {
     "minimal": { // for an evaluate button and nothing else.
         "editor": "textarea-readonly",
-        "hide": ["editor", "editorToggle", "files", "permalink"],
+        "hide": ["editor", "files", "permalink"],
     },
     "restricted": { // to display/evaluate code that can't be edited.
         "editor": "codemirror-readonly",
-        "hide": ["editorToggle", "files", "permalink"],
+        "hide": ["files", "permalink"],
     }
 };
 

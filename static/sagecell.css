@@ -389,10 +389,6 @@
     font-size: 80%;
 }
 
-.sagecell_editorToggle input {
-    vertical-align: middle;
-}
-
 .sagecell_fullScreen {
     position: absolute;
     right: 10px;

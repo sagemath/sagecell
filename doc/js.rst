@@ -132,18 +132,6 @@ ________________
       rendered editor and ``editorData`` is additional data required to later
       modify the rendered editor.
 
-.. _sagecell.toggleEditor:
-.. function:: sagecell.toggleEditor(editor, editorData, inputLocation)
-
-   Switches the editor type (triggered upon clicking the Editor toggle link in a
-   Sage Cell instance).
-
-   :param String editor: Name of current editor type.
-   :param editorData: Data required to modify the current editor type, as
-      returned by :ref:`sagecell.renderEditor() <sagecell.renderEditor>`.
-   :param inputLocation: jQuery selector corresponding to the location for Sage
-      Cell input (where the editor is located).
-
 
 Utility Functions
 ^^^^^^^^^^^^^^^^^

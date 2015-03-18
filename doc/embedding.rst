@@ -320,7 +320,6 @@ This hides specified parts of the Sage Cell using CSS ``display: none``::
 The following input elements can be hidden:
 
 * Editor (``editor``)
-* Editor type toggle (``editorToggle``)
 * Language selection box (``language``)
 * Evaluate button (``evalButton``)
 
