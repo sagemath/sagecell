@@ -7,11 +7,8 @@ try:
 except ImportError:
     # old IPython
     from IPython.zmq.session import Session
-from zmq import ssh
 import paramiko
-import os
 import time
-import sys
 from Queue import Queue, Empty
 import sender
 
@@ -106,7 +103,8 @@ class TrustedMultiKernelManager(object):
             except socket.timeout:
                 polls+= 1
             if stdout_channel.closed:
-                print "An error occurred getting data from the untrusted side."
+                logger.error(
+                    "An error occurred getting data from the untrusted side.")
                 return None
             if polls>20:
                 return None
@@ -123,11 +121,9 @@ class TrustedMultiKernelManager(object):
         comp_id = str(uuid.uuid4())
         cfg = dict(defaults.items() + config.items())
         cfg["kernels"] = {}
-        req = self.context.socket(zmq.REQ)
 
         client = self._setup_ssh_connection(cfg["host"], cfg["username"])
         port = self._ssh_untrusted(cfg, client, comp_id)
-        retval = None
         if port is None:
             logger.error("Computer %s did not respond, connecting failed!"%comp_id)
         else:
@@ -135,10 +131,7 @@ class TrustedMultiKernelManager(object):
             self._clients[comp_id] = {"ssh": client}
             self._comps[comp_id] = cfg
             logger.info("ZMQ Connection with computer %s at port %d established." %(comp_id, port))
-            retval = comp_id
-
-        return retval
-
+            return comp_id
 
     def purge_kernels(self, comp_id):
         """ Kills all kernels on a given computer. 
@@ -355,8 +348,6 @@ class TrustedMultiKernelManager(object):
     
     def create_iopub_stream(self, kernel_id):
         """ Create iopub 0MQ stream between given kernel and the server."""
-        comp_id = self._kernels[kernel_id]["comp_id"]
-        cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
         iopub_stream = self._create_connected_stream(connection["ip"], connection["iopub_port"], zmq.SUB)
         iopub_stream.socket.setsockopt(zmq.SUBSCRIBE, b"")
@@ -367,8 +358,6 @@ class TrustedMultiKernelManager(object):
 
         
         """
-        comp_id = self._kernels[kernel_id]["comp_id"]
-        cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
         shell_stream = self._create_connected_stream(connection["ip"], connection["shell_port"], zmq.DEALER)
         return shell_stream
@@ -378,8 +367,6 @@ class TrustedMultiKernelManager(object):
 
         
         """
-        comp_id = self._kernels[kernel_id]["comp_id"]
-        cfg = self._comps[comp_id]
         connection = self._kernels[kernel_id]["connection"]
         hb_stream = self._create_connected_stream(connection["ip"], connection["hb_port"], zmq.REQ)
         return hb_stream
@@ -395,14 +382,14 @@ if __name__ == "__main__":
     default_config = config.get_default_config("_default_config")
 
     t = TrustedMultiKernelManager(computers = initial_comps, default_computer_config = default_config)
-    for i in xrange(5):
+    for i in range(5):
         t.new_session()
         
     vals = t._comps.values()
-    for i in xrange(len(vals)):
-        print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
+    for i in range(len(vals)):
+        print("\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys())
 
-    print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+    print("\nList of all kernel ids ::: " + str(t.get_kernel_ids()))
         
     y = t.get_kernel_ids()
     x = t._comps.keys()
@@ -410,11 +397,11 @@ if __name__ == "__main__":
     t.remove_computer(x[0])
             
     vals = t._comps.values()
-    print vals
-    for i in xrange(len(vals)):
-        print "\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys()
+    print(vals)
+    for i in range(len(vals)):
+        print("\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys())
 
-    print "\nList of all kernel ids ::: " + str(t.get_kernel_ids())
+    print("\nList of all kernel ids ::: " + str(t.get_kernel_ids()))
 
     # Kill all kernels
     for i in t._comps.keys():
