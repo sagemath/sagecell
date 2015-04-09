@@ -16,14 +16,19 @@ This module defines the SageMathCell backends for
 #*****************************************************************************
 
 import os
-from sage.repl.rich_output.backend_base import BackendBase
+import shutil
+import stat
+import sys
+
+
+from sage.repl.rich_output.backend_base import BackendIPython
 from sage.repl.rich_output.output_catalog import *
 
 
 from misc import display_message
 
 
-class BackendCell(BackendBase):
+class BackendCell(BackendIPython):
     """
     Backend for SageMathCell
 
@@ -51,15 +56,19 @@ class BackendCell(BackendBase):
         """
         return 'SageMathCell'
 
-    def display_file(path, mimetype=None):
+    def display_file(self, path, mimetype=None):
         path = os.path.relpath(path)
+        if path.startswith("../"):
+            shutil.copy(path, ".")
+            path = os.path.basename(path)
+        os.chmod(path, stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH)
         if mimetype is None:
             mimetype = 'application/x-file'
         msg = {'text/plain': '%s file'%mimetype, mimetype: path}
         display_message(msg)
         sys._sage_.sent_files[path] = os.path.getmtime(path)
 
-    def display_html(s):
+    def display_html(self, s):
         display_message({'text/plain': 'html', 'text/html': s})
                                       
     def display_immediately(self, plain_text, rich_output):
@@ -86,11 +95,14 @@ class BackendCell(BackendBase):
             sage: _ = backend.display_immediately(plain_text, plain_text)
             Example plain text output
         """
-        if isinstance(rich_output, (OutputPlainText, OutputAsciiArt)):
-            rich_output.print_to_stdout()
-        elif isinstance(rich_output, OutputLatex):
-            display_html(rich_output.mathjax())
-            
+        if isinstance(rich_output, OutputPlainText):
+            return {u'text/plain': rich_output.text.get()}, {}
+        if isinstance(rich_output, OutputAsciiArt):
+            return {u'text/plain': rich_output.ascii_art.get()}, {}
+
+        if isinstance(rich_output, OutputLatex):
+            self.display_html(rich_output.mathjax())
+
         elif isinstance(rich_output, OutputImageGif):
             self.display_file(rich_output.gif.filename(), 'text/image-filename')
         elif isinstance(rich_output, OutputImageJpg):
@@ -110,6 +122,9 @@ class BackendCell(BackendBase):
             
         else:
             raise TypeError('rich_output type not supported, got {0}'.format(rich_output))
+        return {u'text/plain': None}, {}
+        
+    displayhook = display_immediately
     
     def supported_output(self):
         """
