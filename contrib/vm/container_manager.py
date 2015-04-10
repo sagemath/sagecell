@@ -72,6 +72,7 @@ unzip
 # Due to (other's) bugs, some packages cannot be installed during installation.
 # Let's also use it to separate "standard tools" and "extra stuff".
 packages_later = """
+graphviz
 libav-tools
 libgeos-dev
 libhdf5-dev
@@ -99,7 +100,7 @@ sage_optional_packages = [
 #"database_odlyzko_zeta",
 "database_pari",
 "database_symbolic_data",
-"dot2tex",
+"dot2tex",  # needs graphviz
 "gap_packages",
 "gnuplotpy",
 "guppy",
