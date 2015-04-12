@@ -61,6 +61,7 @@ gfortran
 git
 imagemagick
 iptables
+libcairo-dev
 m4
 nginx
 npm
