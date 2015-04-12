@@ -534,7 +534,7 @@ def lock_down_worker():
     """
     log.info("locking down worker account")
     os.chdir(os.path.join("/home", users["worker"]))
-    check_call("su -l {worker} -c 'echo \"DihedralGroup(4).cayley_graph()\""
+    check_call("su -l {worker} -c 'echo \"DihedralGroup(4).cayley_graph();\""
                " | /home/{server}/sage/sage'")
     os.mkdir(".sage/.python-eggs")
     os.chown(".sage/.python-eggs", users["worker_ID"], users["GID"])
