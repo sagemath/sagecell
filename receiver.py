@@ -51,10 +51,6 @@ class Receiver(object):
             import sage
             import sage.all
 
-            from sage.repl.rich_output import get_display_manager
-            from backend_cell import BackendCell
-            get_display_manager().switch_backend(BackendCell())
-
             # override matplotlib and pylab show functions
             # TODO: use something like IPython's inline backend
             from uuid import uuid4
