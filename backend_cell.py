@@ -21,7 +21,7 @@ import stat
 import sys
 
 
-from sage.repl.rich_output.backend_base import BackendIPython
+from sage.repl.rich_output.backend_ipython import BackendIPython
 from sage.repl.rich_output.output_catalog import *
 
 
