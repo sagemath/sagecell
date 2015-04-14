@@ -84,14 +84,6 @@ class Receiver(object):
             except Exception as e:
                 logger.debug('plotting exception: %s'%e)
             self.sage_dict = {'sage': sage}
-            sage_code = """
-from sage.all import *
-from sage.calculus.predefined import x
-from sage.misc.html import html
-from sage.server.support import help
-from sagenb.misc.support import automatic_names
-"""
-            exec sage_code in self.sage_dict
             return True
         except ImportError as e:
             print e
