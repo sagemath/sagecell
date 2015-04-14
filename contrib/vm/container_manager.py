@@ -481,8 +481,6 @@ def install_packages():
     check_call("../sage/sage setup.py install")
     os.chdir("..")
 
-    # Upgrade to >=6 to use cache
-    check_call("sage/sage -pip install --upgrade pip")
     log.info("installing pip packages")
     for package in python_packages:
         check_call("sage/sage -pip install --no-deps --upgrade {}"
