@@ -10,6 +10,3 @@
 [submodule "submodules/jsmin"]
 	path = submodules/jsmin
 	url = git://github.com/douglascrockford/JSMin.git
-[submodule "static/mathjax"]
-	path = static/mathjax
-	url = git://github.com/mathjax/MathJax.git

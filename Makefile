@@ -69,12 +69,15 @@ threejs-url-control = https://raw.github.com/jasongrout/three.js/sagecell/exampl
 threejs-url-detect =  https://raw.github.com/jasongrout/three.js/sagecell/examples/js/Detector.js
 canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-*.egg/sagenb/data/sage/js/canvas3d_lib.js
 
-all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
+all: submodules mathjax $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
 
 .PHONY: submodules $(tos-static)
 
 submodules:
 	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
+
+mathjax:
+	ln -sfn $(sage-root)/local/share/mathjax static/mathjax
 
 $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
