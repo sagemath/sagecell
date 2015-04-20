@@ -19,6 +19,7 @@ import os
 import shutil
 import stat
 import sys
+import tempfile
 
 
 from sage.repl.rich_output.backend_ipython import BackendIPython
@@ -64,13 +65,13 @@ class BackendCell(BackendIPython):
         os.chmod(path, stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH)
         if mimetype is None:
             mimetype = 'application/x-file'
-        msg = {'text/plain': '%s file'%mimetype, mimetype: path}
+        msg = {'text/plain': '%s file' % mimetype, mimetype: path}
         display_message(msg)
         sys._sage_.sent_files[path] = os.path.getmtime(path)
 
     def display_html(self, s):
         display_message({'text/plain': 'html', 'text/html': s})
-                                      
+
     def display_immediately(self, plain_text, rich_output):
         """
         Show output immediately.
@@ -115,10 +116,16 @@ class BackendCell(BackendIPython):
             self.display_file(rich_output.svg.filename(), 'text/image-filename')
             
         elif isinstance(rich_output, OutputSceneCanvas3d):
-            self.display_file(rich_output.canvas3d.filename(), 'text/image-filename')
+            self.display_file(rich_output.canvas3d.filename(),
+                              'application/x-canvas3d')
 
         elif isinstance(rich_output, OutputSceneJmol):
-            rich_output.embed()
+            path = tempfile.mkdtemp(suffix=".jmol", dir=".")
+            os.chmod(path, stat.S_IRWXU + stat.S_IXGRP + stat.S_IXOTH)
+            rich_output.scene_zip.save_as(os.path.join(path, 'scene.zip'))
+            rich_output.preview_png.save_as(os.path.join(path, 'preview.png'))
+            display_message({'text/plain': 'application/x-jmol file',
+                             'application/x-jmol': path})
             
         else:
             raise TypeError('rich_output type not supported, got {0}'.format(rich_output))
@@ -161,6 +168,6 @@ class BackendCell(BackendIPython):
             OutputImageSvg,
             
             OutputSceneCanvas3d,
-            #OutputSceneJmol,
+            OutputSceneJmol,
             #OutputSceneWavefront,
         ])

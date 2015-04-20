@@ -108,6 +108,9 @@ class Receiver(object):
             import sys
             new_files = []
             for top,dirs,files in os.walk(root):
+                for dir in dirs:
+                    if dir.endswith(".jmol"):
+                        dirs.remove(dir)
                 for nm in files:
                     path = os.path.join(top,nm)
                     if path.startswith('./'):

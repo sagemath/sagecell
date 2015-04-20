@@ -569,10 +569,10 @@ sagecell.Session.prototype.display_handlers = {
             width: 500,
             color: "white",
             j2sPath: "/static/jsmol/j2s",
-            coverImage: filepath + "/.jmol_images/" + data + ".png",
+            coverImage: filepath + data + "/preview.png",
             deferUncover: true,
             disableInitialConsole: true,
-            script: 'script ' + filepath + data,
+            script: "set defaultdirectory '" + filepath + data + "/scene.zip';\n script SCRIPT;\n",
             menuFile: "/static/SageMenu.mnu",
         }
         this.output(Jmol.getAppletHtml("scJmol", info), block_id);}
