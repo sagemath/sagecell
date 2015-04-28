@@ -592,11 +592,14 @@ class SCLXC(object):
 
         # Try to work around https://github.com/lxc/lxc/issues/280
         cmd = "apt-config shell APT_PROXY Acquire::http::Proxy"
-        APT_PROXY = check_output(cmd).split("'")[1]
-        proxy_file = "/var/cache/lxc/trusty/rootfs-amd64" \
-            "/etc/apt/apt.conf.d/70proxy"
-        with open(proxy_file, "w") as f:
-            f.write(r'Acquire::http::Proxy "{}";'.format(APT_PROXY))
+        try:
+            APT_PROXY = check_output(cmd).split("'")[1]
+            proxy_file = "/var/cache/lxc/trusty/rootfs-amd64" \
+                "/etc/apt/apt.conf.d/70proxy"
+            with open(proxy_file, "w") as f:
+                f.write(r'Acquire::http::Proxy "{}";'.format(APT_PROXY))
+        except IndexError:
+            pass
         os.environ.unsetenv("HTTP_PROXY")
 
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
