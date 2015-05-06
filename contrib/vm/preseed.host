@@ -76,7 +76,7 @@ d-i passwd/make-user boolean false
 tasksel tasksel/first multiselect Basic Ubuntu server, OpenSSH server
 
 # Individual additional packages to install
-d-i pkgsel/include string git haproxy lxc munin python3-yaml rsyslog-relp
+d-i pkgsel/include string dnsmasq git haproxy lxc munin python3-yaml rsyslog-relp
         
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
