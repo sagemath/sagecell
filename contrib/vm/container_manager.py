@@ -234,14 +234,14 @@ backend permalink{suffix}
     server central{suffix} sagecell.sagemath.org
 
 backend static{suffix}
-    server {node} {node}:8889 id {id} check
+    server {node} {node}.lxc:8889 id {id} check
 
 backend compute{suffix}
     stick-table type string size 1m expire 2h peers local{suffix}
     stick on hdr(X-Forwarded-For)
     option httpchk
 
-    server {node} {node}:8888 id {id} check port 9888
+    server {node} {node}.lxc:8888 id {id} check port 9888
 """
 
 HAProxy_stats = """
@@ -740,16 +740,6 @@ def restart_haproxy(names, backup_names=[]):
     if check_output("haproxy -v").startswith("HA-Proxy version 1.4"):
         log.info("HAProxy is too old, installing from backports")
         check_call("apt-get install --target-release trusty-backports haproxy")
-    # Make it possible to use container names following
-    # https://blog.carroarmato0.be/2013/11/24/dns-in-ubuntu-lxc/
-    try:
-        check_call("host " + lxcn_sagecell)
-    except subprocess.CalledProcessError:
-        log.info("making container names resolvable to IP addresses")
-        with open("/etc/resolvconf/resolv.conf.d/head", "a") as f:
-            f.write("nameserver 10.0.3.1\n")
-        check_call("resolvconf -u")
-        check_call("host " + lxcn_sagecell)
 
     log.debug("generating HAProxy configuration file")
     lines = [HAProxy_header]
@@ -783,12 +773,26 @@ def restart_haproxy(names, backup_names=[]):
     lines.append(HAProxy_stats)
     with open("/etc/haproxy/haproxy.cfg", "w") as f:
         f.write("\n".join(lines))
-    check_call("service haproxy reload")
+    # HA-Proxy is likely to fail to start after reboot since container
+    # names are not resolvable until they have started.
     with open("/etc/cron.d/haproxy", "w") as f:
         delay = start_delay * (len(up_names) + 2)
         f.write("@reboot root sleep %d; service haproxy start\n" % delay)
-        # HA-Proxy is likely to fail to start after reboot since container
-        # names are not resolvable until they have started.
+    # Make it possible to use container names
+    try:
+        check_call("host {}.lxc".format(lxcn_sagecell))
+    except subprocess.CalledProcessError:
+        log.info("making container names resolvable to IP addresses")
+        with open("/etc/default/lxc-net", "r") as f:
+            content = f.read()
+        content = content.replace('\n#LXC_DOMAIN="lxc"', '\nLXC_DOMAIN="lxc"')
+        with open("/etc/default/lxc-net", "w") as f:
+            f.write(content)
+        with open("/etc/dnsmasq.d/lxc", "a") as f:
+            f.write("server=/lxc/10.0.3.1\n")
+        log.info("Reboot for system configuration changes to take effect.")
+        exit()
+    check_call("service haproxy reload")
 
 
 logging.config.dictConfig(yaml.load("""
