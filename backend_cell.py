@@ -103,6 +103,8 @@ class BackendCell(BackendIPython):
 
         if isinstance(rich_output, OutputLatex):
             self.display_html(rich_output.mathjax())
+        elif isinstance(rich_output, OutputHtml):
+            self.display_html(rich_output.html.get())
 
         elif isinstance(rich_output, OutputImageGif):
             self.display_file(rich_output.gif.filename(), 'text/image-filename')
@@ -160,6 +162,7 @@ class BackendCell(BackendIPython):
             OutputPlainText,
             OutputAsciiArt,
             OutputLatex,
+            OutputHtml,
             
             OutputImageGif,
             OutputImageJpg,
