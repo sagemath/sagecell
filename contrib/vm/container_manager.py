@@ -533,8 +533,12 @@ def lock_down_worker():
     """
     log.info("locking down worker account")
     os.chdir(os.path.join("/home", users["worker"]))
-    check_call("su -l {worker} -c 'echo \"DihedralGroup(4).cayley_graph();\""
-               " | /home/{server}/sage/sage'")
+    # These commands (somewhat buggishly) lead to creation of files in .sage
+    check_call("""su -l {worker} -c 'echo "
+        DihedralGroup(4).cayley_graph();
+        Dokchitser(conductor=1, gammaV=[0], weight=1, eps=1).init_coeffs(
+            [i+z for z in range(1,5)]);
+        " | /home/{server}/sage/sage'""")
     os.mkdir(".sage/.python-eggs")
     os.chown(".sage/.python-eggs", users["worker_ID"], users["GID"])
     check_call("touch .sage/init.sage")
