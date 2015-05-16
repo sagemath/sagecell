@@ -6,7 +6,7 @@ SQLAlchemy Database Adapter
 """
 System library imports
 """
-import json, string, random
+import string, random
 from datetime import datetime
 
 """
@@ -41,7 +41,7 @@ class DB(db.DB):
         See :meth:`db.DB.new_exec_msg`
         """
         while True:
-            session_id = "".join(random.choice(string.lowercase) for _ in xrange(6))
+            session_id = "".join(random.choice(string.lowercase) for _ in range(6))
             message = ExecMessage(ident=session_id, code=code, language=language, interacts=interacts)
             try:
                 self.dbsession.add(message)
