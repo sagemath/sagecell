@@ -1,32 +1,12 @@
 import os.path
 
-# location of a sage executable
-sage = ""
+from config_default import sage
 
-# defaults if sage isn't set above
-if sage == "":
-    if 'SAGE_ROOT' in os.environ:
-        # assume that the untrusted worker should run the same copy of sage
-        # that is used to run the web server
-        sage = os.path.join(os.environ["SAGE_ROOT"],"sage")
-    else:
-        # assume both the web server and the untrusted workers have sage in their paths
-        sage = "sage"
-
-#db = "sqlalchemy"
-#db_config = {"uri": "sqlite:///sqlite.db"}
-
+# Global database running on Google Compute Engine with a static IP
 db = "web"
-db_config = {"uri": "https://sagecell.sagemath.org/permalink"}
-# db = "web"
-# db_config = {"uri": "http://localhost:8889"}
+db_config = {"uri": "http://130.211.113.153"}
 
 requires_tos = True
-
-permalink_server = {
-    'db': 'sqlalchemy',
-    'db_config': {'uri': 'sqlite:///sqlite.db'}
-}
 
 max_kernel_timeout = 60*90 # 90 minutes, for interacts
 pid_file='/home/{server}/sagecell.pid'

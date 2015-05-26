@@ -223,15 +223,11 @@ defaults
 HAProxy_section = """
 frontend http{suffix}
     bind *:{port}
-    use_backend permalink{suffix} if { path_beg /permalink }
     use_backend static{suffix} if { path_beg /static }
     use_backend compute{suffix}
 
 peers local{suffix}
     peer {hostname} {hostname}:{peer_port}
-
-backend permalink{suffix}
-    server central{suffix} sagecell.sagemath.org
 
 backend static{suffix}
     server {node} {node}.lxc:8889 id {id} check
