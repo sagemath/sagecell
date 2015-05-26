@@ -401,6 +401,7 @@ accepted_tos=true\n""")
                 if msg["msg_type"] == "execute_reply":
                     self.success = msg["content"]["status"] == "ok"
                     self.user_variables = msg["content"].get("user_variables", [])
+                    self.user_expressions = msg["content"].get("user_expressions", {})
                     self.execute_reply = msg['content']
                     loop.remove_timeout(self.timeout_request)
                     loop.add_callback(self.finish_request)
@@ -415,7 +416,7 @@ accepted_tos=true\n""")
                             "content": {"code": code,
                                         "silent": False,
                                         "user_variables": self.get_arguments('user_variables'),
-                                        "user_expressions": {},
+                                        "user_expressions": jsonapi.loads(self.get_argument('user_expressions', default="{}")),
                                         "allow_stdin": False,
                                         },
                             "metadata": {}
@@ -437,6 +438,8 @@ accepted_tos=true\n""")
         retval.update(success=getattr(self, 'success', 'abort'))
         if hasattr(self, 'user_variables'):
             retval.update(user_variables=self.user_variables)
+        if hasattr(self, 'user_expressions'):
+            retval.update(user_expressions=self.user_expressions)
         if hasattr(self, 'execute_reply'):
             retval.update(execute_reply=self.execute_reply)
         self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
