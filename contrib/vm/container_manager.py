@@ -534,6 +534,7 @@ def lock_down_worker():
         DihedralGroup(4).cayley_graph();
         Dokchitser(conductor=1, gammaV=[0], weight=1, eps=1).init_coeffs(
             [i+z for z in range(1,5)]);
+        gp.eval("5*6;");
         " | /home/{server}/sage/sage'""")
     os.mkdir(".sage/.python-eggs")
     os.chown(".sage/.python-eggs", users["worker_ID"], users["GID"])
