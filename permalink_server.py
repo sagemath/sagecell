@@ -12,7 +12,6 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 
-from log import logger
 import permalink
 
 
@@ -49,31 +48,20 @@ if __name__ == "__main__":
     pidlock = PIDLockFile(pidfile_path)
     if pidlock.is_locked():
         old_pid = pidlock.read_pid()
-        logger.info("Lock file exists for PID %d." % old_pid)
-        if os.getpid() == old_pid:
-            logger.info("Stale lock since we have the same PID.")
-        else:
+        if os.getpid() != old_pid:
             try:
                 old = psutil.Process(old_pid)
                 if os.path.basename(__file__) in old.cmdline():
                     try:
-                        logger.info("Trying to terminate old instance...")
                         old.terminate()
                         try:
                             old.wait(10)
                         except psutil.TimeoutExpired:
-                            logger.info("Trying to kill old instance.")
                             old.kill()
                     except psutil.AccessDenied:
-                        logger.error("The process seems to be the same, but "
-                                     "can not be stopped. Its command line: %s"
-                                     % old.cmdline())
-                else:
-                    logger.info("Process does not seem to be the same.")
+                        pass
             except psutil.NoSuchProcess:
                 pass
-                logger.info("No such process exist anymore.")
-        logger.info("Breaking old lock.")
         pidlock.break_lock()
     try:
         pidlock.acquire(timeout=10)
@@ -82,7 +70,6 @@ if __name__ == "__main__":
         http_server.listen(options.port)
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
-        logger.info("Received KeyboardInterrupt, so I'm shutting down.")
+        pass
     finally:
         pidlock.release()
-        logger.warning('Permalink server shutdown')
