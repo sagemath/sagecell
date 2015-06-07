@@ -34,16 +34,16 @@ popd
 ## And we cannot yet switch to IPython 2.1 since embedded cells stop working on
 ## other sites.
 ##git clone https://github.com/ipython/ipython.git
-git clone https://github.com/jasongrout/ipython.git
+git clone https://github.com/novoselt/ipython.git
 pushd ipython
 ##git checkout rel-2.1.0
 git checkout sagecell
 git submodule update --init --recursive
 popd
 
-git clone https://github.com/jasongrout/matplotlib
+git clone https://github.com/matplotlib/matplotlib
 pushd matplotlib
-git checkout sagecell
+git checkout v1.4.3
 git submodule update --init --recursive
 popd
 

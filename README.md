@@ -1,11 +1,11 @@
-This is Sage Cell - a Sage computation web service.
+This is SageMathCell - a Sage computation web service.
 
 Please note that installation instructions below may be outdated. The most reliable source of build instructions at the moment is in [contib/vm scripts](contrib/vm).
 
 
 # Security Warning
 
-If you are going to run a world accessible Sage Cell server, you must understand security implications and should be able to implement reasonable precautions.
+If you are going to run a world accessible SageMathCell server, you must understand security implications and should be able to implement reasonable precautions.
 
 The worker account (which is your own one by default) will be able to execute arbitrary code, which may be malicious. Make **sure** that you are securing the account properly. Working with a professional IT person is a very good idea here. Since the untrusted accounts can be on any computer, one way to isolate these accounts is to host them in a virtual machine that can be reset if the machine is compromised.
 
@@ -46,14 +46,11 @@ We assume that you have access to the Internet and can install any needed depend
     make start
     ```
 
-    Note that we are building a special branch of Sage for the Cell server, do NOT use your regular Sage installation!
+    Note that we are building a special branch of Sage, do NOT use your regular Sage installation!
     
-5.  Prepare Sage for Sage Cell:
+5.  Prepare Sage for SageMathCell:
 
     ```bash
-    ./sage -sh -c "easy_install pip"
-    ./sage -i zeromq
-    ./sage -i pyzmq
     # We need IPython stuff not present in spkg.
     pushd local/lib/python/site-packages
     rm -rf IPython*
@@ -68,12 +65,12 @@ We assume that you have access to the Internet and can install any needed depend
     pushd matplotlib
     ../sage setup.py install
     popd
-    ./sage -sh -c "easy_install ecdsa"
-    ./sage -sh -c "easy_install paramiko"
-    ./sage -sh -c "easy_install sockjs-tornado"
-    ./sage -sh -c "easy_install lockfile"
+    ./sage -pip install --no-deps --upgrade ecdsa
+    ./sage -pip install --no-deps --upgrade paramiko
+    ./sage -pip install --no-deps --upgrade sockjs-tornado
+    ./sage -pip install --no-deps --upgrade lockfile
     ```
-6.  Build Sage Cell:
+6.  Build SageMathCell:
 
     ```bash
     mv ../github/sagecell .
