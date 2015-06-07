@@ -1,1 +1,0 @@
-*/30 * * * * root /usr/sbin/tmpwatch 2h /tmp/sagecell 

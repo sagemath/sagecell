@@ -1,5 +1,0 @@
-#!/bin/sh
-
-mkdir empty
-virt-make-fs --type=ext4 --format=qcow2 empty $1
-
