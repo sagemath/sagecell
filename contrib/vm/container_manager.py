@@ -481,6 +481,25 @@ def install_packages():
     for package in python_packages:
         check_call("sage/sage -pip install --no-deps --upgrade {}"
                    .format(package))
+    log.info("patching sockjs-tornado")
+    with subprocess.Popen(shlex.split("patch /home/sc_serv/sage/local/lib/python/site-packages/sockjs/tornado/basehandler.py"),
+                          stdin=subprocess.PIPE,
+                          universal_newlines=True) as p:
+        p.communicate('''
+            --- a/sockjs/tornado/basehandler.py
+            +++ b/sockjs/tornado/basehandler.py
+            @@ -117,10 +117,6 @@ class PreflightHandler(BaseHandler):
+                     """Handles request authentication"""
+                     origin = self.request.headers.get('Origin', '*')
+             
+            -        # Respond with '*' to 'null' origin
+            -        if origin == 'null':
+            -            origin = '*'
+            -
+                     self.set_header('Access-Control-Allow-Origin', origin)
+             
+                     headers = self.request.headers.get('Access-Control-Request-Headers')
+            ''')
 
 
 def install_sagecell():
@@ -790,7 +809,7 @@ def restart_haproxy(names, backup_names=[]):
         with open("/etc/default/lxc-net", "w") as f:
             f.write(content)
         with open("/etc/dnsmasq.d/lxc", "a") as f:
-            f.write("server=/lxc/10.0.3.1\n")
+            f.write("server=/lxc/10.0.3.1\ninterface=lo\n")
         log.info("Reboot for system configuration changes to take effect.")
         exit()
     check_call("service haproxy reload")
