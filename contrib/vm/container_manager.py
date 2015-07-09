@@ -57,6 +57,7 @@ automake
 bison
 build-essential
 dvipng
+gettext
 gfortran
 git
 imagemagick
@@ -67,6 +68,7 @@ nginx
 npm
 rsyslog-relp
 texlive
+texlive-latex-extra
 unattended-upgrades
 unzip
 """.split()
