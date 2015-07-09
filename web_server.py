@@ -30,16 +30,17 @@ class SageCellServer(tornado.web.Application):
         baseurl = baseurl.rstrip('/')
         handlers_list = [
             (r"/", handlers.RootHandler),
-            (r"/kernel", handlers.KernelHandler),
             (r"/embedded_sagecell.js", tornado.web.RedirectHandler, {"url":baseurl+"/static/embedded_sagecell.js"}),
-            (r"/sagecell.html", handlers.SageCellHandler),
-            (r"/tos.html", handlers.TOSHandler),
+            (r"/help.html", handlers.HelpHandler),
+            (r"/kernel", handlers.KernelHandler),
             (r"/kernel/%s" % _kernel_id_regex, handlers.KernelHandler),
             (r"/kernel/%s/iopub" % _kernel_id_regex, handlers.IOPubWebHandler),
             (r"/kernel/%s/shell" % _kernel_id_regex, handlers.ShellWebHandler),
             (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": tmp_dir}),
             (r"/permalink", permalink.PermalinkHandler),
+            (r"/sagecell.html", handlers.SageCellHandler),
             (r"/service", handlers.ServiceHandler),
+            (r"/tos.html", handlers.TOSHandler),
             ] + handlers.KernelRouter.urls
         handlers_list = [[baseurl+i[0]]+list(i[1:]) for i in handlers_list]
         settings = dict(

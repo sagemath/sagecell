@@ -108,6 +108,15 @@ class RootHandler(tornado.web.RequestHandler):
     def options(self):
         self.set_status(200)
 
+
+class HelpHandler(tornado.web.RequestHandler):
+    """
+    Render templates/help.html.
+    """
+    def get(self):
+        self.render("help.html")
+
+
 class KernelHandler(tornado.web.RequestHandler):
     """
     Kernel startup request handler.

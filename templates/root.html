@@ -28,26 +28,6 @@ $(function () {
 
 });
 </script>
-
-    <h1>About</h1>
-
-    <p><a href="https://github.com/sagemath/sagecell">SageMathCell</a> project is an easy-to-use web interface to a free open-source mathematics software system <a href="http://sagemath.org">SageMath</a>.</p>
-
-    <p>It allows <strong>embedding Sage computations into any webpage</strong>: check out <a href="{{ static_url('about.html') }}">short instructions</a> or <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">comprehensive description of capabilities</a>. You can also <a href="https://github.com/sagemath/sagecell/tree/master/contrib/vm/README.md">run it on your own server</a>.</p>
-
-    <h1>General Questions on Using Sage</h1>
-
-    <p>There are <a href="http://sagemath.org/help.html">a lot of resources</a> available to help you use Sage. In particular, you may ask questions on <a href="http://groups.google.com/group/sage-support">sage-support</a> discussion group or <a href="http://ask.sagemath.org/questions/">ask.sagemath.org</a> website.</p>
-
-    <h1>Problems and Suggestions</h1>
-
-    <p>If you experience any problems or have suggestions on improving this service (e.g., you want a package installed), please email <a href="mailto:novoselt@gmail.com?Subject=SageMathCell">Andrey Novoseltsev</a>.</p>
-
-    <p>SageMathCell is expected to work with any modern browser and without any downtime.</p>
-
-    <h1><a href="https://cloud.sagemath.com/" target="_blank"><img src="{{ static_url('sagemathcloud-logo.png') }}" alt="SageMathCloud"></a></h1>
-
-    <p>Need more power and flexibility but still prefer to avoid your own installation of Sage? <a href="https://cloud.sagemath.com/" target="_blank">SageMathCloud</a> will allow you to work with multiple persistent worksheets in Sage, IPython, LaTeX, and much, much more!</p>
-
-    </body>
+    {% include info.html %}
+  </body>
 </html>
