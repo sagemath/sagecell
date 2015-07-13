@@ -21,6 +21,11 @@ import yaml
 
 number_of_compute_nodes = 3
 
+#This will be visible on root and help pages. Suggested template:
+# Resources for your computation are provided by <a href="...">...</a>.
+provider_html = r"""
+"""
+
 # Container names
 lxcn_base = "base"      # OS and packages
 lxcn_precell = "precell"    # Everything but SageCell and system configuration
@@ -513,6 +518,8 @@ def install_sagecell():
     shutil.move("github/sagecell", ".")
     shutil.rmtree("github")
     os.chdir("sagecell")
+    with open("templates/provider.html", "w") as f:
+        f.write(provider_html)
     check_call("../sage/sage -sh -c 'make -B'")
     log.info("successfully compiled SageCell")
 
