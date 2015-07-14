@@ -8,7 +8,6 @@ import logging
 import logging.config
 import os
 import pwd
-import re
 import shlex
 import shutil
 import stat
@@ -324,16 +323,6 @@ def update_repositories():
         if call("git symbolic-ref -q HEAD") == 0:
             git("pull")
         git("submodule update --init --recursive")
-        if repository == "sage":
-            log.info("downloading standard Sage packages")
-            with open("build/install") as f:
-                for pkg in re.findall(r"`newest_version (\w*)`", f.read()):
-                    check_call("src/bin/sage-spkg -d {}".format(pkg))
-            log.info("downloading optional Sage packages")
-            for pkg in sage_optional_packages:
-                # Apparently, this only works for "new style" packages...
-                # So use call rather than check_call
-                call("src/bin/sage-spkg -d {}".format(pkg))
         os.chdir(os.pardir)
     os.chdir(os.pardir)
 
@@ -698,12 +687,17 @@ class SCLXC(object):
             update_repositories()
         log.info("uploading repositories to %s", self.name)
         root = self.c.get_config_item("lxc.rootfs")
+        home = os.path.join(root, "home", users["server"])
         shutil.copytree("github",
-                        os.path.join(root, "home", users["server"], "github"),
+                        os.path.join(home, "github"),
                         symlinks=True)
         self.inside("chown -R {server}:{group} /home/{server}/github")
         self.inside(install_sage)
         self.inside(install_packages)
+        shutil.rmtree("github/sage/upstream")
+        shutil.copytree(os.path.join(home, "sage/upstream"),
+                        "github/sage/upstream",
+                        symlinks=True)
 
     def install_sagecell(self):
         r"""
