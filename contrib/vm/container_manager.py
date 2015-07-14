@@ -50,7 +50,6 @@ users = {"group": "sagecell", "GID": 8888,
 repositories = [
     ("novoselt", "sage", "sagecell"),
     ("novoselt", "ipython", "sagecell"),
-    ("matplotlib", "matplotlib", "v1.4.3"),
     ("sagemath", "sagecell", "master"),
     ("matplotlib", "basemap", "master"),
 ]
@@ -458,13 +457,6 @@ def install_packages():
     shutil.move("github/ipython", ".")
     os.chdir("ipython")
     check_call("../sage/sage setup.py develop")
-    os.chdir("..")
-    # We need a cutting-edge matplotlib for the new interactive features.
-    log.info("replacing matplotlib in Sage")
-    remove_pattern("sage/local/lib/python/site-packages", "matplotlib*")
-    shutil.move("github/matplotlib", ".")
-    os.chdir("matplotlib")
-    check_call("../sage/sage setup.py install")
     os.chdir("..")
     # And we also install basemap
     log.info("installing basemap in Sage")
