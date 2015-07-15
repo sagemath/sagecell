@@ -274,6 +274,15 @@ def check_output(command):
                                    universal_newlines=True)
 
 
+def communicate(command, message):
+    command = command.format_map(users)
+    log.debug("sending %s to %s", message, command)
+    with subprocess.Popen(shlex.split(command),
+                          stdin=subprocess.PIPE,
+                          universal_newlines=True) as p:
+        p.communicate(message)
+
+
 def remove_pattern(path, pattern):
     r"""
     Remove all files and directories at ``path`` matching ``pattern``.
@@ -413,33 +422,24 @@ def install_sage():
     log.info("compiling Sage")
     check_call("make start")
 
-    with subprocess.Popen(shlex.split("./sage"),
-                          stdin=subprocess.PIPE,
-                          universal_newlines=True) as p:
-        p.communicate(r"""
-            # make appropriate octave directory
-            octave.eval('1+2')
-            quit
-            """)
+    communicate("./sage", r"""
+        # make appropriate octave directory
+        octave.eval('1+2')
+        quit
+        """)
     log.info("successfully compiled Sage")
     # SageCell used to install QEPCAD, but it does not build now.
-#    with subprocess.Popen(shlex.split("./sage -i qepcad"),
-#                          stdin=subprocess.PIPE,
-#                          universal_newlines=True) as p:
-#        p.communicate("y\n")
+#    communicate("./sage -i qepcad", "y\n")
 #    os.chmod("local/bin/qepcad.help", 0o644)
-#    with subprocess.Popen(shlex.split("./sage"),
-#                          stdin=subprocess.PIPE,
-#                          universal_newlines=True) as p:
-#        p.communicate(r"""
-#            # make appropriate qepcad directory
-#            var('a,b,c,d,x,y,z')
-#            qf = qepcad_formula
-#            ellipse = 3*x^2 + 2*x*y + y^2 - x + y - 7
-#            F = qf.exists(y, ellipse == 0)
-#            qepcad(F)
-#            quit
-#            """)
+#    communicate("./sage", r"""
+#        # make appropriate qepcad directory
+#        var('a,b,c,d,x,y,z')
+#        qf = qepcad_formula
+#        ellipse = 3*x^2 + 2*x*y + y^2 - x + y - 7
+#        F = qf.exists(y, ellipse == 0)
+#        qepcad(F)
+#        quit
+#        """)
 
 
 def install_packages():
@@ -449,7 +449,8 @@ def install_packages():
     become_server()
     log.info("installing optional Sage packages")
     for package in sage_optional_packages:
-        check_call("sage/sage -i {}".format(package))
+        # Experimental packages ask for confirmation.
+        communicate("sage/sage -i {}".format(package), "\n")
     # We need IPython stuff not present in spkg and there are issues with 2.1
     log.info("replacing IPython in Sage")
     remove_pattern("sage/local/lib/python/site-packages", "IPython*")
@@ -470,24 +471,22 @@ def install_packages():
         check_call("sage/sage -pip install --no-deps --upgrade {}"
                    .format(package))
     log.info("patching sockjs-tornado")
-    with subprocess.Popen(shlex.split("patch /home/sc_serv/sage/local/lib/python/site-packages/sockjs/tornado/basehandler.py"),
-                          stdin=subprocess.PIPE,
-                          universal_newlines=True) as p:
-        p.communicate('''
-            --- a/sockjs/tornado/basehandler.py
-            +++ b/sockjs/tornado/basehandler.py
-            @@ -117,10 +117,6 @@ class PreflightHandler(BaseHandler):
-                     """Handles request authentication"""
-                     origin = self.request.headers.get('Origin', '*')
-             
-            -        # Respond with '*' to 'null' origin
-            -        if origin == 'null':
-            -            origin = '*'
-            -
-                     self.set_header('Access-Control-Allow-Origin', origin)
-             
-                     headers = self.request.headers.get('Access-Control-Request-Headers')
-            ''')
+    communicate("patch /home/{server}/sage/local/lib/python/site-packages/"
+        "sockjs/tornado/basehandler.py", '''
+        --- a/sockjs/tornado/basehandler.py
+        +++ b/sockjs/tornado/basehandler.py
+        @@ -117,10 +117,6 @@ class PreflightHandler(BaseHandler):
+                 """Handles request authentication"""
+                 origin = self.request.headers.get('Origin', '*')
+         
+        -        # Respond with '*' to 'null' origin
+        -        if origin == 'null':
+        -            origin = '*'
+        -
+                 self.set_header('Access-Control-Allow-Origin', origin)
+         
+                 headers = self.request.headers.get('Access-Control-Request-Headers')
+        ''')
 
 
 def install_sagecell():
