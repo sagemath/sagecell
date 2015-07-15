@@ -233,7 +233,7 @@ frontend http{suffix}
     use_backend compute{suffix}
 
 peers local{suffix}
-    peer {hostname} {hostname}:{peer_port}
+    peer {hostname} localhost:{peer_port}
 
 backend static{suffix}
     server {node} {node}.lxc:8889 id {id} check
