@@ -112,7 +112,7 @@ sage_optional_packages = [
 "guppy",
 "kash3",
 "lie",  # needs bison
-"lrs",
+"lrslib",
 "mcqd",
 "nauty",
 "normaliz",
