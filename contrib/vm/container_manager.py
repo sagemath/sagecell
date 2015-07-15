@@ -130,6 +130,7 @@ sage_optional_packages = [
 
 # Python packages to be installed into Sage (via pip) - the order is important!
 python_packages = """
+pip
 ecdsa
 paramiko
 sockjs-tornado
@@ -685,7 +686,10 @@ class SCLXC(object):
         self.inside("chown -R {server}:{group} /home/{server}/github")
         self.inside(install_sage)
         self.inside(install_packages)
-        shutil.rmtree("github/sage/upstream")
+        try:
+            shutil.rmtree("github/sage/upstream")
+        except FileNotFoundError:
+            pass
         shutil.copytree(os.path.join(home, "sage/upstream"),
                         "github/sage/upstream",
                         symlinks=True)
