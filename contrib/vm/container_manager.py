@@ -52,6 +52,7 @@ repositories = [
     ("novoselt", "ipython", "sagecell"),
     ("sagemath", "sagecell", "master"),
     ("matplotlib", "basemap", "master"),
+    ("mathjax", "MathJax", "master"),
 ]
 
 # Packages to be installed in the base container
@@ -460,6 +461,11 @@ def install_packages():
     os.chdir("ipython")
     check_call("../sage/sage setup.py develop")
     os.chdir("..")
+    # MathJax in Sage is very stripped, while SVG and image fonts are useful,
+    # see http://trac.sagemath.org/ticket/18596
+    log.info("replacing MathJax in Sage")
+    remove_pattern("sage/local/share", "mathjax")
+    shutil.move("github/MathJax", "sage/local/share/mathjax")
     # And we also install basemap
     log.info("installing basemap in Sage")
     shutil.move("github/basemap", ".")
