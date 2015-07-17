@@ -686,10 +686,14 @@ class SCLXC(object):
         log.info("uploading repositories to %s", self.name)
         root = self.c.get_config_item("lxc.rootfs")
         home = os.path.join(root, "home", users["server"])
-        shutil.copytree("github",
-                        os.path.join(home, "github"),
-                        symlinks=True)
+        shutil.copytree("github", os.path.join(home, "github"), symlinks=True)
         self.inside("chown -R {server}:{group} /home/{server}/github")
+        dot_cache = os.path.join(home, ".cache")
+        try:
+            shutil.copytree("dot_cache", dot_cache, symlinks=True)
+            self.inside("chown -R {server}:{server} /home/{server}/.cache")
+        except FileNotFoundError:
+            pass
         self.inside(install_sage)
         self.inside(install_packages)
         try:
@@ -699,6 +703,11 @@ class SCLXC(object):
         shutil.copytree(os.path.join(home, "sage/upstream"),
                         "github/sage/upstream",
                         symlinks=True)
+        try:
+            shutil.rmtree("dot_cache")
+        except FileNotFoundError:
+            pass
+        shutil.copytree(dot_cache, "dot_cache", symlinks=True)
 
     def install_sagecell(self):
         r"""
