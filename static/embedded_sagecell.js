@@ -213,7 +213,7 @@ sagecell.init = function (callback) {
             'text': 'MathJax.Hub.Config(' + JSON.stringify(mjConfig) + ');',
             'type': 'text/x-mathjax-config'
         });
-        load({"src": sagecell.URLs.root + "static/mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
+        load({"src": "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
     }
     // Preload images
     new Image().src = sagecell.URLs.sage_logo;
