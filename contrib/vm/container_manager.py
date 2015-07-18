@@ -16,6 +16,7 @@ import sys
 import time
 
 import lxc
+import psutil
 import yaml
 
 number_of_compute_nodes = 3
@@ -296,17 +297,20 @@ def remove_pattern(path, pattern):
             os.remove(full)
 
 
-def timer_delay(delay):
+def timer_delay(delay, test=None):
     r"""
     Wait with a countdown timer.
 
     ``delay`` is either a timedelta or the number of seconds.
+    
+    ``test`` is either ``None`` (default) or callable, in which case the timer
+    stops as soon as ``False`` is returned.
     """
     if isinstance(delay, datetime.timedelta):
         delay = delay.total_seconds()
     now = time.time()
     end = now + delay
-    while now < end:
+    while now < end and (test is None or test()):
         remaining = datetime.timedelta(seconds=int(end - now))
         sys.stdout.write("  Please wait {} ...\r".format(remaining))
         sys.stdout.flush()
@@ -943,9 +947,14 @@ if args.deploy:
     timer_delay(start_delay)
     old_nodes = list(map(SCLXC, old_names))
     if old_nodes and not args.nodelay:
+        try:
+            with open("/var/run/haproxy.pid") as f:
+                test = psutil.Process(int(f.read())).is_running
+        except FileNotFoundError:
+            test = None
         restart_haproxy(up_names, old_names)
         log.info("waiting for users to stop working with old containers...")
-        timer_delay(deploy_delay)
+        timer_delay(deploy_delay, test)
         # Make sure sagecell has an associated IP for restart_haproxy
         sagecell.start()
         sagecell.shutdown()
