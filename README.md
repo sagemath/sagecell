@@ -24,70 +24,64 @@ We assume that you have access to the Internet and can install any needed depend
     sudo npm install -g inherits requirejs coffee-script
     ```
 
-3.  Download repositories from GitHub:
+3.  Optionally create a directory for all components:
 
     ```bash
-    # Create a directory for building images and go there.
     mkdir sc_build
     cd sc_build
-    # Get clone_repositories, make it executable, and run it.
-    wget https://github.com/sagemath/sagecell/raw/master/contrib/vm/clone_repositories
-    chmod u+x clone_repositories
-    ./clone_repositories
     ```
     
-    Note: these are the largest downloads that happen during installation, but not the only ones - you have to have Internet access during the following steps as well.
-
-4.  Build Sage (`export MAKE="make -j8"` or something similar can speed things up):
+4.  Get and build Sage (`export MAKE="make -j8"` or something similar can speed things up):
 
     ```bash
-    mv github/sage .
-    cd sage
-    make start
+    git clone https://github.com/novoselt/sage.git
+    pushd sage
+    git checkout sagecell
+    git submodule update --init --recursive
+    make
+    popd
     ```
-
+    
     Note that we are building a special branch of Sage, do NOT use your regular Sage installation!
     
 5.  Prepare Sage for SageMathCell:
 
     ```bash
     # We need IPython stuff not present in spkg.
-    pushd local/lib/python/site-packages
+    pushd sage/local/lib/python/site-packages
     rm -rf IPython*
     rm -rf ipython*
     popd
-    mv ../github/ipython .
+    git clone https://github.com/novoselt/ipython.git
     pushd ipython
-    ../sage setup.py develop
+    git checkout sagecell
+    git submodule update --init --recursive
+    ../sage/sage setup.py develop
     popd
-    # we need a cutting-edge matplotlib as well for the new interactive features
-    mv ../github/matplotlib .
-    pushd matplotlib
-    ../sage setup.py install
-    popd
-    ./sage -pip install --no-deps --upgrade ecdsa
-    ./sage -pip install --no-deps --upgrade paramiko
-    ./sage -pip install --no-deps --upgrade sockjs-tornado
-    ./sage -pip install --no-deps --upgrade lockfile
+    sage/sage -pip install --no-deps --upgrade ecdsa
+    sage/sage -pip install --no-deps --upgrade paramiko
+    sage/sage -pip install --no-deps --upgrade sockjs-tornado
+    sage/sage -pip install --no-deps --upgrade lockfile
     ```
 6.  Build SageMathCell:
 
     ```bash
-    mv ../github/sagecell .
-    cd sagecell
-    ../sage -sh -c "make -B"
+    git clone https://github.com/sagemath/sagecell.git
+    pushd sagecell
+    git submodule update --init --recursive
+    ../sage/sage -sh -c "make -B"
     ```
 
 
 # Configuration
 
-1.  Go into the `sage/sagecell` directory (you are there in the end of the above instructions).
+1.  Go into the `sagecell` directory (you are there in the end of the above instructions).
 2.  Copy `config_default.py` to `config.py`.
 3.  Edit `config.py` according to your needs. Of particular interest are `host` and `username` entries of the `_default_config` dictionary: you should be able to SSH to `username@host` *without typing in a password*. For example, by default, it assumes you can do `ssh localhost` without typing in a password. Unless you are running a private and **firewalled** server for youself, you’ll want to change this to a more restrictive account; otherwise **anyone will be able to execute any code under your username**. You can set up a passwordless account using SSH: type “ssh passwordless login” into Google to find lots of guides for doing this, like http://www.debian-administration.org/articles/152. You may also wish to adjust `db_config["uri"]` (make the database files readable *only* by the trusted account).
 4.  Start the server via
 
     ```bash
-    ../sage web_server.py [-p <PORT_NUMBER>]
+    ../sage/sage web_server.py [-p <PORT_NUMBER>]
     ```
     
     where the default `<PORT_NUMBER>` is `8888` and go to `http://localhost:<PORT_NUMBER>` to use the Sage Cell server.
