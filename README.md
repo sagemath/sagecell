@@ -62,6 +62,7 @@ We assume that you have access to the Internet and can install any needed depend
     sage/sage -pip install --no-deps --upgrade paramiko
     sage/sage -pip install --no-deps --upgrade sockjs-tornado
     sage/sage -pip install --no-deps --upgrade lockfile
+    sage/sage -pip install --no-deps --upgrade psutil
     ```
 6.  Build SageMathCell:
 
