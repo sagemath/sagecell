@@ -5,9 +5,6 @@ all-min-css    = static/all.min.css
 all-min-js     = static/all.min.js
 colorpicker    = static/colorpicker/js/colorpicker.js
 compute_server = static/compute_server.js
-threejs        = static/three.js
-threejs-control= static/OrbitControls.js
-threejs-detect = static/Detector.js
 threed         = static/3d.js
 threed-coffee  = static/3d.coffee
 jsmol-path     = static/jsmol
@@ -64,10 +61,10 @@ ip-widgets     = $(require-base)/build/widgets.js
 jquery-url     = http://code.jquery.com/jquery-2.1.3.min.js
 sockjs-url     = https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js
 mpl-js         = static/mpl.js
-threejs-url    =  https://raw.github.com/jasongrout/three.js/sagecell/build/three.js
-threejs-url-control = https://raw.github.com/jasongrout/three.js/sagecell/examples/js/controls/OrbitControls.js
-threejs-url-detect =  https://raw.github.com/jasongrout/three.js/sagecell/examples/js/Detector.js
 canvas3d       = $(sage-root)/local/lib/python/site-packages/sagenb-*.egg/sagenb/data/sage/js/canvas3d_lib.js
+threejs        = $(sage-root)/local/share/threejs/build/three.js
+threejs-control= $(sage-root)/local/share/threejs/examples/js/controls/OrbitControls.js
+threejs-detect = $(sage-root)/local/share/threejs/examples/js/Detector.js
 
 all: submodules $(jquery) $(all-min-js) $(all-min-css) $(tos-static) $(embed-css)
 
@@ -78,15 +75,6 @@ submodules:
 
 $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
-
-$(threejs):
-	python -c "import urllib; urllib.urlretrieve('$(threejs-url)', '$(threejs)')"
-
-$(threejs-control):
-	python -c "import urllib; urllib.urlretrieve('$(threejs-url-control)', '$(threejs-control)')"
-
-$(threejs-detect):
-	python -c "import urllib; urllib.urlretrieve('$(threejs-url-detect)', '$(threejs-detect)')"
 
 $(ip-widgets): $(require-base)/main.js
 	r.js -o $(require-base)/main.js appDir=$(ip-static)
@@ -128,7 +116,7 @@ $(threed): $(threed-coffee)
 	coffee -c $(threed-coffee)
 
 $(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(ip-widgets) $(jquery-ui) $(jquery-ui-tp) \
-            $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js)
+            $(colorpicker) $(threed) $(mpl-js)
 	cat $(ip-events) $(ip-utils) $(ip-widgets) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js) > $(wrap-js)
 	python $(fix-js) $(wrap-js)

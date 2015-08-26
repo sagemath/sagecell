@@ -127,6 +127,7 @@ sage_optional_packages = [
 "pyx",
 "qhull",
 "topcom",
+"threejs",
 ]
 
 # Python packages to be installed into Sage (via pip) - the order is important!

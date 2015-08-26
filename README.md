@@ -39,6 +39,7 @@ We assume that you have access to the Internet and can install any needed depend
     git checkout sagecell
     git submodule update --init --recursive
     make
+    ./sage -i threejs
     popd
     ```
     
