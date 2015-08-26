@@ -206,7 +206,7 @@ sagecell.init = function (callback) {
                 "inlineMath": [["$", "$"], ["\\(", "\\)"]],
                 "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
                 "processEscapes": true,
-                "processEnvironments": false
+                "processEnvironments": true
             }
         };
         load({
