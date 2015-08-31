@@ -690,7 +690,7 @@ class SCLXC(object):
         dot_cache = os.path.join(home, ".cache")
         try:
             shutil.copytree("dot_cache", dot_cache, symlinks=True)
-            self.inside("chown -R {server}:{server} /home/{server}/.cache")
+            self.inside("chown -R {server}:{group} /home/{server}/.cache")
         except FileNotFoundError:
             pass
         self.inside(install_sage)
