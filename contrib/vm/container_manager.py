@@ -284,6 +284,10 @@ def communicate(command, message):
                           stdin=subprocess.PIPE,
                           universal_newlines=True) as p:
         p.communicate(message)
+        if p.returncode != 0:
+            msg = "{} failed".format(command)
+            log.error(msg)
+            raise RuntimeError(msg)
 
 
 def remove_pattern(path, pattern):
