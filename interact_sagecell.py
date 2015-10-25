@@ -1278,7 +1278,7 @@ def automatic_control(control, var=None):
         C = ExpressionBox(default = control, label=label)
         try:
             from sagenb.misc.misc import Color
-            from sage.structure.all import is_Vector, is_Matrix
+            from sage.structure.element import is_Vector, is_Matrix
             from sage.all import parent
             if is_Matrix(control):
                 nrows = control.nrows()
