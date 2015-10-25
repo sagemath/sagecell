@@ -121,7 +121,9 @@ sage_optional_packages = [
 "phc",
 "pybtex",   # needs unzip
 "pyx",
+"qepcad",
 "qhull",
+"saclib",
 "topcom",
 "threejs",
 ]
