@@ -418,7 +418,7 @@ def become_server():
 
 def install_sage():
     r"""
-    Install Sage and some of its optional packages.
+    Install Sage.
     """
     become_server()
     shutil.move("github/sage", ".")
@@ -436,23 +436,11 @@ def install_sage():
         quit
         """)
     log.info("successfully compiled Sage")
-    # SageCell used to install QEPCAD, but it does not build now.
-#    communicate("./sage -i qepcad", "y\n")
-#    os.chmod("local/bin/qepcad.help", 0o644)
-#    communicate("./sage", r"""
-#        # make appropriate qepcad directory
-#        var('a,b,c,d,x,y,z')
-#        qf = qepcad_formula
-#        ellipse = 3*x^2 + 2*x*y + y^2 - x + y - 7
-#        F = qf.exists(y, ellipse == 0)
-#        qepcad(F)
-#        quit
-#        """)
 
 
 def install_packages():
     r"""
-    Assuming Sage is already installed, install remaining packages.
+    Assuming Sage is already installed, install optional packages.
     """
     become_server()
     log.info("installing optional Sage packages")
