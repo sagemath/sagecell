@@ -429,6 +429,10 @@ def install_sage():
     # but it may be particularly slow.
     log.info("compiling Sage")
     check_call("make start")
+    
+    # Make R use cairo instead of X11 when plotting
+    with open("local/lib/R/etc/Rprofile.site", "w") as f:
+        print("options(bitmapType='cairo')", file=f)
 
     communicate("./sage", r"""
         # make appropriate octave directory

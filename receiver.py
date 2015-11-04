@@ -294,6 +294,8 @@ set_random_seed()
 from sage.repl.rich_output import get_display_manager
 from backend_cell import BackendCell
 get_display_manager().switch_backend(BackendCell(), shell=get_ipython())
+# Make R interface pickup the new working directory
+r = R()
 """
             exec sage_code in user_ns
         def getsource(obj, is_binary):
