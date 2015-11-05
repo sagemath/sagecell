@@ -377,7 +377,7 @@ sagecell.Session.prototype.execute = function (code) {
             pre = "print " + this.language + ".eval";
         }
         if (pre) {
-            code = pre + '("""' + code.replace(/"/g, '\\"') + '""")'
+            code = pre + '("""' + code.replace(/"/g, '\\"') + '""").strip()'
         }
         if (this.language === "r") {
             code += "\nr.eval('graphics.off()'); display_file = get_display_manager()._backend.display_file; import glob; [display_file(filename, 'text/image-filename') for filename in glob.glob('Rplot*') if filename[-4:] in ['.bmp', 'jpeg', '.png', '.svg']]; None";
