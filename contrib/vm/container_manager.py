@@ -731,10 +731,11 @@ class SCLXC(object):
             f.seek(0, os.SEEK_END)
             f.seek(max(f.tell() - 2**16, 0))
             end = f.readlines()[-1][:stamp_length].decode()
+        copyname = "container_logs/%s to %s on %s" % (start, end, self.name)
         if not os.path.exists("container_logs"):
             os.mkdir("container_logs")
-        shutil.copy(logname,
-                    "container_logs/%s to %s on %s" % (start, end, self.name))
+        shutil.copy(logname, copyname)
+        check_call("bzip2 '{}'".format(copyname))
 
     def shutdown(self):
         if self.c.running and not self.c.shutdown(timeout):
