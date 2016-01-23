@@ -1,4 +1,4 @@
-from IPython.kernel.comm import Comm
+from ipykernel.comm import Comm
 
 import sys
 

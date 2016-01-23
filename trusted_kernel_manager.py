@@ -2,11 +2,7 @@ import uuid, random
 import zmq
 import socket
 from zmq.eventloop.zmqstream import ZMQStream
-try:
-    from IPython.kernel.zmq.session import Session
-except ImportError:
-    # old IPython
-    from IPython.zmq.session import Session
+from ipykernel.zmqshell import Session
 import paramiko
 import time
 from Queue import Queue, Empty
