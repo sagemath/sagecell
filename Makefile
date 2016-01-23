@@ -50,14 +50,12 @@ jsmin          = submodules/jsmin/jsmin.c
 jsmin-bin      = submodules/jsmin-bin
 wrap-js        = static/wrap.js
 sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
-ip-static      = $(shell $(sage-root)/sage -python -c "import os,IPython; print '/'+os.path.join(*IPython.__file__.split(os.sep)[:-1]+'html/static/'.split(os.sep))")
-ip-namespace   = $(ip-static)/base/js/namespace.js
-ip-events      = $(ip-static)/base/js/events.js
-ip-utils       = $(ip-static)/base/js/utils.js
-ip-comm        = $(ip-static)/services/kernels/js/comm.js
-ip-kernel      = $(ip-static)/services/kernels/js/kernel.js
-require-base   = static/require
-ip-widgets     = $(require-base)/build/widgets.js
+nb-static      = $(sage-root)/local/lib/python/site-packages/notebook/static
+nb-namespace   = $(nb-static)/base/js/namespace.js
+nb-events      = $(nb-static)/base/js/events.js
+nb-utils       = $(nb-static)/base/js/utils.js
+nb-comm        = $(nb-static)/services/kernels/comm.js
+nb-kernel      = $(nb-static)/services/kernels/kernel.js
 jquery-url     = http://code.jquery.com/jquery-2.1.3.min.js
 sockjs-url     = https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js
 mpl-js         = static/mpl.js
@@ -75,10 +73,6 @@ submodules:
 
 $(jquery):
 	python -c "import urllib; urllib.urlretrieve('$(jquery-url)', '$(jquery)')"
-
-$(ip-widgets): $(require-base)/main.js
-	r.js -o $(require-base)/main.js appDir=$(ip-static)
-	rm -rf $(require-base)/build/components/.git
 
 $(mpl-js):
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > $(mpl-js)
@@ -102,9 +96,9 @@ $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(
            $(cm-foldxml) $(cm-foldcomment) $(cm-foldindent) \
            > ../../$(codemirror-cat)
 
-$(all-js): $(ip-namespace) $(wrap-js) $(jsmol) $(canvas3d)\
+$(all-js): $(nb-namespace) $(wrap-js) $(jsmol) $(canvas3d)\
            $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(jsmol) $(canvas3d) $(ip-namespace) $(wrap-js) > $(all-js)
+	cat $(jsmol) $(canvas3d) $(nb-namespace) $(wrap-js) > $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
 
@@ -115,9 +109,9 @@ coffee: $(threed-coffee)
 $(threed): $(threed-coffee)
 	coffee -c $(threed-coffee)
 
-$(wrap-js): $(ip-events) $(ip-utils) $(ip-kernel) $(ip-comm) $(ip-widgets) $(jquery-ui) $(jquery-ui-tp) \
+$(wrap-js): $(nb-events) $(nb-utils) $(nb-kernel) $(nb-comm) $(jquery-ui) $(jquery-ui-tp) \
             $(colorpicker) $(threed) $(mpl-js)
-	cat $(ip-events) $(ip-utils) $(ip-widgets) $(ip-kernel) $(ip-comm) $(jquery-ui) $(jquery-ui-tp) \
+	cat $(nb-events) $(nb-utils) $(nb-kernel) $(nb-comm) $(jquery-ui) $(jquery-ui-tp) \
 	    $(colorpicker) $(threejs) $(threejs-control) $(threejs-detect) $(threed) $(mpl-js) > $(wrap-js)
 	python $(fix-js) $(wrap-js)
 
