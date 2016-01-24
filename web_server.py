@@ -54,7 +54,7 @@ class SageCellServer(tornado.web.Application):
         default_comp = self.config.get_default_config("_default_config")
         max_kernel_timeout = self.config.get_config("max_kernel_timeout")
         self.km = TMKM(computers=initial_comps, default_computer_config=default_comp,
-                       max_kernel_timeout=max_kernel_timeout, tmp_dir = tmp_dir)
+                       max_kernel_timeout=max_kernel_timeout, tmp_dir=tmp_dir)
         db = __import__('db_'+self.config.get_config('db'))
         self.db = db.DB(self.config.get_config('db_config')['uri'])
         self.ioloop = ioloop.IOLoop.instance()
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     try:
         pidlock.acquire(timeout=10)
         # TODO: clean out the router-ipc directory
-        application = SageCellServer(baseurl = args.baseurl)
+        application = SageCellServer(baseurl=args.baseurl)
         listen = {'port': args.port, 'xheaders': True}
         if args.interface is not None:
             listen['address']=get_ip_address(args.interface)

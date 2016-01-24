@@ -13,15 +13,32 @@ from log import logger
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
-    def __init__(self, computers = None, default_computer_config = None,
-                 max_kernel_timeout = 0.0, tmp_dir = None):
+    def __init__(self, computers=None, default_computer_config=None,
+                 max_kernel_timeout=0.0, tmp_dir=None):
 
         self._kernel_queue = Queue()
 
-        self._kernels = {} #kernel_id: {"comp_id": comp_id, "connection": {"key": hmac_key, "hb_port": hb, "iopub_port": iopub, "shell_port": shell, "stdin_port": stdin, "referer": referer, "remote_ip": remote_ip}}
-        self._comps = {} #comp_id: {"host:"", "port": ssh_port, "kernels": {}, "max": #, "beat_interval": Float, "first_beat": Float, "resource_limits": {resource: limit}}
-        self._clients = {} #comp_id: {"ssh": paramiko client}
-        self._sessions = {} # kernel_id: Session
+        self._kernels = {}
+        # kernel_id: {"comp_id": comp_id,
+        #             "connection": {"key": hmac_key,
+        #                            "hb_port": hb,
+        #                            "iopub_port": iopub,
+        #                            "shell_port": shell,
+        #                            "stdin_port": stdin,
+        #                            "referer": referer,
+        #                            "remote_ip": remote_ip}}
+        self._comps = {}
+        # comp_id: {"host: "",
+        #           "port": ssh_port,
+        #           "kernels": {},
+        #           "max": #,
+        #           "beat_interval": Float,
+        #           "first_beat": Float,
+        #           "resource_limits": {resource: limit}}
+        self._clients = {}
+        # comp_id: {"ssh": paramiko client}
+        self._sessions = {}
+        # kernel_id: Session
 
         self._sender = sender.AsyncSender() # Manages asynchronous communication
 
@@ -37,8 +54,8 @@ class TrustedMultiKernelManager(object):
                 preforked = comp.get("preforked_kernels", 0)
                 if preforked:
                     for i in range(preforked):
-                        self.new_session_prefork(comp_id = comp_id)
-                    logger.debug("Requested %d preforked kernels"%preforked)
+                        self.new_session_prefork(comp_id)
+                    logger.debug("Requested %d preforked kernels" % preforked)
 
     def get_kernel_ids(self, comp = None):
         """ A function for obtaining kernel ids of a particular computer.

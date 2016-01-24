@@ -67,14 +67,6 @@ class Receiver(object):
             pylab.show = partial(mp_show, savefig=pylab.savefig)
             matplotlib.pyplot.show = partial(mp_show, savefig=matplotlib.pyplot.savefig)
 
-            # Monkey-patch IPython widgets so they work with Sage's show
-            from IPython.html.widgets import Widget
-            import misc
-            def widget_show(self, *args, **kwargs):
-                misc.reset_kernel_timeout(float('inf'))
-                self._ipython_display_(*args, **kwargs)
-            Widget.show = widget_show
-
             import StringIO
             # The first plot takes about 2 seconds to generate (presumably
             # because lots of things, like matplotlib, are imported).  We plot
