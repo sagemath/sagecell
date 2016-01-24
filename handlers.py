@@ -44,20 +44,14 @@ class RootHandler(tornado.web.RequestHandler):
     """
     @tornado.web.asynchronous
     def get(self):
-        logger.debug('request')
-        db = self.application.db
-        code = None
-        language = None
-        interacts = None
+        logger.debug('RootHandler.get')
         args = self.request.arguments
-
-        if "lang" in args:
-            language = args["lang"][0]
-
+        code = None
+        language = args["lang"][0] if "lang" in args else None
+        interacts = None
         if "c" in args:
             # If the code is explicitly specified
             code = "".join(args["c"])
-
         elif "z" in args:
             # If the code is base64-compressed
             try:
@@ -70,23 +64,19 @@ class RootHandler(tornado.web.RequestHandler):
                     interacts = "".join(args["interacts"])
                     interacts += "=" * ((4 - (len(interacts) % 4)) % 4)
                     interacts = zlib.decompress(base64.urlsafe_b64decode(interacts))
-                else:
-                    interacts = "[]"
                 code = zlib.decompress(base64.urlsafe_b64decode(z))
             except Exception as e:
                 self.set_status(400)
                 self.finish("Invalid zipped code: %s\n" % (e.message,))
                 return
-
         if "q" in args:
-            # if the code is referenced by a permalink identifier
+            # The code is referenced by a permalink identifier.
             q = "".join(args["q"])
             try:
-                db.get_exec_msg(q, self.return_root)
+                self.application.db.get_exec_msg(q, self.return_root)
             except LookupError:
                 self.set_status(404)
                 self.finish("ID not found in permalink database")
-                return
         else:
             self.return_root(code, language, interacts)
 
@@ -97,8 +87,6 @@ class RootHandler(tornado.web.RequestHandler):
                 code = code.encode("utf8")
             code = urllib.quote(code)
             autoeval = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
-        if interacts == "[]":
-            interacts = None
         if interacts is not None:
             if isinstance(interacts, unicode):
                 interacts = interacts.encode("utf8")
