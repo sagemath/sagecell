@@ -107,6 +107,7 @@ sage_optional_packages = [
 "database_symbolic_data",
 "dot2tex",  # needs graphviz
 "gap_packages",
+"giac",
 "gnuplotpy",
 "guppy",
 "kash3",
@@ -129,36 +130,36 @@ sage_optional_packages = [
 ]
 
 # Python packages to be installed into Sage (via pip) - the order is important!
-python_packages = """
-pip
-ecdsa
-paramiko
-sockjs-tornado
-lockfile
-requests
-netcdf4
-h5py
-pandas
-scikit-learn
-patsy
-statsmodels
-numexpr
-tables
-scikit-image
-scimath
-Shapely
-SimPy
-pyproj
-bitarray
-ggplot
-oct2py
-psutil
-lxml
-munkres
-husl
-seaborn
-moss
-""".split()
+python_packages = [
+"pip==7.1.2", # Upgrade to version 8.0.2 causes some encoding issues
+"ecdsa",
+"paramiko",
+"sockjs-tornado",
+"lockfile",
+"requests",
+"netcdf4",
+"h5py",
+"pandas",
+"scikit-learn",
+"patsy",
+"statsmodels",
+"numexpr",
+"tables",
+"scikit-image",
+"scimath",
+"Shapely",
+"SimPy",
+"pyproj",
+"bitarray",
+"ggplot",
+"oct2py",
+"psutil",
+"lxml",
+"munkres",
+"husl",
+"seaborn",
+"moss",
+]
 
 
 # limits configuration for the host - will not be overwritten later
