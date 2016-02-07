@@ -51,6 +51,7 @@ jsmin-bin      = submodules/jsmin-bin
 wrap-js        = static/wrap.js
 sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
 nb-static      = $(sage-root)/local/lib/python/site-packages/notebook/static
+nb-require     = $(nb-static)/components/requirejs/require.js
 nb-namespace   = $(nb-static)/base/js/namespace.js
 nb-events      = $(nb-static)/base/js/events.js
 nb-utils       = $(nb-static)/base/js/utils.js
@@ -96,15 +97,13 @@ $(codemirror-cat): $(cm-dir)/$(cm-compress) $(cm-dir)/$(codemirror) $(cm-dir)/$(
            $(cm-foldxml) $(cm-foldcomment) $(cm-foldindent) \
            > ../../$(codemirror-cat)
 
-$(all-js): $(nb-namespace) $(wrap-js) $(jsmol) $(canvas3d)\
+$(all-js): $(jsmol) $(canvas3d) $(nb-require) $(nb-namespace) $(wrap-js) \
            $(sockjs-client) $(compute_server) $(sagecell)
-	cat $(jsmol) $(canvas3d) $(nb-namespace) $(wrap-js) > $(all-js)
+	cat $(jsmol) $(canvas3d) $(nb-require) $(nb-namespace) > $(all-js)
+	echo ';' >> $(all-js)
+	cat $(wrap-js) >> $(all-js)
 	echo ';' >> $(all-js)
 	cat $(sockjs-client) $(compute_server) $(sagecell) >> $(all-js)
-
-# not run by default---we keep this for backwards compatibility until people remove the 'make coffee' line in their scripts
-coffee: $(threed-coffee)
-	coffee -c $(threed-coffee)
 
 $(threed): $(threed-coffee)
 	coffee -c $(threed-coffee)
