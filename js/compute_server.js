@@ -15,7 +15,25 @@
 //    which argues that it is more inefficient to make objects out of
 //    closures instead of using the prototype property and "new"
 
-(function($) {
+require([
+    "base/js/namespace",
+    "base/js/utils",
+    "base/js/events",
+    "services/kernels/comm",
+    "services/kernels/kernel",
+    "jquery",
+    "jquery-ui",
+    "jquery-ui-tp"
+], function(
+    IPython,
+    utils,
+    events,
+    comm,
+    kernel,
+    $,
+    jquery_ui,
+    jquery_ui_tp
+   ) {
 "use strict";
 var undefined;
 var ce = sagecell.util.createElement;
@@ -2022,4 +2040,4 @@ sagecell.MultiSockJS.prototype.close = function () {
 //jmolInitialize(sagecell.URLs.root + 'static/jmol');
 //jmolSetCallback("menuFile", sagecell.URLs.root + "static/jmol/appletweb/SageMenu.mnu");
 
-})(sagecell.jQuery);
+});
