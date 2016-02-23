@@ -28,8 +28,8 @@ embed-css      = static/sagecell_embed.css
 sagecell-css   = static/sagecell.css
 
 compute_server = build/compute_server_build.js
-threed         = static/3d.js
-threed-coffee  = static/3d.coffee
+threed         = build/3d.js
+threed-coffee  = js/3d.coffee
 mpl-js         = build/mpl.js
 
 all-components = \
@@ -65,7 +65,7 @@ $(jsmol):
 	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
 
 $(threed): $(threed-coffee)
-	coffee -c $(threed-coffee)
+	coffee -o build -c $(threed-coffee)
 
 $(compute_server): js/*
 	cp -a $(nb-static) build
