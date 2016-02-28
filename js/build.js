@@ -1,6 +1,6 @@
 ({
-    name: "compute_server",
-    out: "compute_server_build.js",
+    name: "main",
+    out: "main_build.js",
     optimize: "none",
     paths: {
         "codemirror" : "components/codemirror",
@@ -37,7 +37,6 @@
         "Detector",
         "JSmol",
         "3d",
-        "mpl",
-        "sagecell"
+        "mpl"
     ]
 })

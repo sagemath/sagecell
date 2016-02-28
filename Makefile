@@ -17,11 +17,10 @@ tos-static     = static/tos.html
 embed-css      = static/sagecell_embed.css
 sagecell-css   = static/sagecell.css
 
-compute_server = build/compute_server_build.js
 threed         = build/3d.js
 threed-coffee  = js/3d.coffee
 
-all-min-js     = static/all.min.js
+all-min-js = static/embedded_sagecell.js
 all-css-components = \
 	$(codemirror-css-components) \
 	$(sagecell-css) \
@@ -53,14 +52,12 @@ build:
 $(threed): build $(threed-coffee)
 	coffee -o build -c $(threed-coffee)
 
-$(compute_server): build js/*
+$(all-min-js): build js/*
 	cp build/components/jquery/jquery.min.js static
 	cp $(jquery-ui-tp) build/jquery-ui-tp.js
 	cp -a js/* build
 	cd build && r.js -o build.js
-
-$(all-min-js): $(compute_server)
-	cp $(compute_server) $(all-min-js)
+	mv build/main_build.js $(all-min-js)
 
 $(all-min-css): $(all-css-components)
 	cat $(all-css-components) | python $(cssmin) > $(all-min-css)

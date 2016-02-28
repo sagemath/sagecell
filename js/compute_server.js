@@ -36,6 +36,82 @@ require([
    ) {
 "use strict";
 var undefined;
+
+// Make a global sagecell namespace for our functions
+window.sagecell = window.sagecell || {};
+
+sagecell.util = {
+    "createElement": function (type, attrs, children) {
+        var node = document.createElement(type);
+        for (var k in attrs) {
+            if (attrs.hasOwnProperty(k)) {
+                node.setAttribute(k, attrs[k]);
+            }
+        }
+        if (children) {
+            for (var i = 0; i < children.length; i++) {
+                if (typeof children[i] == 'string') {
+                    node.appendChild(document.createTextNode(children[i]));
+                } else {
+                    node.appendChild(children[i]);
+                }
+            }
+        }
+        return node;
+    }
+/* var p = proxy(['list', 'of', 'methods'])
+     will save any method calls in the list.  At some later time, you can invoke
+     each method on an object by doing p._run_callbacks(my_obj) */
+    ,"proxy": function(methods) {
+        var proxy = {_callbacks: []};
+        $.each(methods, function(i,method) {
+            proxy[method] = function() {
+                proxy._callbacks.push([method, arguments]);
+                console.log('stored proxy for '+method);
+            }
+        })
+            proxy._run_callbacks = function(obj) {
+                $.each(proxy._callbacks, function(i,cb) {
+                    obj[cb[0]].apply(obj, cb[1]);
+                })
+                    }
+        return proxy;
+    }
+
+
+//     throttle is from:
+//     Underscore.js 1.4.3
+//     http://underscorejs.org
+//     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
+//     Underscore may be freely distributed under the MIT license.
+// Returns a function, that, when invoked, will only be triggered at most once
+// during a given window of time.
+    ,"throttle": function(func, wait) {
+    var context, args, timeout, result;
+    var previous = 0;
+    var later = function() {
+      previous = new Date;
+      timeout = null;
+      result = func.apply(context, args);
+    };
+    return function() {
+      var now = new Date;
+      var remaining = wait - (now - previous);
+      context = this;
+      args = arguments;
+      if (remaining <= 0) {
+        clearTimeout(timeout);
+        timeout = null;
+        previous = now;
+        result = func.apply(context, args);
+      } else if (!timeout) {
+        timeout = setTimeout(later, remaining);
+      }
+      return result;
+    };
+  }
+};
+
 var ce = sagecell.util.createElement;
 var proxy = sagecell.util.proxy;
 var throttle = sagecell.util.throttle;
