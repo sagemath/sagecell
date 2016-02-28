@@ -9,15 +9,15 @@ from zmq.utils import jsonapi
 import math
 try:
     from sage.all import gap, gp, maxima, r, singular
-    trait_names = {
-        "gap": gap.trait_names(),
-        "gp": gp.trait_names(),
-        "maxima": maxima.trait_names(),
-        "r": r.trait_names(),
-        "singular": singular.trait_names()
+    tab_completion = {
+        "gap": gap._tab_completion(),
+        "gp": gp._tab_completion(),
+        "maxima": maxima._tab_completion(),
+        "r": r._tab_completion(),
+        "singular": singular._tab_completion()
     }
 except ImportError:
-    trait_names = {}
+    tab_completion = {}
 from misc import sage_json, Timer, Config
 config = Config()
 
@@ -194,7 +194,7 @@ class Completer(object):
             self.waiting[msg["header"]["msg_id"]] = kc
             self.session.send(self.stream, msg)
             return
-        elif msg["content"]["mode"] in trait_names:
+        elif msg["content"]["mode"] in tab_completion:
             line = msg["content"]["line"][:msg["content"]["cursor_pos"]]
             name = Completer.name_pattern.search(line)
         response = {
@@ -209,7 +209,7 @@ class Completer(object):
         }
         if name is not None:
             response["content"] = {
-                "matches": [t for t in trait_names[msg["content"]["mode"]] if t.startswith(name.group())],
+                "matches": [t for t in tab_completion[msg["content"]["mode"]] if t.startswith(name.group())],
                 "matched_text": name.group()
             }
         else:
