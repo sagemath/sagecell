@@ -14,10 +14,12 @@ _gaq.push(['sagecell._trackPageview']);
 
 require([
     "jquery",
-    "compute_server"
+    "compute_server",
+    "codemirror/lib/codemirror"
 ], function(
     $,
-    compute_server
+    compute_server,
+    CodeMirror
    ) {
 "use strict";
 var undefined;
