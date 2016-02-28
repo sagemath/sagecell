@@ -29,6 +29,15 @@
         "codemirror/mode/r/r",
         "codemirror/mode/xml/xml",
         "requireLib",
-        "sockjs"
+        "sockjs",
+        "colorpicker",
+        "canvas3d_lib",
+        "three",
+        "OrbitControls",
+        "Detector",
+        "JSmol",
+        "3d",
+        "mpl",
+        "sagecell"
     ]
 })
