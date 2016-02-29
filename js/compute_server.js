@@ -139,8 +139,8 @@ var strip_hostname = function(f) {
         return hostname+f.apply(null,arguments);
     }
 }
-IPython.utils.url_join_encode = strip_hostname(IPython.utils.url_join_encode);
-IPython.utils.url_path_join = strip_hostname(IPython.utils.url_path_join);
+utils.url_join_encode = strip_hostname(utils.url_join_encode);
+utils.url_path_join = strip_hostname(utils.url_path_join);
 
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
@@ -232,9 +232,9 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         window.console = window.console || {};
         //console.log = sagecell.log;
         this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
-        this.kernel.comm_manager.register_target('threejs', IPython.utils.always_new(sagecell.SessionThreeJSWidget(this)));
-        this.kernel.comm_manager.register_target('graphicswidget', IPython.utils.always_new(sagecell.SessionGraphicsWidget(this)));
-        this.kernel.comm_manager.register_target('matplotlib', IPython.utils.always_new(sagecell.MPLWidget(this)));
+        this.kernel.comm_manager.register_target('threejs', utils.always_new(sagecell.SessionThreeJSWidget(this)));
+        this.kernel.comm_manager.register_target('graphicswidget', utils.always_new(sagecell.SessionGraphicsWidget(this)));
+        this.kernel.comm_manager.register_target('matplotlib', utils.always_new(sagecell.MPLWidget(this)));
 
         this.kernel.session = this;
         this.kernel.opened = false;
@@ -270,7 +270,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         $([IPython.events]).trigger('status_started.Kernel', {kernel: this});
     };
 
-        this.kernel.start({notebook: IPython.utils.uuid(), timeout: linked ? 'inf' : 0});
+        this.kernel.start({notebook: utils.uuid(), timeout: linked ? 'inf' : 0});
     }
     var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(
@@ -546,7 +546,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     /* This would give two error messages (since a pyerr should have already come)
       if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
-            .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
+            .html(utils.fixConsole(msg.traceback.join("\n")));
     } 
     */
     // TODO: handle payloads with a payload callback, instead of in the execute_reply
@@ -604,7 +604,7 @@ sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
     case "pyerr":
         if (content.traceback.join) {
             this.output('<pre class="sagecell_pyerr"></pre>', block_id)
-                .html(IPython.utils.fixConsole(content.traceback.join("\n")));
+                .html(utils.fixConsole(content.traceback.join("\n")));
         }
         break;
 

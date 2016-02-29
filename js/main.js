@@ -14,10 +14,12 @@ _gaq.push(['sagecell._trackPageview']);
 
 require([
     "jquery",
+    "base/js/utils",
     "compute_server",
     "codemirror/lib/codemirror"
 ], function(
     $,
+    utils,
     compute_server,
     CodeMirror
    ) {
@@ -273,7 +275,7 @@ sagecell.makeSagecell = function (args, k) {
                 ta.addClass("sagecell_commands");
                 ta.attr({"autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
                 inputLocation.find(".sagecell_commands").replaceWith(ta);
-                var id = "input_" + IPython.utils.uuid();
+                var id = "input_" + utils.uuid();
                 inputLocation[0].id = id;
                 if (settings.outputLocation === settings.inputLocation) {
                     outputLocation = $(settings.outputLocation = "#" + id);
@@ -303,7 +305,7 @@ sagecell.makeSagecell = function (args, k) {
                                         "sessionFiles": true,
                                         "permalink": true}};
                 var hidden_out = [];
-                var out_class = "output_" + IPython.utils.uuid();
+                var out_class = "output_" + utils.uuid();
                 outputLocation.addClass(out_class);
                 for (var i = 0, i_max = hide.length; i < i_max; i++) {
                     if (hide[i] in hideable["in"]) {
@@ -520,7 +522,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         return false;
     };
     var button = inputLocation.find(".sagecell_evalButton").button();
-    button.click({"id": IPython.utils.uuid()}, sagecellInfo.submit);
+    button.click({"id": utils.uuid()}, sagecellInfo.submit);
     if (sagecellInfo.code && sagecellInfo.autoeval) {
         button.click();
     }
@@ -601,7 +603,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         // Use a form submission to send POST requests
         // Methods such as DELETE and OPTIONS will be sent as POST instead
         var iframe = document.createElement("iframe");
-        iframe.name = IPython.utils.uuid();
+        iframe.name = utils.uuid();
         var form = ce("form", {method: "POST", action: url, target: iframe.name});
         if (data === undefined) {
             data = {};
@@ -669,8 +671,8 @@ sagecell.restoreInputForm = function (sagecellInfo) {
 var makeMsg = function (msg_type, content) {
     return {
         "header": {
-            "msg_id": IPython.utils.uuid(),
-            "session": IPython.utils.uuid(),
+            "msg_id": utils.uuid(),
+            "session": utils.uuid(),
             "msg_type": msg_type,
             "username": ""
         },
@@ -720,7 +722,7 @@ var showInfo = function (data, cm) {
         var def;
         if (data.definition !== null) {
             def = ce("code");
-            def.innerHTML = IPython.utils.fixConsole(data.definition);
+            def.innerHTML = utils.fixConsole(data.definition);
         }
         d = ce("div", {}, [
             ce("div", {}, [ce("strong", {}, "File: "), ce("code", {}, data.file || data.namespace)]),
