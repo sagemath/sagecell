@@ -1,31 +1,15 @@
-cm-dir = build/components/codemirror/
-codemirror-css-components = \
-	$(cm-dir)/lib/codemirror.css \
-	$(cm-dir)/addon/display/fullscreen.css \
-	$(cm-dir)/addon/fold/foldgutter.css \
-	$(cm-dir)/addon/hint/show-hint.css
-colorpicker = static/colorpicker/js/colorpicker.js
-cssmin = submodules/cssmin/src/cssmin.py
-jquery-ui-tp   = submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js
-
-sage-root     := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
-
-tos-default    = templates/tos_default.html
-tos            = templates/tos.html
-tos-static     = static/tos.html
-
-embed-css      = static/sagecell_embed.css
-sagecell-css   = static/sagecell.css
-
-threed         = build/3d.js
-threed-coffee  = js/3d.coffee
-
+sage-root := $(shell [ -n "$$SAGE_ROOT" ] && echo "$$SAGE_ROOT" || sage --root || echo "\$$SAGE_ROOT")
+threed-coffee = js/3d.coffee
+threed = build/3d.js
 all-min-js = static/embedded_sagecell.js
-all-css-components = \
-	$(codemirror-css-components) \
-	$(sagecell-css) \
-	static/fontawesome.css
-all-min-css    = static/all.min.css
+
+sagecell-css = static/sagecell.css
+all-min-css = static/all.min.css
+embed-css = static/sagecell_embed.css
+
+tos-default = templates/tos_default.html
+tos = templates/tos.html
+tos-static = static/tos.html
 
 all: submodules $(threed) $(all-min-js) $(all-min-css) $(embed-css) $(tos-static)
 
@@ -41,7 +25,7 @@ build:
 	   $(sage-root)/local/share/threejs/build/three.js \
 	   $(sage-root)/local/share/threejs/examples/js/controls/OrbitControls.js \
 	   $(sage-root)/local/share/threejs/examples/js/Detector.js \
-	   $(colorpicker) \
+	   static/colorpicker/js/colorpicker.js \
 	   build
 	ln -sfn $(sage-root)/local/share/jsmol static/jsmol
 	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
@@ -54,13 +38,14 @@ $(threed): build $(threed-coffee)
 
 $(all-min-js): build js/*
 	cp build/components/jquery/jquery.min.js static
-	cp $(jquery-ui-tp) build/jquery-ui-tp.js
+	cp submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js build/jquery-ui-tp.js
 	cp -a js/* build
 	cd build && r.js -o build.js
-	mv build/main_build.js $(all-min-js)
+	cp build/main_build.js $(all-min-js)
 
-$(all-min-css): $(all-css-components)
-	cat $(all-css-components) | python $(cssmin) > $(all-min-css)
+$(all-min-css): build $(sagecell-css)
+	cp -a build/components/jquery-ui/themes/smoothness/* static
+	r.js -o cssIn=static/main.css out=$(all-min-css)
 
 $(embed-css): $(sagecell-css)
 	sed -e 's/;/ !important;/g' < $(sagecell-css) > $(embed-css)

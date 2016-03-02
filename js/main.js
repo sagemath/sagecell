@@ -120,13 +120,7 @@ sagecell.init = function (callback) {
     sagecell.dependencies_loaded = false;
     sagecell.last_session = {};
 
-    // many stylesheets that have been smashed together into all.min.css
-    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.10.2.custom.min.css",
-                       sagecell.URLs.root + "static/colorpicker/css/colorpicker.css",
-                       sagecell.URLs.root + "static/all.min.css"]
-    for (var i = 0; i < stylesheets.length; i++) {
-        document.head.appendChild(ce("link", {rel: "stylesheet", href: stylesheets[i]}));
-    }
+    document.head.appendChild(ce("link", {rel: "stylesheet", href: sagecell.URLs.root + "static/all.min.css"}));
 
     if(window.MathJax === undefined && sagecell.loadMathJax) {
         // Mathjax.  We need a separate script tag for mathjax since it later
