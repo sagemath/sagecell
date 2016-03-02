@@ -20,13 +20,15 @@ require([
     "base/js/namespace",
     "base/js/utils",
     "base/js/events",
-    "services/kernels/kernel"
+    "services/kernels/kernel",
+    "sockjs"
 ], function(
     $,
     IPython,
     utils,
     events,
-    Kernel
+    Kernel,
+    SockJS
    ) {
 "use strict";
 var undefined;

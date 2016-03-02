@@ -29,7 +29,6 @@
         "codemirror/mode/r/r",
         "codemirror/mode/xml/xml",
         "requireLib",
-        "sockjs",
         "jquery-ui",
         "jquery-ui-tp",
         "colorpicker",
