@@ -15,11 +15,13 @@ _gaq.push(['sagecell._trackPageview']);
 require([
     "jquery",
     "base/js/utils",
+    "services/kernels/kernel",
     "compute_server",
     "codemirror/lib/codemirror"
 ], function(
     $,
     utils,
+    Kernel,
     compute_server,
     CodeMirror
    ) {
@@ -175,7 +177,7 @@ sagecell.makeSagecell = function (args, k) {
         if (!sagecell.dependencies_loaded) {
             if (sagecell.dependencies_loaded === undefined) {
                 sagecell.init(function () {
-                    IPython.Kernel.prototype.kill = function () {
+                    Kernel.Kernel.prototype.kill = function () {
                         if (this.running) {
                             this.running = false;
                             sagecell.sendRequest("DELETE", this.kernel_url);

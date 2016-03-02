@@ -16,23 +16,17 @@
 //    closures instead of using the prototype property and "new"
 
 require([
+    "jquery",
     "base/js/namespace",
     "base/js/utils",
     "base/js/events",
-    "services/kernels/comm",
-    "services/kernels/kernel",
-    "jquery",
-    "jquery-ui",
-    "jquery-ui-tp"
+    "services/kernels/kernel"
 ], function(
+    $,
     IPython,
     utils,
     events,
-    comm,
-    kernel,
-    $,
-    jquery_ui,
-    jquery_ui_tp
+    Kernel
    ) {
 "use strict";
 var undefined;
@@ -217,7 +211,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     if (!old_ws) {
         window.WebSocket = sagecell.MultiSockJS;
     }
-    this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
+    this.kernel = new Kernel.Kernel(sagecell.URLs.kernel);
     window.WebSocket = old_ws;
     */
     var that = this;
@@ -231,7 +225,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         window.WebSocket = sagecell.MultiSockJS;
         window.console = window.console || {};
         //console.log = sagecell.log;
-        this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
+        this.kernel = sagecell.kernels[k] = new Kernel.Kernel(sagecell.URLs.kernel);
         this.kernel.comm_manager.register_target('threejs', utils.always_new(sagecell.SessionThreeJSWidget(this)));
         this.kernel.comm_manager.register_target('graphicswidget', utils.always_new(sagecell.SessionGraphicsWidget(this)));
         this.kernel.comm_manager.register_target('matplotlib', utils.always_new(sagecell.MPLWidget(this)));
