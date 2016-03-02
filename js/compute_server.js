@@ -264,7 +264,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         $([events]).trigger('status_started.Kernel', {kernel: this});
     };
 
-        this.kernel.start({notebook: utils.uuid(), timeout: linked ? 'inf' : 0});
+        this.kernel.start({notebook: utils.uuid(), timeout: linked ? 'inf' : 0, accepted_tos : "true"});
     }
     var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(
