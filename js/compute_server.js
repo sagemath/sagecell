@@ -240,30 +240,25 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         this.kernel.post = function (url, callback) {
             sagecell.sendRequest("POST", url, {}, function (data) { callback(JSON.parse(data)); });
         }
-    /**
-     * Copied from IPython and slightly modified (comment out session_id send, add deferred code execution
-     * Handle a websocket entering the open state
-     * Once all sockets are open, signal the Kernel.status_started event.
-     * @method _ws_opened
-     */
+
+    // Copied from Jupyter notebook and slightly modified to add deferred code execution
     this.kernel._ws_opened = function (evt) {
-        // send the session id so the Session object Python-side
-        // has the same identity
-        //evt.target.send(this.session_id + ':' + document.cookie);
-        var channels = [this.shell_channel, this.iopub_channel, this.stdin_channel];
-        for (var i=0; i < channels.length; i++) {
-            // if any channel is not ready, don't trigger event.
-            if ( !channels[i].readyState ) return;
+        /**
+         * Handle a websocket entering the open state,
+         * signaling that the kernel is connected when websocket is open.
+         *
+         * @function _ws_opened
+         */
+        if (this.is_connected()) {
+            // ADDED BLOCK START
+            this.opened = true;
+            while (this.deferred_code.length > 0) {
+                this.session.execute(this.deferred_code.shift());
+            }
+            // ADDED BLOCK END
+            // all events ready, trigger started event.
+            this._kernel_connected();
         }
-
-        // All channels are started
-        this.opened = true;
-        while (this.deferred_code.length > 0) {
-            this.session.execute(this.deferred_code.shift());
-        }
-
-        // all events ready, trigger started event.
-        $([events]).trigger('status_started.Kernel', {kernel: this});
     };
 
         this.kernel.start({notebook: utils.uuid(), timeout: linked ? 'inf' : 0, accepted_tos : "true"});
