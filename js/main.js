@@ -86,15 +86,6 @@ sagecell.modes = {"sage": "python", "python": "python",
 if (sagecell.loadMathJax === undefined) {
     sagecell.loadMathJax = true;
 }
-if (sagecell.log === undefined) {
-    sagecell.log = (function (log) {
-        return function (obj) {
-            if (sagecell.debug) {
-                log(obj);
-            }
-        };
-    }(typeof console === "undefined" ? function() {} : $.proxy(console.log, console)));
-}
 
 var ce = sagecell.util.createElement;
 var deferred_eval = [];
@@ -289,7 +280,7 @@ sagecell.makeSagecell = function (args, k) {
             outputLocation.find(".sagecell_output_elements").hide();
             hide.push("files"); // TODO: Delete this line when this feature is implemented.
             if (settings.mode === "debug") {
-                sagecell.log("Running the Sage Cell in debug mode!");
+                console.info("Running the Sage Cell in debug mode!");
             } else {
                 var hideAdvanced = {};
                 var hideable = {"in": {"editor": true,

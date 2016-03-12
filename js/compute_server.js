@@ -141,7 +141,7 @@ utils.url_path_join = strip_hostname(utils.url_path_join);
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
    //var a = 0;
-   sagecell.log('starting timer from '+t);
+   console.debug('starting timer from '+t);
    return function(reset) {
        reset = reset || false;
        var old_t = t;
@@ -150,7 +150,7 @@ sagecell.simpletimer = function () {
            t = new_t;
        }
        //a+=1;
-       //sagecell.log('time since '+t+': '+(new_t-old_t));
+       //console.debug('time since '+t+': '+(new_t-old_t));
        return new_t-old_t;
    };
 };
@@ -187,7 +187,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
 
     // Set this object because we aren't loading the full IPython JavaScript library
-    IPython.notification_widget = {"set_message": sagecell.log};
+    IPython.notification_widget = {"set_message": console.debug};
     
     this.interacts = [];
     if (window.addEventListener) {
@@ -226,7 +226,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
         window.console = window.console || {};
-        //console.log = sagecell.log;
+        //console.log = console.debug;
         this.kernel = sagecell.kernels[k] = new Kernel.Kernel(sagecell.URLs.kernel);
         this.kernel.comm_manager.register_target('threejs', utils.always_new(sagecell.SessionThreeJSWidget(this)));
         this.kernel.comm_manager.register_target('graphicswidget', utils.always_new(sagecell.SessionGraphicsWidget(this)));
@@ -329,7 +329,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             pl_qlink.removeAttribute("href");
             pl_qrcode.parentNode.removeAttribute("href");
             pl_qrcode.removeAttribute("src");
-            sagecell.log('sending permalink request post: '+that.timer()+' ms');
+            console.debug('sending permalink request post: '+that.timer()+' ms');
             var args = {
                 "code": that.rawcode,
                 "language": that.language,
@@ -360,7 +360,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             }
             sagecell.sendRequest("POST", sagecell.URLs.permalink, args, function (data) {
                 data = JSON.parse(data);
-                sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
+                console.debug('POST permalink request walltime: '+that.timer() + " ms");
                 if (data.n !== n) {
                     return;
                 }
@@ -449,7 +449,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.kernel.opened) {
-        sagecell.log('opened and executing in kernel: '+this.timer()+' ms');
+        console.debug('opened and executing in kernel: '+this.timer()+' ms');
         var pre;
         //TODO: do this wrapping of code on the server, not in javascript
         //Maybe the system can be sent in metadata in the execute_request message
@@ -533,7 +533,7 @@ sagecell.Session.prototype.handle_message_reply = function(msg) {
 
 
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
-    sagecell.log('reply walltime: '+this.timer() + " ms");
+    console.debug('reply walltime: '+this.timer() + " ms");
     /* This would give two error messages (since a pyerr should have already come)
       if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
@@ -618,7 +618,7 @@ sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
         }
         break;
     }
-    sagecell.log('handled output: '+this.timer()+' ms');
+    console.debug('handled output: '+this.timer()+' ms');
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
     var output = this.outputDiv.find(".sagecell_output").get(0);
@@ -2039,12 +2039,12 @@ sagecell.InteractData.control_types = {
 };
 
 sagecell.MultiSockJS = function (url, prefix) {
-    sagecell.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
+    console.debug("Starting sockjs connection to "+url+": "+(new Date()).getTime());
     if (!sagecell.MultiSockJS.sockjs
         || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSING
         || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSED) {
 
-        sagecell.log("Initializing MultiSockJS to "+sagecell.URLs.sockjs);
+        console.debug("Initializing MultiSockJS to "+sagecell.URLs.sockjs);
         sagecell.MultiSockJS.channels = {};
         sagecell.MultiSockJS.to_init = [];
         sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, sagecell.sockjs_options || {});
