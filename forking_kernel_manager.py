@@ -41,15 +41,6 @@ class ForkingKernelManager(object):
             ka = IPKernelApp.instance(config=config, ip=config["ip"])
             from namespace import InstrumentedNamespace
             ka.user_ns = InstrumentedNamespace()
-            # The following line on UNIX systems (and we are unlikely to run on
-            # Windows) will lead to creation of a 1-second poller that will kill
-            # this process as soon as its parent dies. More importanly, it will
-            # prevent from execution the following if block:
-            # https://github.com/ipython/ipython/blob/rel-2.1.0/IPython/kernel/zmq/kernelapp.py#L348
-            # which probably was filling some output buffer and used to severely
-            # limit the number of computations possible without restarting the
-            # server. TODO: figure out a better fix or confirm this is the one!
-            ka.parent_handle = True
             ka.initialize([])
         except:
             logger.exception("Error initializing IPython kernel")
