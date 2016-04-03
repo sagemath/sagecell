@@ -11,6 +11,8 @@ except ImportError:
 import sys
 import re
 from datetime import datetime
+
+
 class Config(object):
     """
     Config file wrapper / handler class
@@ -174,17 +176,24 @@ def session_metadata(metadata):
     session.metadata = old_metadata
 
 def display_message(data, metadata=None):
-    session = sys.stdout.session
-    content = {'data': data, 'source': 'sagecell'}
-    session.send(sys.stdout.pub_socket, 'display_data', content=content, parent = sys.stdout.parent_header, metadata=metadata)
+    sys.stdout.session.send(sys.stdout.pub_thread,
+                            'display_data',
+                            content={'data': data, 'source': 'sagecell'},
+                            parent=sys.stdout.parent_header,
+                            metadata=metadata)
 
 def stream_message(stream, data, metadata=None):
-    session = sys.stdout.session
-    content = dict(name=stream, data=data)
-    session.send(sys.stdout.pub_socket, 'stream', content=content, parent = sys.stdout.parent_header, metadata=metadata)
+    sys.stdout.session.send(sys.stdout.pub_thread,
+                            'stream',
+                            content={'name': stream, 'data': data},
+                            parent=sys.stdout.parent_header,
+                            metadata=metadata)
 
 def reset_kernel_timeout(timeout):
-    sys.stdout.session.send(sys.stdout.pub_socket, 'kernel_timeout', content={'timeout': float(timeout)}, parent = sys.stdout.parent_header)
+    sys.stdout.session.send(sys.stdout.pub_thread,
+                            'kernel_timeout',
+                            content={'timeout': float(timeout)},
+                            parent=sys.stdout.parent_header)
 
 def javascript(code):
     sys._sage_.display_message({'application/javascript': code, 'text/plain': 'javascript code'})
