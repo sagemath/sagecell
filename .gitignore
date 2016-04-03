@@ -1,18 +1,18 @@
 *.pyc
 *~
-doc/_build/*
-tests/multimechanize/results/
-sqlite.db
-/config.py
-templates/tos.html
-static/tos.html
 
-# generated web files
-submodules/jsmin-bin
-static/jmol
-static/all*
-static/sagecell_embed.css
-static/codemirror.js
-static/jquery.min.js
-static/sockjs.js
-static/wrap.js
+/build/
+/doc/_build/*
+/static/SageMenu.mnu
+/static/all.min.css
+/static/embedded_sagecell.js
+/static/images/
+/static/jquery.min.js
+/static/jquery-ui.min.css
+/static/jsmol
+/static/sagecell_embed.css
+/static/tos.html
+/templates/tos.html
+/tests/multimechanize/results/
+/config.py
+/sqlite.db
