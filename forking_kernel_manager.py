@@ -39,6 +39,8 @@ class ForkingKernelManager(object):
         logger.debug("kernel forked; now starting and configuring")
         try:
             ka = IPKernelApp.instance(config=config, ip=config["ip"])
+            ka.log.propagate = True
+            ka.log_level = logger.level
             from namespace import InstrumentedNamespace
             ka.user_ns = InstrumentedNamespace()
             ka.initialize([])
@@ -82,6 +84,7 @@ class ForkingKernelManager(object):
             port numbers
         :rtype: dict
         """
+        kernel_logger.debug("start_kernel with config %s", config)
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
