@@ -42,13 +42,15 @@ _default_config = {"host": "localhost",
 
 # Note: RLIMIT_NPROC doesn't really work
 # Note: RLIMIT_AS is more of a suggestion than a hard limit in Mac OS X
+# Also, Sage may allocate huge AS, making this limit pointless:
+# https://groups.google.com/d/topic/sage-devel/1MM7UPcrW18/discussion
 # Note: All other resource limits seem to be working, but besides RLIMIT_CPU and
 # RLIMIT_AS they don't actually kill off offending processes
                   "resource_limits": {"RLIMIT_CPU": 30, # CPU time in seconds
-                                      "RLIMIT_AS": 2048*(2**20), #Maximum address space in bytes; this sets 1024 MB
+                                      "RLIMIT_AS": 2**35, #Maximum address space in bytes; this sets 32 GB
                                      },
                   "max_kernels": 10,
-                  "preforked_kernels": 3,
+                  "preforked_kernels": 1,
 # These set paramaters for a heartbeat channel checking whether a given kernel is alive.
 # Setting first_beat lower than 1.0 may cause javascript errors.
                   "beat_interval": 0.5,
