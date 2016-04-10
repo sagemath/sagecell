@@ -9,7 +9,7 @@ If you are going to run a world accessible SageMathCell server, you must underst
 
 The worker account (which is your own one by default) will be able to execute arbitrary code, which may be malicious. Make **sure** that you are securing the account properly. Working with a professional IT person is a very good idea here. Since the untrusted accounts can be on any computer, one way to isolate these accounts is to host them in a virtual machine that can be reset if the machine is compromised.
 
-    
+
 # Simple Installation
 
 We assume that you have access to the Internet and can install any needed dependencies (e.g. git). If you need to know more precisely what tools are needed, please consult the scripts for building virtual machine images in [contib/vm scripts](contrib/vm).
@@ -30,7 +30,7 @@ We assume that you have access to the Internet and can install any needed depend
     mkdir sc_build
     cd sc_build
     ```
-    
+
 4.  Get and build Sage (`export MAKE="make -j8"` or something similar can speed things up):
 
     ```bash
@@ -42,23 +42,12 @@ We assume that you have access to the Internet and can install any needed depend
     ./sage -i threejs
     popd
     ```
-    
+
     Note that we are building a special branch of Sage, do NOT use your regular Sage installation!
     
 5.  Prepare Sage for SageMathCell:
 
     ```bash
-    # We need IPython stuff not present in spkg.
-    pushd sage/local/lib/python/site-packages
-    rm -rf IPython*
-    rm -rf ipython*
-    popd
-    git clone https://github.com/novoselt/ipython.git
-    pushd ipython
-    git checkout sagecell
-    git submodule update --init --recursive
-    ../sage/sage setup.py develop
-    popd
     sage/sage -pip install --no-deps --upgrade ecdsa
     sage/sage -pip install --no-deps --upgrade paramiko
     sage/sage -pip install --no-deps --upgrade sockjs-tornado
@@ -71,7 +60,7 @@ We assume that you have access to the Internet and can install any needed depend
     git clone https://github.com/sagemath/sagecell.git
     pushd sagecell
     git submodule update --init --recursive
-    ../sage/sage -sh -c "make -B"
+    ../sage/sage -sh -c make
     ```
 
 
@@ -85,9 +74,9 @@ We assume that you have access to the Internet and can install any needed depend
     ```bash
     ../sage/sage web_server.py [-p <PORT_NUMBER>]
     ```
-    
+
     where the default `<PORT_NUMBER>` is `8888` and go to `http://localhost:<PORT_NUMBER>` to use the Sage Cell server.
-    
+
     When you want to shut down the server, press `Ctrl-C` in the same terminal.
 
 
