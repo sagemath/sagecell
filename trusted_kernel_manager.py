@@ -1,12 +1,15 @@
-import uuid, random
-import zmq
-import socket
-from zmq.eventloop.zmqstream import ZMQStream
-from ipykernel.zmqshell import Session
-import paramiko
-import time
-from Queue import Queue, Empty
+import random, time, uuid
+
 import sender
+import socket
+from Queue import Queue, Empty
+
+import paramiko
+import zmq
+from zmq.eventloop.zmqstream import ZMQStream
+
+from jupyter_client.session import Session
+
 
 from log import logger
 
@@ -368,8 +371,6 @@ class TrustedMultiKernelManager(object):
 
     def create_shell_stream(self, kernel_id):
         """ Create shell 0MQ stream between given kernel and the server.gi
-
-        
         """
         connection = self._kernels[kernel_id]["connection"]
         shell_stream = self._create_connected_stream(connection["ip"], connection["shell_port"], zmq.DEALER)
@@ -377,12 +378,11 @@ class TrustedMultiKernelManager(object):
 
     def create_hb_stream(self, kernel_id):
         """ Create heartbeat 0MQ stream between given kernel and the server.
-
-        
         """
         connection = self._kernels[kernel_id]["connection"]
         hb_stream = self._create_connected_stream(connection["ip"], connection["hb_port"], zmq.REQ)
         return hb_stream
+        
     def kernel_info(self, kernel_id):
         return self._kernels[kernel_id]
 

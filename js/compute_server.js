@@ -496,12 +496,6 @@ sagecell.Session.prototype.appendMsg = function(msg, text) {
     $(ce('div')).text(text+JSON.stringify(msg)).prependTo(this.outputDiv.find(".sagecell_messages"));
 };
 
-sagecell.Session.prototype.last_output = function(block_id) {
-    var block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
-    var last = block.children().last();
-    return (last.length === 0 ? undefined : last);
-}
-
 sagecell.Session.prototype.clear = function (block_id, changed) {
     var output_block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
     if (output_block.length===0) {return;}
@@ -536,7 +530,7 @@ sagecell.Session.prototype.handle_message_reply = function(msg) {
 
 
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
-    console.debug('reply walltime: '+this.timer() + " ms");
+    console.debug("handle_execute_reply walltime: " + this.timer() + " ms");
     /* This would give two error messages (since a pyerr should have already come)
       if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
@@ -568,6 +562,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
 }
     
 sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
+    console.debug("handle_output");
     var msg_type = msg.header.msg_type;
     var content = msg.content;
     var metadata = msg.metadata;
@@ -580,29 +575,25 @@ sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
     case "stream":
         // First, see if we should consolidate this output with the previous output <pre>
         // this reaches into the inner workings of output
-        var last_output = this.last_output(block_id);
+        var block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
+        var last = block.children().last();
+        var last_output = (last.length === 0 ? undefined : last);
         if (last_output && last_output.hasClass("sagecell_" + content.name)) {
-            last_output.text(last_output.text()+content.data)
+            last_output.text(last_output.text() + content.text);
         } else {
-            var html = ce('pre', {class: 'sagecell_'+content.name},
-                             [content.data]);
+            var html = ce('pre', {class: 'sagecell_' + content.name},
+                             [content.text]);
             this.output(html, block_id);
         }
         break;
-
-    case "pyout":
-        this.output('<pre class="sagecell_pyout"></pre>', block_id)
-            .text(content.data["text/plain"]);
-        break;
-
-    case "pyerr":
+    case "error":
         if (content.traceback.join) {
             this.output('<pre class="sagecell_pyerr"></pre>', block_id)
                 .html(utils.fixConsole(content.traceback.join("\n")));
         }
         break;
-
     case "display_data":
+    case "execute_result":
         var filepath=this.kernel.kernel_url+'/files/';
         // find any key of content that is in the display_handlers array and execute that handler
         // if none found, do the text/plain 
@@ -2043,6 +2034,7 @@ sagecell.InteractData.control_types = {
 
 sagecell.MultiSockJS = function (url, prefix) {
     console.debug("Starting sockjs connection to "+url+": "+(new Date()).getTime());
+    console.debug("prefix:" + prefix);
     if (!sagecell.MultiSockJS.sockjs
         || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSING
         || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSED) {
@@ -2059,8 +2051,10 @@ sagecell.MultiSockJS = function (url, prefix) {
         sagecell.MultiSockJS.sockjs.onmessage = function (e) {
             var i = e.data.indexOf(",");
             var prefix = e.data.substring(0, i);
+            console.debug("onmessage prefix: " + prefix);
             e.data = e.data.substring(i + 1);
-            if (sagecell.MultiSockJS.channels[prefix].onmessage) {
+            console.debug("other data: " + e.data);
+            if (sagecell.MultiSockJS.channels[prefix] && sagecell.MultiSockJS.channels[prefix].onmessage) {
                 sagecell.MultiSockJS.channels[prefix].onmessage(e);
             }
         }
@@ -2075,7 +2069,8 @@ sagecell.MultiSockJS = function (url, prefix) {
             // Maybe we should just remove the sockjs object from sagecell.MultiSockJS now
         }
     }
-    this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1] : prefix;
+    this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*\/channels).*$/)[1] : prefix;
+    console.debug("this.prefix:" + this.prefix);
     this.readyState = sagecell.MultiSockJS.sockjs.readyState;
     sagecell.MultiSockJS.channels[this.prefix] = this;
     this.init_socket();
