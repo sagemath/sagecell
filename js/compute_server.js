@@ -395,7 +395,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     });
     pl_button.addEventListener("mousedown", stop);
     pl_box.addEventListener("mousedown", stop);
-    $([events]).on("status_busy.Kernel", function (evt, data) {
+    events.on("kernel_busy.Kernel", function (evt, data) {
+        console.debug("kernel_busy.Kernel");
         if (data.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
         }
@@ -403,7 +404,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     pl_chkbox.addEventListener("change", function () {
         that.updateLinks(false);
     });
-    $([events]).on("status_idle.Kernel", function (evt, data) {
+    events.on("kernel_idle.Kernel", function (evt, data) {
+        console.debug("kernel_idle.Kernel");
         if (data.kernel.kernel_id !== that.kernel.kernel_id) {
             return;
         }
@@ -428,6 +430,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         that.interact_vals = [];
     });
     var killkernel = function (evt, data) {
+        console.debug("killkernel");
         if (data.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
@@ -438,8 +441,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             sagecell.kernels[k] = null;
         }
     }
-    $([events]).on("status_dead.Kernel", killkernel);
-    $([events]).on("websocket_closed.Kernel", killkernel);
+    events.on("kernel_dead.Kernel", killkernel);
+    events.on("kernel_disconnected.Kernel", killkernel);
     this.lock_output = false;
     this.files = {};
     this.eventHandlers = {};
