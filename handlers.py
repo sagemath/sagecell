@@ -364,8 +364,8 @@ accepted_tos=true\n""")
             remote_ip = self.request.remote_ip
             referer = self.request.headers.get('Referer','')
             self.kernel_id = yield gen.Task(km.new_session_async,
-                                            referer = referer,
-                                            remote_ip = remote_ip,
+                                            referer=referer,
+                                            remote_ip=remote_ip,
                                             timeout=0)
             if not (remote_ip=="::1" and referer==""
                     and cron.match(code) is not None):
@@ -664,14 +664,9 @@ class WebChannelsHandler(ZMQChannelsHandler,
 
     def _output_message(self, msg):
         self.write_message(self._json_msg(msg))
-
-    def allow_draft76(self):
-        """Allow draft 76, until browsers such as Safari update to RFC 6455.
-
-        This has been disabled by default in tornado in release 2.2.0, and
-        support will be removed in later versions.
-        """
-        return True
+        
+    def open(self, kernel_id):
+        super(WebChannelsHandler, self).open(self.application, kernel_id)
 
 
 class FileHandler(StaticHandler):
