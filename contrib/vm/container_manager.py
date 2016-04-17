@@ -120,7 +120,6 @@ sage_optional_packages = [
 "ore_algebra",
 "phc",
 "pybtex",   # needs unzip
-"pyx",
 "qepcad",
 "qhull",
 "saclib",
