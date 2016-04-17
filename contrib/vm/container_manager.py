@@ -130,7 +130,7 @@ sage_optional_packages = [
 
 # Python packages to be installed into Sage (via pip) - the order is important!
 python_packages = [
-"pip==7.1.2", # Upgrade to version 8.0.2 causes some encoding issues
+"pip",
 "ecdsa",
 "paramiko",
 "sockjs-tornado",
