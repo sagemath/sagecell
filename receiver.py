@@ -1,18 +1,22 @@
-from untrusted_kernel_manager import UntrustedMultiKernelManager
+import sys, time
+
+from ipykernel.jsonutil import json_clean
 import zmq
-from zmq import ssh
-import sys
+
 from misc import Timer, sage_json
+from untrusted_kernel_manager import UntrustedMultiKernelManager
+
 
 class Receiver(object):
+    
     def __init__(self, ip, tmp_dir):
         self.context = zmq.Context()
         self.dealer = self.context.socket(zmq.DEALER)
         self.port = self.dealer.bind_to_random_port("tcp://%s" % ip)
-        print self.port
+        print(self.port)
         sys.stdout.flush()
         self.sage_mode = self.setup_sage()
-        print self.sage_mode
+        print(self.sage_mode)
         sys.stdout.flush()
         self.km = UntrustedMultiKernelManager(ip,
                 update_function=self.update_dict_with_sage, tmp_dir=tmp_dir)
@@ -67,14 +71,6 @@ class Receiver(object):
             pylab.show = partial(mp_show, savefig=pylab.savefig)
             matplotlib.pyplot.show = partial(mp_show, savefig=matplotlib.pyplot.savefig)
 
-            # Monkey-patch IPython widgets so they work with Sage's show
-            from IPython.html.widgets import Widget
-            import misc
-            def widget_show(self, *args, **kwargs):
-                misc.reset_kernel_timeout(float('inf'))
-                self._ipython_display_(*args, **kwargs)
-            Widget.show = widget_show
-
             import StringIO
             # The first plot takes about 2 seconds to generate (presumably
             # because lots of things, like matplotlib, are imported).  We plot
@@ -86,7 +82,7 @@ class Receiver(object):
             self.sage_dict = {'sage': sage}
             return True
         except ImportError as e:
-            print e
+            print(e)
             self.sage_dict = {}
             return False
 
@@ -178,22 +174,16 @@ class Receiver(object):
             Provide an option to just run the code with minimal
             changes (i.e., no input splitting).  This provides fast
             execution.
-
             """
-            
             kernel = ka.kernel
             from functools import wraps
             @wraps(handler)
             def f(stream, ident, parent, *args, **kwargs):
                 kernel._publish_status(u'busy', parent)
-                md = kernel._make_metadata(parent['metadata'])
+                md = kernel.init_metadata(parent)
                 content = parent['content']
                 # Set the parent message of the display hook and out streams.
-                kernel.shell.displayhook.set_parent(parent)
-                kernel.shell.display_pub.set_parent(parent)
-                kernel.shell.data_pub.set_parent(parent)
-                sys.stdout.set_parent(parent)
-                sys.stderr.set_parent(parent)
+                kernel.shell.set_parent(parent)
                 reply_content = {}
                 try:
                     reply_content[u'result'] = handler(stream, ident, parent, *args, **kwargs)
@@ -211,16 +201,12 @@ class Receiver(object):
 
                 # this should be refactored probably to use existing IPython code
                 if reply_content['status'] == 'ok':
-                    reply_content[u'user_variables'] = \
-                                 kernel.shell.user_variables(content.get(u'user_variables', []))
                     reply_content[u'user_expressions'] = \
                                  kernel.shell.user_expressions(content.get(u'user_expressions', {}))
                 else:
-                    # If there was an error, don't even try to compute variables or
+                    # If there was an error, don't even try to compute
                     # expressions
-                    reply_content[u'user_variables'] = {}
                     reply_content[u'user_expressions'] = {}
-
 
                 # Payloads should be retrieved regardless of outcome, so we can both
                 # recover partial output (that could have been generated early in a
@@ -237,23 +223,20 @@ class Receiver(object):
                 # clients... This seems to mitigate the problem, but we definitely need
                 # to better understand what's going on.
                 if kernel._execute_sleep:
-                    import time
                     time.sleep(kernel._execute_sleep)
 
-                from IPython.utils.jsonutil import json_clean
                 reply_content = json_clean(reply_content)
-
                 md['status'] = reply_content['status']
-                if reply_content['status'] == 'error' and \
-                                reply_content['ename'] == 'UnmetDependency':
+                if (reply_content['status'] == 'error' and
+                    reply_content['ename'] == 'UnmetDependency'):
                         md['dependencies_met'] = False
-                reply_msg = kernel.session.send(stream, key+u'_reply',
-                                              reply_content, parent, metadata=md,
-                                              ident=ident)
+                md = kernel.finish_metadata(parent, md, reply_content)
+                reply_msg = kernel.session.send(stream, key + u'_reply',
+                    reply_content, parent, metadata=md, ident=ident)
                 kernel.log.debug("%s", reply_msg)
-
                 kernel._publish_status(u'idle', parent)
             return f
+            
         def register_handler(key, handler):
             msg_types = set([ 'execute_request', 'complete_request',
                           'object_info_request', 'history_request',
@@ -263,13 +246,14 @@ class Receiver(object):
 
             if key not in msg_types:
                 ka.kernel.shell_handlers[key] = handler_wrapper(key, handler)
+                
         _sage_.register_handler = register_handler
+        
         def send_message(stream, msg_type, content, parent, **kwargs):
             ka.kernel.session.send(stream, msg_type, content=content, parent=parent, **kwargs)
         _sage_.send_message = send_message
 
         # Enable Sage types to be sent via session messages
-        import zmq
         from zmq.utils import jsonapi
         ka.kernel.session.pack = lambda x: jsonapi.dumps(x, default=sage_json)
 
@@ -297,16 +281,16 @@ get_display_manager().switch_backend(BackendCell(), shell=get_ipython())
 # Make R interface pickup the new working directory
 r = R()
 """
-            exec sage_code in user_ns
+            exec(sage_code, user_ns)
         def getsource(obj, is_binary):
             # modified from sage.misc.sagedoc.my_getsource
             from sage.misc.sagedoc import sageinspect, format_src
             try:
                 s = sageinspect.sage_getsource(obj, is_binary)
                 return format_src(str(s))
-            except Exception, msg:
-                print 'Error getting source:', msg
-                return None
+            except Exception as e:
+                print('Error getting source: %s' % e.message)
+                
         from IPython.core import oinspect
         oinspect.getsource = getsource
         import interact_sagecell
@@ -384,7 +368,6 @@ if __name__ == '__main__':
     comp_id = sys.argv[2]
     tmp_dir = sys.argv[3]
     from log import receiver_logger
-    import uuid
     logger = receiver_logger.getChild(comp_id[:4])
     logger.debug('started')
     receiver = Receiver(ip, tmp_dir)

@@ -15,9 +15,99 @@
 //    which argues that it is more inefficient to make objects out of
 //    closures instead of using the prototype property and "new"
 
-(function($) {
+require([
+    "jquery",
+    "base/js/namespace",
+    "base/js/utils",
+    "base/js/events",
+    "services/kernels/kernel",
+    "sockjs"
+], function(
+    $,
+    IPython,
+    utils,
+    events,
+    Kernel,
+    SockJS
+   ) {
 "use strict";
 var undefined;
+
+// Make a global sagecell namespace for our functions
+window.sagecell = window.sagecell || {};
+
+sagecell.util = {
+    "createElement": function (type, attrs, children) {
+        var node = document.createElement(type);
+        for (var k in attrs) {
+            if (attrs.hasOwnProperty(k)) {
+                node.setAttribute(k, attrs[k]);
+            }
+        }
+        if (children) {
+            for (var i = 0; i < children.length; i++) {
+                if (typeof children[i] == 'string') {
+                    node.appendChild(document.createTextNode(children[i]));
+                } else {
+                    node.appendChild(children[i]);
+                }
+            }
+        }
+        return node;
+    }
+/* var p = proxy(['list', 'of', 'methods'])
+     will save any method calls in the list.  At some later time, you can invoke
+     each method on an object by doing p._run_callbacks(my_obj) */
+    ,"proxy": function(methods) {
+        var proxy = {_callbacks: []};
+        $.each(methods, function(i,method) {
+            proxy[method] = function() {
+                proxy._callbacks.push([method, arguments]);
+                console.log('stored proxy for '+method);
+            }
+        })
+            proxy._run_callbacks = function(obj) {
+                $.each(proxy._callbacks, function(i,cb) {
+                    obj[cb[0]].apply(obj, cb[1]);
+                })
+                    }
+        return proxy;
+    }
+
+
+//     throttle is from:
+//     Underscore.js 1.4.3
+//     http://underscorejs.org
+//     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
+//     Underscore may be freely distributed under the MIT license.
+// Returns a function, that, when invoked, will only be triggered at most once
+// during a given window of time.
+    ,"throttle": function(func, wait) {
+    var context, args, timeout, result;
+    var previous = 0;
+    var later = function() {
+      previous = new Date;
+      timeout = null;
+      result = func.apply(context, args);
+    };
+    return function() {
+      var now = new Date;
+      var remaining = wait - (now - previous);
+      context = this;
+      args = arguments;
+      if (remaining <= 0) {
+        clearTimeout(timeout);
+        timeout = null;
+        previous = now;
+        result = func.apply(context, args);
+      } else if (!timeout) {
+        timeout = setTimeout(later, remaining);
+      }
+      return result;
+    };
+  }
+};
+
 var ce = sagecell.util.createElement;
 var proxy = sagecell.util.proxy;
 var throttle = sagecell.util.throttle;
@@ -45,13 +135,13 @@ var strip_hostname = function(f) {
         return hostname+f.apply(null,arguments);
     }
 }
-IPython.utils.url_join_encode = strip_hostname(IPython.utils.url_join_encode);
-IPython.utils.url_path_join = strip_hostname(IPython.utils.url_path_join);
+utils.url_join_encode = strip_hostname(utils.url_join_encode);
+utils.url_path_join = strip_hostname(utils.url_path_join);
 
 sagecell.simpletimer = function () {
     var t = (new Date()).getTime();
    //var a = 0;
-   sagecell.log('starting timer from '+t);
+   console.debug('starting timer from '+t);
    return function(reset) {
        reset = reset || false;
        var old_t = t;
@@ -60,7 +150,7 @@ sagecell.simpletimer = function () {
            t = new_t;
        }
        //a+=1;
-       //sagecell.log('time since '+t+': '+(new_t-old_t));
+       //console.debug('time since '+t+': '+(new_t-old_t));
        return new_t-old_t;
    };
 };
@@ -97,7 +187,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
 
     // Set this object because we aren't loading the full IPython JavaScript library
-    IPython.notification_widget = {"set_message": sagecell.log};
+    IPython.notification_widget = {"set_message": console.debug};
     
     this.interacts = [];
     if (window.addEventListener) {
@@ -123,7 +213,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     if (!old_ws) {
         window.WebSocket = sagecell.MultiSockJS;
     }
-    this.kernel = new IPython.Kernel(sagecell.URLs.kernel);
+    this.kernel = new Kernel.Kernel(sagecell.URLs.kernel);
     window.WebSocket = old_ws;
     */
     var that = this;
@@ -136,11 +226,11 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         var old_log = window.console && console.log;
         window.WebSocket = sagecell.MultiSockJS;
         window.console = window.console || {};
-        //console.log = sagecell.log;
-        this.kernel = sagecell.kernels[k] = new IPython.Kernel(sagecell.URLs.kernel);
-        this.kernel.comm_manager.register_target('threejs', IPython.utils.always_new(sagecell.SessionThreeJSWidget(this)));
-        this.kernel.comm_manager.register_target('graphicswidget', IPython.utils.always_new(sagecell.SessionGraphicsWidget(this)));
-        this.kernel.comm_manager.register_target('matplotlib', IPython.utils.always_new(sagecell.MPLWidget(this)));
+        //console.log = console.debug;
+        this.kernel = sagecell.kernels[k] = new Kernel.Kernel(sagecell.URLs.kernel);
+        this.kernel.comm_manager.register_target('threejs', utils.always_new(sagecell.SessionThreeJSWidget(this)));
+        this.kernel.comm_manager.register_target('graphicswidget', utils.always_new(sagecell.SessionGraphicsWidget(this)));
+        this.kernel.comm_manager.register_target('matplotlib', utils.always_new(sagecell.MPLWidget(this)));
 
         this.kernel.session = this;
         this.kernel.opened = false;
@@ -150,33 +240,28 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         this.kernel.post = function (url, callback) {
             sagecell.sendRequest("POST", url, {}, function (data) { callback(JSON.parse(data)); });
         }
-    /**
-     * Copied from IPython and slightly modified (comment out session_id send, add deferred code execution
-     * Handle a websocket entering the open state
-     * Once all sockets are open, signal the Kernel.status_started event.
-     * @method _ws_opened
-     */
+
+    // Copied from Jupyter notebook and slightly modified to add deferred code execution
     this.kernel._ws_opened = function (evt) {
-        // send the session id so the Session object Python-side
-        // has the same identity
-        //evt.target.send(this.session_id + ':' + document.cookie);
-        var channels = [this.shell_channel, this.iopub_channel, this.stdin_channel];
-        for (var i=0; i < channels.length; i++) {
-            // if any channel is not ready, don't trigger event.
-            if ( !channels[i].readyState ) return;
+        /**
+         * Handle a websocket entering the open state,
+         * signaling that the kernel is connected when websocket is open.
+         *
+         * @function _ws_opened
+         */
+        if (this.is_connected()) {
+            // ADDED BLOCK START
+            this.opened = true;
+            while (this.deferred_code.length > 0) {
+                this.session.execute(this.deferred_code.shift());
+            }
+            // ADDED BLOCK END
+            // all events ready, trigger started event.
+            this._kernel_connected();
         }
-
-        // All channels are started
-        this.opened = true;
-        while (this.deferred_code.length > 0) {
-            this.session.execute(this.deferred_code.shift());
-        }
-
-        // all events ready, trigger started event.
-        $([IPython.events]).trigger('status_started.Kernel', {kernel: this});
     };
 
-        this.kernel.start({notebook: IPython.utils.uuid(), timeout: linked ? 'inf' : 0});
+        this.kernel.start({notebook: utils.uuid(), timeout: linked ? 'inf' : 0, accepted_tos : "true"});
     }
     var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(
@@ -244,7 +329,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             pl_qlink.removeAttribute("href");
             pl_qrcode.parentNode.removeAttribute("href");
             pl_qrcode.removeAttribute("src");
-            sagecell.log('sending permalink request post: '+that.timer()+' ms');
+            console.debug('sending permalink request post: '+that.timer()+' ms');
             var args = {
                 "code": that.rawcode,
                 "language": that.language,
@@ -275,7 +360,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             }
             sagecell.sendRequest("POST", sagecell.URLs.permalink, args, function (data) {
                 data = JSON.parse(data);
-                sagecell.log('POST permalink request walltime: '+that.timer() + " ms");
+                console.debug('POST permalink request walltime: '+that.timer() + " ms");
                 if (data.n !== n) {
                     return;
                 }
@@ -310,7 +395,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     });
     pl_button.addEventListener("mousedown", stop);
     pl_box.addEventListener("mousedown", stop);
-    $([IPython.events]).on("status_busy.Kernel", function (evt, data) {
+    events.on("kernel_busy.Kernel", function (evt, data) {
+        console.debug("kernel_busy.Kernel");
         if (data.kernel.kernel_id === that.kernel.kernel_id) {
             that.spinner.style.display = "";
         }
@@ -318,7 +404,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     pl_chkbox.addEventListener("change", function () {
         that.updateLinks(false);
     });
-    $([IPython.events]).on("status_idle.Kernel", function (evt, data) {
+    events.on("kernel_idle.Kernel", function (evt, data) {
+        console.debug("kernel_idle.Kernel");
         if (data.kernel.kernel_id !== that.kernel.kernel_id) {
             return;
         }
@@ -343,6 +430,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         that.interact_vals = [];
     });
     var killkernel = function (evt, data) {
+        console.debug("killkernel");
         if (data.kernel.kernel_id === that.kernel.kernel_id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
@@ -353,8 +441,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
             sagecell.kernels[k] = null;
         }
     }
-    $([IPython.events]).on("status_dead.Kernel", killkernel);
-    $([IPython.events]).on("websocket_closed.Kernel", killkernel);
+    events.on("kernel_dead.Kernel", killkernel);
+    events.on("kernel_disconnected.Kernel", killkernel);
     this.lock_output = false;
     this.files = {};
     this.eventHandlers = {};
@@ -364,7 +452,7 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
 
 sagecell.Session.prototype.execute = function (code) {
     if (this.kernel.opened) {
-        sagecell.log('opened and executing in kernel: '+this.timer()+' ms');
+        console.debug('opened and executing in kernel: '+this.timer()+' ms');
         var pre;
         //TODO: do this wrapping of code on the server, not in javascript
         //Maybe the system can be sent in metadata in the execute_request message
@@ -408,12 +496,6 @@ sagecell.Session.prototype.appendMsg = function(msg, text) {
     $(ce('div')).text(text+JSON.stringify(msg)).prependTo(this.outputDiv.find(".sagecell_messages"));
 };
 
-sagecell.Session.prototype.last_output = function(block_id) {
-    var block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
-    var last = block.children().last();
-    return (last.length === 0 ? undefined : last);
-}
-
 sagecell.Session.prototype.clear = function (block_id, changed) {
     var output_block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
     if (output_block.length===0) {return;}
@@ -448,11 +530,11 @@ sagecell.Session.prototype.handle_message_reply = function(msg) {
 
 
 sagecell.Session.prototype.handle_execute_reply = function(msg) {
-    sagecell.log('reply walltime: '+this.timer() + " ms");
+    console.debug("handle_execute_reply walltime: " + this.timer() + " ms");
     /* This would give two error messages (since a pyerr should have already come)
       if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
-            .html(IPython.utils.fixConsole(msg.traceback.join("\n")));
+            .html(utils.fixConsole(msg.traceback.join("\n")));
     } 
     */
     // TODO: handle payloads with a payload callback, instead of in the execute_reply
@@ -480,6 +562,7 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
 }
     
 sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
+    console.debug("handle_output");
     var msg_type = msg.header.msg_type;
     var content = msg.content;
     var metadata = msg.metadata;
@@ -492,29 +575,25 @@ sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
     case "stream":
         // First, see if we should consolidate this output with the previous output <pre>
         // this reaches into the inner workings of output
-        var last_output = this.last_output(block_id);
+        var block = $(block_id === null ? this.output_block : interacts[block_id].output_block);
+        var last = block.children().last();
+        var last_output = (last.length === 0 ? undefined : last);
         if (last_output && last_output.hasClass("sagecell_" + content.name)) {
-            last_output.text(last_output.text()+content.data)
+            last_output.text(last_output.text() + content.text);
         } else {
-            var html = ce('pre', {class: 'sagecell_'+content.name},
-                             [content.data]);
+            var html = ce('pre', {class: 'sagecell_' + content.name},
+                             [content.text]);
             this.output(html, block_id);
         }
         break;
-
-    case "pyout":
-        this.output('<pre class="sagecell_pyout"></pre>', block_id)
-            .text(content.data["text/plain"]);
-        break;
-
-    case "pyerr":
+    case "error":
         if (content.traceback.join) {
             this.output('<pre class="sagecell_pyerr"></pre>', block_id)
-                .html(IPython.utils.fixConsole(content.traceback.join("\n")));
+                .html(utils.fixConsole(content.traceback.join("\n")));
         }
         break;
-
     case "display_data":
+    case "execute_result":
         var filepath=this.kernel.kernel_url+'/files/';
         // find any key of content that is in the display_handlers array and execute that handler
         // if none found, do the text/plain 
@@ -533,7 +612,7 @@ sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
         }
         break;
     }
-    sagecell.log('handled output: '+this.timer()+' ms');
+    console.debug('handled output: '+this.timer()+' ms');
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
     var output = this.outputDiv.find(".sagecell_output").get(0);
@@ -1954,12 +2033,13 @@ sagecell.InteractData.control_types = {
 };
 
 sagecell.MultiSockJS = function (url, prefix) {
-    sagecell.log("Starting sockjs connection to "+url+": "+(new Date()).getTime());
+    console.debug("Starting sockjs connection to "+url+": "+(new Date()).getTime());
+    console.debug("prefix:" + prefix);
     if (!sagecell.MultiSockJS.sockjs
         || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSING
         || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSED) {
 
-        sagecell.log("Initializing MultiSockJS to "+sagecell.URLs.sockjs);
+        console.debug("Initializing MultiSockJS to "+sagecell.URLs.sockjs);
         sagecell.MultiSockJS.channels = {};
         sagecell.MultiSockJS.to_init = [];
         sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, sagecell.sockjs_options || {});
@@ -1971,8 +2051,10 @@ sagecell.MultiSockJS = function (url, prefix) {
         sagecell.MultiSockJS.sockjs.onmessage = function (e) {
             var i = e.data.indexOf(",");
             var prefix = e.data.substring(0, i);
+            console.debug("onmessage prefix: " + prefix);
             e.data = e.data.substring(i + 1);
-            if (sagecell.MultiSockJS.channels[prefix].onmessage) {
+            console.debug("other data: " + e.data);
+            if (sagecell.MultiSockJS.channels[prefix] && sagecell.MultiSockJS.channels[prefix].onmessage) {
                 sagecell.MultiSockJS.channels[prefix].onmessage(e);
             }
         }
@@ -1987,7 +2069,8 @@ sagecell.MultiSockJS = function (url, prefix) {
             // Maybe we should just remove the sockjs object from sagecell.MultiSockJS now
         }
     }
-    this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*)$/)[1] : prefix;
+    this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*\/channels).*$/)[1] : prefix;
+    console.debug("this.prefix:" + this.prefix);
     this.readyState = sagecell.MultiSockJS.sockjs.readyState;
     sagecell.MultiSockJS.channels[this.prefix] = this;
     this.init_socket();
@@ -2022,4 +2105,4 @@ sagecell.MultiSockJS.prototype.close = function () {
 //jmolInitialize(sagecell.URLs.root + 'static/jmol');
 //jmolSetCallback("menuFile", sagecell.URLs.root + "static/jmol/appletweb/SageMenu.mnu");
 
-})(sagecell.jQuery);
+});

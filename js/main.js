@@ -12,7 +12,19 @@ _gaq.push(['sagecell._trackPageview']);
     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
 
-(function() {
+require([
+    "jquery",
+    "base/js/utils",
+    "services/kernels/kernel",
+    "compute_server",
+    "codemirror/lib/codemirror"
+], function(
+    $,
+    utils,
+    Kernel,
+    compute_server,
+    CodeMirror
+   ) {
 "use strict";
 var undefined;
 
@@ -22,12 +34,6 @@ window.sagecell = window.sagecell || {};
 if (!document.head) {
     document.head = document.getElementsByTagName("head")[0];
 }
-
-var $ = jQuery.noConflict(true);
-if (jQuery === undefined) {
-    window.$ = jQuery = $;
-}
-sagecell.jQuery = $;
 
 sagecell.URLs = {};
 
@@ -80,88 +86,6 @@ sagecell.modes = {"sage": "python", "python": "python",
 if (sagecell.loadMathJax === undefined) {
     sagecell.loadMathJax = true;
 }
-if (sagecell.log === undefined) {
-    sagecell.log = (function (log) {
-        return function (obj) {
-            if (sagecell.debug) {
-                log(obj);
-            }
-        };
-    }(typeof console === "undefined" ? function() {} : $.proxy(console.log, console)));
-}
-// Various utility functions for the Single Cell Server
-sagecell.util = {
-    "createElement": function (type, attrs, children) {
-        var node = document.createElement(type);
-        for (var k in attrs) {
-            if (attrs.hasOwnProperty(k)) {
-                node.setAttribute(k, attrs[k]);
-            }
-        }
-        if (children) {
-            for (var i = 0; i < children.length; i++) {
-                if (typeof children[i] == 'string') {
-                    node.appendChild(document.createTextNode(children[i]));
-                } else {
-                    node.appendChild(children[i]);
-                }
-            }
-        }
-        return node;
-    }
-/* var p = proxy(['list', 'of', 'methods'])
-     will save any method calls in the list.  At some later time, you can invoke
-     each method on an object by doing p._run_callbacks(my_obj) */
-    ,"proxy": function(methods) {
-        var proxy = {_callbacks: []};
-        $.each(methods, function(i,method) {
-            proxy[method] = function() {
-                proxy._callbacks.push([method, arguments]);
-                console.log('stored proxy for '+method);
-            }
-        })
-            proxy._run_callbacks = function(obj) {
-                $.each(proxy._callbacks, function(i,cb) {
-                    obj[cb[0]].apply(obj, cb[1]);
-                })
-                    }
-        return proxy;
-    }
-
-
-//     throttle is from:
-//     Underscore.js 1.4.3
-//     http://underscorejs.org
-//     (c) 2009-2012 Jeremy Ashkenas, DocumentCloud Inc.
-//     Underscore may be freely distributed under the MIT license.
-// Returns a function, that, when invoked, will only be triggered at most once
-// during a given window of time.
-    ,"throttle": function(func, wait) {
-    var context, args, timeout, result;
-    var previous = 0;
-    var later = function() {
-      previous = new Date;
-      timeout = null;
-      result = func.apply(context, args);
-    };
-    return function() {
-      var now = new Date;
-      var remaining = wait - (now - previous);
-      context = this;
-      args = arguments;
-      if (remaining <= 0) {
-        clearTimeout(timeout);
-        timeout = null;
-        previous = now;
-        result = func.apply(context, args);
-      } else if (!timeout) {
-        timeout = setTimeout(later, remaining);
-      }
-      return result;
-    };
-  }
-
-};
 
 var ce = sagecell.util.createElement;
 var deferred_eval = [];
@@ -189,13 +113,7 @@ sagecell.init = function (callback) {
     sagecell.dependencies_loaded = false;
     sagecell.last_session = {};
 
-    // many stylesheets that have been smashed together into all.min.css
-    var stylesheets = [sagecell.URLs.root + "static/jquery-ui/css/sagecell/jquery-ui-1.10.2.custom.min.css",
-                       sagecell.URLs.root + "static/colorpicker/css/colorpicker.css",
-                       sagecell.URLs.root + "static/all.min.css"]
-    for (var i = 0; i < stylesheets.length; i++) {
-        document.head.appendChild(ce("link", {rel: "stylesheet", href: stylesheets[i]}));
-    }
+    document.head.appendChild(ce("link", {rel: "stylesheet", href: sagecell.URLs.root + "static/all.min.css"}));
 
     if(window.MathJax === undefined && sagecell.loadMathJax) {
         // Mathjax.  We need a separate script tag for mathjax since it later
@@ -222,17 +140,12 @@ sagecell.init = function (callback) {
         function (data) {
             $(function () {
                 sagecell.body = data;
-                // many prerequisites that have been smashed together into all.min.js
-                load({"src": sagecell.URLs.root + "static/all.min.js"})
+                sagecell.dependencies_loaded = true;
+                if (callback !== undefined) {
+                    callback();
+                };
             });
         }, undefined);
-};
-
-sagecell.sagecell_dependencies_callback = function () {
-    sagecell.dependencies_loaded = true;
-    if (sagecell.init_callback !== undefined) {
-        sagecell.init_callback();
-    }
 };
 
 sagecell.kernels = [];
@@ -255,45 +168,12 @@ sagecell.makeSagecell = function (args, k) {
         if (!sagecell.dependencies_loaded) {
             if (sagecell.dependencies_loaded === undefined) {
                 sagecell.init(function () {
-                    IPython.Kernel.prototype.kill = function () {
+                    Kernel.Kernel.prototype.kill = function () {
                         if (this.running) {
                             this.running = false;
                             sagecell.sendRequest("DELETE", this.kernel_url);
                         }
                     }
-                    IPython.WidgetManager.prototype.display_view = function(msg, model) {
-                        var session = this.comm_manager.kernel.session;
-                        var block_id = msg.metadata.interact_id || null;
-                        var view = this.create_view(model, {cell: session})
-                        if (view === undefined) {
-                            console.error("Could not find widget view for model", model);
-                        }
-                        session.output(view.$el, block_id);
-                    }
-                    IPython.WidgetManager.prototype.callbacks = function (view) {
-                        // callback handlers specific a view
-                        var callbacks = {};
-                        if (view && view.options && view.options.cell) {
-                            var session = view.options.cell;
-                            // Create callback dict using what is known
-                            callbacks = {
-                                iopub : {
-                                    output : $.proxy(session.handle_output, session),
-                                    clear_output : null,
-
-                                    // Special function only registered by widget messages.
-                                    // Allows us to get the cell for a message so we know
-                                    // where to add widgets if the code requires it.
-                                    get_cell : function () {
-                                        return session;
-                                    },
-                                }
-                            };
-                        }
-                        return callbacks;
-                    };
-                    // override IPython notebookisms
-                    IPython.WidgetManager.prototype._handle_new_view = function() {/*do nothing*/};
                 });
             }
             setTimeout(waitForLoad, 100);
@@ -382,7 +262,7 @@ sagecell.makeSagecell = function (args, k) {
                 ta.addClass("sagecell_commands");
                 ta.attr({"autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
                 inputLocation.find(".sagecell_commands").replaceWith(ta);
-                var id = "input_" + IPython.utils.uuid();
+                var id = "input_" + utils.uuid();
                 inputLocation[0].id = id;
                 if (settings.outputLocation === settings.inputLocation) {
                     outputLocation = $(settings.outputLocation = "#" + id);
@@ -400,7 +280,7 @@ sagecell.makeSagecell = function (args, k) {
             outputLocation.find(".sagecell_output_elements").hide();
             hide.push("files"); // TODO: Delete this line when this feature is implemented.
             if (settings.mode === "debug") {
-                sagecell.log("Running the Sage Cell in debug mode!");
+                console.info("Running the Sage Cell in debug mode!");
             } else {
                 var hideAdvanced = {};
                 var hideable = {"in": {"editor": true,
@@ -412,7 +292,7 @@ sagecell.makeSagecell = function (args, k) {
                                         "sessionFiles": true,
                                         "permalink": true}};
                 var hidden_out = [];
-                var out_class = "output_" + IPython.utils.uuid();
+                var out_class = "output_" + utils.uuid();
                 outputLocation.addClass(out_class);
                 for (var i = 0, i_max = hide.length; i < i_max; i++) {
                     if (hide[i] in hideable["in"]) {
@@ -629,7 +509,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         return false;
     };
     var button = inputLocation.find(".sagecell_evalButton").button();
-    button.click({"id": IPython.utils.uuid()}, sagecellInfo.submit);
+    button.click({"id": utils.uuid()}, sagecellInfo.submit);
     if (sagecellInfo.code && sagecellInfo.autoeval) {
         button.click();
     }
@@ -710,7 +590,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         // Use a form submission to send POST requests
         // Methods such as DELETE and OPTIONS will be sent as POST instead
         var iframe = document.createElement("iframe");
-        iframe.name = IPython.utils.uuid();
+        iframe.name = utils.uuid();
         var form = ce("form", {method: "POST", action: url, target: iframe.name});
         if (data === undefined) {
             data = {};
@@ -718,8 +598,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         data.method = method;
         for (var k in data) {
             if (data.hasOwnProperty(k)) {
-                form.appendChild(sagecell.util.createElement("input",
-                        {"name": k, "value": data[k]}));
+                form.appendChild(ce("input", {"name": k, "value": data[k]}));
             }
         }
         form.appendChild(ce("input", {name: "frame", value: "on"}));
@@ -779,8 +658,8 @@ sagecell.restoreInputForm = function (sagecellInfo) {
 var makeMsg = function (msg_type, content) {
     return {
         "header": {
-            "msg_id": IPython.utils.uuid(),
-            "session": IPython.utils.uuid(),
+            "msg_id": utils.uuid(),
+            "session": utils.uuid(),
             "msg_type": msg_type,
             "username": ""
         },
@@ -830,7 +709,7 @@ var showInfo = function (data, cm) {
         var def;
         if (data.definition !== null) {
             def = ce("code");
-            def.innerHTML = IPython.utils.fixConsole(data.definition);
+            def.innerHTML = utils.fixConsole(data.definition);
         }
         d = ce("div", {}, [
             ce("div", {}, [ce("strong", {}, "File: "), ce("code", {}, data.file || data.namespace)]),
@@ -1040,4 +919,4 @@ sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "pytho
 // Purely for backwards compability
 window.singlecell = window.sagecell;
 window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
-})();
+});

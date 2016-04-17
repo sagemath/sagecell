@@ -1,27 +1,12 @@
-import uuid
-import os
-import signal
-import resource
-try:
-    from IPython.kernel.zmq.kernelapp import IPKernelApp
-except ImportError:
-    # old IPython
-    from IPython.zmq.ipkernel import IPKernelApp
-from IPython.config.loader import Config
-from multiprocessing import Process, Pipe
+import errno, os, resource, signal, uuid
+from multiprocessing import Pipe, Process
+
+from ipykernel.kernelapp import IPKernelApp
+from traitlets.config.loader import Config
 
 from log import kernel_logger
 
 
-def makedirs(path):
-    import errno
-    try:
-        os.makedirs(path)
-    except OSError as exc: # Python >2.5
-        if exc.errno == errno.EEXIST:
-            pass
-        else: raise
-    
 class KernelError(Exception):
     """
     An error relating to starting up kernels
@@ -29,18 +14,23 @@ class KernelError(Exception):
     pass
 
 class ForkingKernelManager(object):
-    """ A class for managing multiple kernels and forking on the untrusted side. """
-    def __init__(self, ip, update_function=None, tmp_dir = None):
+    """Manager for multiple kernels and forking on the untrusted side."""
+    
+    def __init__(self, ip, update_function, tmp_dir):
         self.kernels = {}
         self.ip = ip
         self.update_function = update_function
         self.dir = tmp_dir
-        makedirs(self.dir)
+        try:
+            os.makedirs(tmp_dir)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
 
     def fork_kernel(self, config, pipe, resource_limits):
         """ A function to be set as the target for the new kernel processes forked in ForkingKernelManager.start_kernel. This method forks and initializes a new kernel, uses the update_function to update the kernel's namespace, sets resource limits for the kernel, and sends kernel connection information through the Pipe object.
 
-        :arg IPython.config.loader config: kernel configuration
+        :arg traitlets.config.loader config: kernel configuration
         :arg multiprocessing.Pipe pipe: a multiprocessing connection object which will send kernel ip, session, and port information to the other side
         :arg dict resource_limits: a dict with keys resource.RLIMIT_* (see config_default documentation for explanation of valid options) and values of the limit for the given resource to be set in the kernel process
         """
@@ -49,17 +39,10 @@ class ForkingKernelManager(object):
         logger.debug("kernel forked; now starting and configuring")
         try:
             ka = IPKernelApp.instance(config=config, ip=config["ip"])
+            ka.log.propagate = True
+            ka.log_level = logger.level
             from namespace import InstrumentedNamespace
             ka.user_ns = InstrumentedNamespace()
-            # The following line on UNIX systems (and we are unlikely to run on
-            # Windows) will lead to creation of a 1-second poller that will kill
-            # this process as soon as its parent dies. More importanly, it will
-            # prevent from execution the following if block:
-            # https://github.com/ipython/ipython/blob/rel-2.1.0/IPython/kernel/zmq/kernelapp.py#L348
-            # which probably was filling some output buffer and used to severely
-            # limit the number of computations possible without restarting the
-            # server. TODO: figure out a better fix or confirm this is the one!
-            ka.parent_handle = True
             ka.initialize([])
         except:
             logger.exception("Error initializing IPython kernel")
@@ -101,6 +84,7 @@ class ForkingKernelManager(object):
             port numbers
         :rtype: dict
         """
+        kernel_logger.debug("start_kernel with config %s", config)
         if kernel_id is None:
             kernel_id = str(uuid.uuid4())
         if config is None:
@@ -112,7 +96,7 @@ class ForkingKernelManager(object):
         dir = os.path.join(self.dir, kernel_id)
         try:
             os.mkdir(dir)
-        except OSError as e:
+        except OSError:
             # TODO: take care of race conditions and other problems with us
             # using an 'unclean' directory
             pass

@@ -1,12 +1,3 @@
-[submodule "submodules/codemirror"]
-	path = submodules/codemirror
-	url = git://github.com/marijnh/CodeMirror.git
-[submodule "submodules/cssmin"]
-	path = submodules/cssmin
-	url = git://github.com/zacharyvoase/cssmin.git
 [submodule "submodules/jquery-ui-touch-punch"]
 	path = submodules/jquery-ui-touch-punch
 	url = git://github.com/furf/jquery-ui-touch-punch.git
-[submodule "submodules/jsmin"]
-	path = submodules/jsmin
-	url = git://github.com/douglascrockford/JSMin.git

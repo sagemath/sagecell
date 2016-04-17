@@ -50,7 +50,6 @@ users = {"group": "sagecell", "GID": 8888,
 # Github repositories as (user, repository, branch)
 repositories = [
     ("novoselt", "sage", "sagecell"),
-    ("novoselt", "ipython", "sagecell"),
     ("sagemath", "sagecell", "master"),
     ("matplotlib", "basemap", "master"),
 ]
@@ -452,14 +451,6 @@ def install_packages():
     for package in sage_optional_packages:
         # Experimental packages ask for confirmation.
         communicate("sage/sage -i {}".format(package), "\n")
-    # We need IPython stuff not present in spkg and there are issues with 2.1
-    log.info("replacing IPython in Sage")
-    remove_pattern("sage/local/lib/python/site-packages", "IPython*")
-    remove_pattern("sage/local/lib/python/site-packages", "ipython*")
-    shutil.move("github/ipython", ".")
-    os.chdir("ipython")
-    check_call("../sage/sage setup.py develop")
-    os.chdir("..")
     # And we also install basemap
     log.info("installing basemap in Sage")
     shutil.move("github/basemap", ".")

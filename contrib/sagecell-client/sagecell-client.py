@@ -6,7 +6,6 @@ Requires the websocket-client package: http://pypi.python.org/pypi/websocket-cli
 """
 
 import websocket
-import threading
 import json
 import requests
 
@@ -33,14 +32,13 @@ class SageCell(object):
             cookie += '{0}={1}; '.format(key, value)
 
         # RESPONSE: {"id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
-        # construct the iopub and shell websocket channel urls from that
+        # construct the websocket channel url from that
         response = reply.json()
 
         self.kernel_url = response['ws_url']+'kernel/'+response['id']+'/'
         websocket.setdefaulttimeout(timeout)
         print self.kernel_url
-        self._shell = websocket.create_connection(self.kernel_url+'shell', cookie=cookie)
-        self._iopub = websocket.create_connection(self.kernel_url+'iopub', cookie=cookie)
+        self._ws = websocket.create_connection(self.kernel_url+'channels', cookie=cookie)
 
         # initialize our list of messages
         self.shell_messages = []
@@ -51,45 +49,36 @@ class SageCell(object):
         self.shell_messages = []
         self.iopub_messages = []
 
-        # We use threads so that we can simultaneously get the messages on both channels.
-        threads = [threading.Thread(target=self._get_iopub_messages), 
-                    threading.Thread(target=self._get_shell_messages)]
-        for t in threads:
-            t.start()
-
         # Send the JSON execute_request message string down the shell channel
         msg = self._make_execute_request(code)
-        self._shell.send(msg)
+        self._ws.send(msg)
 
         # Wait until we get both a kernel status idle message and an execute_reply message
-        for t in threads:
-            t.join()
+        got_execute_reply = False
+        got_idle_status = False
+        while not (got_execute_reply and got_idle_status):
+            msg = json.loads(self._ws.recv())
+            if msg['channel'] == 'shell':
+                self.shell_messages.append(msg)
+                # an execute_reply message signifies the computation is done
+                if msg['header']['msg_type'] == 'execute_reply':
+                    got_execute_reply = True
+            elif msg['channel'] == 'iopub':
+                self.iopub_messages.append(msg)
+                # the kernel status idle message signifies the kernel is done
+                if (msg['header']['msg_type'] == 'status' and
+                    msg['content']['execution_state'] == 'idle'):
+                        got_idle_status = True
 
         return {'shell': self.shell_messages, 'iopub': self.iopub_messages}
 
-    def _get_shell_messages(self):
-        while True:
-            msg = json.loads(self._shell.recv())
-            self.shell_messages.append(msg)
-            # an execute_reply message signifies the computation is done
-            if msg['header']['msg_type'] == 'execute_reply':
-                break
-
-    def _get_iopub_messages(self):
-        while True:
-            msg = json.loads(self._iopub.recv())
-            self.iopub_messages.append(msg)
-            # the kernel status idle message signifies the kernel is done
-            if msg['header']['msg_type'] == 'status' and msg['content']['execution_state'] == 'idle':
-                break
-
     def _make_execute_request(self, code):
         from uuid import uuid4
-        import json
         session = str(uuid4())
 
         # Here is the general form for an execute_request message
         execute_request = {
+            'channel': 'shell',
             'header': {
                 'msg_type': 'execute_request',
                 'msg_id': str(uuid4()), 
@@ -100,7 +89,6 @@ class SageCell(object):
             'content': {
                 'code': code, 
                 'silent': False, 
-                'user_variables': [], 
                 'user_expressions': {
                     '_sagecell_files': 'sys._sage_.new_files()',
                 }, 
@@ -111,8 +99,7 @@ class SageCell(object):
 
     def close(self):
         # If we define this, we can use the closing() context manager to automatically close the channels
-        self._shell.close()
-        self._iopub.close()
+        self._ws.close()
 
 if __name__ == "__main__":
     import sys
