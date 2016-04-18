@@ -339,7 +339,8 @@ class ServiceHandler(tornado.web.RequestHandler):
 
     The code to be executed is given in the code request parameter.
 
-    This handler is currently not production-ready.
+    This handler is currently not production-ready. But it is used for health
+    checks...
     """
     @tornado.web.asynchronous
     @gen.engine
@@ -642,10 +643,10 @@ class ZMQServiceHandler(ZMQChannelsHandler):
     def _output_message(self, msg):
         if msg["channel"] == "iopub":
             if msg["header"]["msg_type"] == "stream":
-                self.streams[msg["content"]["name"]] += msg["content"]["data"]
+                self.streams[msg["content"]["name"]] += msg["content"]["text"]
 
     def open(self, application, kernel_id):
-        super(ZMQChannelsHandler, self).open(application, kernel_id)
+        super(ZMQServiceHandler, self).open(application, kernel_id)
         from collections import defaultdict
         self.streams = defaultdict(unicode)
 
