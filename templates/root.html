@@ -4,27 +4,27 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="A simple, embeddable interface for SageMath">
+    <title>Sage Cell Server</title>
     <link rel="icon" href="{{ static_url('favicon.ico') }}">
     <script src="{{ static_url('jquery.min.js') }}"></script>
-<title>Sage Cell Server</title>
     <script src="{{ static_url('embedded_sagecell.js') }}"></script>
   </head>
   <body id="sagecell_main">
     <link rel="stylesheet" href="{{ static_url('root.css') }}">
-<h1><img src="{{ static_url('sagemathcell-logo.png') }}" alt="SageMathCell"></h1>
+    <h1><img src="{{ static_url('sagemathcell-logo.png') }}" alt="SageMathCell"></h1>
     Type some Sage code below and press Evaluate.
-    <div id="sagecell"></div>
+    <div id="cell"></div>
     <a href="{{ static_url('about.html') }}" id="sagecell_about" target="_blank">About SageMathCell</a>
 <script>
 $(function () {
-    sagecell.makeSagecell({inputLocation: '#sagecell',
+    sagecell.makeSagecell({inputLocation: '#cell',
                            languages: sagecell.allLanguages
             {% if code %}, code: decodeURIComponent('{{ code }}'),
                            autoeval: {{autoeval}} {% end %}
        {% if interacts %}, interacts: JSON.parse(decodeURIComponent('{{interacts}}')) {% end %}
             {% if lang %}, defaultLanguage: '{{lang}}' {% end %},
                            //Focus the editor
-                           callback: function() {$('#sagecell').find(".CodeMirror").get(0).CodeMirror.focus();}});
+                           callback: function() {$('#cell').find(".CodeMirror").get(0).CodeMirror.focus();}});
 
 });
 </script>
