@@ -704,7 +704,7 @@ var completerMsg = function (msg, callback) {
         sagecell.completer.send(JSON.stringify(msg));
     };
     if (sagecell.completer === undefined) {
-        sagecell.completer = new sagecell.MultiSockJS(null, "complete/shell");
+        sagecell.completer = new sagecell.MultiSockJS(null, "complete");
         sagecell.completer.onmessage = function (event) {
             var data = JSON.parse(event.data);
             var cb = callbacks[data.parent_header.msg_id];
@@ -844,12 +844,9 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
                     if (data.content) {
                         data = data.content;
                     }
-                    if (data.matched_text.length === 0) {
-                        data.matches = [];
-                    }
                     callback({
                         "list": data.matches,
-                        "from": CodeMirror.Pos(cur.line, cur.ch - data.matched_text.length),
+                        "from": CodeMirror.Pos(cur.line, data.cursor_start),
                         "to": cur
                     });
                 };

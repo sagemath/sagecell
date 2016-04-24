@@ -178,7 +178,9 @@ class KernelHandler(tornado.web.RequestHandler):
             self.set_header("Content-Type", "text/html")
         return data
 
+
 class Completer(object):
+    
     name_pattern = re.compile(r"\b[a-z_]\w*$", re.IGNORECASE)
 
     def __init__(self, km):
@@ -189,15 +191,15 @@ class Completer(object):
         self.stream.on_recv(self.on_recv)
 
     def registerRequest(self, kc, msg):
-        name = None
-        if "mode" not in msg["content"] or msg["content"]["mode"] in ("sage", "python"):
+        mode = msg["content"].get("mode", "sage")
+        if mode in ("sage", "python"):
             self.waiting[msg["header"]["msg_id"]] = kc
             self.session.send(self.stream, msg)
             return
-        elif msg["content"]["mode"] in tab_completion:
-            line = msg["content"]["line"][:msg["content"]["cursor_pos"]]
-            name = Completer.name_pattern.search(line)
+        match = Completer.name_pattern.search(
+            msg["content"]["line"][:msg["content"]["cursor_pos"]])
         response = {
+            "channel": "shell",
             "header": {
                 "msg_id": str(uuid.uuid4()),
                 "username": "",
@@ -205,27 +207,21 @@ class Completer(object):
                 "msg_type": "complete_reply"
             },
             "parent_header": msg["header"],
-            "metadata": {}
+            "metadata": {},
+            "content": {
+                "matches": [t for t in tab_completion.get(mode, [])
+                            if t.startswith(match.group())],
+                "cursor_start": match.start(),
+            },
         }
-        if name is not None:
-            response["content"] = {
-                "matches": [t for t in tab_completion[msg["content"]["mode"]] if t.startswith(name.group())],
-                "matched_text": name.group()
-            }
-        else:
-            response["content"] = {
-                "matches": [],
-                "matched_text": []
-            }
-        kc.send("complete/shell," + jsonapi.dumps(response))
+        kc.send("complete," + jsonapi.dumps(response))
 
     def on_recv(self, msg):
         msg = self.session.feed_identities(msg)[1]
         msg = self.session.unserialize(msg)
         msg_id = msg["parent_header"]["msg_id"]
         kc = self.waiting.pop(msg_id)
-        del msg["header"]["date"]
-        kc.send("complete/shell," + jsonapi.dumps(msg))
+        kc.send("complete," + jsonapi.dumps(msg, default=sage_json))
 
 
 class KernelConnection(sockjs.tornado.SockJSConnection):
