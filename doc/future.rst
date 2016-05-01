@@ -20,7 +20,7 @@ Typical computation request::
     USER writes code to be executed
     CLIENT formats code into iPython execute_request message
     CLIENT sends request message to SERVER
-    SERVER stores request message in DB and sends identifying permalking back to client
+    SERVER stores request message in DB and sends identifying permalinking back to client
     SERVER starts KERNEL session
     SERVER opens websocket/ZMQ connection linking CLIENT to KERNEL through SERVER
     SERVER sends request message to KERNEL through websocket
