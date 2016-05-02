@@ -163,16 +163,20 @@ class KernelHandler(tornado.web.RequestHandler):
         self.permissions()
         self.finish()
 
-    def options(self, kernel_id):
-        logger.info("options kernel: %s",kernel_id)
+    def options(self, kernel_id=None):
+        logger.debug("KernelHandler.options for kernel_id %s", kernel_id)
         self.permissions()
         self.finish()
 
     def permissions(self, data=None):
-        if "frame" not in self.request.arguments:
-            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
-            self.set_header("Access-Control-Allow-Credentials", "true")
-            self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
+        if ("frame" not in self.request.arguments
+            and "Origin" in self.request.headers):
+                self.set_header("Access-Control-Allow-Origin",
+                                self.request.headers["Origin"])
+                self.set_header("Access-Control-Allow-Credentials", "true")
+                self.set_header("Access-Control-Allow-Methods",
+                                "POST, GET, OPTIONS, DELETE")
+                self.set_header("Access-Control-Allow-Headers", "Content-Type")
         else:
             data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
             self.set_header("Content-Type", "text/html")
@@ -291,8 +295,10 @@ class TOSHandler(tornado.web.RequestHandler):
                 self.write(self.tos_html)
             else:
                 self.set_status(204)
-            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
-            self.set_header("Access-Control-Allow-Credentials", "true")
+            if "Origin" in self.request.headers:
+                self.set_header("Access-Control-Allow-Origin",
+                                self.request.headers["Origin"])
+                self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "text/html")
         else:
             resp = self.tos_json if self.tos else '""'
@@ -315,18 +321,24 @@ class SageCellHandler(tornado.web.RequestHandler):
     def get(self):
         if len(self.get_arguments("callback")) == 0:
             self.write(self.sagecell_html);
-            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
-            self.set_header("Access-Control-Allow-Credentials", "true")
+            if "Origin" in self.request.headers:
+                self.set_header("Access-Control-Allow-Origin",
+                                self.request.headers["Origin"])
+                self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "text/html")
         else:
             self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
             self.set_header("Content-Type", "application/javascript")
 
+
 class StaticHandler(tornado.web.StaticFileHandler):
     """Handler for static requests"""
     def set_extra_headers(self, path):
-        self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
-        self.set_header("Access-Control-Allow-Credentials", "true")
+        if "Origin" in self.request.headers:
+            self.set_header("Access-Control-Allow-Origin",
+                            self.request.headers["Origin"])
+            self.set_header("Access-Control-Allow-Credentials", "true")
+
 
 class ServiceHandler(tornado.web.RequestHandler):
     """
@@ -426,8 +438,10 @@ accepted_tos=true\n""")
         retval.update(success=getattr(self, 'success', 'abort'))
         if hasattr(self, 'execute_reply'):
             retval.update(execute_reply=self.execute_reply)
-        self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
-        self.set_header("Access-Control-Allow-Credentials", "true")
+        if "Origin" in self.request.headers:
+            self.set_header("Access-Control-Allow-Origin",
+                            self.request.headers["Origin"])
+            self.set_header("Access-Control-Allow-Credentials", "true")
         self.write(retval)
         self.finish()
 
