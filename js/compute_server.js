@@ -33,9 +33,6 @@ require([
 "use strict";
 var undefined;
 
-// Make a global sagecell namespace for our functions
-window.sagecell = window.sagecell || {};
-
 sagecell.util = {
     "createElement": function (type, attrs, children) {
         var node = document.createElement(type);
