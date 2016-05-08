@@ -77,7 +77,7 @@ additional required JavaScript and CSS libraries and creates a global JavaScript
 object called ``sagecell``. Use :ref:`sagecell.init() <sagecell.init_embed>`
 for more configuration options upon initialization, including callback functionality.
 
-.. note:: The Sage Cell uses version 1.7 of the jQuery library. If the page on
+.. note:: The Sage Cell uses version 2.1 of the jQuery library. If the page on
    which it will be embedded also uses jQuery and loads it before loading
    ``embedded_sagecell.js``, the first line of the above HTML may be omitted.
    However, if the version of jQuery loaded is incompatible with the Sage Cell,
