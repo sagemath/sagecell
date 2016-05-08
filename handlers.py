@@ -169,8 +169,8 @@ class KernelHandler(tornado.web.RequestHandler):
         self.finish()
 
     def permissions(self, data=None):
-        if ("frame" not in self.request.arguments
-            and "Origin" in self.request.headers):
+        if "frame" not in self.request.arguments:
+            if "Origin" in self.request.headers:
                 self.set_header("Access-Control-Allow-Origin",
                                 self.request.headers["Origin"])
                 self.set_header("Access-Control-Allow-Credentials", "true")
