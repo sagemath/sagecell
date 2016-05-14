@@ -37,7 +37,6 @@ We assume that you have access to the Internet and can install any needed depend
     git clone https://github.com/novoselt/sage.git
     pushd sage
     git checkout sagecell
-    git submodule update --init --recursive
     make
     ./sage -i threejs
     popd
@@ -48,12 +47,12 @@ We assume that you have access to the Internet and can install any needed depend
 5.  Prepare Sage for SageMathCell:
 
     ```bash
-    sage/sage -pip install --no-deps --upgrade ecdsa
-    sage/sage -pip install --no-deps --upgrade paramiko
-    sage/sage -pip install --no-deps --upgrade sockjs-tornado
-    sage/sage -pip install --no-deps --upgrade lockfile
-    sage/sage -pip install --no-deps --upgrade psutil
+    sage/sage -pip install --upgrade lockfile
+    sage/sage -pip install --upgrade paramiko
+    sage/sage -pip install --upgrade psutil
+    sage/sage -pip install --upgrade sockjs-tornado
     ```
+
 6.  Build SageMathCell:
 
     ```bash
@@ -69,7 +68,8 @@ We assume that you have access to the Internet and can install any needed depend
 1.  Go into the `sagecell` directory (you are there in the end of the above instructions).
 2.  Copy `config_default.py` to `config.py`.
 3.  Edit `config.py` according to your needs. Of particular interest are `host` and `username` entries of the `_default_config` dictionary: you should be able to SSH to `username@host` *without typing in a password*. For example, by default, it assumes you can do `ssh localhost` without typing in a password. Unless you are running a private and **firewalled** server for youself, you’ll want to change this to a more restrictive account; otherwise **anyone will be able to execute any code under your username**. You can set up a passwordless account using SSH: type “ssh passwordless login” into Google to find lots of guides for doing this, like http://www.debian-administration.org/articles/152. You may also wish to adjust `db_config["uri"]` (make the database files readable *only* by the trusted account).
-4.  Start the server via
+4.  You may want to adjust `log.py` to suit your needs and/or adjust system configuration. By default logging is done via syslog which handles multiple processes better than plain files.
+5.  Start the server via
 
     ```bash
     ../sage/sage web_server.py [-p <PORT_NUMBER>]
@@ -87,7 +87,7 @@ DISCLAIMER OF ALL WARRANTIES.
 
 # Browser Compatibility
 
-The Sage Cell Server is designed to be compatible with recent versions of:
+SageMathCell is designed to be compatible with recent versions of:
 
 * Chrome
 * Firefox

@@ -66,6 +66,7 @@ git
 imagemagick
 iptables
 libcairo-dev
+libffi-dev
 m4
 nginx
 npm
@@ -127,36 +128,36 @@ sage_optional_packages = [
 "threejs",
 ]
 
-# Python packages to be installed into Sage (via pip) - the order is important!
+# Python packages to be installed into Sage (via pip)
 python_packages = [
-"pip",
-"ecdsa",
-"paramiko",
-"sockjs-tornado",
+# Dependencies of SageMathCell
 "lockfile",
-"requests",
-"netcdf4",
-"h5py",
-"pandas",
-"scikit-learn",
-"patsy",
-"statsmodels",
-"numexpr",
-"tables",
-"scikit-image",
-"scimath",
-"Shapely",
-"SimPy",
-"pyproj",
+"paramiko",
+"psutil",
+"sockjs-tornado",
+# Optional
 "bitarray",
 "ggplot",
-"oct2py",
-"psutil",
+"h5py",
+"husl",
 "lxml",
 "munkres",
-"husl",
+"netcdf4",
+"numexpr",
+"oct2py",
+"pandas",
+"patsy",
+"pyproj",
+"requests",
+"scikit-image",
+"scikit-learn",
+"scimath",
 "seaborn",
-"moss",
+"Shapely",
+"SimPy",
+"statsmodels",
+"tables",
+"moss", # This one only complains about missing dependencies
 ]
 
 
@@ -458,9 +459,9 @@ def install_packages():
     os.chdir("..")
 
     log.info("installing pip packages")
+    check_call("sage/sage -pip install --upgrade pip")
     for package in python_packages:
-        check_call("sage/sage -pip install --no-deps --upgrade {}"
-                   .format(package))
+        check_call("sage/sage -pip install {}".format(package))
     log.info("patching sockjs-tornado")
     communicate("patch /home/{server}/sage/local/lib/python/site-packages/"
         "sockjs/tornado/basehandler.py", '''
