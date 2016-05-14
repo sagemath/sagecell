@@ -376,6 +376,11 @@ accepted_tos=true\n""")
                                             referer=referer,
                                             remote_ip=remote_ip,
                                             timeout=0)
+            if not self.kernel_id:
+                logger.error("could not obtain a valid kernel_id")
+                self.set_status(503)
+                self.finish()
+                return
             if not (remote_ip=="::1" and referer==""
                     and cron.match(code) is not None):
                 sm = StatsMessage(kernel_id=self.kernel_id,
