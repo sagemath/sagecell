@@ -21,7 +21,7 @@ submodules:
 build:
 	-rm -r build
 	cp -a $(sage-root)/local/lib/python/site-packages/notebook/static build
-	cp $(sage-root)/local/lib/python/site-packages/sagenb-*.egg/sagenb/data/sage/js/canvas3d_lib.js \
+	cp $(sage-root)/local/lib/python/site-packages/sagenb/data/sage/js/canvas3d_lib.js \
 	   $(sage-root)/local/share/threejs/build/three.js \
 	   $(sage-root)/local/share/threejs/examples/js/controls/OrbitControls.js \
 	   $(sage-root)/local/share/threejs/examples/js/Detector.js \
