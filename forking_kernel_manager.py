@@ -1,10 +1,11 @@
 import errno, os, resource, signal, uuid
 from multiprocessing import Pipe, Process
 
+from log import kernel_logger
+
 from ipykernel.kernelapp import IPKernelApp
 from traitlets.config.loader import Config
 
-from log import kernel_logger
 
 
 class KernelError(Exception):

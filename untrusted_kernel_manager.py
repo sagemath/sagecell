@@ -1,5 +1,7 @@
-from forking_kernel_manager import ForkingKernelManager, KernelError
 from log import kernel_logger
+
+from forking_kernel_manager import ForkingKernelManager, KernelError
+
 
 class UntrustedMultiKernelManager(object):
     def __init__(self, ip, update_function=None, tmp_dir=None):
@@ -49,9 +51,9 @@ if __name__ == "__main__":
         return 1
     x = UntrustedMultiKernelManager(f)
     y = x.start_kernel()
-    print y
+    print(y)
     from time import sleep 
     sleep(2)
-    print x.restart_kernel(y["kernel_id"])
+    print(x.restart_kernel(y["kernel_id"]))
     sleep(2)
     x.kill_kernel(y["kernel_id"])

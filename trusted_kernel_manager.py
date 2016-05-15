@@ -1,17 +1,14 @@
-import random, time, uuid
-
-import sender
-import socket
+import random, socket, time, uuid
 from Queue import Queue, Empty
 
+from log import logger
+
 import paramiko
+import sender
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
 from jupyter_client.session import Session
-
-
-from log import logger
 
 
 class TrustedMultiKernelManager(object):

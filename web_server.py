@@ -1,31 +1,25 @@
 #! /usr/bin/env python
 
-import os
+import fcntl, os, socket, struct
 
 import psutil
 
-# Sage Cell imports
 from log import logger
-import misc
-from trusted_kernel_manager import TrustedMultiKernelManager
 
-# Tornado / zmq imports
-from zmq.eventloop import ioloop
 import tornado.web
+import zmq.eventloop
+zmq.eventloop.ioloop.install()
 
-ioloop.install()
-
-# Globals
-# This matches a kernel id (uuid4 format) from a url
-_kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
-
-# Tornado Web Server
+import misc
 import handlers
 import permalink
+from trusted_kernel_manager import TrustedMultiKernelManager
 
 
 class SageCellServer(tornado.web.Application):
     def __init__(self, baseurl=""):
+        # This matches a kernel id (uuid4 format) from a url
+        _kernel_id_regex = r"(?P<kernel_id>\w+-\w+-\w+-\w+-\w+)"
         self.config = misc.Config()
         baseurl = baseurl.rstrip('/')
         handlers_list = [
@@ -59,7 +53,7 @@ class SageCellServer(tornado.web.Application):
             tmp_dir=tmp_dir)
         db = __import__('db_'+self.config.get_config('db'))
         self.db = db.DB(self.config.get_config('db_config')['uri'])
-        self.ioloop = ioloop.IOLoop.instance()
+        self.ioloop = zmq.eventloop.IOLoop.instance()
 
         # to check for blocking when debugging, uncomment the following
         # and set the argument to the blocking timeout in seconds
@@ -67,9 +61,6 @@ class SageCellServer(tornado.web.Application):
         self.completer = handlers.Completer(self.km)
         super(SageCellServer, self).__init__(handlers_list, **settings)
 
-import socket
-import fcntl
-import struct
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

@@ -1,5 +1,7 @@
 import sys, time
 
+from log import receiver_logger
+
 from ipykernel.jsonutil import json_clean
 import zmq
 
@@ -367,7 +369,6 @@ if __name__ == '__main__':
     ip = sys.argv[1]
     comp_id = sys.argv[2]
     tmp_dir = sys.argv[3]
-    from log import receiver_logger
     logger = receiver_logger.getChild(comp_id[:4])
     logger.debug('started')
     receiver = Receiver(ip, tmp_dir)

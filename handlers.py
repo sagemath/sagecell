@@ -1,12 +1,14 @@
-import time, urllib, zlib, base64, uuid, json, os.path
+import base64, json, math, os.path, re, time, urllib, uuid, zlib
 
+from log import StatsMessage, logger, stats_logger
+
+import tornado.gen
 import tornado.web
 import tornado.websocket
-import tornado.gen as gen
 import sockjs.tornado
 from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
-import math
+
 try:
     from sage.all import gap, gp, maxima, r, singular
     tab_completion = {
@@ -20,11 +22,6 @@ except ImportError:
     tab_completion = {}
 from misc import sage_json, Timer, Config
 config = Config()
-
-import re
-cron = re.compile("^print [-]?\d+\+[-]?\d+$")
-
-from log import StatsMessage, logger, stats_logger
 
 
 class RootHandler(tornado.web.RequestHandler):
@@ -125,7 +122,7 @@ class KernelHandler(tornado.web.RequestHandler):
     ``<ws_url>/shell`` is the expected shell stream url
     """
     @tornado.web.asynchronous
-    @gen.engine
+    @tornado.gen.engine
     def post(self, *args, **kwargs):
         method = self.get_argument("method", "POST")
         if method == "DELETE":
@@ -149,10 +146,11 @@ class KernelHandler(tornado.web.RequestHandler):
                 timeout = float(timeout)
                 if math.isnan(timeout) or timeout<0:
                     timeout = None
-            kernel_id = yield gen.Task(km.new_session_async,
-                                       referer = self.request.headers.get('Referer',''),
-                                       remote_ip = self.request.remote_ip,
-                                       timeout = timeout)
+            kernel_id = yield tornado.gen.Task(
+               km.new_session_async,
+               referer=self.request.headers.get('Referer', ''),
+               remote_ip=self.request.remote_ip,
+               timeout=timeout)
             data = {"ws_url": ws_url, "id": kernel_id}
             self.write(self.permissions(data))
             self.finish()
@@ -350,8 +348,10 @@ class ServiceHandler(tornado.web.RequestHandler):
     This handler is currently not production-ready. But it is used for health
     checks...
     """
+    cron = re.compile("^print [-]?\d+\+[-]?\d+$")
+
     @tornado.web.asynchronous
-    @gen.engine
+    @tornado.gen.engine
     def post(self):
         if config.get_config("requires_tos") and \
                 self.get_argument("accepted_tos", "false") != "true":
@@ -372,17 +372,19 @@ accepted_tos=true\n""")
             km = self.application.km
             remote_ip = self.request.remote_ip
             referer = self.request.headers.get('Referer','')
-            self.kernel_id = yield gen.Task(km.new_session_async,
-                                            referer=referer,
-                                            remote_ip=remote_ip,
-                                            timeout=0)
+            self.kernel_id = yield tornado.gen.Task(
+                km.new_session_async,
+                referer=referer,
+                remote_ip=remote_ip,
+                timeout=0)
             if not self.kernel_id:
                 logger.error("could not obtain a valid kernel_id")
                 self.set_status(503)
                 self.finish()
                 return
-            if not (remote_ip=="::1" and referer==""
-                    and cron.match(code) is not None):
+            if not (remote_ip == "::1"
+                    and referer == ""
+                    and self.cron.match(code) is not None):
                 sm = StatsMessage(kernel_id=self.kernel_id,
                                   remote_ip=remote_ip,
                                   referer=referer,
