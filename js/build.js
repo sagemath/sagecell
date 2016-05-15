@@ -1,7 +1,7 @@
 ({
     name: "main",
     out: "main_build.js",
-    optimize: "none",
+    //optimize: "none",
     paths: {
         "codemirror" : "components/codemirror",
         "jquery" : "components/jquery/jquery.min",
