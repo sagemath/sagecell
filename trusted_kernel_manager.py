@@ -39,7 +39,8 @@ class TrustedMultiKernelManager(object):
         #           "first_beat": Float,
         #           "resource_limits": {resource: limit}}
         self._clients = {}
-        # comp_id: {"ssh": paramiko client}
+        # comp_id: {"ssh": paramiko client,
+        #           "channel": paramico channel}
         self._sessions = {}
         # kernel_id: Session
 
@@ -88,44 +89,6 @@ class TrustedMultiKernelManager(object):
         comp = self._comps[comp_id]
         return (comp["beat_interval"], comp["first_beat"])
 
-    def _setup_ssh_connection(self, host, username):
-        """ Returns a paramiko SSH client connected to the given host. 
-
-        :arg str host: host to SSH to
-        :arg str username: username to SSH to
-        :returns: a paramiko SSH client connected to the host and username given
-        """
-        ssh_client = paramiko.SSHClient()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(host, username=username)
-        return ssh_client
-
-    def _ssh_untrusted(self, cfg, client, comp_id):
-        ip = socket.gethostbyname(cfg["host"])
-        code = "%s '%s/receiver.py' '%s' '%s' '%s'"%(cfg["python"], cfg["location"], ip, comp_id, self.tmp_dir)
-        logger.debug(code)
-        ssh_stdin, ssh_stdout, ssh_stderr = client.exec_command(code)
-        stdout_channel = ssh_stdout.channel
-
-        # Wait for untrusted side to respond with the bound port using paramiko channels
-        # Another option would be to have a short-lived ZMQ socket bound on the trusted
-        # side and have the untrusted side connect to that and send the port
-        output = ""
-        stdout_channel.settimeout(2.0)
-        polls = 0
-        while output.count("\n")!=2:
-            try:
-                output += stdout_channel.recv(1024)
-            except socket.timeout:
-                polls+= 1
-            if stdout_channel.closed:
-                logger.error(
-                    "An error occurred getting data from the untrusted side.")
-                return None
-            if polls>20:
-                return None
-        return int(output.split("\n")[0])
-
     def add_computer(self, config):
         """ Adds a tracked computer.
 
@@ -134,20 +97,42 @@ class TrustedMultiKernelManager(object):
         :rtype: string
         """
         defaults = self.default_computer_config
-        comp_id = str(uuid.uuid4())
         cfg = dict(defaults.items() + config.items())
         cfg["kernels"] = {}
+        
+        comp_id = str(uuid.uuid4())
+        host = cfg["host"]
+        ip = socket.gethostbyname(host)
 
-        client = self._setup_ssh_connection(cfg["host"], cfg["username"])
-        port = self._ssh_untrusted(cfg, client, comp_id)
-        if port is None:
-            logger.error("Computer %s did not respond, connecting failed!"%comp_id)
-        else:
-            self._sender.register_computer(cfg["host"], port, comp_id=comp_id)
-            self._clients[comp_id] = {"ssh": client}
-            self._comps[comp_id] = cfg
-            logger.info("ZMQ Connection with computer %s at port %d established." %(comp_id, port))
-            return comp_id
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(host, username=cfg["username"])
+        command = "{} '{}/receiver.py' '{}' '{}' '{}'".format(
+            cfg["python"], cfg["location"], ip, comp_id, self.tmp_dir)
+        logger.debug(command)
+        channel = client.exec_command(command)[0].channel
+        # Wait for untrusted side to respond with the bound port using paramiko
+        # channels.
+        # Another option would be to have a short-lived ZMQ socket bound on the
+        # trusted side and have the untrusted side connect to that and send the
+        # port
+        channel.settimeout(2.0)
+        output = ""
+        for poll in range(20):
+            try:
+                output += channel.recv(1024)
+            except socket.timeout:
+                continue
+            if output.count("\n") == 2:
+                port = int(output.split("\n")[0])
+                self._sender.register_computer(host, port, comp_id=comp_id)
+                self._comps[comp_id] = cfg
+                self._clients[comp_id] = {"ssh": client, "channel": channel}
+                logger.info(
+                    "ZMQ connection with computer %s at port %d established",
+                    comp_id, port)
+                return comp_id
+        logger.error("connection to computer %s failed", comp_id)
 
     def purge_kernels(self, comp_id):
         """ Kills all kernels on a given computer. 
@@ -246,8 +231,19 @@ class TrustedMultiKernelManager(object):
 
     def new_session_prefork(self, comp_id):
         """
-        Start up a new kernel asynchronously on a specific computer and put it in the prefork queue
+        Start up a new kernel asynchronously on a specified computer and put it
+        in the prefork queue. Also check if there are any messages in
+        stdout/stderr and fetch them - we don't need/expect anything, but if
+        there is accumulation of output computer will eventually lock.
         """
+        channel = self._clients[comp_id]["channel"]
+        if channel.recv_ready():
+            logger.debug("computer %s has stdout output: %s",
+                         comp_id, channel.recv(2**15))
+        if channel.recv_stderr_ready():
+            logger.debug("computer %s has stderr output: %s",
+                         comp_id, channel.recv_stderr(2**15))
+        
         resource_limits = self._comps[comp_id].get("resource_limits")
         def cb(reply):
             if reply["type"] == "success":
