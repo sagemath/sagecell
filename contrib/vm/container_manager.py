@@ -52,6 +52,7 @@ repositories = [
     ("novoselt", "sage", "sagecell"),
     ("sagemath", "sagecell", "master"),
     ("matplotlib", "basemap", "master"),
+    ("ipython", "ipykernel", "master"),
 ]
 
 # Packages to be installed in the base container
@@ -479,6 +480,9 @@ def install_packages():
          
                  headers = self.request.headers.get('Access-Control-Request-Headers')
         ''')
+    log.info("updating ipykernel to master")
+    shutil.move("github/ipykernel", ".")
+    check_call("sage/sage -pip install ipykernel")
 
 
 def install_sagecell():
