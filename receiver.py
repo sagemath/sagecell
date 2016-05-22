@@ -284,17 +284,11 @@ get_display_manager().switch_backend(BackendCell(), shell=get_ipython())
 r = R()
 """
             exec(sage_code, user_ns)
-        def getsource(obj, is_binary):
-            # modified from sage.misc.sagedoc.my_getsource
-            from sage.misc.sagedoc import sageinspect, format_src
-            try:
-                s = sageinspect.sage_getsource(obj, is_binary)
-                return format_src(str(s))
-            except Exception as e:
-                print('Error getting source: %s' % e.message)
-                
+            
         from IPython.core import oinspect
-        oinspect.getsource = getsource
+        from sage.misc.sagedoc import my_getsource
+        oinspect.getsource = my_getsource
+        
         import interact_sagecell
         import interact_compatibility
         import dynamic
@@ -304,12 +298,11 @@ r = R()
         user_ns.update(interact_compatibility.imports)
         user_ns.update(dynamic.imports)
         user_ns.update(exercise.imports)
-        user_ns['threejs']=sys._sage_.threejs
+        user_ns['threejs'] = sys._sage_.threejs
         sys._sage_.update_interact = interact_sagecell.update_interact
 
-    """
-    Message Handlers
-    """
+    # Message Handlers
+    
     def invalid_message(self, msg_content):
         """Handler for unsupported messages."""
         return self._form_message({"status": "Invalid message!"}, error = True)

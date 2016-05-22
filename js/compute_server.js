@@ -524,10 +524,13 @@ sagecell.Session.prototype.clear = function (block_id, changed) {
 };
 
 sagecell.Session.prototype.output = function(html, block_id) {
-    // Return a DOM element for new content.  The html is appended to the html block and the newly appended content element is returned
-    var output_block=$(block_id === null ? this.output_block : interacts[block_id].output_block);
-    if (output_block.length===0) {return;}
-    return $(html).appendTo(output_block);
+    // Return a DOM element for new content. The html is appended to the html
+    // block and the newly appended content element is returned.
+    var output_block = $(block_id === null ?
+        this.output_block : interacts[block_id].output_block);
+    if (output_block.length !== 0) {
+        return $(html).appendTo(output_block);
+    };
 };
 
 sagecell.Session.prototype.handle_message_reply = function(msg) {
@@ -545,7 +548,10 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
     // TODO: handle payloads with a payload callback, instead of in the execute_reply
     // That would be much less brittle
     var payload = msg.content.payload[0];
-    if (payload && payload.new_files && payload.new_files.length>0){
+    if (!payload) {
+        return;
+    };
+    if (payload.new_files && payload.new_files.length > 0) {
         var files = payload.new_files;
         var output_block = this.outputDiv.find("div.sagecell_sessionFiles");
         var html="<div>\n";
@@ -563,7 +569,11 @@ sagecell.Session.prototype.handle_execute_reply = function(msg) {
         }
         html+="</div>";
         output_block.html(html).effect("pulsate", {times:1}, 500);
-    }
+    };
+    if (payload.data && payload.data['text/plain']) {
+        this.output('<pre class="sagecell_payload"></pre>', null).html(
+            utils.fixConsole(payload.data['text/plain']));
+    };
 }
     
 sagecell.Session.prototype.handle_output = function (msg, default_block_id) {
