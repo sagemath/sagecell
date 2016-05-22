@@ -117,10 +117,16 @@ var interacts = {};
 
     Right now, the IPython websocket connection urls are messed up (they prepend a phony ws_host), but that's okay because the regexp
     pulls out the kernel id and everything is fine.
+
+    We make sure not to apply our handling multiple time (possible when
+    the embedding script is included many times).
 */
 var url_parts = new RegExp("^((([^:/?#]+):)?(//([^/?#]*))?)?(.*)");
 var strip_hostname = function(f) {
-    return function() {
+    if (f._strip_hostname_applied) {
+        return f;
+    };
+    var wrapped = function() {
         // override IPython function to account for leading protocol and hostname
         // assume that the first argument has the part to strip off, if any
         var hostname = '';
@@ -130,7 +136,9 @@ var strip_hostname = function(f) {
             arguments[0] = parts[6]; // url path
         }
         return hostname+f.apply(null,arguments);
-    }
+    };
+    wrapped._strip_hostname_applied = true;
+    return wrapped;
 }
 utils.url_join_encode = strip_hostname(utils.url_join_encode);
 utils.url_path_join = strip_hostname(utils.url_path_join);
