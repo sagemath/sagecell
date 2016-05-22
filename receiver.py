@@ -300,6 +300,12 @@ r = R()
         user_ns.update(exercise.imports)
         user_ns['threejs'] = sys._sage_.threejs
         sys._sage_.update_interact = interact_sagecell.update_interact
+        
+        import warnings
+        warnings.filterwarnings('ignore', module="IPython.core.formatters")
+        # Prevent Sage from dropping warning filters
+        import sage.misc.superseded
+        sage.misc.superseded.resetwarnings = lambda: None
 
     # Message Handlers
     
