@@ -68,6 +68,17 @@ class ForkingKernelManager(object):
         # kernels that eventually crash the server. TODO: figure out a better
         # fix, perhaps kernels have to be stopped in a more gentle fashion?
         ka.cleanup_connection_file()
+        # In order to show the correct code line when a (deprecation) warning
+        # is triggered, we change the main module name and save user code to
+        # a file with the same name.
+        import sys
+        sys.argv = ['sagemathcell.py']
+        old_execute = ka.kernel.do_execute
+        def new_execute(code, *args, **kwds):
+            with open("sagemathcell.py", "w") as f:
+                f.write(code)
+            return old_execute(code, *args, **kwds)
+        ka.kernel.do_execute = new_execute
         ka.start()
 
     def start_kernel(self, kernel_id=None, config=None, resource_limits=None):
