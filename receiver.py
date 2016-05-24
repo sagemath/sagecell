@@ -101,25 +101,30 @@ class Receiver(object):
         import graphics
         _sage_.threejs = graphics.show_3d_plot_using_threejs
         _sage_.InteractiveGraphics = graphics.InteractiveGraphics
+        
         def new_files(root='./'):
             import os
             import sys
             new_files = []
-            for top,dirs,files in os.walk(root):
+            for top, dirs, files in os.walk(root):
                 for dir in dirs:
                     if dir.endswith(".jmol"):
                         dirs.remove(dir)
                 for nm in files:
-                    path = os.path.join(top,nm)
+                    path = os.path.join(top, nm)
                     if path.startswith('./'):
                         path = path[2:]
                     mtime = os.stat(path).st_mtime
-                    if path not in sys._sage_.sent_files or sys._sage_.sent_files[path] < mtime:
-                        new_files.append(path)
-                        sys._sage_.sent_files[path] = mtime
+                    if (path == "sagemathcell.py"
+                        or path in sys._sage_.sent_files
+                        and sys._sage_.sent_files[path] >= mtime):
+                        continue
+                    new_files.append(path)
+                    sys._sage_.sent_files[path] = mtime
             ip = user_ns['get_ipython']()
             ip.payload_manager.write_payload({"new_files": new_files})
             return ''
+        
         _sage_.new_files = new_files
 
         def handler_wrapper(key, handler):
