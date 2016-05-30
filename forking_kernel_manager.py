@@ -74,10 +74,13 @@ class ForkingKernelManager(object):
         import sys
         sys.argv = ['sagemathcell.py']
         old_execute = ka.kernel.do_execute
+        import codecs
+        
         def new_execute(code, *args, **kwds):
-            with open("sagemathcell.py", "w") as f:
+            with codecs.open('sagemathcell.py', 'w', encoding='utf-8') as f:
                 f.write(code)
             return old_execute(code, *args, **kwds)
+            
         ka.kernel.do_execute = new_execute
         ka.start()
 
