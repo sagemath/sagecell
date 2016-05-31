@@ -65,26 +65,16 @@ like)::
 Basic Usage
 -----------
 
-The following lines should be inserted into ``<head>``:
+The following line should be inserted into ``<head>``:
 
 .. code-block:: html
 
-   <script src="http://<server>/static/jquery.min.js"></script>
    <script src="http://<server>/embedded_sagecell.js"></script>
 
 where ``<server>`` is the root url of a live Sage Cell server. This downloads
 additional required JavaScript and CSS libraries and creates a global JavaScript
 object called ``sagecell``. Use :ref:`sagecell.init() <sagecell.init_embed>`
 for more configuration options upon initialization, including callback functionality.
-
-.. note:: The Sage Cell uses version 1.7 of the jQuery library. If the page on
-   which it will be embedded also uses jQuery and loads it before loading
-   ``embedded_sagecell.js``, the first line of the above HTML may be omitted.
-   However, if the version of jQuery loaded is incompatible with the Sage Cell,
-   the required version should be loaded as above, in addition to the version
-   used by the embedding page. As long as the Sage Cell's version is loaded
-   immediately before ``embedded_sagecell.js``, the Sage Cell will use that
-   version, but also allow the main page to use its preferred version.
 
 Later, the following JavaScript should be run::
 
