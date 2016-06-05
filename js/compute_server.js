@@ -401,8 +401,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
     pl_button.addEventListener("mousedown", stop);
     pl_box.addEventListener("mousedown", stop);
     events.on("kernel_busy.Kernel", function (evt, data) {
-        console.debug("kernel_busy.Kernel");
-        if (data.kernel.kernel_id === that.kernel.kernel_id) {
+        console.debug("kernel_busy.Kernel for", data.kernel.id);
+        if (data.kernel.id === that.kernel.id) {
             that.spinner.style.display = "";
         }
     });
@@ -410,8 +410,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         that.updateLinks(false);
     });
     events.on("kernel_idle.Kernel", function (evt, data) {
-        console.debug("kernel_idle.Kernel");
-        if (data.kernel.kernel_id !== that.kernel.kernel_id) {
+        console.debug("kernel_idle.Kernel for", data.kernel.id);
+        if (data.kernel.id !== that.kernel.id) {
             return;
         }
         that.spinner.style.display = "none";
@@ -435,8 +435,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         that.interact_vals = [];
     });
     var killkernel = function (evt, data) {
-        console.debug("killkernel");
-        if (data.kernel.kernel_id === that.kernel.kernel_id) {
+        console.debug("killkernel for", data.kernel.id);
+        if (data.kernel.id === that.kernel.id) {
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
