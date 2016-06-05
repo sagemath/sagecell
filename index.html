@@ -1,90 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
   <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Sage Cell Server : Bringing Sage to the world" />
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
+    <meta charset='utf-8'>
     <title>Sage Cell Server</title>
   </head>
-
   <body>
-
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/sagemath/sagecell">View on GitHub</a>
-
-          <h1 id="project_title">Sage Cell Server</h1>
-          <h2 id="project_tagline">Bringing Sage to the world</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/sagemath/sagecell/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/sagemath/sagecell/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <p>The Sage Cell Server provides a <a href="http://sagemath.org">Sage</a> computation web service. The <a href="http://sage.math.washington.edu/home/jason/sagecell/">documentation</a> gives instructions for setting up your own server, or you can use the flagship server at <a href="http://aleph.sagemath.org">aleph.sagemath.org</a>.</p>
-
-<p>You can easily <a href="http://sage.math.washington.edu/home/jason/sagecell/embedding.html">embed</a> Sage into any webpage.  Here is a short example:</p>
-
-<pre><code>&lt;!DOCTYPE HTML&gt;
-&lt;html&gt;
-  &lt;head&gt;
-    &lt;meta charset="utf-8"&gt;
-    &lt;meta name="viewport" content="width=device-width"&gt;
-    &lt;title&gt;Sage Cell Server&lt;/title&gt;
-    &lt;script src="http://aleph.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
-    &lt;script src="http://aleph.sagemath.org/embedded_sagecell.js"&gt;&lt;/script&gt;
-    &lt;script&gt;
-$(function () {
-    sagecell.makeSagecell({inputLocation:  '#mycell',
-                           template:       sagecell.templates.minimal,
-                           evalButtonText: 'Activate'});
-    sagecell.makeSagecell({inputLocation: '#mycell2',
-                           evalButtonText: 'Evaluate'});
-});
-    &lt;/script&gt;
-  &lt;/head&gt;
-  &lt;body&gt;
-  &lt;h1&gt;Embedded Sage Cells&lt;/h1&gt;
-
-  &lt;h2&gt;Factorial&lt;/h2&gt;
-  Click the "Activate" button below to calculate factorials.
-    &lt;div id="mycell"&gt;&lt;script type="text/x-sage"&gt;
-@interact
-def _(a=(1, 10)):
-    print factorial(a)
- &lt;/script&gt;
-&lt;/div&gt;
-
-&lt;h2&gt;Your own computation&lt;/h2&gt;
-Type your own Sage computation below and click &amp;ldquo;Evaluate&amp;rdquo;.
-    &lt;div id="mycell2"&gt;&lt;script type="text/x-sage"&gt;plot(sin(x), (x, 0, 2*pi))&lt;/script&gt;&lt;/div&gt;
-  &lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-
-<p>The Sage Cell Server is based upon work supported by the National Science Foundation (DUE-1022574). Any opinions, findings, and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation.</p>
-      </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Sage Cell Server maintained by <a href="https://github.com/sagemath">sagemath</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
-    
-
+    <script>
+      window.location = 'http://sagecell.sagemath.org/';
+    </script>
   </body>
 </html>
