@@ -5,6 +5,7 @@ require([
     "compute_server",
     "codemirror/lib/codemirror",
     // Unreferenced dependencies
+    "codemirror/addon/display/autorefresh",
     "codemirror/addon/display/fullscreen",
     "codemirror/addon/edit/matchbrackets",
     "codemirror/addon/fold/foldcode",
@@ -848,6 +849,7 @@ sagecell.renderEditor = function (editor, inputLocation, collapse) {
         }
 
         editorData = CodeMirror.fromTextArea(commands.get(0), {
+            autoRefresh: true,
             mode: sagecell.modes[mode],
             viewportMargin: Infinity,
             indentUnit: 4,
