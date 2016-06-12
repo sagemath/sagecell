@@ -2,8 +2,14 @@
     name: "main",
     out: "main_build.js",
     //optimize: "none",
+    packages: [
+        {
+            name: "codemirror",
+            location: "components/codemirror",
+            main: "lib/codemirror"
+        }
+    ],
     paths: {
-        "codemirror" : "components/codemirror",
         "jquery" : "components/jquery/jquery.min",
         "jquery-ui" : "components/jquery-ui/ui/minified/jquery-ui.min",
         "moment" : "components/moment/min/moment.min",
