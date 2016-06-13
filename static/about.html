@@ -5,10 +5,10 @@
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="root.css">
     <link rel="stylesheet" href="all.min.css">
-    <title>About the Sage Cell Server</title>
+    <title>About SageMathCell</title>
   </head>
   <body>
-    <h1>About the Sage Cell Server</h1>
+    <h1>About SageMathCell</h1>
     <ol class="sagecell_toc">
       <li>
         <a href="#instructions">Instructions</a>
@@ -23,16 +23,16 @@
       <li><a href="#authors">Authors</a></li>
     </ol>
     <p>
-      The <a href="https://github.com/sagemath/sagecell">Sage Cell Server</a>
+      <a href="https://github.com/sagemath/sagecell">SageMathCell</a>
       is an <a href="https://github.com/sagemath/sagecell/blob/master/LICENSE.txt">open-source</a>,
       scalable, and easy-to-use web interface to
       <a href="http://sagemath.org">Sage</a>, a comprehensive open-source math
-      software system. Additionally, the Sage Cell Server can be used to embed
+      software system. Additionally, SageMathCell can be used to embed
       Sage computations into any webpage.
     </p>
     <p>
       Here are <a href="amsjointslides-2013/index.html">slides</a>
-      to a short introductory talk about the Sage Cell Server given at the
+      to a short introductory talk about SageMathCell given at the
       Joint AMS/MAA Mathematical conference in San Diego, January 2013.
     </p>
     <h2 id="instructions">Instructions</h2>
@@ -43,11 +43,10 @@
       <p>
         Include the following HTML at the top of the webpage
         (optionally replacing <code>sagecell.sagemath.org</code> with the name
-        of your server). The third line makes it so that any element with a
+        of your server). The second line makes it so that any element with a
         class of <code>sage</code> will turn into a Sage cell.
       </p>
-      <pre data-lang="text/html">&lt;script src="https://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
-&lt;script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
+      <pre data-lang="text/html">&lt;script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
 &lt;script&gt;sagecell.makeSagecell({"inputLocation": ".sage"});&lt;/script&gt;</pre>
       <p>
         If you are embedding into a webpage with lots of styling (like
@@ -67,7 +66,9 @@
   &lt;script type="text/x-sage"&gt;1+2&lt;/script&gt;
 &lt;/div&gt;</pre>
       </li>
-      
+      <li>
+        Subscribe to the discussion group <a href="https://groups.google.com/forum/#!forum/sage-cell">sage-cell</a> to be aware of changes and issues.
+      </li>
     </ol>
     There are <a href="https://github.com/sagemath/sagecell/blob/master/doc/embedding.rst">lots of options</a>
     controlling how cells are embedded, including:
@@ -96,8 +97,7 @@
   &lt;head&gt;
     &lt;meta charset="utf-8"&gt;
     &lt;meta name="viewport" content="width=device-width"&gt;
-    &lt;title&gt;Sage Cell Server&lt;/title&gt;
-    &lt;script src="https://sagecell.sagemath.org/static/jquery.min.js"&gt;&lt;/script&gt;
+    &lt;title&gt;SageMathCell&lt;/title&gt;
     &lt;script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
     &lt;script&gt;$(function () {
     // Make the div with id 'mycell' a Sage cell
@@ -135,7 +135,7 @@ def f(n=(0,10)):
 </pre>
 
     <h3 id="permalinks">Permalinks</h3>
-    The Sage Cell Server has two types of permalinks generated with each
+    SageMathCell has two types of permalinks generated with each
     computation (accessible from links at the upper right of any output).
     <dl>
       <dt>Permalink<dt>
@@ -143,21 +143,21 @@ def f(n=(0,10)):
           A URL which contains a compressed version of the code. This is a
           truly permanent link that does not depend on the server storing the
           code (since the text is encoded in the URL itself). This URL can be
-          used with a different Sage Cell Server simply by changing the
+          used with a different server simply by changing the
           domain name. If the code is too long, the length of the URL may
           cause problems in some browsers.
         </dd>
       <dt>Shortened Temporary Link</dt>
       <dd>
         A shorter URL containing an identifier for the code. The code is
-        stored in a database on the server and retrieved using the ID, so the
-        link will be valid only with a single server, and only as long as the
-        server database retains the input.
+        stored in a database and retrieved using the ID, so the
+        link will be valid only with servers connected to the same database, and only as long as the
+        database retains the input.
       </dd>
     </dl>
     <h2 id="in-use">Where is it used?</h2>
-    The Sage Cell Server is used in a variety of places. If you know of
-    another use of the Sage Cell Server, please let us know.
+    SageMathCell is used in a variety of places. If you know of
+    another use of SageMathCell, please let us know.
     <ul>
       <li>
         Curricular materials
@@ -196,10 +196,6 @@ def f(n=(0,10)):
         </ul>
       </li>
       <li>
-        The <a href="http://interact.sagemath.org">Sage Interact website</a>,
-        an online resource for submitting and browsing Sage interacts
-      </li>
-      <li>
         <a href="http://www.sagemath.org/eval.html">Short example computations</a>
         on the Sage website
       </li>
@@ -207,13 +203,13 @@ def f(n=(0,10)):
         The <a href="http://wiki.sagemath.org/interact/">Sage Wiki</a>
       </li>
       <li>
-        The Sage Cell Server powers the Sage
+        SageMathCell powers the Sage
         <a href="https://play.google.com/store/apps/details?id=org.sagemath.droid">Android</a> and
         <a href="https://itunes.apple.com/us/app/sage-math/id496492945">iOS</a> apps
       </li>
     </ul>
     <h2 id="technology">Technology used</h2>
-    The Sage Cell Server is built on top of the
+    SageMathCell is built on top of the
     <a href="http://ipython.org">IPython</a> architecture for executing Python
     code remotely. We use:
     <ul>
@@ -227,12 +223,6 @@ def f(n=(0,10)):
         untrusted multikernel manager launches new kernels using a
         <a href="https://github.com/sagemath/sagecell/blob/master/forking_kernel_manager.py">Forking Kernel Manager</a>,
         which starts kernels quickly by forking a master process and maintaining a queue of preforked kernels.
-      </li>
-      <li>
-        <a href="https://github.com/sagemath/sagecell/tree/master/sage-patches">Patches</a>
-        to Sage which implement the
-        <a href="http://ipython.org/ipython-doc/stable/development/messaging.html">IPython message protocol</a>
-        in Sage
       </li>
       <li>
         A <a href="https://github.com/sagemath/sagecell/blob/master/interact_sagecell.py">new implementation</a>
@@ -292,23 +282,23 @@ def f(n=(0,10)):
       Drake University (thanks to the
       <a href="http://utmost.aimath.org">UTMOST</a> NSF funding and a
       <a href="http://artsci.drake.edu/grout/lib/exe/fetch.php/assistantships-scalableinternetinterfaceforsage.pdf">Drake internal grant</a>)
-      to design and implement the first version of the Sage Cell Server in the
+      to design and implement the first version of SageMathCell in the
       summer of 2011. Ira Hanson worked with Michael Gage, Jason Aubrey, Davide
       Cervone, and John Travis from WeBWorK at
       <a href="http://wiki.sagemath.org/days31">Sage Days 31</a> to allow Sage
       cells to be embedded in WeBWorK problems and other external pages.  In
       July 2011, the Sage Cell developers
       <a href="https://groups.google.com/forum/?fromgroups=#!topic/sage-devel/SRnR9vdNmBc">announced</a>
-      the release of an open beta for the Sage Cell Server Version 1 on a
+      the release of an open beta for SageMathCell Version 1 on a
       public server for testing.
     </p>
     <p>
-      Version 1 of the Sage Cell Server reimplemented much of the IPython 0.12
+      Version 1 of SageMathCell reimplemented much of the IPython 0.12
       messaging protocol in a custom layer on top of Sage (since IPython was
       not yet mature enough to be included in Sage). Jason, Ira, and Alex
       continued maintaining and improving this codebase throughout the
       2011&ndash;2012 academic year. The Android and iOS apps, which relied on
-      the Sage Cell Server, were built by Ivan Andrus and Volker Braun. People
+      SageMathCell, were built by Ivan Andrus and Volker Braun. People
       started incorporating Sage Cells into their curricular materials, and
       momentum was gathering. Alex and Jason attended
       <a href="http://wiki.sagemath.org/days35.5">Sage Days 35.5</a> to help
@@ -319,7 +309,7 @@ def f(n=(0,10)):
       included in Sage and serve as a base for the Cell Server. Steven Johnson
       joined Jason, Ira, and Alex to work full-time (under NSF funding) during
       the summer of 2012 to go back to the drawing board and redesign and
-      reimplement the Sage Cell Server to take advantage of insights gained
+      reimplement SageMathCell to take advantage of insights gained
       during the first year. Byron Varberg also joined the Drake Sage Group to
       implement the
       <a href="http://interact.sagemath.org">Sage Interact website</a>. Sage
