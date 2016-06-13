@@ -1,12 +1,12 @@
 .. _embedding:
 
-Embedding Sage Cell Instances
-=============================
+Embedding Sage Cells
+====================
 
 .. default-domain:: js
 .. highlight:: javascript
 
-You can embed multiple customized instances of the Sage Cell in
+You can embed multiple customized Sage cells in
 arbitrary webpages. Customizable options include location of input and
 output and functionality shown to the user.
 
@@ -15,7 +15,7 @@ Example
 
 This is a very simple HTML page showing how to embed two cells with
 most things turned off and a default piece of code (you can replace
-``sagecell.sagemath.org`` with a different Sage Cell server, if you
+``sagecell.sagemath.org`` with a different SageMathCell server, if you
 like)::
 
    <!DOCTYPE HTML>
@@ -23,11 +23,9 @@ like)::
      <head>
        <meta charset="utf-8">
        <meta name="viewport" content="width=device-width">
-       <title>Sage Cell Server</title>
-       <script src="http://sagecell.sagemath.org/static/jquery.min.js"></script>
+       <title>SageMathCell</title>
        <script src="http://sagecell.sagemath.org/embedded_sagecell.js"></script>
        <script>
-   $(function () {
        // Make the div with id 'mycell' a Sage cell
        sagecell.makeSagecell({inputLocation:  '#mycell',
                               template:       sagecell.templates.minimal,
@@ -35,7 +33,6 @@ like)::
        // Make *any* div with class 'compute' a Sage cell
        sagecell.makeSagecell({inputLocation: 'div.compute',
                               evalButtonText: 'Evaluate'});
-   });
        </script>
      </head>
      <body>
@@ -71,7 +68,7 @@ The following line should be inserted into ``<head>``:
 
    <script src="http://<server>/embedded_sagecell.js"></script>
 
-where ``<server>`` is the root url of a live Sage Cell server. This downloads
+where ``<server>`` is the root url of a SageMathCell server. This downloads
 additional required JavaScript and CSS libraries and creates a global JavaScript
 object called ``sagecell``. Use :ref:`sagecell.init() <sagecell.init_embed>`
 for more configuration options upon initialization, including callback functionality.
@@ -80,38 +77,37 @@ Later, the following JavaScript should be run::
 
    sagecell.makeSagecell({inputLocation: "[jQuery selector]"});
 
-This creates a basic Sage Cell instance at the location matching
-``inputLocation``. This location must be a selector for a unique HTML
-element in which content can be dynamically placed. See the
+This creates basic Sage cells at the locations matching
+``inputLocation``. See the
 documentation for :ref:`sagecell.makeSagecell()
 <sagecell.makeSagecell>` for more configuration options. This function
 returns an object containing information necessary to later move
-portions of or remove the entirety of the Sage Cell instance if
+portions of or remove the entirety of the Sage cell if
 desired.
 
 ``sagecell.makeSagecell()`` can be called multiple times to embed multiple
-Sage Cell instances, as long as the input (and output, if specified) locations
-of each instance are unique to the page.
+Sage cells, as long as the input (and output, if specified) locations
+of each call are unique to the page.
 
-To remove a Sage Cell instance, the following JavaScript can be used::
+To remove a Sage cell, the following JavaScript can be used::
 
    sagecell.deleteSagecell(sagecellInfo);
 
-where ``sagecellInfo`` is the object returned upon that Sage Cell
-instance's creation by ``sagecell.makeSagecell()``.
+where ``sagecellInfo`` is the object returned upon that Sage cell creation by
+``sagecell.makeSagecell()``.
 
-Sage Cell instances can be safely embedded within HTML forms (even though each
-instance contains form elements) since those form elements are copied to a
+Sage cells can be safely embedded within HTML forms (even though each
+cell contains form elements) since those form elements are copied to a
 hidden form outside of the embedded context. However, in such a case, it may
-not be optimal for external form submission to include Sage Cell elements. To
+not be optimal for external form submission to include cell elements. To
 prevent this issue, the following JavaScript can be used before and after form
-submission to move and restore the Sage Cell::
+submission to move and restore the Sage cell::
 
    sagecell.moveInputForm(sagecellInfo); // before submission
    sagecell.restoreInputForm(sagecellInfo); // after submission
 
-where ``sagecellInfo`` is the object returned upon that Sage Cell
-instance's creation by ``sagecell.makeSagecell()``.
+where ``sagecellInfo`` is the object returned upon that Sage cell creation by
+``sagecell.makeSagecell()``.
 
 .. _Customization:
 
@@ -120,15 +116,14 @@ Customization
 
 All customization occurs through ``sagecell.makeSagecell()``, which takes a
 dictionary as its argument. The key/value pairs of this dictionary serve as the
-configuration of the created Sage Cell instance. The following options can be
+configuration of the created Sage cell. The following options can be
 set when embedding:
 
 Input Location
 ^^^^^^^^^^^^^^
 
-This sets the location of the input elements of a Sage Cell, which includes
-the editor, editor toggle, "Sage Mode" selector, file upload selector, and the
-evaluate button::
+This sets the location of the input elements of a Sage cell, which includes
+the editor, mode selector, and the evaluate button::
 
    { ..
    inputLocation: "#..."
@@ -136,7 +131,7 @@ evaluate button::
 
 The ``inputLocation`` argument (required) should be a
 `jQuery selector <http://api.jquery.com/category/selectors/>`_ (which
-may actually return more than one DOM element---each one will be made
+may actually return more than one DOM element --- each one will be made
 into a Sage cell). If a DOM node is a textarea, the textarea will be used
 as the basis for the code input box (this can be helpful if you are
 trying to make an existing form textarea a live Sage cell).
@@ -144,7 +139,7 @@ trying to make an existing form textarea a live Sage cell).
 Output Location
 ^^^^^^^^^^^^^^^
 
-This sets the location of the output elements of a Sage Cell, which includes
+This sets the location of the output elements of a Sage cell, which includes
 the session output and server messages::
 
    { ..
@@ -176,11 +171,6 @@ Available options are:
 
 * ``textarea-readonly`` - like ``textarea``, but not editable
 
-Note that Sage Cell editor toggling functionality only switches between the
-group of editors that are editable or static. For instance, ``textarea-readonly``
-can only become ``codemirror-readonly``, rather than ``textarea`` or
-``codemirror``.
-
 Default code
 ^^^^^^^^^^^^
 
@@ -207,8 +197,8 @@ of type ``text/x-sage`` containing the default Python/Sage code:
 .. code-block:: html
 
        <script type="text/x-sage" id="mycode">
-   print "Here's some code!"
-   print "Hello World"
+   print("Here's some code!")
+   print("Hello World")
        </script>
 
 Note that all whitespace is preserved inside of the ``<script>``
@@ -253,7 +243,7 @@ This sets the text of the evaluate button::
 Languages
 ^^^^^^^^^
 
-This sets the list of languages that can be evaluated in the Sage Cell::
+This sets the list of languages that can be evaluated in the Sage cell::
 
    { ..
    languages: ["sage", ...]
@@ -271,7 +261,7 @@ array.
 Managing subsequent sessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This sets whether subsequent session output (future Sage Cell evaluations)
+This sets whether subsequent session output (future Sage cell evaluations)
 should replace or be displayed alongside current session output::
 
    { ..
@@ -281,17 +271,17 @@ should replace or be displayed alongside current session output::
 Automatic evaluation
 ^^^^^^^^^^^^^^^^^^^^
 
-This sets whether the Sage Cell will immediately evalute the code from the
-``code`` option::
+This sets whether the code from the ``code`` option will be immediately evaluated,
+without the need for pressing a button::
 
    { ..
    autoeval: boolean
    .. }
 
 Callback
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^
 
-This is a function with no arguments that will be called after the Sage Cell
+This is a function with no arguments that will be called after SageMathCell
 has finished loading::
 
    { ..
@@ -301,7 +291,7 @@ has finished loading::
 Hiding Sage Cell elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This hides specified parts of the Sage Cell using CSS ``display: none``::
+This hides specified parts of the Sage cell using CSS ``display: none``::
 
    { ..
    hide: ["element_1", ... , "element_n"]
@@ -327,17 +317,13 @@ Additionally, the following debugging elements are hidden by default:
 
 These elements can be displayed in :ref:`debug_mode`.
 
-.. todo:: It might be nice to make a more user-friendly way of saying
-   that a session is done, maybe by changing the background color or
-   letting the page author pass in a CSS "style" or maybe a class?
-
 .. _Templates:
 
 Templates
 ^^^^^^^^^
 
-Templates provide an alternative way to set certain Sage Cell properties and
-are designed to simplify the process of embedding multiple instances on the
+Templates provide an alternative way to set certain Sage cell properties and
+are designed to simplify the process of embedding multiple cells on the
 same page. A template is a JavaScript dictionary with key/value pairs
 corresponding to desired key/value pairs given to
 ``sagecell.makeSagecell()``.
@@ -354,7 +340,7 @@ documentation for :ref:`customization <Customization>` for full syntax
 information, as these options mirror what can be given to
 ``sagecell.makeSagecell()``).
 
-* Hiding Sage Cell elements::
+* Hiding Sage cell elements::
 
    { ..
    hide: ["element_1", .. , "element_n"]
@@ -420,5 +406,4 @@ A special "debug" mode is avaliable by passing the following to
 This shows all page elements (overriding ``hide`` specification), which provides
 session titles and sent / recieved message logging that are otherwise hidden by
 default. Since this mode is not intended for production purposes, a browser
-warning will be raised when initializing a Sage Cell instance in debug mode.
-
+warning will be raised when initializing a Sage cell in debug mode.
