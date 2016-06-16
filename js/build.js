@@ -16,6 +16,7 @@
         "requireLib": "components/requirejs/require",
         "underscore" : "components/underscore/underscore-min"
     },
+    waitSeconds: 70,
     include: [
         "requireLib"
     ]
