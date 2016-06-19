@@ -1,6 +1,6 @@
 require([
     "jquery",
-    "base/js/utils",
+    "utils",
     "services/kernels/kernel",
     "compute_server",
     "codemirror/lib/codemirror",
@@ -95,7 +95,7 @@ if (sagecell.loadMathJax === undefined) {
     sagecell.loadMathJax = true;
 }
 
-var ce = sagecell.util.createElement;
+var ce = utils.createElement;
 var deferred_eval = [];
 sagecell.init = function (callback) {
     if (sagecell.dependencies_loaded !== undefined) {
