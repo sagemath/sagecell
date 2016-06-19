@@ -1,8 +1,9 @@
 require([
     "jquery",
-    "utils",
     "services/kernels/kernel",
-    "compute_server",
+    "multisockjs",
+    "session",
+    "utils",
     "codemirror/lib/codemirror",
     // Unreferenced dependencies
     "codemirror/addon/display/autorefresh",
@@ -31,13 +32,13 @@ require([
     "OrbitControls",
     "Detector",
     "JSmol",
-    "3d",
-    "mpl"
+    "3d"
 ], function(
     $,
-    utils,
     Kernel,
-    compute_server,
+    MultiSockJS,
+    Session,
+    utils,
     CodeMirror
    ) {
 "use strict";
@@ -465,7 +466,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
 
         var code = textArea.val();
         var language = langSelect[0].value;
-        var session = new sagecell.Session(outputLocation, language,
+        var session = new Session(outputLocation, language,
             sagecellInfo.interacts || [], k, sagecellInfo.linked || false);
         sagecellInfo.session = session;
         sagecellInfo.interacts = [];
@@ -681,7 +682,7 @@ var completerMsg = function (msg, callback) {
         sagecell.completer.send(JSON.stringify(msg));
     };
     if (sagecell.completer === undefined) {
-        sagecell.completer = new sagecell.MultiSockJS(null, "complete");
+        sagecell.completer = new MultiSockJS(null, "complete");
         sagecell.completer.onmessage = function (event) {
             var data = JSON.parse(event.data);
             var cb = callbacks[data.parent_header.msg_id];

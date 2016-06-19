@@ -13,13 +13,13 @@ function MultiSockJS(url, prefix) {
         console.debug("Initializing MultiSockJS to " + sagecell.URLs.sockjs);
         MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, {});
 
-        MultiSockJS.sockjs.onopen = function (e) {
+        MultiSockJS.sockjs.onopen = function(e) {
             while (MultiSockJS.to_init.length > 0) {
                 MultiSockJS.to_init.shift().init_socket(e);
             }
         }
 
-        MultiSockJS.sockjs.onmessage = function (e) {
+        MultiSockJS.sockjs.onmessage = function(e) {
             var i = e.data.indexOf(",");
             var prefix = e.data.substring(0, i);
             console.debug("MultiSockJS.sockjs.onmessage prefix: " + prefix);
@@ -30,7 +30,7 @@ function MultiSockJS(url, prefix) {
             }
         }
 
-        MultiSockJS.sockjs.onclose = function (e) {
+        MultiSockJS.sockjs.onclose = function(e) {
             var readyState = MultiSockJS.sockjs.readyState;
             for (var prefix in MultiSockJS.channels) {
                 MultiSockJS.channels[prefix].readyState = readyState;
@@ -48,12 +48,12 @@ function MultiSockJS(url, prefix) {
     this.init_socket();
 }
 
-MultiSockJS.prototype.init_socket = function (e) {
+MultiSockJS.prototype.init_socket = function(e) {
     if (MultiSockJS.sockjs.readyState) {
         var that = this;
         // Run the onopen function after the current thread has finished,
         // so that onopen has a chance to be set.
-        setTimeout(function () {
+        setTimeout(function() {
             that.readyState = MultiSockJS.sockjs.readyState;
             if (that.onopen) {
                 that.onopen(e);
@@ -64,11 +64,11 @@ MultiSockJS.prototype.init_socket = function (e) {
     }
 }
 
-MultiSockJS.prototype.send = function (msg) {
+MultiSockJS.prototype.send = function(msg) {
     MultiSockJS.sockjs.send(this.prefix + "," + msg);
 }
 
-MultiSockJS.prototype.close = function () {
+MultiSockJS.prototype.close = function() {
     delete MultiSockJS.channels[this.prefix];
 }
 
