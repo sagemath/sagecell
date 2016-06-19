@@ -21,14 +21,14 @@ require([
     "base/js/utils",
     "base/js/events",
     "services/kernels/kernel",
-    "sockjs"
+    "multisockjs"
 ], function(
     $,
     IPython,
     utils,
     events,
     Kernel,
-    SockJS
+    MultiSockJS
    ) {
 "use strict";
 var undefined;
@@ -212,15 +212,6 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
      * Also, there are some bugs in, for example, Firefox and other issues that we don't want to have
      * to work around, that sockjs already worked around.
      */
-    /* 
-    // When we restore the websocket, things are messed up if window.WebSocket was undefined and window.MozWebSocket was.
-    var old_ws = window.WebSocket || window.MozWebSocket;
-    if (!old_ws) {
-        window.WebSocket = sagecell.MultiSockJS;
-    }
-    this.kernel = new Kernel.Kernel(sagecell.URLs.kernel);
-    window.WebSocket = old_ws;
-    */
     var that = this;
     if (linked && sagecell.kernels[k]) {
         this.kernel = sagecell.kernels[k];
@@ -229,9 +220,8 @@ sagecell.Session = function (outputDiv, language, interact_vals, k, linked) {
         // sometimes (IE8) window.console is not defined (until the console is opened)
         var old_console = window.console;
         var old_log = window.console && console.log;
-        window.WebSocket = sagecell.MultiSockJS;
+        window.WebSocket = MultiSockJS;
         window.console = window.console || {};
-        //console.log = console.debug;
         this.kernel = sagecell.kernels[k] = new Kernel.Kernel(sagecell.URLs.kernel);
         this.kernel.comm_manager.register_target('threejs', utils.always_new(sagecell.SessionThreeJSWidget(this)));
         this.kernel.comm_manager.register_target('graphicswidget', utils.always_new(sagecell.SessionGraphicsWidget(this)));
@@ -2046,74 +2036,6 @@ sagecell.InteractData.control_types = {
     "selector": sagecell.InteractData.Selector,
     "slider": sagecell.InteractData.Slider
 };
-
-sagecell.MultiSockJS = function (url, prefix) {
-    console.debug("Starting sockjs connection to "+url+": "+(new Date()).getTime());
-    console.debug("prefix:" + prefix);
-    if (!sagecell.MultiSockJS.sockjs
-        || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSING
-        || sagecell.MultiSockJS.sockjs.readyState === SockJS.CLOSED) {
-
-        console.debug("Initializing MultiSockJS to "+sagecell.URLs.sockjs);
-        sagecell.MultiSockJS.channels = {};
-        sagecell.MultiSockJS.to_init = [];
-        sagecell.MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, sagecell.sockjs_options || {});
-        sagecell.MultiSockJS.sockjs.onopen = function (e) {
-            while (sagecell.MultiSockJS.to_init.length > 0) {
-                sagecell.MultiSockJS.to_init.shift().init_socket(e);
-            }
-        }
-        sagecell.MultiSockJS.sockjs.onmessage = function (e) {
-            var i = e.data.indexOf(",");
-            var prefix = e.data.substring(0, i);
-            console.debug("onmessage prefix: " + prefix);
-            e.data = e.data.substring(i + 1);
-            console.debug("other data: " + e.data);
-            if (sagecell.MultiSockJS.channels[prefix] && sagecell.MultiSockJS.channels[prefix].onmessage) {
-                sagecell.MultiSockJS.channels[prefix].onmessage(e);
-            }
-        }
-        sagecell.MultiSockJS.sockjs.onclose = function (e) {
-            var readyState = sagecell.MultiSockJS.sockjs.readyState;
-            for (var prefix in sagecell.MultiSockJS.channels) {
-                sagecell.MultiSockJS.channels[prefix].readyState = readyState;
-                if (sagecell.MultiSockJS.channels[prefix].onclose) {
-                    sagecell.MultiSockJS.channels[prefix].onclose(e);
-                }
-            }
-            // Maybe we should just remove the sockjs object from sagecell.MultiSockJS now
-        }
-    }
-    this.prefix = url ? url.match(/^\w+:\/\/.*?\/kernel\/(.*\/channels).*$/)[1] : prefix;
-    console.debug("this.prefix:" + this.prefix);
-    this.readyState = sagecell.MultiSockJS.sockjs.readyState;
-    sagecell.MultiSockJS.channels[this.prefix] = this;
-    this.init_socket();
-}
-
-sagecell.MultiSockJS.prototype.init_socket = function (e) {
-    if (sagecell.MultiSockJS.sockjs.readyState) {
-        var that = this;
-        // Run the onopen function after the current thread has finished,
-        // so that onopen has a chance to be set.
-        setTimeout(function () {
-            that.readyState = sagecell.MultiSockJS.sockjs.readyState;
-            if (that.onopen) {
-                that.onopen(e);
-            }
-        }, 0);
-    } else {
-        sagecell.MultiSockJS.to_init.push(this);
-    }
-}
-
-sagecell.MultiSockJS.prototype.send = function (msg) {
-    sagecell.MultiSockJS.sockjs.send(this.prefix + "," + msg);
-}
-
-sagecell.MultiSockJS.prototype.close = function () {
-    delete sagecell.MultiSockJS.channels[this.prefix];
-}
 
 // Initialize jmol
 // TODO: move to a better place
