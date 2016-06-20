@@ -44,52 +44,6 @@ require([
 "use strict";
 var undefined;
 
-sagecell.URLs = {};
-
-(function () {
-    /* Read the Sage Cell server's  root url from one of the following locations:
-         1. the variable sagecell.root
-         2. a tag of the form <link property="sagecell-root" href="...">
-         3. the root of the URL of the executing script */
-    var el;
-    if (sagecell.root) {
-        sagecell.URLs.root = sagecell.root;
-    } else if ((el = $("link[property=sagecell-root]")).length > 0) {
-        sagecell.URLs.root = el.last().attr("href");
-    } else {
-        /* get the first part of the last script element's src that loaded something called 'embedded_sagecell.js'
-           also, strip off the static/ part of the url if the src looked like 'static/embedded_sagecell.js'
-           modified from MathJax source
-           We could use the jquery reverse plugin at  http://www.mail-archive.com/discuss@jquery.com/msg04272.html 
-           and the jquery .each() to get this as well, but this approach avoids creating a reversed list, etc. */
-        var scripts = (document.documentElement || document).getElementsByTagName("script");
-        var namePattern = /^.*?(?=(?:static\/)?embedded_sagecell.js)/;
-        for (var i = scripts.length-1; i >= 0; i--) {
-            var m = (scripts[i].src||"").match(namePattern);
-            if (m) {
-                var r = m[0];
-                break;
-            }
-        }
-        if (r === "" || r === "/") {
-            r = window.location.protocol + "//" + window.location.host + "/";
-        }
-        sagecell.URLs.root = r;
-    }
-    if (sagecell.URLs.root.slice(-1) !== "/") {
-        sagecell.URLs.root += "/";
-    }
-}());
-
-sagecell.URLs.kernel = sagecell.URLs.root + "kernel";
-sagecell.URLs.sockjs = sagecell.URLs.root + "sockjs";
-sagecell.URLs.permalink = sagecell.URLs.root + "permalink";
-sagecell.URLs.cell = sagecell.URLs.root + "sagecell.html";
-sagecell.URLs.completion = sagecell.URLs.root + "complete";
-sagecell.URLs.terms = sagecell.URLs.root + "tos.html";
-sagecell.URLs.help = sagecell.URLs.root + "help.html"
-sagecell.URLs.sage_logo = sagecell.URLs.root + "static/sagelogo.png";
-sagecell.URLs.spinner = sagecell.URLs.root + "static/spinner.gif";
 sagecell.modes = {"sage": "python", "python": "python",
                   "html": "htmlmixed", "r": "r"};
 if (sagecell.loadMathJax === undefined) {
@@ -122,7 +76,7 @@ sagecell.init = function (callback) {
     sagecell.dependencies_loaded = false;
     sagecell.last_session = {};
 
-    document.head.appendChild(ce("link", {rel: "stylesheet", href: sagecell.URLs.root + "static/all.min.css"}));
+    document.head.appendChild(ce("link", {rel: "stylesheet", href: utils.URLs.root + "static/all.min.css"}));
 
     if(window.MathJax === undefined && sagecell.loadMathJax) {
         // Mathjax.  We need a separate script tag for mathjax since it later
@@ -143,9 +97,9 @@ sagecell.init = function (callback) {
         load({"src": "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
     }
     // Preload images
-    new Image().src = sagecell.URLs.sage_logo;
-    new Image().src = sagecell.URLs.spinner;
-    sagecell.sendRequest("GET", sagecell.URLs.cell, {},
+    new Image().src = utils.URLs.sage_logo;
+    new Image().src = utils.URLs.spinner;
+    sagecell.sendRequest("GET", utils.URLs.cell, {},
         function (data) {
             $(function () {
                 sagecell.body = data;
@@ -344,7 +298,7 @@ sagecell.makeSagecell = function (args, k) {
 };
 
 
-var isXDomain = sagecell.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
+var isXDomain = utils.URLs.root !== window.location.protocol + "//" + window.location.host + "/";
 var accepted_tos = localStorage.accepted_tos;
 
 sagecell.initCell = (function (sagecellInfo, k) {
@@ -481,7 +435,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
         }
         deferred_eval.push([startEvaluation, evt]);
         if (deferred_eval.length === 1) {
-            sagecell.sendRequest("POST", sagecell.URLs.terms, {}, function (data) {
+            sagecell.sendRequest("POST", utils.URLs.terms, {}, function (data) {
                 if (data.length === 0) {
                     accepted_tos = true;
                     startEvaluation(evt);
@@ -623,7 +577,7 @@ sagecell.sendRequest = function (method, url, data, callback, files) {
         document.body.appendChild(form);
         var listen = function (evt) {
             if (evt.source === iframe.contentWindow &&
-                evt.origin + "/" === sagecell.URLs.root) {
+                evt.origin + "/" === utils.URLs.root) {
                 if (window.removeEventListener) {
                     removeEventListener("message", listen);
                 } else {

@@ -74,7 +74,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
         var old_log = window.console && console.log;
         window.WebSocket = MultiSockJS;
         window.console = window.console || {};
-        this.kernel = sagecell.kernels[k] = new Kernel.Kernel(sagecell.URLs.kernel);
+        this.kernel = sagecell.kernels[k] = new Kernel.Kernel(utils.URLs.kernel);
         this.kernel.comm_manager.register_target('threejs', utils.always_new(widgets.ThreeJS(this)));
         this.kernel.comm_manager.register_target('graphicswidget', utils.always_new(widgets.Graphics(this)));
         this.kernel.comm_manager.register_target('matplotlib', utils.always_new(widgets.MPL(this)));
@@ -136,13 +136,13 @@ function Session(outputDiv, language, interact_vals, k, linked) {
             ]),
             this.output_block = ce("div", {"class": "sagecell_sessionOutput sagecell_active"}, [
                 this.spinner = ce("img", {
-                    "src": sagecell.URLs.spinner,
+                    "src": utils.URLs.spinner,
                     "alt": "Loading",
                     "class": "sagecell_spinner"
                 })
             ]),
             ce("div", {"class": "sagecell_poweredBy"}, [
-                ce("a", {"href": sagecell.URLs.help, "target": "_blank"},
+                ce("a", {"href": utils.URLs.help, "target": "_blank"},
                     ["Help"]),
                 " | Powered by ",
                 ce("a", {"href": "http://www.sagemath.org", "target": "_blank"},
@@ -205,14 +205,14 @@ function Session(outputDiv, language, interact_vals, k, linked) {
                 }
                 args.interacts = JSON.stringify(list);
             }
-            sagecell.sendRequest("POST", sagecell.URLs.permalink, args, function(data) {
+            sagecell.sendRequest("POST", utils.URLs.permalink, args, function(data) {
                 data = JSON.parse(data);
                 console.debug('POST permalink request walltime: '+that.timer() + " ms");
                 if (data.n !== n) {
                     return;
                 }
-                pl_qlink.href = links.query = sagecell.URLs.root + "?q=" + data.query;
-                links.zip = sagecell.URLs.root + "?z=" + data.zip + "&lang=" + that.language;
+                pl_qlink.href = links.query = utils.URLs.root + "?q=" + data.query;
+                links.zip = utils.URLs.root + "?z=" + data.zip + "&lang=" + that.language;
                 if (data.interacts) {
                     links.zip += "&interacts=" + data.interacts;
                 }

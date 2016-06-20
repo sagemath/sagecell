@@ -1,4 +1,4 @@
-define(["sockjs"], function(SockJS) {
+define(["sockjs", "utils"], function(SockJS, utils) {
 "use strict";
 var undefined;
 
@@ -10,8 +10,8 @@ function MultiSockJS(url, prefix) {
 
         MultiSockJS.channels = {};
         MultiSockJS.to_init = [];
-        console.debug("Initializing MultiSockJS to " + sagecell.URLs.sockjs);
-        MultiSockJS.sockjs = new SockJS(sagecell.URLs.sockjs, null, {});
+        console.debug("Initializing MultiSockJS to " + utils.URLs.sockjs);
+        MultiSockJS.sockjs = new SockJS(utils.URLs.sockjs, null, {});
 
         MultiSockJS.sockjs.onopen = function(e) {
             while (MultiSockJS.to_init.length > 0) {
