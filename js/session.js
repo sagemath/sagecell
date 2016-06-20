@@ -85,7 +85,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
         window.WebSocket = old_ws;
 
         this.kernel.post = function(url, callback) {
-            sagecell.sendRequest("POST", url, {}, function(data) { callback(JSON.parse(data)); });
+            utils.sendRequest("POST", url, {}, function(data) { callback(JSON.parse(data)); });
         }
 
     // Copied from Jupyter notebook and slightly modified to add deferred code execution
@@ -205,7 +205,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
                 }
                 args.interacts = JSON.stringify(list);
             }
-            sagecell.sendRequest("POST", utils.URLs.permalink, args, function(data) {
+            utils.sendRequest("POST", utils.URLs.permalink, args, function(data) {
                 data = JSON.parse(data);
                 console.debug('POST permalink request walltime: '+that.timer() + " ms");
                 if (data.n !== n) {

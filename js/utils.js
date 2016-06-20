@@ -75,6 +75,125 @@ if (sagecell.root) {
 if (root.slice(-1) !== "/") {
     root += "/";
 }
+var isXDomain = root !== window.location.protocol + "//" + window.location.host + "/";
+
+function sendRequest (method, url, data, callback, files) {
+    method = method.toUpperCase();
+    var hasFiles = false;
+    /* files code
+    if (files === undefined) {
+        files = [];
+    }
+    for (var i = 0; i < files.length; i++) {
+        if (files[i]) {
+            hasFiles = true;
+            break;
+        }
+    }
+    */
+    var xhr = new XMLHttpRequest();
+    var fd = undefined;
+    if (method === "GET") {
+        data.rand = Math.random().toString();
+    }
+    if (method === "POST" && localStorage.accepted_tos) {
+        data.accepted_tos = "true";
+    }
+    // Format parameters to send as a string or a FormData object
+    if (window.FormData && method !== "GET") {
+        fd = new FormData();
+        for (var k in data) {
+            if (data.hasOwnProperty(k)) {
+                fd.append(k, data[k]);
+            }
+        }
+        /* files code
+        for (var i = 0; i < files.length; i++) {
+            if (files[i]) {
+                fd.append("file", files[i]);
+            }
+        }
+        */
+    } else {
+        fd = "";
+        for (var k in data) {
+            if (data.hasOwnProperty(k)) {
+                fd += "&" + encodeURIComponent(k) + "=" + encodeURIComponent(data[k]);
+            }
+        }
+        fd = fd.substr(1);
+        if (fd.length > 0 && method === "GET") {
+            url += "?" + fd;
+            fd = undefined;
+        }
+    }
+    if (window.FormData || !(isXDomain /*|| hasFiles*/)) {
+        // If an XMLHttpRequest is possible, use it
+        xhr.open(method, url, true);
+        xhr.withCredentials = true;
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 /* DONE */ && callback) {
+                callback(xhr.responseText);
+            }
+        };
+        if (typeof fd === "string") {
+            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+        }
+        xhr.send(fd);
+    } else if (method === "GET") {
+        // Use JSONP to send cross-domain GET requests
+        url += (url.indexOf("?") === -1 ? "?" : "&") + "callback=?";
+        $.getJSON(url, callback);
+    } else {
+        // Use a form submission to send POST requests
+        // Methods such as DELETE and OPTIONS will be sent as POST instead
+        var iframe = document.createElement("iframe");
+        iframe.name = utils.uuid();
+        var form = ce("form", {method: "POST", action: url, target: iframe.name});
+        if (data === undefined) {
+            data = {};
+        }
+        data.method = method;
+        for (var k in data) {
+            if (data.hasOwnProperty(k)) {
+                form.appendChild(ce("input", {"name": k, "value": data[k]}));
+            }
+        }
+        form.appendChild(ce("input", {name: "frame", value: "on"}));
+        /* file code
+        if (hasFiles) {
+            form.setAttribute("enctype", "multipart/form-data");
+            for (var i = 0; i < files.length; i++) {
+                if (files[i]) {
+                    form.appendChild(files[i]);
+                }
+            }
+        }
+        */
+        form.style.display = iframe.style.display = "none";
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+        var listen = function (evt) {
+            if (evt.source === iframe.contentWindow &&
+                evt.origin + "/" === utils.URLs.root) {
+                if (window.removeEventListener) {
+                    removeEventListener("message", listen);
+                } else {
+                    detachEvent("onmessage", listen);
+                }
+                callback(evt.data);
+                document.body.removeChild(iframe);
+            }
+        }
+        if (window.addEventListener) {
+            window.addEventListener("message", listen);
+        } else {
+            window.attachEvent("onmessage", listen);
+        }
+        form.submit();
+        document.body.removeChild(form);
+    }
+}
 
 return {
     always_new: utils.always_new,
@@ -115,6 +234,7 @@ return {
                     }
         return proxy;
     },
+    sendRequest: sendRequest,
     simpletimer: function () {
         var t = (new Date()).getTime();
         //var a = 0;
