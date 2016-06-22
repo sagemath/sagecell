@@ -1,29 +1,10 @@
 require([
     "jquery",
     "services/kernels/kernel",
-    "multisockjs",
+    "editor",
     "session",
     "utils",
-    "codemirror/lib/codemirror",
     // Unreferenced dependencies
-    "codemirror/addon/display/autorefresh",
-    "codemirror/addon/display/fullscreen",
-    "codemirror/addon/edit/matchbrackets",
-    "codemirror/addon/fold/foldcode",
-    "codemirror/addon/fold/foldgutter",
-    "codemirror/addon/fold/brace-fold",
-    "codemirror/addon/fold/xml-fold",
-    "codemirror/addon/fold/comment-fold",
-    "codemirror/addon/fold/indent-fold",
-    "codemirror/addon/hint/show-hint",
-    "codemirror/addon/runmode/runmode",
-    "codemirror/addon/runmode/colorize",
-    "codemirror/mode/css/css",
-    "codemirror/mode/htmlmixed/htmlmixed",
-    "codemirror/mode/javascript/javascript",
-    "codemirror/mode/python/python",
-    "codemirror/mode/r/r",
-    "codemirror/mode/xml/xml",
     "jquery-ui",
     "jquery-ui-tp",
     "colorpicker",
@@ -36,10 +17,9 @@ require([
 ], function(
     $,
     Kernel,
-    MultiSockJS,
+    editor,
     Session,
-    utils,
-    CodeMirror
+    utils
    ) {
 "use strict";
 var undefined;
@@ -303,15 +283,15 @@ var accepted_tos = localStorage.accepted_tos;
 sagecell.initCell = (function (sagecellInfo, k) {
     var inputLocation = $(sagecellInfo.inputLocation);
     var outputLocation = $(sagecellInfo.outputLocation);
-    var editor = sagecellInfo.editor;
+    var editorType = sagecellInfo.editor;
     var replaceOutput = sagecellInfo.replaceOutput;
     var collapse = sagecellInfo.collapse;
     var textArea = inputLocation.find(".sagecell_commands");
     var langSelect = inputLocation.find(".sagecell_language select");
     //var files = [];
     var editorData, temp;
-    temp = this.renderEditor(editor, inputLocation, collapse);
-    editor = temp[0];
+    temp = editor.render(editorType, inputLocation, collapse);
+    editorType = temp[0];
     editorData = temp[1];
     editorData.k = k;
     inputLocation.find(".sagecell_advancedTitle").click(function () {
@@ -412,7 +392,7 @@ sagecell.initCell = (function (sagecellInfo, k) {
                 sagecell.last_session[evt.data.id].destroy();
             }
         }
-        if (editor.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
+        if (editorType.lastIndexOf('codemirror',0) === 0 /* efficient .startswith('codemirror')*/ ) {
             editorData.save();
         }
         _gaq.push(['sagecell._trackEvent', 'SageCell', 'Execute',window.location.origin+window.location.pathname]);
@@ -494,250 +474,5 @@ sagecell.restoreInputForm = function (sagecellInfo) {
     var moved = $("#sagecell_moved");
     moved.contents().appendTo(sagecellInfo.inputLocation);
     moved.remove();
-};
-
-var makeMsg = function (msg_type, content) {
-    return {
-        "header": {
-            "msg_id": utils.uuid(),
-            "session": utils.uuid(),
-            "msg_type": msg_type,
-            "username": ""
-        },
-        "content": content,
-        "parent_header": {},
-        "metadata": {}
-    }
-};
-
-var callbacks = {};
-var completerMsg = function (msg, callback) {
-    var sendMsg = function () {
-        callbacks[msg.header.msg_id] = callback;
-        sagecell.completer.send(JSON.stringify(msg));
-    };
-    if (sagecell.completer === undefined) {
-        sagecell.completer = new MultiSockJS(null, "complete");
-        sagecell.completer.onmessage = function (event) {
-            var data = JSON.parse(event.data);
-            var cb = callbacks[data.parent_header.msg_id];
-            delete callbacks[data.parent_header.msg_id];
-            cb(data)
-        }
-        sagecell.completer.onopen = sendMsg;
-    } else {
-        sendMsg();
-    }
-};
-
-var openedDialog = null;
-var closeDialog = function () {
-    if (openedDialog) {
-        openedDialog.dialog("destroy");
-        openedDialog = null;
-    }
-}
-
-var showInfo = function (data, cm) {
-    if (data.content) {
-        data = data.content;
-    }
-    if (!data.found) {
-        return;
-    }
-    var d;
-    if (data.source === null) {
-        var def;
-        if (data.definition !== null) {
-            def = ce("code");
-            def.innerHTML = utils.fixConsole(data.definition);
-        }
-        d = ce("div", {}, [
-            ce("div", {}, [ce("strong", {}, "File: "), ce("code", {}, data.file || data.namespace)]),
-            ce("div", {}, [ce("strong", {}, "Type: "), ce("code", {}, data.base_class)])
-        ]);
-        if (def) {
-            d.appendChild(ce("div", {}, [ce("strong", {}, "Definition: "), def]));
-        }
-        d.appendChild(ce("pre", {}, data.docstring));
-    } else {
-        d = ce("pre", {"class": "cm-s-default"});
-        CodeMirror.runMode(data.source, "python", d);
-    }
-    closeDialog();
-    openedDialog = $(d).dialog({
-        "title": data.name,
-        "width": 700,
-        "height": 300,
-        "position": {
-            "my": "left top",
-            "at": "left+5px bottom+5px",
-            "of": cm.display.cursor.parentNode,
-            "collision": "none"
-        },
-        "appendTo": $(cm.display.wrapper).parents(".sagecell").first(),
-        "close": closeDialog
-    });
-    cm.focus();
-}
-
-var requestInfo = function (cm) {
-    var cur = cm.getCursor();
-    var line = cm.getLine(cur.line).substr(0, cur.ch);
-    var detail = (cur.ch > 1 && line[cur.ch - 2] === "?") ? 1 : 0;
-    var oname = line.match(/([a-z_][a-z_\d.]*)(\?\??|\()$/i);
-    if (oname === null) {
-        return;
-    }
-    var cb = function (data) {
-        showInfo(data, cm);
-    }
-    var kernel = sagecell.kernels[cm.k];
-    if (kernel && kernel.session.linked && kernel.shell_channel.send) {
-        var msg = kernel._get_msg("object_info_request", {
-            "oname": oname[1],
-            "detail_level": detail
-        })
-        kernel.shell_channel.send(JSON.stringify(msg));
-        kernel.set_callbacks_for_msg(msg.header.msg_id, {
-            "object_info_reply": cb
-        });
-    } else {
-        completerMsg(makeMsg("object_info_request", {
-            "oname": oname[1],
-            "detail_level": detail
-        }), cb);
-    }
-}
-
-sagecell.renderEditor = function (editor, inputLocation, collapse) {
-    var commands = inputLocation.find(".sagecell_commands");
-    var editorData;
-    if (collapse !== undefined) {
-        var header, code;
-        var accordion = ce("div", {}, [
-            header = ce("h3", {}, ["Code"]),
-            code = document.createElement("div")
-        ]);
-        header.style.paddingLeft = "2.2em";
-        $(accordion).insertBefore(commands);
-        $(accordion).accordion({"active": (collapse ? false : header),
-                                "collapsible": true,
-                                "header": header});
-    }
-    commands.keypress(function (event) {
-        if (event.which === 13 && event.shiftKey) {
-            event.preventDefault();
-        }
-    });
-    commands.keyup(function (event) {
-        if (event.which === 13 && event.shiftKey) {
-            inputLocation.find(".sagecell_evalButton").click();
-        }
-    });
-    if (editor === "textarea") {
-        editorData = {};
-    } else if (editor === "textarea-readonly") {
-        editorData = {}
-        commands.attr("readonly", "readonly");
-    } else {
-        var readOnly = false;
-        if (editor === "codemirror-readonly") {
-            readOnly = true;
-        } else {
-            editor = "codemirror";
-        }
-        var langSelect = inputLocation.find(".sagecell_language select");
-        var mode = langSelect[0].value;
-        CodeMirror.commands.autocomplete = function (cm) {
-            CodeMirror.showHint(cm, function (cm, callback) {
-                var cur = cm.getCursor();
-                var kernel = sagecell.kernels[cm.k];
-                var cb = function (data) {
-                    if (data.content) {
-                        data = data.content;
-                    }
-                    callback({
-                        "list": data.matches,
-                        "from": CodeMirror.Pos(cur.line, data.cursor_start),
-                        "to": cur
-                    });
-                };
-                var mode = langSelect[0].value;
-                if ((mode === "sage" || mode === "python") && kernel &&
-                    kernel.session.linked && kernel.shell_channel.send) {
-                    kernel.complete(cm.getLine(cur.line), cur.ch, {"complete_reply": cb});
-                } else {
-                    completerMsg(makeMsg("complete_request", {
-                        "text": "",
-                        "line": cm.getLine(cur.line),
-                        "cursor_pos": cur.ch,
-                        "mode": mode
-                    }), cb);
-                }
-            }, {"async": true});
-        };
-        var fullscreen = $(ce("button", {title: "Toggle full-screen editor", type: "button", class: "sagecell_fullScreen sagecell_icon-resize-full"}));
-        var fullscreenToggle = function(editor) {
-            editor.setOption("fullScreen", !editor.getOption("fullScreen"));
-            fullscreen.toggleClass("sagecell_fullScreenEnabled");
-            fullscreen.toggleClass("sagecell_icon-resize-full sagecell_icon-resize-small");
-        }
-
-        editorData = CodeMirror.fromTextArea(commands.get(0), {
-            autoRefresh: true,
-            mode: sagecell.modes[mode],
-            viewportMargin: Infinity,
-            indentUnit: 4,
-            lineNumbers: true,
-            matchBrackets: true,
-            readOnly: readOnly,
-            foldGutter: true,
-            gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-            extraKeys: {
-                "Tab": function (editor) {
-                    var cur = editor.getCursor();
-                    var line = editor.getLine(cur.line).substr(0, cur.ch);
-                    var mode = langSelect[0].value;
-                    if ((mode === "sage" || mode === "python") && cur.ch > 0 &&
-                        (line[cur.ch - 1] === "?" || line[cur.ch - 1] === "(")) {
-                        requestInfo(editor);
-                    } else if (line.match(/^ *$/)) {
-                        CodeMirror.commands.indentMore(editor);
-                    } else {
-                        closeDialog();
-                        CodeMirror.commands.autocomplete(editor);
-                    }
-                },
-                "Shift-Tab": "indentLess",
-                "Shift-Enter": closeDialog,
-                "Esc": function(cm) {
-                    if (openedDialog) {
-                        closeDialog();
-                    } else if (cm.getOption("fullScreen")) {
-                        fullscreenToggle(cm);
-                    }
-                }
-            }
-        });
-        editorData.on("keyup", function (editor, event) {
-            editor.save();
-            if (event.which === 13 && event.shiftKey) {
-                inputLocation.find(".sagecell_evalButton").click();
-                if (editor.getOption("fullScreen")) {
-                    fullscreenToggle(editor);
-                }
-            }
-        });
-        $(accordion).on("accordionactivate", function () {
-            editorData.refresh();
-        });
-        $(editorData.getWrapperElement()).prepend(fullscreen);
-        fullscreen.click(function() {
-            fullscreenToggle(editorData);
-            editorData.focus();
-        });
-    }
-    return [editor, editorData];
 };
 });
