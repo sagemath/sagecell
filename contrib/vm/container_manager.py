@@ -76,6 +76,7 @@ texlive
 texlive-latex-extra
 unattended-upgrades
 unzip
+wget
 """.split()
 # Due to (other's) bugs, some packages cannot be installed during installation.
 # Let's also use it to separate "standard tools" and "extra stuff".
