@@ -31,7 +31,6 @@ class SageCellServer(tornado.web.Application):
             (r"/kernel/%s/channels" % _kernel_id_regex, handlers.WebChannelsHandler),
             (r"/kernel/%s/files/(?P<file_path>.*)" % _kernel_id_regex, handlers.FileHandler, {"path": tmp_dir}),
             (r"/permalink", permalink.PermalinkHandler),
-            (r"/sagecell.html", handlers.SageCellHandler),
             (r"/service", handlers.ServiceHandler),
             (r"/tos.html", handlers.TOSHandler),
             ] + handlers.KernelRouter.urls

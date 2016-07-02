@@ -16,48 +16,51 @@ _gaq.push(['sagecell._trackPageview']);
 "use strict";
 var undefined;
 
+window.sagecell = window.sagecell || {};
 if (!document.head) {
     document.head = document.getElementsByTagName("head")[0];
 }
-
-window.sagecell = window.sagecell || {};
+require(['utils'], function(utils) {
+    document.head.appendChild(utils.createElement(
+        "link", {rel: "stylesheet", href: utils.URLs.root + "static/all.min.css"}));
+    console.debug('SageMathCell stylesheet inserted');
+});
 
 sagecell.templates = {
-    "minimal": { // for an evaluate button and nothing else.
-        "editor": "textarea-readonly",
-        "hide": ["editor", "files", "permalink"],
+    minimal: { // for an evaluate button and nothing else.
+        editor: "textarea-readonly",
+        hide: ["editor", "files", "permalink"],
     },
-    "restricted": { // to display/evaluate code that can't be edited.
-        "editor": "codemirror-readonly",
-        "hide": ["files", "permalink"],
+    restricted: { // to display/evaluate code that can't be edited.
+        editor: "codemirror-readonly",
+        hide: ["files", "permalink"],
     }
 };
 
 sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "python", "r", "singular"];
 
-sagecell.init = function (callback) {
-    require(['sagecell_r'], function() {
-        sagecell.init(callback);
+sagecell.makeSagecell = function(args) {
+    console.info('sagecell.makeSagecell called');
+    var cellInfo = {};
+    require(['cell'], function(cell) {
+        cell.make(args, cellInfo);
+        console.info('sagecell.makeSagecell finished');
+    });
+    return cellInfo;
+};
+sagecell.deleteSagecell = function(cellInfo) {
+    require(['cell'], function(cell) {
+        cell.delete(cellInfo);
     });
 };
-sagecell.makeSagecell = function (args, k) {
-    require(['sagecell_r'], function() {
-        sagecell.makeSagecell(args, k);
+sagecell.moveInputForm = function(cellInfo) {
+    require(['cell'], function(cell) {
+        cell.moveInputForm(cellInfo);
     });
 };
-sagecell.deleteSagecell = function (sagecellInfo) {
-    require(['sagecell_r'], function() {
-        sagecell.deleteSagecell(sagecellInfo);
-    });
-};
-sagecell.moveInputForm = function (sagecellInfo) {
-    require(['sagecell_r'], function() {
-        sagecell.moveInputForm(sagecellInfo);
-    });
-};
-sagecell.restoreInputForm = function (sagecellInfo) {
-    require(['sagecell_r'], function() {
-        sagecell.restoreInputForm(sagecellInfo);
+sagecell.restoreInputForm = function(cellInfo) {
+    require(['cell'], function(cell) {
+        cell.restoreInputForm(cellInfo);
     });
 };
 

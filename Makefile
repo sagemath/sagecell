@@ -30,7 +30,10 @@ build:
 	ln -sfn $(sage-root)/local/share/jsmol static/jsmol
 	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
 	cp static/jsmol/JSmol.min.nojq.js build/JSmol.js
-	python -c "import urllib; urllib.urlretrieve('https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js', 'build/sockjs.js')"
+	wget -P build \
+		https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js \
+		https://raw.githubusercontent.com/requirejs/domReady/latest/domReady.js \
+		https://raw.githubusercontent.com/requirejs/text/latest/text.js
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > build/mpl.js
 
 $(threed): build $(threed-coffee)

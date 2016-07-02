@@ -309,25 +309,6 @@ class TOSHandler(tornado.web.RequestHandler):
         else:
             raise tornado.web.HTTPError(404, 'No Terms of Service Required')
 
-class SageCellHandler(tornado.web.RequestHandler):
-    """Handler for ``/sagecell.html``"""
-
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "sagecell.html")) as f:
-        sagecell_html = f.read()
-        sagecell_json = json.dumps(sagecell_html)
-
-    def get(self):
-        if len(self.get_arguments("callback")) == 0:
-            self.write(self.sagecell_html);
-            if "Origin" in self.request.headers:
-                self.set_header("Access-Control-Allow-Origin",
-                                self.request.headers["Origin"])
-                self.set_header("Access-Control-Allow-Credentials", "true")
-            self.set_header("Content-Type", "text/html")
-        else:
-            self.write("%s(%s);" % (self.get_argument("callback"), self.sagecell_json))
-            self.set_header("Content-Type", "application/javascript")
-
 
 class StaticHandler(tornado.web.StaticFileHandler):
     """Handler for static requests"""
