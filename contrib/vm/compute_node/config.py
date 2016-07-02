@@ -6,7 +6,7 @@ from config_default import sage
 db = "web"
 db_config = {"uri": "http://130.211.113.153"}
 
-requires_tos = True
+requires_tos = False
 
 max_kernel_timeout = 60*90 # 90 minutes, for interacts
 pid_file='/home/{server}/sagecell.pid'
