@@ -39,29 +39,37 @@ sagecell.templates = {
 
 sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "python", "r", "singular"];
 
+var cell;
+require(['cell'], function(cell_arg) {
+    cell = cell_arg;
+    console.debug('cell set');
+});
 sagecell.makeSagecell = function(args) {
     console.info('sagecell.makeSagecell called');
     var cellInfo = {};
-    require(['cell'], function(cell) {
+    if (cell) {
         cell.make(args, cellInfo);
         console.info('sagecell.makeSagecell finished');
-    });
+    } else {
+        setTimeout(function tryAgain() {
+            if (cell) {
+                cell.make(args, cellInfo);
+                console.info('sagecell.makeSagecell finished after delay');
+            } else {
+                setTimeout(tryAgain);
+            }
+        });
+    }
     return cellInfo;
 };
 sagecell.deleteSagecell = function(cellInfo) {
-    require(['cell'], function(cell) {
-        cell.delete(cellInfo);
-    });
+    cell.delete(cellInfo);
 };
 sagecell.moveInputForm = function(cellInfo) {
-    require(['cell'], function(cell) {
-        cell.moveInputForm(cellInfo);
-    });
+    cell.moveInputForm(cellInfo);
 };
 sagecell.restoreInputForm = function(cellInfo) {
-    require(['cell'], function(cell) {
-        cell.restoreInputForm(cellInfo);
-    });
+    cell.restoreInputForm(cellInfo);
 };
 
 // Purely for backwards compability
