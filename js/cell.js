@@ -233,6 +233,13 @@ function make(args, cellInfo, k) {
 
 var accepted_tos = localStorage.accepted_tos;
 var deferred_eval = [];
+
+function deferredEvaluation() {
+    for (var i = 0; i < deferred_eval.length; i++) {
+        deferred_eval[i][0](deferred_eval[i][1]);
+    }
+}
+
 var last_session = {};
 var ce = utils.createElement;
 
@@ -359,7 +366,7 @@ function init(cellInfo, k) {
         output.find(".sagecell_output_elements").show();
     }
     cellInfo.submit = function (evt) {
-        if (accepted_tos || cellInfo.requires_tos === false) {
+        if (accepted_tos) {
             startEvaluation(evt);
             return false;
         }
@@ -368,7 +375,7 @@ function init(cellInfo, k) {
             utils.sendRequest("POST", utils.URLs.terms, {}, function (data) {
                 if (data.length === 0) {
                     accepted_tos = true;
-                    startEvaluation(evt);
+                    deferredEvaluation();
                 } else {
                     var terms = $(document.createElement("div"));
                     terms.html(data);
@@ -383,9 +390,7 @@ function init(cellInfo, k) {
                                 $(this).dialog("close");
                                 accepted_tos = true;
                                 localStorage.accepted_tos = true;
-                                for (var i = 0; i < deferred_eval.length; i++) {
-                                    deferred_eval[i][0](deferred_eval[i][1]);
-                                }
+                                deferredEvaluation();
                             },
                             "Cancel": function () {
                                 $(this).dialog("close");
