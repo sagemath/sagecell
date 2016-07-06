@@ -17,6 +17,7 @@
         "underscore" : "components/underscore/underscore-min"
     },
     waitSeconds: 70,
+    wrap: true,
     include: [
         "requireLib"
     ]
