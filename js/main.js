@@ -39,6 +39,11 @@ sagecell.templates = {
 
 sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "python", "r", "singular"];
 
+// Deal with IE's lack of Promise
+require(['es6-promise'], function(es6p) {
+    es6p.polyfill();
+});
+
 var cell;
 require(['cell'], function(cell_arg) {
     cell = cell_arg;

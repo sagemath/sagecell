@@ -10,6 +10,7 @@
         }
     ],
     paths: {
+        'es6-promise': 'components/es6-promise/promise',
         "jquery" : "components/jquery/jquery.min",
         "jquery-ui" : "components/jquery-ui/ui/minified/jquery-ui.min",
         "moment" : "components/moment/min/moment.min",
