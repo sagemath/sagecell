@@ -33,7 +33,9 @@ sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "pytho
 
 // Deal with IE's lack of Promise
 require(['es6-promise'], function(es6p) {
-    es6p.polyfill();
+    if(es6p) {
+        es6p.polyfill();
+    }
 });
 
 var cell;
