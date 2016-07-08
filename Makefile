@@ -4,7 +4,7 @@ threed = build/3d.js
 all-min-js = static/embedded_sagecell.js
 
 sagecell-css = static/sagecell.css
-all-min-css = static/all.min.css
+all-min-css = build/all.min.css
 embed-css = static/sagecell_embed.css
 
 tos-default = templates/tos_default.html
@@ -39,7 +39,7 @@ build:
 $(threed): build $(threed-coffee)
 	coffee -o build -c $(threed-coffee)
 
-$(all-min-js): build js/*
+$(all-min-js): build $(all-min-css) js/*
 	cp build/components/jquery/jquery.min.js static
 	cp submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js build/jquery-ui-tp.js
 	cp -a js/* build

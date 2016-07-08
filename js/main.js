@@ -17,14 +17,6 @@ _gaq.push(['sagecell._trackPageview']);
 var undefined;
 
 window.sagecell = window.sagecell || {};
-if (!document.head) {
-    document.head = document.getElementsByTagName("head")[0];
-}
-require(['utils'], function(utils) {
-    document.head.appendChild(utils.createElement(
-        "link", {rel: "stylesheet", href: utils.URLs.root + "static/all.min.css"}));
-    console.debug('SageMathCell stylesheet inserted');
-});
 
 sagecell.templates = {
     minimal: { // for an evaluate button and nothing else.

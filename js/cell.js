@@ -4,6 +4,7 @@ define([
     "session",
     "utils",
     "text!cell_body.html",
+    "text!all.min.css",
     // Unreferenced dependencies
     "domReady!",
     "jquery-ui",
@@ -20,7 +21,8 @@ define([
     editor,
     Session,
     utils,
-    cell_body
+    cell_body,
+    css
    ) {
 "use strict";
 var undefined;
@@ -30,6 +32,11 @@ sagecell.modes = {
     python: "python",
     html: "htmlmixed",
     r: "r"};
+
+var style = document.createElement('style');
+style.innerHTML = css.replace(/url\((?!data:)/g, 'url(' + utils.URLs.root + 'static/');
+var fs = document.getElementsByTagName('script')[0];
+fs.parentNode.insertBefore(style, fs);
 
 function load(config) {
     // We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag
@@ -44,7 +51,7 @@ function load(config) {
     if (config.text !== undefined) {
         script.text = config.text;
     }
-    document.head.appendChild(script);
+    fs.parentNode.insertBefore(script, fs);
 }
 
 if(window.MathJax === undefined && (sagecell.loadMathJax || sagecell.loadMathJax === undefined)) {
