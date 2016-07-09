@@ -39,7 +39,7 @@ var stop = function(event) {
 var close = null;
 
 function Session(outputDiv, language, interact_vals, k, linked) {
-    this.timer = utils.simpletimer();
+    this.timer = utils.simpleTimer();
     this.outputDiv = outputDiv;
     this.outputDiv[0].sagecell_session = this;
     this.language = language;
@@ -183,7 +183,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
             pl_qlink.removeAttribute("href");
             pl_qrcode.parentNode.removeAttribute("href");
             pl_qrcode.removeAttribute("src");
-            console.debug('sending permalink request post: '+that.timer()+' ms');
+            console.debug('sending permalink request post:', that.timer());
             var args = {
                 "code": that.rawcode,
                 "language": that.language,
@@ -214,7 +214,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
             }
             utils.sendRequest("POST", utils.URLs.permalink, args, function(data) {
                 data = JSON.parse(data);
-                console.debug('POST permalink request walltime: '+that.timer() + " ms");
+                console.debug('POST permalink request:', that.timer());
                 if (data.n !== n) {
                     return;
                 }
@@ -308,7 +308,7 @@ Session.prototype.send_message = function() {
 
 Session.prototype.execute = function(code) {
     if (this.kernel.opened) {
-        console.debug('opened and executing in kernel: '+this.timer()+' ms');
+        console.debug('opened and executing in kernel:', this.timer());
         var pre;
         //TODO: do this wrapping of code on the server, not in javascript
         //Maybe the system can be sent in metadata in the execute_request message
@@ -388,7 +388,7 @@ Session.prototype.handle_message_reply = function(msg) {
 };
 
 Session.prototype.handle_execute_reply = function(msg) {
-    console.debug("handle_execute_reply walltime: " + this.timer() + " ms");
+    console.debug("handle_execute_reply:", this.timer());
     /* This would give two error messages (since a pyerr should have already come)
       if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
@@ -477,7 +477,7 @@ Session.prototype.handle_output = function(msg, default_block_id) {
         }
         break;
     }
-    console.debug('handled output: '+this.timer()+' ms');
+    console.debug('handled output:', this.timer());
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
     var output = this.outputDiv.find(".sagecell_output").get(0);

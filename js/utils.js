@@ -235,20 +235,16 @@ return {
         return proxy;
     },
     sendRequest: sendRequest,
-    simpletimer: function () {
+    simpleTimer: function () {
         var t = (new Date()).getTime();
-        //var a = 0;
         console.debug('starting timer from '+t);
         return function(reset) {
-            reset = reset || false;
             var old_t = t;
             var new_t = (new Date()).getTime();
             if (reset) {
                 t = new_t;
             }
-            //a+=1;
-            //console.debug('time since '+t+': '+(new_t-old_t));
-            return new_t-old_t;
+            return (new_t - old_t) + " ms";
         }
     },
     //     throttle is from:
