@@ -289,7 +289,6 @@ return {
         kernel: root + "kernel",
         permalink: root + "permalink",
         root: root,
-        sage_logo: root + "static/sagelogo.png",
         sockjs: root + "sockjs",
         spinner: root + "static/spinner.gif",
         terms: root + "tos.html"

@@ -60,7 +60,6 @@ if (window.MathJax === undefined) {
     fs.parentNode.insertBefore(script, fs);
 }
 // Preload images
-new Image().src = utils.URLs.sage_logo;
 new Image().src = utils.URLs.spinner;
 
 sagecell.kernels = [];
