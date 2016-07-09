@@ -38,39 +38,26 @@ style.innerHTML = css.replace(/url\((?!data:)/g, 'url(' + utils.URLs.root + 'sta
 var fs = document.getElementsByTagName('script')[0];
 fs.parentNode.insertBefore(style, fs);
 
-function load(config) {
-    // We can't use the jquery .append to load javascript because then the script tag disappears.  At least mathjax depends on the script tag
-    // being around later to get the mathjax path.  See http://stackoverflow.com/questions/610995/jquery-cant-append-script-element.
+if (window.MathJax === undefined) {
     var script = document.createElement("script");
-    if (config.type !== undefined) {
-        script.type = config.type;
-    }
-    if (config.src !== undefined) {
-        script.src = config.src;
-    }
-    if (config.text !== undefined) {
-        script.text = config.text;
-    }
-    fs.parentNode.insertBefore(script, fs);
-}
-
-if(window.MathJax === undefined && (sagecell.loadMathJax || sagecell.loadMathJax === undefined)) {
-    // Mathjax.  We need a separate script tag for mathjax since it later
-    // comes back and looks at the script tag.
-    var mjConfig = {
+    script.type = "text/x-mathjax-config";
+    script.text = "MathJax.Hub.Config(" + JSON.stringify({
         "extensions": ["jsMath2jax.js", "tex2jax.js"],
         "tex2jax": {
             "inlineMath": [["$", "$"], ["\\(", "\\)"]],
             "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
             "processEscapes": true,
             "processEnvironments": true
+        },
+        "TeX": {
+            "extensions": ["color.js"]
         }
-    };
-    load({
-        'text': 'MathJax.Hub.Config(' + JSON.stringify(mjConfig) + ');',
-        'type': 'text/x-mathjax-config'
-    });
-    load({"src": "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"});
+    }) + ");";
+    fs.parentNode.insertBefore(script, fs);
+    script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    fs.parentNode.insertBefore(script, fs);
 }
 // Preload images
 new Image().src = utils.URLs.sage_logo;
