@@ -458,12 +458,8 @@ class ZMQChannelsHandler(object):
         try:
             idents, msg_list = self.session.feed_identities(msg_list)
             msg = self.session.unserialize(msg_list)
-            send = True
-            for f in self.msg_from_kernel_callbacks:
-                result = f(msg)
-                if result is False:
-                    send = False
-            if send:
+            if all([f(msg) is not False
+                    for f in self.msg_from_kernel_callbacks]):
                 msg["channel"] = stream.channel
                 self._output_message(msg)
         except Exception as e:
@@ -482,13 +478,13 @@ class ZMQChannelsHandler(object):
                 # kill the kernel before the heartbeat is able to
                 self.kill_kernel = True
             else:
-                self.kernel["deadline"] = (time.time()+timeout)
+                self.kernel["deadline"] = time.time() + timeout
                 self.kernel["executing"] -= 1
                 logger.debug("decreased execution counter for %s to %s",
                              self.kernel_id, self.kernel["executing"])
 
     def _reset_timeout(self, msg):
-        if msg["header"]["msg_type"]=="kernel_timeout":
+        if msg["header"]["msg_type"] == "kernel_timeout":
             try:
                 timeout = float(msg["content"]["timeout"])
                 if (not math.isnan(timeout)) and timeout >= 0:

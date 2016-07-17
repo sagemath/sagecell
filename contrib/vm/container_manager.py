@@ -483,7 +483,7 @@ def install_packages():
         ''')
     log.info("updating ipykernel to master")
     shutil.move("github/ipykernel", ".")
-    check_call("sage/sage -pip install ipykernel")
+    check_call("sage/sage -pip install ./ipykernel")
 
 
 def install_sagecell():
