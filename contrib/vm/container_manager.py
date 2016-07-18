@@ -686,13 +686,25 @@ class SCLXC(object):
             pass
         self.inside(install_sage)
         self.inside(install_packages)
+        # Remove old versions of packages
+        upstream = os.path.join(home, "sage/upstream")
+        packages = dict()
+        for f in os.listdir(upstream):
+            filename = os.path.join(upstream, f)
+            name = f.split("-", 1)[0]
+            if name not in packages:
+                packages[name] = []
+            packages[name].append((os.stat(filename).st_mtime, filename))
+        for package in packages.values():
+            package.sort()
+            package.pop()
+            for _, filename in package:
+                os.remove(filename)
         try:
             shutil.rmtree("github/sage/upstream")
         except FileNotFoundError:
             pass
-        shutil.copytree(os.path.join(home, "sage/upstream"),
-                        "github/sage/upstream",
-                        symlinks=True)
+        shutil.move(upstream, "github/sage/upstream")
         try:
             shutil.rmtree("dot_cache")
         except FileNotFoundError:
