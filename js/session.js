@@ -536,7 +536,7 @@ Session.prototype.display_handlers = {
             width: 500,
             color: "white",
             j2sPath: utils.URLs.root + "static/jsmol/j2s",
-            serverURL: "http://chemapps.stolaf.edu/jmol/jsmol/php/jsmol.php",
+            serverURL: "https://chemapps.stolaf.edu/jmol/jsmol/php/jsmol.php",
             coverImage: filepath + data + "/preview.png",
             deferUncover: true,
             disableInitialConsole: true,
