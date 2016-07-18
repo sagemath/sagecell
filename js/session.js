@@ -535,13 +535,14 @@ Session.prototype.display_handlers = {
             height: 500,
             width: 500,
             color: "white",
-            j2sPath: "/static/jsmol/j2s",
+            j2sPath: utils.URLs.root + "static/jsmol/j2s",
+            serverURL: "http://chemapps.stolaf.edu/jmol/jsmol/php/jsmol.php",
             coverImage: filepath + data + "/preview.png",
             deferUncover: true,
             disableInitialConsole: true,
             script: "set defaultdirectory '" + filepath + data + "/scene.zip';\n script SCRIPT;\n",
-            menuFile: "/static/SageMenu.mnu",
-        }
+            menuFile: utils.URLs.root + "static/SageMenu.mnu"
+        };
         this.output(Jmol.getAppletHtml("scJmol", info), block_id);
     },
     "application/x-canvas3d": function(data, block_id, filepath) {
