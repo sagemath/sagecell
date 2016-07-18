@@ -96,3 +96,5 @@ SageMathCell is designed to be compatible with recent versions of:
 * Safari
 
 If you notice issues with any of these browsers, please let us know.
+
+Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copied](https://github.com/sagemath/sagecell/blob/master/Makefile#L23) from the Jupyter notebook bundled with SageMath.
