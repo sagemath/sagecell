@@ -62,6 +62,10 @@ We assume that you have access to the Internet and can install any needed depend
     ../sage/sage -sh -c make
     ```
 
+System packages installed in the base container are listed [here](https://github.com/sagemath/sagecell/blob/master/contrib/vm/container_manager.py#L58).
+
+Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copied](https://github.com/sagemath/sagecell/blob/master/Makefile#L23) from the Jupyter notebook bundled with SageMath.
+
 
 # Configuration
 
@@ -96,5 +100,3 @@ SageMathCell is designed to be compatible with recent versions of:
 * Safari
 
 If you notice issues with any of these browsers, please let us know.
-
-Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copied](https://github.com/sagemath/sagecell/blob/master/Makefile#L23) from the Jupyter notebook bundled with SageMath.
