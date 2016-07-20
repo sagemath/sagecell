@@ -1,7 +1,6 @@
 This is SageMathCell - a Sage computation web service.
 
-Please note that installation instructions below may be outdated. The most reliable source of build instructions at the moment is in [contib/vm scripts](contrib/vm).
-
+Our mailing list is https://groups.google.com/forum/#!forum/sage-cell
 
 # Security Warning
 
@@ -12,7 +11,9 @@ The worker account (which is your own one by default) will be able to execute ar
 
 # Simple Installation
 
-We assume that you have access to the Internet and can install any needed dependencies (e.g. git). If you need to know more precisely what tools are needed, please consult the scripts for building virtual machine images in [contib/vm scripts](contrib/vm).
+We assume that you have access to the Internet and can install any needed dependencies. If you need to know more precisely what tools are needed, please consult the scripts for building virtual machine images in [contib/vm](contrib/vm).
+In particular, system packages installed in the base container are listed [here](https://github.com/sagemath/sagecell/blob/master/contrib/vm/container_manager.py#L58).
+
 
 1.  Make sure you have a recent enough version of git: 1.8.5 is good enough, while 1.7.9 isn't.
 2.  Install required npm packages:
@@ -61,10 +62,8 @@ We assume that you have access to the Internet and can install any needed depend
     git submodule update --init --recursive
     ../sage/sage -sh -c make
     ```
-
-System packages installed in the base container are listed [here](https://github.com/sagemath/sagecell/blob/master/contrib/vm/container_manager.py#L58).
-
-Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copied](https://github.com/sagemath/sagecell/blob/master/Makefile#L23) from the Jupyter notebook bundled with SageMath.
+    
+Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copied](https://github.com/sagemath/sagecell/blob/master/Makefile#L23) from the [Jupyter notebook](https://github.com/jupyter/notebook) bundled with SageMath.
 
 
 # Configuration
