@@ -71,6 +71,7 @@ libffi-dev
 m4
 nginx
 npm
+php5-fpm
 rsyslog-relp
 texlive
 texlive-latex-extra
