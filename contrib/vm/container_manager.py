@@ -431,7 +431,7 @@ def install_sage():
     # os.environ.setdefault("SAGE_ATLAS_LIB", "/usr/lib")
     # but it may be particularly slow.
     log.info("compiling Sage")
-    check_call("make start")
+    check_call("make")
     
     # Make R use cairo instead of X11 when plotting
     with open("local/lib/R/etc/Rprofile.site", "w") as f:
