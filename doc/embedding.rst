@@ -24,7 +24,7 @@ like)::
        <meta charset="utf-8">
        <meta name="viewport" content="width=device-width">
        <title>SageMathCell</title>
-       <script src="http://sagecell.sagemath.org/embedded_sagecell.js"></script>
+       <script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"></script>
        <script>
        // Make the div with id 'mycell' a Sage cell
        sagecell.makeSagecell({inputLocation:  '#mycell',
@@ -66,7 +66,7 @@ The following line should be inserted into ``<head>``:
 
 .. code-block:: html
 
-   <script src="http://<server>/embedded_sagecell.js"></script>
+   <script src="https://<server>/static/embedded_sagecell.js"></script>
 
 where ``<server>`` is the root url of a SageMathCell server. This downloads
 additional required JavaScript and CSS libraries and creates a global JavaScript
