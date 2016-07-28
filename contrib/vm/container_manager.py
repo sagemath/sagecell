@@ -232,6 +232,7 @@ defaults
 HAProxy_section = """
 frontend http{suffix}
     bind *:{port}
+    reqrep ^([^\ \t]*[\ \t])/kernel/([a-f0-9-]{36})/files/([^\ \t]*)(.*)     \1/kernel/\2/files/\3?CellSessionID=\2\4
     use_backend static{suffix} if { path_beg /static }
     use_backend compute{suffix}
 
@@ -242,8 +243,9 @@ backend static{suffix}
     server {node} {node}.lxc:8889 id {id} check
 
 backend compute{suffix}
-    stick-table type string size 1m expire 2h peers local{suffix}
-    stick on hdr(X-Forwarded-For)
+    stick-table type string len 36 size 1m expire 2h peers local{suffix}
+    stick on urlp(CellSessionID)
+    stick store-response res.hdr(Jupyter-Kernel-ID)
     option httpchk
 
     server {node} {node}.lxc:8888 id {id} check port 9888

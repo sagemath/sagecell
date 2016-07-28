@@ -11,7 +11,8 @@ function MultiSockJS(url, prefix) {
         MultiSockJS.channels = {};
         MultiSockJS.to_init = [];
         console.debug("Initializing MultiSockJS to " + utils.URLs.sockjs);
-        MultiSockJS.sockjs = new SockJS(utils.URLs.sockjs, null, {});
+        MultiSockJS.sockjs = new SockJS(
+            utils.URLs.sockjs + '?CellSessionID=' + utils.cellSessionID());
 
         MultiSockJS.sockjs.onopen = function(e) {
             while (MultiSockJS.to_init.length > 0) {

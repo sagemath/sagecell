@@ -135,12 +135,12 @@ class KernelHandler(tornado.web.RequestHandler):
                 self.set_status(403)
                 self.finish()
                 return
-            timer = Timer("Kernel handler for %s"%self.get_argument("notebook", uuid.uuid4()))
+            logger.info('starting kernel for session '
+                         + self.get_argument('CellSessionID', '(no ID)'))
             proto = self.request.protocol.replace("http", "ws", 1)
             host = self.request.host
             ws_url = "%s://%s/" % (proto, host)
             km = self.application.km
-            logger.info("Starting session: %s"%timer)
             timeout = self.get_argument("timeout", None)
             if timeout is not None:
                 timeout = float(timeout)
@@ -152,6 +152,7 @@ class KernelHandler(tornado.web.RequestHandler):
                remote_ip=self.request.remote_ip,
                timeout=timeout)
             data = {"ws_url": ws_url, "id": kernel_id}
+            self.set_header("Jupyter-Kernel-ID", kernel_id)
             self.write(self.permissions(data))
             self.finish()
 

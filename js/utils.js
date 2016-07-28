@@ -77,6 +77,12 @@ if (root.slice(-1) !== "/") {
 }
 var isXDomain = root !== window.location.protocol + "//" + window.location.host + "/";
 
+var ID;
+
+function cellSessionID() {
+    return ID = ID || utils.uuid();
+}
+
 function sendRequest (method, url, data, callback, files) {
     method = method.toUpperCase();
     var hasFiles = false;
@@ -197,6 +203,7 @@ function sendRequest (method, url, data, callback, files) {
 
 return {
     always_new: utils.always_new,
+    cellSessionID: cellSessionID,
     createElement: function (type, attrs, children) {
         var node = document.createElement(type);
         for (var k in attrs) {

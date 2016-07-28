@@ -115,7 +115,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
         }
     };
 
-        this.kernel.start({notebook: utils.uuid(), timeout: linked ? 'inf' : 0, accepted_tos : "true"});
+        this.kernel.start({CellSessionID: utils.cellSessionID(), timeout: linked ? 'inf' : 0, accepted_tos : "true"});
     }
     var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(
@@ -459,7 +459,7 @@ Session.prototype.handle_output = function(msg, default_block_id) {
         break;
     case "display_data":
     case "execute_result":
-        var filepath=this.kernel.kernel_url+'/files/';
+        var filepath = this.kernel.kernel_url + '/files/';
         // find any key of content that is in the display_handlers array and execute that handler
         // if none found, do the text/plain 
         var already_handled = false;
@@ -502,16 +502,19 @@ Session.prototype.display_handlers = {
     'application/sage-interact-bookmark': function(data) {
         interacts[data.interact_id].createBookmark(data.name, data.values);
     },
-    'application/sage-interact-control': function(data, block_id, filepath) {
-        var that=this;
+    'application/sage-interact-control': function(data, block_id) {
+        var that = this;
         var control_class = interact_controls[data.control_type];
         if (control_class === undefined) {return false;}
         var control = new control_class(this, data.control_id);
         control.create(data, block_id);
-        $.each(data.variable, function(index, value) {that.register_control(data.namespace, value, control);});
+        $.each(data.variable, function(index, value) {
+            that.register_control(data.namespace, value, control);
+
+        });
         control.update(data.namespace, data.variable);
     },
-    'application/sage-interact-variable': function(data, block_id, filepath) {
+    'application/sage-interact-variable': function(data) {
         this.update_variable(data.namespace, data.variable, data.control);
     },
     'application/sage-clear': function(data, block_id) {
@@ -520,14 +523,14 @@ Session.prototype.display_handlers = {
     'text/html': function(data, block_id, filepath) {
         this.output("<div></div>", block_id).html(data.replace(/cell:\/\//gi, filepath));
     },
-    'application/javascript': function(data, block_id, filepath) {
+    'application/javascript': function(data) {
         eval(data);
     },
     'text/image-filename': function(data, block_id, filepath) {
-        this.output("<img src='"+filepath+data+"'/>", block_id);
+        this.output("<img src='" + filepath + data + "'/>", block_id);
     },
-    'image/png': function(data, block_id, filepath) {
-        this.output("<img src='data:image/png;base64,"+data+"'/>", block_id);
+    'image/png': function(data, block_id) {
+        this.output("<img src='data:image/png;base64," + data + "'/>", block_id);
     },
     'application/x-jmol': function(data, block_id, filepath) {
         Jmol.setDocument(false);
