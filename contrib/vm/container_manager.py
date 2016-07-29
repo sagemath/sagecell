@@ -245,7 +245,7 @@ backend static{suffix}
 backend compute{suffix}
     stick-table type string len 36 size 1m expire 2h peers local{suffix}
     stick on urlp(CellSessionID)
-    stick store-response res.hdr(Jupyter-Kernel-ID)
+    stick on hdr(Jupyter-Kernel-ID)
     option httpchk
 
     server {node} {node}.lxc:8888 id {id} check port 9888

@@ -14,32 +14,22 @@ class SageCell(object):
 
     def __init__(self, url, timeout=10):
         if not url.endswith('/'):
-            url+='/'
+            url += '/'
         # POST or GET <url>/kernel
         # if there is a terms of service agreement, you need to
         # indicate acceptance in the data parameter below (see the API docs)
-
-        reply = requests.post(
-            url+'kernel',
-            data={'accepted_tos':'true'},
-            headers={'Accept': 'application/json'},
-        )
-
-        # Subsequent connections (including websocket) must preserve
-        # the cookies for the backend to route to the right server
-        cookie = ''
-        for key, value in reply.cookies.items():
-            cookie += '{0}={1}; '.format(key, value)
-
+        response = requests.post(
+            url + 'kernel',
+            data={'accepted_tos': 'true'},
+            headers={'Accept': 'application/json'}).json()
         # RESPONSE: {"id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
         # construct the websocket channel url from that
-        response = reply.json()
-
-        self.kernel_url = response['ws_url']+'kernel/'+response['id']+'/'
-        websocket.setdefaulttimeout(timeout)
+        self.kernel_url = '{ws_url}kernel/{id}/'.format(**response)
         print self.kernel_url
-        self._ws = websocket.create_connection(self.kernel_url+'channels', cookie=cookie)
-
+        websocket.setdefaulttimeout(timeout)
+        self._ws = websocket.create_connection(
+            self.kernel_url + 'channels',
+            header={'Jupyter-Kernel-ID': response['id']})
         # initialize our list of messages
         self.shell_messages = []
         self.iopub_messages = []
@@ -107,7 +97,7 @@ if __name__ == "__main__":
         # argv[1] is the web address
         url = sys.argv[1]
     else:
-        url = 'http://sagecell.sagemath.org'
+        url = 'https://sagecell.sagemath.org'
     a = SageCell(url)
     import pprint
     pprint.pprint(a.execute_request('factorial(2012)'))
