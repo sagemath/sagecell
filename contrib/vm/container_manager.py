@@ -229,7 +229,7 @@ defaults
 
 # {suffix} {port} {hostname} {peer_port} have to be set once
 # lines with {node} and {id} should be repeated for each server
-HAProxy_section = """
+HAProxy_section = r"""
 frontend http{suffix}
     bind *:{port}
     reqrep ^([^\ \t]*[\ \t])/kernel/([a-f0-9-]{36})/files/([^\ \t]*)(.*)     \1/kernel/\2/files/\3?CellSessionID=\2\4
