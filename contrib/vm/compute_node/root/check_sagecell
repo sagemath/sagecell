@@ -13,8 +13,7 @@ su -l sc_serv sage/sage sagecell/contrib/sagecell-client/sagecell-service.py $1
 if [ $? -ne 0 ]
 then
    echo "`date` Error in server. Restarting..."
-   /sbin/initctl stop sagecell
-   /sbin/initctl start sagecell
+   systemctl restart sagecell
    echo "`date` Restarted."
    echo "************"
    exit 1
