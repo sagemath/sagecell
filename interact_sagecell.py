@@ -1269,7 +1269,7 @@ def automatic_control(control, var=None):
         if len(control) == 2:
             C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), label = label)
         elif len(control) == 3:
-            from sage.misc.misc import srange
+            from sage.arith.srange import srange
             C = DiscreteSlider(default=default_value, values=srange(control[0], control[1], control[2], include_endpoint=True), label=label)
         else:
             values=list(control)
