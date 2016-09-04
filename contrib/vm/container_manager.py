@@ -2,7 +2,6 @@
 
 import argparse
 import datetime
-import fnmatch
 import grp
 import logging
 import logging.config
@@ -253,7 +252,7 @@ peers local{suffix}
     peer {hostname} localhost:{peer_port}
 
 backend static{suffix}
-    server {node} {node}.lxc:8889 id {id} check
+    server {node} {ip}:8889 id {id} check
 
 backend compute{suffix}
     stick-table type string len 36 size 1m expire 2h peers local{suffix}
@@ -262,7 +261,7 @@ backend compute{suffix}
     stick store-response res.hdr(Jupyter-Kernel-ID)
     option httpchk
 
-    server {node} {node}.lxc:8888 id {id} check port 9888
+    server {node} {ip}:8888 id {id} check port 9888
 """
 
 HAProxy_stats = """
@@ -717,6 +716,10 @@ class SCLXC(object):
         self.start()
         timer_delay(start_delay)
         self.shutdown()
+        
+    def ip(self):
+        self.start()
+        return self.c.get_ips()[0]
 
     def is_defined(self):
         return self.c.defined
@@ -783,16 +786,19 @@ def restart_haproxy(names, backup_names=[]):
                 lines.append(l)
             else:
                 for i, n in enumerate(names):
-                    lines.append(l.format(node=n, id=i + shift(n)))
+                    lines.append(l.format(
+                        node=n, ip=SCLXC(n).ip(), id=i + shift(n)))
                 l += " backup"
                 for i, n in enumerate(backup_names):
-                    lines.append(l.format(node=n, id=i + shift(n)))
+                    lines.append(l.format(
+                        node=n, ip=SCLXC(n).ip(), id=i + shift(n)))
     tester = SCLXC(lxcn_tester)
     if tester.is_defined():
         section = HAProxy_section
         for k, v in {"port" : 8888,
                      "suffix": "_test",
                      "node": lxcn_tester,
+                     "ip": tester.ip(),
                      "id": 1,
                      "peer_port": 1088,
                      "hostname": check_output("hostname").strip()}.items():
@@ -801,28 +807,6 @@ def restart_haproxy(names, backup_names=[]):
     lines.append(HAProxy_stats)
     with open("/etc/haproxy/haproxy.cfg", "w") as f:
         f.write("\n".join(lines))
-    # HA-Proxy is likely to fail to start after reboot since container
-    # names are not resolvable until they have started.
-    with open("/etc/cron.d/haproxy", "w") as f:
-        delay = start_delay * (len(up_names) + 2)
-        f.write("@reboot root sleep %d; systemctl start haproxy\n" % delay)
-    # Make it possible to use container names
-    try:
-        if names:
-            check_call("host {}.lxc".format(names[0]))
-        elif tester.is_defined():
-            check_call("host {}.lxc".format(lxcn_tester))
-    except subprocess.CalledProcessError:
-        log.info("making container names resolvable to IP addresses")
-        with open("/etc/default/lxc-net", "r") as f:
-            content = f.read()
-        content = content.replace('\n#LXC_DOMAIN="lxc"', '\nLXC_DOMAIN="lxc"')
-        with open("/etc/default/lxc-net", "w") as f:
-            f.write(content)
-        with open("/etc/dnsmasq.d/lxc", "a") as f:
-            f.write("server=/lxc/10.0.3.1\ninterface=lo\n")
-        log.info("Reboot for system configuration changes to take effect.")
-        exit()
     try:
         check_call("systemctl reload haproxy")
     except subprocess.CalledProcessError:
