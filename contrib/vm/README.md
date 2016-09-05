@@ -43,7 +43,7 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
     chmod a+x container_manager.py
     ```
 
-2.  Adjust it if necessary. In particular, note that the default permalink server is the public SageCell server.
+2.  Adjust it if necessary. In particular, note that the default permalink database server is the public one.
 3.  Run it. If all goes well, the base OS and the master SageCell container will be created. Expect it to take at least an hour.
 
     ```bash
@@ -65,19 +65,41 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
 
 ## Maintenance Notes
 
-1.  Used GitHub repositories are cached in EVM to reduce download size for upgrades.
+1.  Used GitHub repositories are cached in `/root/github/` to reduce download size for upgrades.
 2.  EVM is configured to install security updates automatically.
-3.  Base and master containers are always fully updated before cloning deployment nodes.
+3.  Master containers are always fully updated before cloning deployment nodes.
 4.  Deployment nodes are configured to install security updates automatically.
 5.  EVM, deployment, and test containers should start automatically after reboot of the host machine.
-6.  If you want to upgrade to the current SageCell, run
+  
+## Upgrading
+
+1.  Check if you have any custom changes to `container_manager.py` and save them in a patch:
+
+    ```bash
+    diff -u github/sagecell/contrib/vm/container_manager.py container_manager.py
+    diff -u github/sagecell/contrib/vm/container_manager.py container_manager.py > local.patch
+    ```
+
+2. Pull the latest branch to your saved repository and look over changes:
+
+    ```bash
+    cd github/sagecell/ && git pull && cd && diff -u container_manager.py github/sagecell/contrib/vm/container_manager.py
+    ```
+
+3. If everything looks OK to you, apply your patch over new version of the script:
+
+    ```bash
+    cp github/sagecell/contrib/vm/container_manager.py . && patch container_manager.py local.patch
+    ```
+
+4.  Build the new version of the master container and deploy:
 
     ```bash
     ./container_manager.py -m --deploy
     ```
 
     Note that after the new version is started, the script will wait for a couple hours to make sure that users in the middle of interacting with the old one have finished their work.
-7. If you want to first test the new version while keeping the old one in production, run instead
+5. If you want to first test the new version while keeping the old one in production, run instead
 
     ```bash
     ./container_manager.py -m -t
@@ -88,7 +110,8 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
     ```bash
     ./container_manager.py --deploy
     ```
-
-8.  If you would like to customize your SageCell, make changes in the master container before deployment.
+    
+6. If you know that only some changes to SageMathCell source code were made, you can skip building Sage and its packages from scratch: `./container_manager.py -p -m`
+7. For some other options check the built-in help: `./container_manager.py -h`
 
 **If these instructions are unclear or do not work, please let us know!**
