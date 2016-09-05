@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 
-import fcntl, os, socket, struct
+import fcntl
+import os
+import signal
+import socket
+import struct
 
 import psutil
 
@@ -118,23 +122,32 @@ if __name__ == "__main__":
                 logger.info("No such process exist anymore.")
         logger.info("Breaking old lock.")
         pidlock.break_lock()
+        
+    pidlock.acquire(timeout=10)
+    # TODO: clean out the router-ipc directory
+    application = SageCellServer(baseurl=args.baseurl)
+    listen = {'port': args.port, 'xheaders': True}
+    if args.interface is not None:
+        listen['address'] = get_ip_address(args.interface)
+    logger.info("Listening configuration: %s", listen)
+
+    def handler(signum, frame):
+        logger.info("Received %s, shutting down...", signum)
+        application.km.shutdown()
+        application.ioloop.stop()
+    
+    signal.signal(signal.SIGHUP, handler)
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+    application.listen(**listen)
+    logger.warning('START')
     try:
-        pidlock.acquire(timeout=10)
-        # TODO: clean out the router-ipc directory
-        application = SageCellServer(baseurl=args.baseurl)
-        listen = {'port': args.port, 'xheaders': True}
-        if args.interface is not None:
-            listen['address']=get_ip_address(args.interface)
-        logger.info("Listening configuration: %s"%(listen,))
-        logger.warning('START')
-        application.listen(**listen)
-        application.ioloop.start()
-    except KeyboardInterrupt:
-        logger.info("Received KeyboardInterrupt, so I'm shutting down.")
-        try:
-            application.km.shutdown()
-        except KeyboardInterrupt:
-            logger.info("Received another KeyboardInterrupt while shutting down, so I'm giving up.  You'll have to clean up anything left over.")
-    finally:
-        pidlock.release()
-        logger.warning('SHUTDOWN')
+        from systemd.daemon import notify
+        logger.debug('notifying systemd that we are ready')
+        notify('READY=1\nMAINPID={}'.format(os.getpid()), True)
+    except ImportError:
+        pass
+    application.ioloop.start()
+    logger.warning('SHUTDOWN')
+    pidlock.release()

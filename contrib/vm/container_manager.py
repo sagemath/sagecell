@@ -2,7 +2,6 @@
 
 import argparse
 import datetime
-import fnmatch
 import grp
 import logging
 import logging.config
@@ -68,10 +67,11 @@ imagemagick
 iptables
 libcairo-dev
 libffi-dev
+libsystemd-dev
 m4
 nginx
 npm
-php5-fpm
+php7.0-fpm
 rsyslog-relp
 texlive
 texlive-latex-extra
@@ -98,9 +98,7 @@ sage_optional_packages = [
 "4ti2",
 "biopython",
 "cbc",
-"chomp",
 "cluster_seed",
-"coxeter3",
 "cryptominisat",
 "database_cremona_ellcurve",
 "database_gap",
@@ -138,6 +136,7 @@ python_packages = [
 "paramiko",
 "psutil",
 "sockjs-tornado",
+"git+https://github.com/systemd/python-systemd.git",
 # Optional
 "bitarray",
 "ggplot",
@@ -198,33 +197,46 @@ if $syslogfacility-text == "local3" then
 
 # HA-Proxy configuration is regenerated every time the script is run.
 HAProxy_header = """\
+# Default from Ubuntu 16.04 LTS
 global
-    chroot /var/lib/haproxy
-    daemon
-    group haproxy
-    user haproxy
-    log /dev/log local0
-    stats socket /var/run/haproxy.sock mode 600
+        log /dev/log    local0
+        log /dev/log    local1 notice
+        chroot /var/lib/haproxy
+        stats socket /run/haproxy/admin.sock mode 660 level admin
+        stats timeout 30s
+        user haproxy
+        group haproxy
+        daemon
 
+        # Default SSL material locations
+        ca-base /etc/ssl/certs
+        crt-base /etc/ssl/private
+
+        # Default ciphers to use on SSL-enabled listening sockets.
+        # For more information, see ciphers(1SSL). This list is from:
+        #  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+        ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
+        ssl-default-bind-options no-sslv3
 
 defaults
-    log global
-    mode http
-    option dontlognull
-    option http-server-close
-    option httplog
-    option redispatch
-    timeout connect 5s
-    timeout client 50s
-    timeout server 50s
+        log     global
+        mode    http
+        option  httplog
+        option  dontlognull
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+        errorfile 400 /etc/haproxy/errors/400.http
+        errorfile 403 /etc/haproxy/errors/403.http
+        errorfile 408 /etc/haproxy/errors/408.http
+        errorfile 500 /etc/haproxy/errors/500.http
+        errorfile 502 /etc/haproxy/errors/502.http
+        errorfile 503 /etc/haproxy/errors/503.http
+        errorfile 504 /etc/haproxy/errors/504.http
 
-    errorfile 400 /etc/haproxy/errors/400.http
-    errorfile 403 /etc/haproxy/errors/403.http
-    errorfile 408 /etc/haproxy/errors/408.http
-    errorfile 500 /etc/haproxy/errors/500.http
-    errorfile 502 /etc/haproxy/errors/502.http
-    errorfile 503 /etc/haproxy/errors/503.http
-    errorfile 504 /etc/haproxy/errors/504.http
+# SageMathCell additions
+        option http-server-close
+        option redispatch
 """
 
 # {suffix} {port} {hostname} {peer_port} have to be set once
@@ -240,7 +252,7 @@ peers local{suffix}
     peer {hostname} localhost:{peer_port}
 
 backend static{suffix}
-    server {node} {node}.lxc:8889 id {id} check
+    server {node} {ip}:8889 id {id} check
 
 backend compute{suffix}
     stick-table type string len 36 size 1m expire 2h peers local{suffix}
@@ -249,7 +261,7 @@ backend compute{suffix}
     stick store-response res.hdr(Jupyter-Kernel-ID)
     option httpchk
 
-    server {node} {node}.lxc:8888 id {id} check port 9888
+    server {node} {ip}:8888 id {id} check port 9888
 """
 
 HAProxy_stats = """
@@ -292,18 +304,6 @@ def communicate(command, message):
             msg = "{} failed".format(command)
             log.error(msg)
             raise RuntimeError(msg)
-
-
-def remove_pattern(path, pattern):
-    r"""
-    Remove all files and directories at ``path`` matching ``pattern``.
-    """
-    for name in fnmatch.filter(os.listdir(path), pattern):
-        full = os.path.join(path, name)
-        if os.path.isdir(full):
-            shutil.rmtree(full)
-        else:
-            os.remove(full)
 
 
 def timer_delay(delay, test=None):
@@ -528,6 +528,7 @@ def install_config_files():
         for file in files:
             name = os.path.join(root, file)
             adjust_names(shutil.copy(name, name[1:]))
+    check_call("systemctl enable sagecell")
     with open("/etc/network/interfaces", "a") as f:
         f.write("    up /root/firewall\n")
 
@@ -562,10 +563,10 @@ class SCLXC(object):
 
     def clone(self, clone_name, autostart=False, update=False):
         r"""
-        Create self, destroy old clone, and create it again.
+        Clone self, create a base container and destroy old clone if necessary.
         """
-        if not self.c.defined:
-            raise RuntimeError("cannot clone a non-existing container")
+        if not self.is_defined():
+            self.create()
         if update:
             self.update()
         self.shutdown()
@@ -586,30 +587,15 @@ class SCLXC(object):
 
     def create(self):
         r"""
-        Destroy and recreate self.
+        Create a base contrainer, destroy old one if necessary.
         """
         self.destroy()
         log.info("creating %s", self.name)
         # Try to automatically pick up proxy from host
         os.environ["HTTP_PROXY"] = "apt"
-
-        # if not self.c.create("ubuntu", 0, {"packages": ",".join(packages)}):
-        #     raise RuntimeError("failed to create " + self.name)
-        # Try to work around https://github.com/lxc/lxc/issues/283
-        cmd = "lxc-create -n {} -t ubuntu -B btrfs -- --packages={}"
-        check_call(cmd.format(self.name, ",".join(packages)))
-        self.c = lxc.Container(self.name)
-
-        # Try to work around https://github.com/lxc/lxc/issues/280
-        cmd = "apt-config shell APT_PROXY Acquire::http::Proxy"
-        try:
-            APT_PROXY = check_output(cmd).split("'")[1]
-            proxy_file = "/var/cache/lxc/trusty/rootfs-amd64" \
-                "/etc/apt/apt.conf.d/70proxy"
-            with open(proxy_file, "w") as f:
-                f.write(r'Acquire::http::Proxy "{}";'.format(APT_PROXY))
-        except IndexError:
-            pass
+        if not self.c.create(
+            "ubuntu", 0, {"packages": ",".join(packages)}, "btrfs"):
+                raise RuntimeError("failed to create " + self.name)
         os.environ.unsetenv("HTTP_PROXY")
 
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
@@ -618,6 +604,7 @@ class SCLXC(object):
         self.inside(os.symlink, "/usr/bin/nodejs", "/usr/bin/node")
         log.info("installing npm packages")
         self.inside("npm install -g inherits requirejs coffee-script")
+        self.update()
 
     def destroy(self):
         r"""
@@ -729,6 +716,10 @@ class SCLXC(object):
         self.start()
         timer_delay(start_delay)
         self.shutdown()
+        
+    def ip(self):
+        self.start()
+        return self.c.get_ips()[0]
 
     def is_defined(self):
         return self.c.defined
@@ -747,6 +738,7 @@ class SCLXC(object):
         copyname = "container_logs/%s to %s on %s" % (start, end, self.name)
         if not os.path.exists("container_logs"):
             os.mkdir("container_logs")
+        log.debug("saving %s", copyname)
         shutil.copy(logname, copyname)
         check_call("bzip2 '{}'".format(copyname))
 
@@ -767,20 +759,18 @@ class SCLXC(object):
         r"""
         Update OS packages in ``self``.
         """
-        log.info("updating packages in %s", self.name)
-        self.inside("apt-get update")
-        self.inside("apt-get dist-upgrade -y --auto-remove")
+        if self.is_defined():
+            log.info("updating packages in %s", self.name)
+            self.inside("apt-get update")
+            self.inside("apt-get dist-upgrade -y --auto-remove")
+        else:
+            self.create()
 
 
 def restart_haproxy(names, backup_names=[]):
     r"""
     Regenerate HA-Proxy configuration file and restart it.
     """
-    # Make sure we have a fresh enough HA-Proxy
-    if check_output("haproxy -v").startswith("HA-Proxy version 1.4"):
-        log.info("HAProxy is too old, installing from backports")
-        check_call("apt-get install --target-release trusty-backports haproxy")
-
     log.debug("generating HAProxy configuration file")
     lines = [HAProxy_header]
     if names:
@@ -796,15 +786,19 @@ def restart_haproxy(names, backup_names=[]):
                 lines.append(l)
             else:
                 for i, n in enumerate(names):
-                    lines.append(l.format(node=n, id=i + shift(n)))
+                    lines.append(l.format(
+                        node=n, ip=SCLXC(n).ip(), id=i + shift(n)))
                 l += " backup"
                 for i, n in enumerate(backup_names):
-                    lines.append(l.format(node=n, id=i + shift(n)))
-    if SCLXC(lxcn_tester).is_defined():
+                    lines.append(l.format(
+                        node=n, ip=SCLXC(n).ip(), id=i + shift(n)))
+    tester = SCLXC(lxcn_tester)
+    if tester.is_defined():
         section = HAProxy_section
         for k, v in {"port" : 8888,
                      "suffix": "_test",
                      "node": lxcn_tester,
+                     "ip": tester.ip(),
                      "id": 1,
                      "peer_port": 1088,
                      "hostname": check_output("hostname").strip()}.items():
@@ -813,26 +807,10 @@ def restart_haproxy(names, backup_names=[]):
     lines.append(HAProxy_stats)
     with open("/etc/haproxy/haproxy.cfg", "w") as f:
         f.write("\n".join(lines))
-    # HA-Proxy is likely to fail to start after reboot since container
-    # names are not resolvable until they have started.
-    with open("/etc/cron.d/haproxy", "w") as f:
-        delay = start_delay * (len(up_names) + 2)
-        f.write("@reboot root sleep %d; service haproxy start\n" % delay)
-    # Make it possible to use container names
     try:
-        check_call("host {}.lxc".format(lxcn_sagecell))
+        check_call("systemctl reload haproxy")
     except subprocess.CalledProcessError:
-        log.info("making container names resolvable to IP addresses")
-        with open("/etc/default/lxc-net", "r") as f:
-            content = f.read()
-        content = content.replace('\n#LXC_DOMAIN="lxc"', '\nLXC_DOMAIN="lxc"')
-        with open("/etc/default/lxc-net", "w") as f:
-            f.write(content)
-        with open("/etc/dnsmasq.d/lxc", "a") as f:
-            f.write("server=/lxc/10.0.3.1\ninterface=lo\n")
-        log.info("Reboot for system configuration changes to take effect.")
-        exit()
-    check_call("service haproxy reload")
+        check_call("systemctl start haproxy")
 
 
 logging.config.dictConfig(yaml.load("""
@@ -901,11 +879,12 @@ if not os.path.exists("/etc/rsyslog.d/sagecell.conf"):
     log.info("setting up rsyslog configuration file")
     with open("/etc/rsyslog.d/sagecell.conf", "w") as f:
         f.write(rsyslog_conf)
-    check_call("service rsyslog restart")
+    check_call("systemctl restart rsyslog")
 
 # Main chain: base -- precell -- (sagecell, backup)
+base = SCLXC(lxcn_base)
 if args.base:
-    SCLXC(lxcn_base).create()
+    base.create()
 
 sagecell = SCLXC(lxcn_sagecell)
 if args.savemaster:
@@ -921,11 +900,6 @@ if args.master or not sagecell.is_defined():
             precell.inside(
                 "su -c 'git -C /home/{server}/github/sagecell pull' {server}")
     else:
-        base = SCLXC(lxcn_base)
-        if base.is_defined():
-            base.update()
-        else:
-            base.create()
         precell = base.clone(lxcn_precell)
         precell.prepare_for_sagecell(args.keeprepos)
     sagecell = precell.clone(lxcn_sagecell)
@@ -964,9 +938,6 @@ if args.deploy:
         restart_haproxy(up_names, old_names)
         log.info("waiting for users to stop working with old containers...")
         timer_delay(deploy_delay, test)
-        # Make sure sagecell has an associated IP for restart_haproxy
-        sagecell.start()
-        sagecell.shutdown()
 
 restart_haproxy(up_names)
 

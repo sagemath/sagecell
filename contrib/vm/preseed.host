@@ -52,6 +52,7 @@ d-i partman-auto/expert_recipe string small-swap : \
             $primary{ } $bootable{ } \
             method{ format } format{ } \
             use_filesystem{ } filesystem{ btrfs } \
+            options/compress{ } \
             mountpoint{ / } . \
         1024 4096 50% linux-swap \
             method{ swap } format{ } .
@@ -73,10 +74,10 @@ d-i passwd/root-password-again password disabled
 d-i passwd/make-user boolean false
 
 ### Package selection
-tasksel tasksel/first multiselect Basic Ubuntu server, OpenSSH server
+tasksel tasksel/first multiselect openssh-server, server, standard
 
 # Individual additional packages to install
-d-i pkgsel/include string dnsmasq git haproxy lxc munin python3-psutil python3-yaml rsyslog-relp
+d-i pkgsel/include string haproxy lxc python3-psutil python3-yaml rsyslog-relp
         
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
