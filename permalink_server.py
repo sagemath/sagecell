@@ -6,6 +6,7 @@ post/get api for storing and retrieving code.
 """
 
 import os
+import signal
 
 import psutil
 import tornado.httpserver
@@ -63,13 +64,24 @@ if __name__ == "__main__":
             except psutil.NoSuchProcess:
                 pass
         pidlock.break_lock()
+        
+    pidlock.acquire(timeout=10)
+    application = PermalinkServer()
+    http_server = tornado.httpserver.HTTPServer(application, xheaders=True)
+    http_server.listen(options.port)
+
+    def handler(signum, frame):
+        tornado.ioloop.IOLoop.instance().stop()
+    
+    signal.signal(signal.SIGHUP, handler)
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
     try:
-        pidlock.acquire(timeout=10)
-        application = PermalinkServer()
-        http_server = tornado.httpserver.HTTPServer(application, xheaders=True)
-        http_server.listen(options.port)
-        tornado.ioloop.IOLoop.instance().start()
-    except KeyboardInterrupt:
+        from systemd.daemon import notify
+        notify('READY=1\nMAINPID={}'.format(os.getpid()), True)
+    except ImportError:
         pass
-    finally:
-        pidlock.release()
+        
+    tornado.ioloop.IOLoop.instance().start()
+    pidlock.release()

@@ -1,0 +1,22 @@
+[Unit]
+Description=SageMathCell Permalink Server
+
+
+[Service]
+Type=notify
+NotifyAccess=all
+SyslogIdentifier=SageMathCell
+
+ExecStartPre=\
+    /sbin/iptables -t nat --flush PREROUTING ;\
+    /sbin/iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to-port 8080
+
+
+PermissionsStartOnly=true
+WorkingDirectory=/home/sc_data
+User=sc_data
+ExecStart=/usr/bin/python sagecell/permalink_server.py
+
+
+[Install]
+WantedBy=multi-user.target
