@@ -1,6 +1,0 @@
-ROOT=/home/sagenb/sagecell
-cd ${ROOT}/sagecell/
-${ROOT}/sage/sage -sh -c "make -B"
-cd ${ROOT}
-sage/sage ${ROOT}/sagecell/web_server.py -p $1 
-

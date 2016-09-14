@@ -1,3 +1,0 @@
-source /home/sagenb/sagecell/screen-config
-logfile /home/sagenb/sagecell/logs/web.log
-logfile flush .1
