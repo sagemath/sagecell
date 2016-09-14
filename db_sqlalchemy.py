@@ -13,6 +13,23 @@ from sqlalchemy.exc import IntegrityError
 
 import db
 
+
+Base = declarative_base()
+
+class ExecMessage(Base):
+    """
+    Table of input messages in JSON form.
+    """
+    __tablename__ = "permalinks"
+    ident = Column(String, primary_key=True, index=True)
+    code = Column(String)
+    language = Column(String)
+    interacts = Column(String)
+    created = Column(DateTime, default=datetime.utcnow)
+    last_accessed = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    requested = Column(Integer, default=0)
+
+
 class DB(db.DB):
     """
     SQLAlchemy database adapter
@@ -21,7 +38,6 @@ class DB(db.DB):
     """
 
     def __init__(self, db_file):
-        self.db_file = db_file
         self.engine = create_engine(db_file)
         self.SQLSession = sessionmaker(bind = self.engine)
         Base.metadata.create_all(self.engine)
@@ -56,18 +72,3 @@ class DB(db.DB):
         if msg is None:
             raise LookupError
         callback(msg.code, msg.language, msg.interacts)
-
-Base = declarative_base()
-
-class ExecMessage(Base):
-    """
-    Table of input messages in JSON form.
-    """
-    __tablename__ = "permalinks"
-    ident = Column(String, primary_key=True, index=True)
-    code = Column(String)
-    language = Column(String)
-    interacts = Column(String)
-    created = Column(DateTime, default=datetime.utcnow)
-    last_accessed = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    requested = Column(Integer, default=0)
