@@ -5,9 +5,12 @@ This Tornado server provides a permalink service with a convenient
 post/get api for storing and retrieving code.
 """
 
-import tornado.web
-import tornado.gen as gen
+import base64
 import json
+import zlib
+
+import tornado
+
 
 class PermalinkHandler(tornado.web.RequestHandler):
     """
@@ -20,7 +23,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
     with the format ``<root_url>?q=<id>``.
     """
     @tornado.web.asynchronous
-    @gen.engine
+    @tornado.gen.engine
     def post(self):
         args = self.request.arguments
         retval = {"query": None, "zip": None}
@@ -31,12 +34,12 @@ class PermalinkHandler(tornado.web.RequestHandler):
             self.send_error(400)
             return
         interacts = "".join(args.get("interacts", ["[]"]))
-        import zlib, base64
         retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code))
-        retval["query"] = yield gen.Task(self.application.db.new_exec_msg,
-            code, language, interacts)
+        retval["query"] = yield tornado.gen.Task(
+            self.application.db.new_exec_msg, code, language, interacts)
         if "interacts" in args:
-            retval["interacts"] = base64.urlsafe_b64encode(zlib.compress(interacts))
+            retval["interacts"] = base64.urlsafe_b64encode(
+                zlib.compress(interacts))
         if "n" in args:
             retval["n"] = int("".join(args["n"]))
         if "frame" not in args:
@@ -50,11 +53,11 @@ class PermalinkHandler(tornado.web.RequestHandler):
         self.finish()
 
     @tornado.web.asynchronous
-    @gen.engine
+    @tornado.gen.engine
     def get(self):
         try:
             q = "".join(self.request.arguments["q"])
-            response = yield gen.Task(self.application.db.get_exec_msg, q)
+            response = yield tornado.gen.Task(self.application.db.get_exec_msg, q)
         except (LookupError, KeyError):
             self.set_status(404)
             self.finish("ID not found in permalink database")
