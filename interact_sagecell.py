@@ -575,7 +575,11 @@ class InputBox(InteractControl):
                 'keypress': self.keypress}
 
     def constrain(self, value):
-        return unicode(value if isinstance(value, basestring) else repr(value))
+        if isinstance(value, str):
+            return value.decode("utf-8")
+        if isinstance(value, unicode):
+            return value
+        return unicode(repr(value))
 
 class ExpressionBox(InputBox):
     """
