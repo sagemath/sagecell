@@ -74,5 +74,4 @@ class DB(db.DB):
             self.dbsession.commit()
         if msg is None:
             raise LookupError
-        callback(
-            msg.code.encode("utf8"), msg.language, msg.interacts.encode("utf8"))
+        callback(msg.code, msg.language, msg.interacts)
