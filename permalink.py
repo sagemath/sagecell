@@ -37,9 +37,9 @@ class PermalinkHandler(tornado.web.RequestHandler):
         retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code))
         retval["query"] = yield tornado.gen.Task(
             self.application.db.new_exec_msg,
-            code.decode("utf8"),
+            code,
             language,
-            interacts.decode("utf8"))
+            interacts)
         if "interacts" in args:
             retval["interacts"] = base64.urlsafe_b64encode(
                 zlib.compress(interacts))

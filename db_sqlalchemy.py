@@ -50,7 +50,10 @@ class DB(db.DB):
         while True:
             ident = "".join(random.choice(string.lowercase) for _ in range(6))
             message = ExecMessage(
-                ident=ident, code=code, language=language, interacts=interacts)
+                ident=ident,
+                code=code.decode("utf8"),
+                language=language,
+                interacts=interacts.decode("utf8"))
             try:
                 self.dbsession.add(message)
                 self.dbsession.commit()
@@ -71,4 +74,5 @@ class DB(db.DB):
             self.dbsession.commit()
         if msg is None:
             raise LookupError
-        callback(msg.code, msg.language, msg.interacts)
+        callback(
+            msg.code.encode("utf8"), msg.language, msg.interacts.encode("utf8"))
