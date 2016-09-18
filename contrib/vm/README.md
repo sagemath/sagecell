@@ -58,7 +58,29 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
 
 ## Outside of EVM
 
-1.  Configure HTTP and/or HTTPS access to EVM:80. HTTPS has to be decrypted before EVM, but it is recommended to avoid certain connection problems. Examples of HA-Proxy and Apache configurations will soon be provided.
+1.  Configure HTTP and/or HTTPS access to EVM:80. HTTPS has to be decrypted before EVM, but it is recommended to avoid certain connection problems. If you are using HA-Proxy, you can add the following sections to `/etc/haproxy/haproxy.conf`:
+ 
+    ```
+    frontend http
+        bind *:80
+        bind *:443 ssl crt /etc/haproxy/cert/your_cerificate.pem
+        option forwardfor
+        http-request add-header X-Proto https if { ssl_fc }
+        use_backend sagemathcell
+        
+    backend sagemathcell
+        server sagemathcell_evm sagemathcell_evm_ip_address:80 check        
+    ```
+
+    If you are using Apache, a possible proxy configuration (with `proxy_wstunnel` module enabled) is
+    
+    ```
+    ProxyPass /sockjs/ ws://sagemathcell_evm_ip_address:80/sockjs/
+    ProxyPass / http://sagemathcell_evm_ip_address:80/
+    ProxyPassReverse / http://sagemathcell_evm_ip_address:80/
+    ProxyPreserveHost On
+    ```
+    
 2.  Configure (restricted) access to EVM:8888 for testing newer versions of SageCell.
 3.  Configure (restricted) access to EVM:9999 for HA-Proxy statistics page.
 4.  If you are going to run multiple EVMs, consider adjusting `/etc/rsyslog.d/sagecell.conf` in them to collect all logs on a single server.
