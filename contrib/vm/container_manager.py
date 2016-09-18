@@ -600,7 +600,7 @@ class SCLXC(object):
 
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
         log.info("installing later packages")
-        self.inside("apt-get install -y " + " ".join(packages_later))
+        self.inside("apt install -y " + " ".join(packages_later))
         self.inside(os.symlink, "/usr/bin/nodejs", "/usr/bin/node")
         log.info("installing npm packages")
         self.inside("npm install -g inherits requirejs coffee-script")
@@ -761,8 +761,14 @@ class SCLXC(object):
         """
         if self.is_defined():
             log.info("updating packages in %s", self.name)
-            self.inside("apt-get update")
-            self.inside("apt-get dist-upgrade -y --auto-remove")
+            try:
+                self.inside("apt update")
+            except RuntimeError:
+                # We get here if /var/lib/dpkg/lock is locked:
+                # let's wait a bit and try again once
+                timer_delay(timeout)
+                self.inside("apt update")
+            self.inside("apt full-upgrade -y --auto-remove")
         else:
             self.create()
 
