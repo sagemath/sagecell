@@ -738,7 +738,7 @@ class SCLXC(object):
         copyname = "container_logs/%s to %s on %s" % (start, end, self.name)
         if not os.path.exists("container_logs"):
             os.mkdir("container_logs")
-        log.debug("saving %s", copyname)
+        log.info("saving %s", copyname)
         shutil.copy(logname, copyname)
         check_call("bzip2 '{}'".format(copyname))
 
