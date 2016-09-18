@@ -139,12 +139,10 @@ class SalvusThreeJS
                 @opts.renderer = 'canvas2d'
 
         if @opts.renderer == 'webgl'
-            @opts.element.find(".salvus-3d-viewer-renderer").text("webgl")
             @renderer = new THREE.WebGLRenderer
                 antialias             : true
                 preserveDrawingBuffer : true
         else
-            @opts.element.find(".salvus-3d-viewer-renderer").text("canvas2d")
             @renderer = new THREE.CanvasRenderer(antialias:true)
         @renderer.setSize(@opts.width, @opts.height)
         @renderer.setClearColor(0xffffff, 1);
