@@ -245,6 +245,7 @@ HAProxy_section = r"""
 frontend http{suffix}
     bind *:{port}
     reqrep ^([^\ \t]*[\ \t])/kernel/([a-f0-9-]{36})/files/([^\ \t]*)(.*)     \1/kernel/\2/files/\3?CellSessionID=\2\4
+    reqrep ^([^\ \t]*[\ \t])(/embedded_sagecell\.js[\ \t].*)     \1/static\2
     use_backend static{suffix} if { path_beg /static }
     use_backend compute{suffix}
 
