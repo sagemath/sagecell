@@ -244,7 +244,6 @@ defaults
 HAProxy_section = r"""
 frontend http{suffix}
     bind *:{port}
-    reqrep ^([^\ \t]*[\ \t])/kernel/([a-f0-9-]{36})/files/([^\ \t]*)(.*)     \1/kernel/\2/files/\3?CellSessionID=\2\4
     reqrep ^([^\ \t]*[\ \t])(/embedded_sagecell\.js[\ \t].*)     \1/static\2
     use_backend static{suffix} if { path_beg /static }
     use_backend compute{suffix}
@@ -260,6 +259,7 @@ backend compute{suffix}
     stick on urlp(CellSessionID)
     stick match req.hdr(Jupyter-Kernel-ID)
     stick store-response res.hdr(Jupyter-Kernel-ID)
+    stick match path bytes(8,36) if { path_reg ^/kernel/.{36}/files/ }
     option httpchk
 
     server {node} {ip}:8888 id {id} check port 9888
