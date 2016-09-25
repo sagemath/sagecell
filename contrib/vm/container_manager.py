@@ -937,11 +937,17 @@ if args.deploy:
     timer_delay(start_delay)
     old_nodes = list(map(SCLXC, old_names))
     if old_nodes and not args.nodelay:
-        try:
-            with open("/var/run/haproxy.pid") as f:
-                test = psutil.Process(int(f.read())).is_running
-        except FileNotFoundError:
-            test = None
+        old_haproxy = []
+        for p in psutil.process_iter():
+            try:
+                if p.username() == 'haproxy':
+                    old_haproxy.append(p)
+            except psutil.NoSuchProcess:
+                pass
+
+        def test():
+            return psutil.wait_procs(old_haproxy, timeout=1)[1]
+            
         restart_haproxy(up_names, old_names)
         log.info("waiting for users to stop working with old containers...")
         timer_delay(deploy_delay, test)
