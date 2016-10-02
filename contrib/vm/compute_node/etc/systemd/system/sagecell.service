@@ -5,6 +5,7 @@ Description=SageMathCell computation server
 [Service]
 Type=notify
 NotifyAccess=all
+Restart=always
 SyslogIdentifier=SageMathCell
 
 ExecStartPre=\

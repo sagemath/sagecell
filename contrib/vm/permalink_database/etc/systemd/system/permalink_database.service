@@ -5,6 +5,7 @@ Description=SageMathCell Permalink Server
 [Service]
 Type=notify
 NotifyAccess=all
+Restart=always
 SyslogIdentifier=SageMathCell
 
 ExecStartPre=\
