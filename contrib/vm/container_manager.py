@@ -51,7 +51,6 @@ repositories = [
     ("novoselt", "sage", "sagecell"),
     ("sagemath", "sagecell", "master"),
     ("matplotlib", "basemap", "master"),
-    ("ipython", "ipykernel", "master"),
 ]
 
 # Packages to be installed in the base container
@@ -132,6 +131,7 @@ sage_optional_packages = [
 # Python packages to be installed into Sage (via pip)
 python_packages = [
 # Dependencies of SageMathCell
+"ipykernel==4.5.0",
 "lockfile",
 "paramiko",
 "psutil",
@@ -487,9 +487,6 @@ def install_packages():
          
                  headers = self.request.headers.get('Access-Control-Request-Headers')
         ''')
-    log.info("updating ipykernel to master")
-    shutil.move("github/ipykernel", ".")
-    check_call("sage/sage -pip install ./ipykernel")
 
 
 def install_sagecell():
