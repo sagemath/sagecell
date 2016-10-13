@@ -138,6 +138,7 @@ python_packages = [
 "sockjs-tornado",
 "git+https://github.com/systemd/python-systemd.git",
 # Optional
+"APMonitor",
 "bitarray",
 "ggplot",
 "h5py",
