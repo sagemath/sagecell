@@ -134,7 +134,6 @@ python_packages = [
 "ipykernel==4.5.0",
 "lockfile",
 "paramiko",
-"psutil",
 "sockjs-tornado",
 "git+https://github.com/systemd/python-systemd.git",
 # Optional
