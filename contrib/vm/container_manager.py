@@ -905,7 +905,7 @@ if args.master or not sagecell.is_defined():
             precell.inside(
                 "su -c 'git -C /home/{server}/github/sagecell pull' {server}")
     else:
-        precell = base.clone(lxcn_precell)
+        precell = base.clone(lxcn_precell, update=True)
         precell.prepare_for_sagecell(args.keeprepos)
     sagecell = precell.clone(lxcn_sagecell)
     sagecell.install_sagecell()
