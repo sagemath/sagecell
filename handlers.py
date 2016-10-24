@@ -3,10 +3,10 @@ import base64, json, math, os.path, re, time, urllib, uuid, zlib
 from log import StatsMessage, logger, stats_logger
 
 import tornado.gen
+import tornado.ioloop
 import tornado.web
 import tornado.websocket
 import sockjs.tornado
-from zmq.eventloop import ioloop
 from zmq.utils import jsonapi
 
 try:
@@ -20,7 +20,7 @@ try:
     }
 except ImportError:
     tab_completion = {}
-from misc import sage_json, Timer, Config
+from misc import sage_json, Config
 config = Config()
 
 
@@ -379,7 +379,7 @@ accepted_tos=true\n""")
 
             self.zmq_handler = ZMQServiceHandler()
             self.zmq_handler.open(self.application, self.kernel_id)
-            loop = ioloop.IOLoop.instance()
+            loop = tornado.ioloop.IOLoop.instance()
             self.success = False
             
             def done(msg):
@@ -413,7 +413,7 @@ accepted_tos=true\n""")
             self.zmq_handler.on_message(jsonapi.dumps(exec_message))
 
     def timeout_request(self):
-        ioloop.IOLoop.instance().add_callback(self.finish_request)
+        tornado.ioloop.IOLoop.instance().add_callback(self.finish_request)
         
     def finish_request(self):
         try: # in case kernel has already been killed
@@ -608,9 +608,10 @@ class ZMQChannelsHandler(object):
                     self.stop_hb()
 
         beat_interval, first_beat = km.get_hb_info(self.kernel_id)
-        loop = ioloop.IOLoop.instance()
+        loop = tornado.ioloop.IOLoop.instance()
         self._hb_periodic_callback = \
-            ioloop.PeriodicCallback(ping_or_dead, beat_interval * 1000, loop)
+            tornado.ioloop.PeriodicCallback(
+                ping_or_dead, beat_interval * 1000, loop)
 
         def delayed_start():
             # Make sure we haven't been closed during the wait.
@@ -627,7 +628,8 @@ class ZMQChannelsHandler(object):
         if self._beating:
             self._beating = False
             self._hb_periodic_callback.stop()
-            ioloop.IOLoop.instance().remove_timeout(self._start_hb_handle)
+            tornado.ioloop.IOLoop.instance().remove_timeout(
+                self._start_hb_handle)
             if not self.hb_stream.closed():
                 self.hb_stream.on_recv(None)
                 self.hb_stream.close()
