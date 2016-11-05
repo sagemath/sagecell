@@ -537,10 +537,11 @@ def lock_down_worker():
     log.info("locking down worker account")
     os.chdir(os.path.join("/home", users["worker"]))
     # These commands (somewhat buggishly) lead to creation of files in .sage
+    # Also, we are not allowed to use multiline input starting with Sage 7.4
+    # https://trac.sagemath.org/ticket/21558
     check_call("""su -l {worker} -c 'echo "
         DihedralGroup(4).cayley_graph();
-        Dokchitser(conductor=1, gammaV=[0], weight=1, eps=1).init_coeffs(
-            [i+z for z in range(1,5)]);
+        Dokchitser(conductor=1, gammaV=[0], weight=1, eps=1).init_coeffs([i+z for z in range(1,5)]);
         gp(1);
         " | /home/{server}/sage/sage'""")
     os.mkdir(".sage/.python-eggs")
