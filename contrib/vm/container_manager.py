@@ -456,8 +456,7 @@ def install_packages():
     become_server()
     log.info("installing optional Sage packages")
     for package in sage_optional_packages:
-        # Experimental packages ask for confirmation.
-        communicate("sage/sage -i {}".format(package), "\n")
+        check_call("sage/sage -i -y {}".format(package))
     # And we also install basemap
     log.info("installing basemap in Sage")
     shutil.move("github/basemap", ".")
