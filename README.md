@@ -50,7 +50,6 @@ In particular, system packages installed in the base container are listed [here]
     ```bash
     sage/sage -pip install --upgrade lockfile
     sage/sage -pip install --upgrade paramiko
-    sage/sage -pip install --upgrade psutil
     sage/sage -pip install --upgrade sockjs-tornado
     ```
 
