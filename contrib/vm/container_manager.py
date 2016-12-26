@@ -107,10 +107,10 @@ sage_optional_packages = [
 "database_symbolic_data",
 "dot2tex",  # needs graphviz
 "gap_packages",
-"giac",
 "gnuplotpy",
 "guppy",
 "kash3",
+"latte_int",
 "lie",  # needs bison
 "lrslib",
 "mcqd",
@@ -121,6 +121,7 @@ sage_optional_packages = [
 "ore_algebra",
 "phc",
 "pybtex",   # needs unzip
+"pynormaliz",
 "qepcad",
 "saclib",
 "topcom",
