@@ -120,7 +120,6 @@ class BackendCell(BackendIPython):
         elif isinstance(rich_output, OutputSceneCanvas3d):
             self.display_file(rich_output.canvas3d.filename(),
                               'application/x-canvas3d')
-
         elif isinstance(rich_output, OutputSceneJmol):
             path = tempfile.mkdtemp(suffix=".jmol", dir=".")
             os.chmod(path, stat.S_IRWXU + stat.S_IXGRP + stat.S_IXOTH)
@@ -128,6 +127,14 @@ class BackendCell(BackendIPython):
             rich_output.preview_png.save_as(os.path.join(path, 'preview.png'))
             display_message({'text/plain': 'application/x-jmol file',
                              'application/x-jmol': path})
+        elif isinstance(rich_output, OutputSceneThreejs):
+            self.display_html("""
+                <iframe srcdoc="{}"
+                    width="500"
+                    height="500"
+                    style="border: 0;">
+                </iframe>
+                """.format(rich_output.html.get().replace('"', '&quot;')))
             
         else:
             raise TypeError('rich_output type not supported, got {0}'.format(rich_output))
@@ -172,5 +179,6 @@ class BackendCell(BackendIPython):
             
             OutputSceneCanvas3d,
             OutputSceneJmol,
+            OutputSceneThreejs,
             #OutputSceneWavefront,
         ])
