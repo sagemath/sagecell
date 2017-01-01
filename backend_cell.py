@@ -130,9 +130,7 @@ class BackendCell(BackendIPython):
         elif isinstance(rich_output, OutputSceneThreejs):
             self.display_html("""
                 <iframe srcdoc="{}"
-                    width="500"
-                    height="500"
-                    style="border: 0;">
+                    style="border: 0; height: 500px; min-width: 500px; width: 75%;">
                 </iframe>
                 """.format(rich_output.html.get().replace('"', '&quot;')))
             
