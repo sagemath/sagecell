@@ -119,7 +119,6 @@ sage_optional_packages = [
 "nose",
 "nzmath",
 "ore_algebra",
-"phc",
 "pybtex",   # needs unzip
 "pynormaliz",
 "qepcad",
