@@ -1,17 +1,15 @@
 import os.path
 
-# location of a sage executable
-sage = ""
 
-# defaults if sage isn't set above
-if sage == "":
-    if 'SAGE_ROOT' in os.environ:
-        # assume that the untrusted worker should run the same copy of sage
-        # that is used to run the web server
-        sage = os.path.join(os.environ["SAGE_ROOT"],"sage")
-    else:
-        # assume both the web server and the untrusted workers have sage in their paths
-        sage = "sage"
+# Location of the Sage executable
+if 'SAGE_ROOT' in os.environ:
+    # Assume that the worker should run the same Sage
+    # that is used to run the web server
+    sage = os.path.join(os.environ["SAGE_ROOT"], "sage")
+else:
+    # Assume both the web server and the worker have Sage in their paths
+    sage = "sage"
+
 # Require the user to accept terms of service before evaluation
 requires_tos = True
 
@@ -26,12 +24,11 @@ permalink_server = {
     'db_config': {'uri': 'sqlite:///sqlite.db'}
 }
 
-max_kernel_timeout = 60*10 # 10 minutes, for interacts
+max_kernel_timeout = 60 * 90    # 90 minutes, for interacts
 pid_file = 'sagecell.pid'
 permalink_pid_file = 'sagecell_permalink_server.pid'
 tmp_dir = "/tmp/sagecell"
 
-computers = []
 _default_config = {"host": "localhost",
                   "username": None,
                   "python": sage + " -python",
@@ -46,8 +43,7 @@ _default_config = {"host": "localhost",
 # https://groups.google.com/d/topic/sage-devel/1MM7UPcrW18/discussion
 # Note: All other resource limits seem to be working, but besides RLIMIT_CPU and
 # RLIMIT_AS they don't actually kill off offending processes
-                  "resource_limits": {"RLIMIT_CPU": 30, # CPU time in seconds
-                                      "RLIMIT_AS": 2**35, #Maximum address space in bytes; this sets 32 GB
+                  "resource_limits": {"RLIMIT_CPU": 120, # CPU time in seconds
                                      },
                   "max_kernels": 10,
                   "preforked_kernels": 1,
@@ -56,5 +52,4 @@ _default_config = {"host": "localhost",
                   "beat_interval": 0.5,
                   "first_beat": 1.0}
 
-for i in range(1):
-    computers.append(_default_config)
+computers = [_default_config]
