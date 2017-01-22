@@ -129,7 +129,8 @@ class BackendCell(BackendIPython):
                              'application/x-jmol': path})
         elif isinstance(rich_output, OutputSceneThreejs):
             self.display_html("""
-                <iframe srcdoc="{}" scrolling="no"
+                <iframe
+                    srcdoc="{}" scrolling="no"
                     style="border: 0; height: 500px; min-width: 500px; width: 75%;">
                 </iframe>
                 """.format(rich_output.html.get().replace('"', '&quot;')))
