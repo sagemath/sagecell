@@ -130,6 +130,7 @@ class BackendCell(BackendIPython):
         elif isinstance(rich_output, OutputSceneThreejs):
             self.display_html("""
                 <iframe
+                    scrolling="no"
                     srcdoc="{}"
                     style="
                         border: 1px silver solid;
