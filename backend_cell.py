@@ -131,7 +131,7 @@ class BackendCell(BackendIPython):
             self.display_html("""
                 <iframe
                     scrolling="no"
-                    srcdoc="{}"
+                    src="{}"
                     style="
                         border: 1px silver solid;
                         height: 500px;
@@ -140,7 +140,7 @@ class BackendCell(BackendIPython):
                         "
                     >
                 </iframe>
-                """.format(rich_output.html.get().replace('"', '&quot;')))
+                """.format(rich_output.html.filename()))
             
         else:
             raise TypeError('rich_output type not supported, got {0}'.format(rich_output))
