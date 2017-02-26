@@ -598,6 +598,10 @@ class SCLXC(object):
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
         log.info("installing later packages")
         self.inside("apt install -y " + " ".join(packages_later))
+        # Need to preseed or there will be a dialog
+        self.inside(communicate, "/usr/bin/debconf-set-selections",
+            "tmpreaper tmpreaper/readsecurity note")
+        self.inside("apt install -y tmpreaper")
         self.inside(os.symlink, "/usr/bin/nodejs", "/usr/bin/node")
         log.info("installing npm packages")
         self.inside("npm install -g inherits requirejs coffee-script")

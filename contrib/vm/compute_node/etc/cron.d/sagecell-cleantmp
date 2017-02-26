@@ -1,1 +1,1 @@
-*/30 * * * * root /usr/sbin/tmpwatch 2h /tmp/sagecell 
+*/30 * * * * root /usr/sbin/tmpreaper 2h /tmp/sagecell
