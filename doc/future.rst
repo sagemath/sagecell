@@ -83,4 +83,40 @@ Issues when migrating to using IPython 0.12+ hub and engines:
 * We'd need to have a way to "wrap" any messages sent out, to translate them GAE channel messages, for example.  The IPython notebook seems to do this already with their websocket/zmq bridge.
 
 
+Roadmap and Future Work
+-----------------------
 
+Going forward, here are some areas that we need to explore:
+
+* Implement stats or analytics of some type.  Google analytics seems like it won't work very well in the embedding scenario.  We can use pyzmq to add a [zmq logger](http://zeromq.github.com/pyzmq/logging.html) (so we get asynchronous logging).  Getting nice graphs and things from this is something else.
+
+* Extensive load-testing.  We don't seem to be able to handle huge load yet.  We're still rebooting 4-5 times a day because of 30-second timeout errors (with one server)
+
+* Also, we should figure out the right HAProxy settings to load balance across several tornado servers.  Currently, it seems like we have problems with the sessions getting mixed up between backends.  There are lots KeyErrors where a session can't find a kernel or something.
+
+* Get something like nginx to server static files.
+
+* (Lower priority: ) Move interact improvements back to sage notebook
+
+* Experiment with better interacts using the global dict that notifies of variable changes.
+
+Here are a few things to keep our eyes on:
+
+Secure ZMQ:
+
+* Salt: https://github.com/thatch45/salt The ZMQ secure pub/sub spec is based on it too: http://www.zeromq.org/topics:pubsub-security.  
+* tcpcrypt:  http://groups.google.com/group/sage-devel/browse_thread/thread/4e64f206fe980ebd
+* ssh tunnels
+
+Interacts:
+
+* using jsxgraph?  See gh-197, http://jsxgraph.uni-bayreuth.de/wiki/index.php/Circles_on_circles, http://sage.cs.drake.edu/home/pub/81/, and http://sage.cs.drake.edu/home/pub/79/
+* jquerymobile is released: http://jquerymobile.com/.  We should look at switching to that for interacts instead of jqueryui.  See also gh-78.
+
+Communication:
+
+* socket.io is a javascript library that allows for a variety of smarter communication that simple polling. See also https://groups.google.com/forum/#!topic/sage-notebook/JbJSULEX3hA
+
+Files:
+
+* We could have drag-and-drop uploading: http://blueimp.github.com/jQuery-File-Upload/
