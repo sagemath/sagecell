@@ -124,7 +124,6 @@ sage_optional_packages = [
 "qepcad",
 "saclib",
 "topcom",
-"threejs",
 ]
 
 # Python packages to be installed into Sage (via pip)

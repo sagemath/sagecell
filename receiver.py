@@ -98,8 +98,18 @@ class Receiver(object):
         _sage_.reset_kernel_timeout = misc.reset_kernel_timeout
         _sage_.javascript = misc.javascript
         _sage_.sent_files = {}
+        def threejs(p, **kwds):
+            from warnings import warn
+            warn("""
+    threejs(graphic_object, **keywords)
+is now equivalent to
+    graphic_object.show(viewer='threejs', **kwds)
+and will be completely removed in future versions""",
+                 DeprecationWarning, 2)
+            kwds['viewer'] = 'threejs'
+            p.show(**kwds)
+        _sage_.threejs = threejs
         import graphics
-        _sage_.threejs = graphics.show_3d_plot_using_threejs
         _sage_.InteractiveGraphics = graphics.InteractiveGraphics
         
         def new_files(root='./'):

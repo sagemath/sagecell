@@ -11,11 +11,7 @@ define([
     "jquery-ui-tp",
     "colorpicker",
     "canvas3d_lib",
-    "three",
-    "OrbitControls",
-    "Detector",
-    "JSmol",
-    "3d"
+    "JSmol"
 ], function(
     $,
     editor,
