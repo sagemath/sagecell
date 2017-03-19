@@ -128,10 +128,13 @@ class BackendCell(BackendIPython):
             display_message({'text/plain': 'application/x-jmol file',
                              'application/x-jmol': path})
         elif isinstance(rich_output, OutputSceneThreejs):
+            filename = graphics_filename(ext='.html')
+            rich_output.html.save_as(filename)
+            world_readable(filename)
             self.display_html("""
                 <iframe
                     scrolling="no"
-                    srcdoc="{}"
+                    src="{}"
                     style="
                         border: 1px silver solid;
                         height: 500px;
@@ -140,7 +143,7 @@ class BackendCell(BackendIPython):
                         "
                     >
                 </iframe>
-                """.format(rich_output.html.get().replace('"', '&quot;')))
+                """.format(filename)
             
         else:
             raise TypeError('rich_output type not supported, got {0}'.format(rich_output))
