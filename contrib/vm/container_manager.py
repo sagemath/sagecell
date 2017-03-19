@@ -602,7 +602,7 @@ class SCLXC(object):
         self.inside("apt install -y tmpreaper")
         self.inside(os.symlink, "/usr/bin/nodejs", "/usr/bin/node")
         log.info("installing npm packages")
-        self.inside("npm install -g inherits requirejs coffee-script")
+        self.inside("npm install -g inherits requirejs")
         self.update()
 
     def destroy(self):

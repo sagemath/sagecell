@@ -15,37 +15,35 @@ We assume that you have access to the Internet and can install any needed depend
 In particular, system packages installed in the base container are listed [here](https://github.com/sagemath/sagecell/blob/master/contrib/vm/container_manager.py#L58).
 
 
-1.  Make sure you have a recent enough version of git: 1.8.5 is good enough, while 1.7.9 isn't.
-2.  Install required npm packages:
+1.  Install required npm packages:
 
     ```bash
     sudo apt-get install npm
     # On Debian based systems we need to make an alias
     sudo ln -s /usr/bin/nodejs /usr/bin/node
-    sudo npm install -g inherits requirejs coffee-script
+    sudo npm install -g inherits requirejs
     ```
 
-3.  Optionally create a directory for all components:
+2.  Optionally create a directory for all components:
 
     ```bash
     mkdir sc_build
     cd sc_build
     ```
 
-4.  Get and build Sage (`export MAKE="make -j8"` or something similar can speed things up):
+3.  Get and build Sage (`export MAKE="make -j8"` or something similar can speed things up):
 
     ```bash
     git clone https://github.com/novoselt/sage.git
     pushd sage
     git checkout sagecell
     make
-    ./sage -i threejs
     popd
     ```
 
     Note that we are building a special branch of Sage, do NOT use your regular Sage installation!
     
-5.  Prepare Sage for SageMathCell:
+4.  Prepare Sage for SageMathCell:
 
     ```bash
     sage/sage -pip install --upgrade lockfile
@@ -53,7 +51,7 @@ In particular, system packages installed in the base container are listed [here]
     sage/sage -pip install --upgrade sockjs-tornado
     ```
 
-6.  Build SageMathCell:
+5.  Build SageMathCell:
 
     ```bash
     git clone https://github.com/sagemath/sagecell.git
