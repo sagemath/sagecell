@@ -128,10 +128,14 @@ class BackendCell(BackendIPython):
             display_message({'text/plain': 'application/x-jmol file',
                              'application/x-jmol': path})
         elif isinstance(rich_output, OutputSceneThreejs):
+            path = tempfile.mkstemp(suffix='.html', dir='.')[1]
+            path = os.path.relpath(path)
+            rich_output.html.save_as(path)
+            os.chmod(path, stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH)
             self.display_html("""
                 <iframe
                     scrolling="no"
-                    srcdoc="{}"
+                    src="cell://{}"
                     style="
                         border: 1px silver solid;
                         height: 500px;
@@ -140,7 +144,8 @@ class BackendCell(BackendIPython):
                         "
                     >
                 </iframe>
-                """.format(rich_output.html.get().replace('"', '&quot;')))
+                """.format(path))
+            sys._sage_.sent_files[path] = os.path.getmtime(path)
             
         else:
             raise TypeError('rich_output type not supported, got {0}'.format(rich_output))
