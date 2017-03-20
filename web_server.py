@@ -40,6 +40,7 @@ class SageCellServer(tornado.web.Application):
             ] + handlers.KernelRouter.urls
         handlers_list = [[baseurl+i[0]]+list(i[1:]) for i in handlers_list]
         settings = dict(
+            compress_response = True,
             template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),
             static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
             static_url_prefix = baseurl+"/static/",
