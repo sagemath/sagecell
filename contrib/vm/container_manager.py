@@ -90,7 +90,6 @@ libxml2-dev
 libxslt-dev
 octave
 """.split()
-# For ATLAS on Ubuntu 14.04: libatlas3-base libatlas3-base-dev liblapack-dev
 
 # Optional Sage packages to be installed
 sage_optional_packages = [
