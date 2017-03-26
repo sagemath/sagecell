@@ -427,10 +427,6 @@ def install_sage():
     become_server()
     shutil.move("github/sage", ".")
     os.chdir("sage")
-    os.environ.setdefault("SAGE_ATLAS_ARCH", "fast")
-    # Alternatively install appropriate system packages and do
-    # os.environ.setdefault("SAGE_ATLAS_LIB", "/usr/lib")
-    # but it may be particularly slow.
     log.info("compiling Sage")
     check_call("make")
     
