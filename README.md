@@ -21,7 +21,7 @@ In particular, system packages installed in the base container are listed [here]
     sudo apt-get install npm
     # On Debian based systems we need to make an alias
     sudo ln -s /usr/bin/nodejs /usr/bin/node
-    sudo npm install -g inherits requirejs
+    sudo npm install -g requirejs
     ```
 
 2.  Optionally create a directory for all components:
