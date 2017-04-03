@@ -428,11 +428,6 @@ def install_sage():
     os.chdir("sage")
     log.info("compiling Sage")
     check_call("make")
-    
-    # Make R use cairo instead of X11 when plotting
-    with open("local/lib/R/etc/Rprofile.site", "w") as f:
-        print("options(bitmapType='cairo', device='svg')", file=f)
-
     communicate("./sage", r"""
         # make appropriate octave directory
         octave.eval('1+2')
