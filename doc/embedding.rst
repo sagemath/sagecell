@@ -303,6 +303,12 @@ without the need for pressing a button:
    autoeval: boolean
    .. }
 
+.. caution::
+
+    Please use this option sparingly, especially with ``@interact``, to
+    decrease the load on servers. Unless majority of users who open your page
+    are likely to use this cell, let them press a button to trigger evaluation.
+
 Callback
 ^^^^^^^^
 
