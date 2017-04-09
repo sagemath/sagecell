@@ -385,15 +385,11 @@
 
 .sagecell_fullScreen {
     position: absolute;
-    right: 10px;
-    top: 5px;
-    z-index: 1;
+    right: 1.5em;
+    top: 0.5em;
+    z-index: 10;
     padding: 2px;
     color: rgb(128,128,128);
-}
-
-.sagecell_fullScreen.sagecell_fullScreenEnabled {
-    z-index: 10;
 }
 
 .sagecell_editor div.ui-accordion-content.ui-helper-reset {
