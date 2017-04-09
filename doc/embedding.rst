@@ -3,9 +3,6 @@
 Embedding Sage Cells
 ====================
 
-.. default-domain:: js
-.. highlight:: javascript
-
 You can embed multiple customized Sage cells in
 arbitrary webpages. Customizable options include location of input and
 output and functionality shown to the user.
@@ -16,7 +13,9 @@ Example
 This is a very simple HTML page showing how to embed two cells with
 most things turned off and a default piece of code (you can replace
 ``sagecell.sagemath.org`` with a different SageMathCell server, if you
-like)::
+like):
+
+.. code-block:: html
 
    <!DOCTYPE HTML>
    <html>
@@ -73,7 +72,9 @@ additional required JavaScript and CSS libraries and creates a global JavaScript
 object called ``sagecell``. Use :ref:`sagecell.init() <sagecell.init_embed>`
 for more configuration options upon initialization, including callback functionality.
 
-Later, the following JavaScript should be run::
+Later, the following JavaScript should be run:
+
+.. code-block:: javascript
 
    sagecell.makeSagecell({inputLocation: "[jQuery selector]"});
 
@@ -89,7 +90,9 @@ desired.
 Sage cells, as long as the input (and output, if specified) locations
 of each call are unique to the page.
 
-To remove a Sage cell, the following JavaScript can be used::
+To remove a Sage cell, the following JavaScript can be used:
+
+.. code-block:: javascript
 
    sagecell.deleteSagecell(sagecellInfo);
 
@@ -101,7 +104,9 @@ cell contains form elements) since those form elements are copied to a
 hidden form outside of the embedded context. However, in such a case, it may
 not be optimal for external form submission to include cell elements. To
 prevent this issue, the following JavaScript can be used before and after form
-submission to move and restore the Sage cell::
+submission to move and restore the Sage cell:
+
+.. code-block:: javascript
 
    sagecell.moveInputForm(sagecellInfo); // before submission
    sagecell.restoreInputForm(sagecellInfo); // after submission
@@ -123,7 +128,9 @@ Input Location
 ^^^^^^^^^^^^^^
 
 This sets the location of the input elements of a Sage cell, which includes
-the editor, mode selector, and the evaluate button::
+the editor, mode selector, and the evaluate button:
+
+.. code-block:: javascript
 
    { ..
    inputLocation: "#..."
@@ -140,7 +147,9 @@ Output Location
 ^^^^^^^^^^^^^^^
 
 This sets the location of the output elements of a Sage cell, which includes
-the session output and server messages::
+the session output and server messages:
+
+.. code-block:: javascript
 
    { ..
    outputLocation: "#..."
@@ -154,7 +163,9 @@ it defaults to the same selector as ``inputLocation``.
 Code Editor
 ^^^^^^^^^^^
 
-This sets the type of code editor::
+This sets the type of code editor:
+
+.. code-block:: javascript
 
    { ..
    editor: "editor type"
@@ -174,7 +185,9 @@ Available options are:
 Default code
 ^^^^^^^^^^^^
 
-This sets the initial content of the code editor::
+This sets the initial content of the code editor:
+
+.. code-block:: javascript
 
    { ..
    code: "code"
@@ -183,7 +196,9 @@ This sets the initial content of the code editor::
 The value of the ``code`` argument should be a string of Python/Sage
 code.
 
-Code editor content can also be set using the ``codeLocation`` argument::
+Code editor content can also be set using the ``codeLocation`` argument:
+
+.. code-block:: javascript
 
    { ..
    codeLocation: "#..."
@@ -223,7 +238,9 @@ Linked Cells
 
 When multiple input locations are given, this sets whether the code from these
 cells is to be executed from the same kernel, so that code executed in one
-will affect the execution of code from another cell::
+will affect the execution of code from another cell:
+
+.. code-block:: javascript
 
    { ..
    linked: boolean
@@ -234,7 +251,9 @@ This option is ``false`` by default.
 Evaluate button text
 ^^^^^^^^^^^^^^^^^^^^
 
-This sets the text of the evaluate button::
+This sets the text of the evaluate button:
+
+.. code-block:: javascript
 
    { ..
    evalButtonText: "text"
@@ -243,7 +262,9 @@ This sets the text of the evaluate button::
 Languages
 ^^^^^^^^^
 
-This sets the list of languages that can be evaluated in the Sage cell::
+This sets the list of languages that can be evaluated in the Sage cell:
+
+.. code-block:: javascript
 
    { ..
    languages: ["sage", ...]
@@ -262,7 +283,9 @@ Managing subsequent sessions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This sets whether subsequent session output (future Sage cell evaluations)
-should replace or be displayed alongside current session output::
+should replace or be displayed alongside current session output:
+
+.. code-block:: javascript
 
    { ..
    replaceOutput: boolean
@@ -272,7 +295,9 @@ Automatic evaluation
 ^^^^^^^^^^^^^^^^^^^^
 
 This sets whether the code from the ``code`` option will be immediately evaluated,
-without the need for pressing a button::
+without the need for pressing a button:
+
+.. code-block:: javascript
 
    { ..
    autoeval: boolean
@@ -282,7 +307,9 @@ Callback
 ^^^^^^^^
 
 This is a function with no arguments that will be called after SageMathCell
-has finished loading::
+has finished loading:
+
+.. code-block:: javascript
 
    { ..
    callback: function
@@ -291,7 +318,9 @@ has finished loading::
 Hiding Sage Cell elements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This hides specified parts of the Sage cell using CSS ``display: none``::
+This hides specified parts of the Sage cell using CSS ``display: none``:
+
+.. code-block:: javascript
 
    { ..
    hide: ["element_1", ... , "element_n"]
@@ -329,8 +358,10 @@ corresponding to desired key/value pairs given to
 ``sagecell.makeSagecell()``.
 
 Within ``sagecell.makeSagecell()``, a template can be applied with the
-following::
-  
+following:
+
+.. code-block:: javascript
+
    { ..
    template: template_name
    .. }
@@ -340,37 +371,49 @@ documentation for :ref:`customization <Customization>` for full syntax
 information, as these options mirror what can be given to
 ``sagecell.makeSagecell()``).
 
-* Hiding Sage cell elements::
+* Hiding Sage cell elements:
+
+.. code-block:: javascript
 
    { ..
    hide: ["element_1", .. , "element_n"]
    .. }
 
-* Editor type::
+* Editor type:
+
+.. code-block:: javascript
 
    { ..
    editor: "editor type"
    .. }
 
-* Evaluate button text::
+* Evaluate button text:
+
+.. code-block:: javascript
 
    { ..
    evalButtonText: "text"
    .. }
 
-* Language selection::
+* Language selection:
+
+.. code-block:: javascript
 
    { ..
    languages: ["sage", ...]
    .. }
 
-* Replacing or appending subsequent sessions::
+* Replacing or appending subsequent sessions:
+
+.. code-block:: javascript
 
    { ..
    replaceOutput: boolean
    .. }
 
-* Automatic evaluation::
+* Automatic evaluation:
+
+.. code-block:: javascript
 
    { ..
    autoeval: boolean
@@ -397,7 +440,9 @@ Debug Mode
 ^^^^^^^^^^
 
 A special "debug" mode is avaliable by passing the following to
-``sagecell.makeSagecell()``::
+``sagecell.makeSagecell()``:
+
+.. code-block:: javascript
 
      { ..
        mode: "debug"
