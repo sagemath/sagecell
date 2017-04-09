@@ -250,6 +250,9 @@ function render(editorType, inputLocation, collapse) {
                 },
                 "Shift-Tab": "indentLess",
                 "Shift-Enter": closeDialog,
+                "F11": function(cm) {
+                    fullscreenToggle(cm);
+                },
                 "Esc": function(cm) {
                     if (openedDialog) {
                         closeDialog();
