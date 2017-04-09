@@ -216,7 +216,11 @@ function render(editorType, inputLocation, collapse) {
                 }
             }, {"async": true});
         };
-        var fullscreen = $(ce("button", {title: "Toggle full-screen editor", type: "button", class: "sagecell_fullScreen sagecell_icon-resize-full"}));
+        var fullscreen = $(ce("button", {
+            title: "Toggle full-screen editor (F11)",
+            type: "button",
+            class: "sagecell_fullScreen sagecell_icon-resize-full"
+        }));
         var fullscreenToggle = function(cm) {
             cm.setOption("fullScreen", !cm.getOption("fullScreen"));
             fullscreen.toggleClass("sagecell_fullScreenEnabled");
