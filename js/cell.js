@@ -52,7 +52,7 @@ if (window.MathJax === undefined) {
     fs.parentNode.insertBefore(script, fs);
     script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://cdn.rawgit.com/mathjax/MathJax/2.7.1/latest.js?config=TeX-AMS-MML_HTMLorMML";
     fs.parentNode.insertBefore(script, fs);
 }
 // Preload images
