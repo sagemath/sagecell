@@ -23,6 +23,7 @@ build:
 	   static/colorpicker/js/colorpicker.js \
 	   build
 	ln -sfn $(sage-root)/local/share/jsmol static/jsmol
+	ln -sfn $(sage-root)/local/share/threejs static/threejs
 	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
 	cp static/jsmol/JSmol.min.nojq.js build/JSmol.js
 	wget -P build \

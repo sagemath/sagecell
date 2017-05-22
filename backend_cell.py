@@ -83,10 +83,6 @@ class BackendCell(BackendIPython):
 
         Same as :meth:`displayhook`.
 
-        OUTPUT:
-
-        This method does not return anything.
-
         EXAMPLES::
 
             sage: from sage.repl.rich_output.output_basic import OutputPlainText
@@ -165,9 +161,8 @@ class BackendCell(BackendIPython):
 
         EXAMPLES::
 
-            sage: raise
-            sage: from sage.repl.rich_output.backend_ipython import BackendIPythonCommandline
-            sage: backend = BackendIPythonCommandline()
+            sage: from sage.repl.rich_output.backend_cell import BackendCell
+            sage: backend = BackendCell()
             sage: supp = backend.supported_output();  supp     # random output
             set([<class 'sage.repl.rich_output.output_graphics.OutputImageGif'>, 
                  ...,
@@ -193,3 +188,23 @@ class BackendCell(BackendIPython):
             OutputSceneThreejs,
             #OutputSceneWavefront,
         ])
+
+    def threejs_offline_scripts(self):
+        """
+        Return script tags for ``viewer=threejs`` with ``online=False``.
+
+        OUTPUT:
+
+        - a string
+
+        EXAMPLES::
+
+            sage: from sage.repl.rich_output.backend_cell import BackendCell
+            sage: backend = BackendCell()
+            sage: backend.threejs_offline_scripts()
+            '...<script ...</script>...'
+        """
+        return """
+<script src="/static/threejs/three.min.js"></script>
+<script src="/static/threejs/OrbitControls.js"></script>
+        """
