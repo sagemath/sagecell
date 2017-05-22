@@ -77,41 +77,20 @@ function closeDialog() {
     }
 }
 
-function showInfo(data, cm) {
-    if (data.content) {
-        data = data.content;
-    }
-    if (!data.found) {
+function showInfo(msg, cm) {
+    if (!msg.content.found) {
         return;
     }
-    var d;
-    if (data.source === null) {
-        var def;
-        if (data.definition !== null) {
-            def = ce("code");
-            def.innerHTML = utils.fixConsole(data.definition);
-        }
-        d = ce("div", {}, [
-            ce("div", {}, [ce("strong", {}, "File: "), ce("code", {}, data.file || data.namespace)]),
-            ce("div", {}, [ce("strong", {}, "Type: "), ce("code", {}, data.base_class)])
-        ]);
-        if (def) {
-            d.appendChild(ce("div", {}, [ce("strong", {}, "Definition: "), def]));
-        }
-        d.appendChild(ce("pre", {}, data.docstring));
-    } else {
-        d = ce("pre", {"class": "cm-s-default"});
-        CodeMirror.runMode(data.source, "python", d);
-    }
+    var d = ce("pre");
+    d.innerHTML = utils.fixConsole(msg.content.data['text/plain']);
     closeDialog();
     openedDialog = $(d).dialog({
-        title: data.name,
         width: 700,
         height: 300,
         position: {
             my: "left top",
             at: "left+5px bottom+5px",
-            of: cm.display.cursor.parentNode,
+            of: cm.display.cursorDiv.parentNode,
             collision: "none"
         },
         appendTo: $(cm.display.wrapper).parents(".sagecell").first(),
@@ -139,7 +118,7 @@ function requestInfo(cm) {
         })
         kernel.shell_channel.send(JSON.stringify(msg));
         kernel.set_callbacks_for_msg(msg.header.msg_id, {
-            "object_info_reply": cb
+            "inspect_request": cb
         });
     } else {
         completerMsg(makeMsg("object_info_request", {
