@@ -90,7 +90,10 @@ Recursively nested interact::
 import uuid
 import sys
 import json
-from misc import session_metadata, decorator_defaults
+
+from sage.misc.decorators import decorator_defaults
+
+from misc import session_metadata
 
 __interacts={}
 

@@ -1,7 +1,6 @@
 """
 Misc functions / classes
 """
-from functools import wraps
 from contextlib import contextmanager
 # note: ensure sage's version of python has nose installed or starting new sessions may hang!
 try:
@@ -108,56 +107,6 @@ class Config(object):
         """
         return dir(self.config)
 
-
-def decorator_defaults(func):
-    """
-    This function allows a decorator to have default arguments.
-
-    Normally, a decorator can be called with or without arguments.
-    However, the two cases call for different types of return values.
-    If a decorator is called with no parentheses, it should be run
-    directly on the function.  However, if a decorator is called with
-    parentheses (i.e., arguments), then it should return a function
-    that is then in turn called with the defined function as an
-    argument.
-
-    This decorator allows us to have these default arguments without
-    worrying about the return type.
-
-    EXAMPLES::
-    
-        sage: from sage.misc.decorators import decorator_defaults
-        sage: @decorator_defaults
-        ... def my_decorator(f,*args,**kwds):
-        ...     print kwds
-        ...     print args
-        ...     print f.__name__
-        ...       
-        sage: @my_decorator
-        ... def my_fun(a,b):
-        ...     return a,b
-        ...  
-        {}
-        ()
-        my_fun
-        sage: @my_decorator(3,4,c=1,d=2)
-        ... def my_fun(a,b):
-        ...     return a,b
-        ...   
-        {'c': 1, 'd': 2}
-        (3, 4)
-        my_fun
-    """
-    @wraps(func)
-    def my_wrap(*args,**kwargs):
-        if len(kwargs)==0 and len(args)==1 and callable(func):
-            # call without parentheses
-            return func(*args)
-        else:
-            def _(f):
-                return func(f, *args, **kwargs)
-            return _
-    return my_wrap
 
 @contextmanager
 def session_metadata(metadata):
