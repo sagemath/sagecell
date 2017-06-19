@@ -43,8 +43,7 @@ virt-install \
 # Make a script to SSH inside, assuming that IP will not change
 virsh --connect qemu:///system start $VM_NAME
 sleep 30
-# While it is in sbin, regular users can run arp -n anyway.
-IP=`/usr/sbin/arp -n|grep $MAC|grep -Eo "^[0-9.]{7,15}"`
+IP=`ip n|grep $MAC|grep -Eo "^[0-9.]{7,15}"`
 cat <<EOF > ssh_host.sh
 #!/usr/bin/env bash
 
