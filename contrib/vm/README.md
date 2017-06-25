@@ -75,6 +75,7 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
     If you are using Apache, a possible proxy configuration (with `proxy_wstunnel` module enabled) is
     
     ```
+    ProxyPass /sockjs/info http://sagemathcell_evm_ip_address:80/sockjs/info
     ProxyPass /sockjs/ ws://sagemathcell_evm_ip_address:80/sockjs/
     ProxyPass / http://sagemathcell_evm_ip_address:80/
     ProxyPassReverse / http://sagemathcell_evm_ip_address:80/
