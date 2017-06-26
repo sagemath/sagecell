@@ -335,6 +335,7 @@ This hides specified parts of the Sage cell using CSS ``display: none``:
 The following input elements can be hidden:
 
 * Editor (``editor``)
+* Full screen button (``fullScreen``) - note that it is still possible to switch to full screen via keyboard
 * Language selection box (``language``)
 * Evaluate button (``evalButton``)
 

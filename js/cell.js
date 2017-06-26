@@ -114,33 +114,25 @@ function make(args, cellInfo, k) {
                     "mode": "normal",
                     "replaceOutput": true,
                     "languages": ["sage"]};
-    // jQuery.extend() has issues with nested objects, so we manually merge
-    // hide parameters.
-    if (args.hide === undefined) {
-        args.hide = defaults.hide;
-    } else {
-        args.hide = $.merge(args.hide, defaults.hide);
+    $.extend(cellInfo, defaults, args.template, args)
+    // Since hide is an array, it is not actually merged as intended
+    var hide = cellInfo.hide = $.merge([], defaults.hide);
+    if (args.template !== undefined && args.template.hide !== undefined) {
+        $.merge(hide, args.template.hide);
     }
-
-    if (args.template !== undefined) {
-        $.extend(cellInfo, defaults, args.template, args)
-        if (args.template.hide !== undefined) {
-            cellInfo.hide = $.merge(cellInfo.hide, args.template.hide);
-        }
-    } else {
-        $.extend(cellInfo, defaults, args);
+    if (args.hide !== undefined) {
+        $.merge(hide, args.hide);
     }
     if ($.inArray(cellInfo.defaultLanguage, cellInfo.languages) === -1) {
         cellInfo.defaultLanguage = cellInfo.languages[0];
     }
     if (cellInfo.languages.length === 1) {
-        cellInfo.hide.push("language");
+        hide.push("language");
     }
     if (cellInfo.linked) {
-        cellInfo.hide.push("permalink");
+        hide.push("permalink");
     }
 
-    var hide = cellInfo.hide;
     var output = $(cellInfo.outputLocation);
 
     if (input.is("textarea")) {
@@ -172,9 +164,9 @@ function make(args, cellInfo, k) {
     } else {
         var hideAdvanced = {};
         var hideable = {"in": {"editor": true,
-                                "files": true,
-                                "evalButton": true,
-                                "language": true},
+                               "files": true,
+                               "evalButton": true,
+                               "language": true},
                         "out": {"output": true,
                                 "messages": true,
                                 "sessionFiles": true,
@@ -216,6 +208,9 @@ function make(args, cellInfo, k) {
     }
     input.find(".sagecell_evalButton").text(cellInfo.evalButtonText);
     init(cellInfo, k);
+    if (hide.indexOf('fullScreen') != -1) {
+        input.find('.sagecell_fullScreen').css("display", "none");
+    }
     _gaq.push(['sagecell._trackEvent', 'SageCell', 'Make',window.location.origin+window.location.pathname]);
 }
 
