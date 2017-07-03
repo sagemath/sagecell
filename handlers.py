@@ -311,15 +311,6 @@ class TOSHandler(tornado.web.RequestHandler):
             raise tornado.web.HTTPError(404, 'No Terms of Service Required')
 
 
-class StaticHandler(tornado.web.StaticFileHandler):
-    """Handler for static requests"""
-    def set_extra_headers(self, path):
-        if "Origin" in self.request.headers:
-            self.set_header("Access-Control-Allow-Origin",
-                            self.request.headers["Origin"])
-            self.set_header("Access-Control-Allow-Credentials", "true")
-
-
 class ServiceHandler(tornado.web.RequestHandler):
     """
     Implements a blocking (to the client) web service to execute a single
@@ -667,12 +658,29 @@ class WebChannelsHandler(ZMQChannelsHandler,
         super(WebChannelsHandler, self).open(self.application, kernel_id)
 
 
+class StaticHandler(tornado.web.StaticFileHandler):
+    """Handler for static requests"""
+    
+    def set_extra_headers(self, path):
+        if "Origin" in self.request.headers:
+            self.set_header("Access-Control-Allow-Origin",
+                            self.request.headers["Origin"])
+            self.set_header("Access-Control-Allow-Credentials", "true")
+
+
 class FileHandler(StaticHandler):
     """
     Files handler
 
     This takes in a filename and returns the file
     """
+    
+    def compute_etag(self):
+        # tornado.web.StaticFileHandler uses filenames for etag, but then
+        # updated user files get the same one even if recomputed in linked
+        # cells. Dropping etag still makes use of modification time.
+        return None
+        
     def get(self, kernel_id, file_path):
         super(FileHandler, self).get('%s/%s'%(kernel_id, file_path))
 
