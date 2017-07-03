@@ -106,6 +106,7 @@ sage_optional_packages = [
 "database_symbolic_data",
 "dot2tex",  # needs graphviz
 "gap_packages",
+"gap3",
 "gnuplotpy",
 "guppy",
 "kash3",
