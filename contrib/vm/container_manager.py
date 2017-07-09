@@ -244,6 +244,8 @@ frontend http{suffix}
     reqrep ^([^\ \t]*[\ \t])(/embedded_sagecell\.js[\ \t].*)     \1/static\2
     use_backend static{suffix} if { path_beg /static }
     use_backend compute{suffix}
+    monitor-uri /?healthcheck
+    monitor fail if { nbsrv(compute{suffix}) lt 1 }
 
 peers local{suffix}
     peer {hostname} localhost:{peer_port}
