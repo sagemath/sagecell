@@ -234,6 +234,8 @@ defaults
 # SageMathCell additions
         option http-server-close
         option redispatch
+        timeout client-fin 50s
+        timeout tunnel 2h
 """
 
 # {suffix} {port} {hostname} {peer_port} have to be set once
