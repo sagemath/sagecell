@@ -461,7 +461,7 @@ def install_packages():
     for package in python_packages:
         check_call("sage/sage -pip install {}".format(package))
     log.info("patching sockjs-tornado")
-    communicate("patch /home/{server}/sage/local/lib/python/site-packages/"
+    communicate("patch /home/{server}/sage/local/lib/python2.7/site-packages/"
         "sockjs/tornado/basehandler.py", '''
         --- a/sockjs/tornado/basehandler.py
         +++ b/sockjs/tornado/basehandler.py
