@@ -321,109 +321,97 @@ class ServiceHandler(tornado.web.RequestHandler):
     This handler is currently not production-ready. But it is used for health
     checks...
     """
-    cron = re.compile("^print [-]?\d+\+[-]?\d+$")
 
     @tornado.web.asynchronous
     @tornado.gen.engine
     def post(self):
-        if config.get_config("requires_tos") and \
-                self.get_argument("accepted_tos", "false") != "true":
-            self.write("""When evaluating code, you must acknowledge your acceptance
-of the terms of service at /static/tos.html by passing the parameter
-accepted_tos=true\n""")
+        if 'Origin' in self.request.headers:
+            self.set_header(
+                'Access-Control-Allow-Origin', self.request.headers['Origin'])
+            self.set_header('Access-Control-Allow-Credentials', 'true')
+        if (config.get_config('requires_tos')
+                and self.get_argument('accepted_tos', 'false') != 'true'):
             self.set_status(403)
-            self.finish()
+            self.finish(
+                'When evaluating code, you must acknowledge your acceptance '
+                'of the terms of service at /static/tos.html by passing the '
+                'parameter accepted_tos=true\n')
             return
-        default_timeout = 30 # seconds
-        code = "".join(self.get_arguments('code', strip=False))
-        if len(code)>65000:
+        code = ''.join(self.get_arguments('code', strip=False))
+        if len(code) > 65000:
             self.set_status(413)
-            self.write("Max code size is 65000 characters")
+            self.finish('Max code size is 65000 characters')
+            return
+        remote_ip = self.request.remote_ip
+        referer = self.request.headers.get('Referer', '')
+        self.kernel_id = yield tornado.gen.Task(
+            self.application.km.new_session_async,
+            referer=referer,
+            remote_ip=remote_ip,
+            timeout=0)
+        sm = StatsMessage(
+            kernel_id=self.kernel_id,
+            remote_ip=remote_ip,
+            referer=referer,
+            code=code,
+            execute_type='service')
+        if remote_ip == '127.0.0.1' and self.kernel_id:
+            stats_logger.debug(sm)
+        else:
+            stats_logger.info(sm)
+        if not self.kernel_id:
+            logger.error('could not obtain a valid kernel_id')
+            self.set_status(503)
             self.finish()
             return
-        if code:
-            km = self.application.km
-            remote_ip = self.request.remote_ip
-            referer = self.request.headers.get('Referer','')
-            self.kernel_id = yield tornado.gen.Task(
-                km.new_session_async,
-                referer=referer,
-                remote_ip=remote_ip,
-                timeout=0)
-            if not self.kernel_id:
-                logger.error("could not obtain a valid kernel_id")
-                self.set_status(503)
-                self.finish()
-                return
-            if not (remote_ip == "::1"
-                    and referer == ""
-                    and self.cron.match(code) is not None):
-                sm = StatsMessage(kernel_id=self.kernel_id,
-                                  remote_ip=remote_ip,
-                                  referer=referer,
-                                  code=code,
-                                  execute_type='service')
-                if remote_ip == "127.0.0.1" and self.kernel_id:
-                    stats_logger.debug(sm)
-                else:
-                    stats_logger.info(sm)
-
-            self.zmq_handler = ZMQServiceHandler()
-            self.zmq_handler.open(self.application, self.kernel_id)
-            loop = tornado.ioloop.IOLoop.instance()
-            self.success = False
-            
-            def done(msg):
-                if msg["msg_type"] == "execute_reply":
-                    self.success = msg["content"]["status"] == "ok"
-                    self.execute_reply = msg['content']
-                    loop.remove_timeout(self.timeout_request)
-                    loop.add_callback(self.finish_request)
-                    
-            self.zmq_handler.msg_from_kernel_callbacks.append(done)
-            self.timeout_request = loop.add_timeout(
-                time.time() + default_timeout, self.timeout_request)
-            exec_message = {
-                "channel": "shell",
-                "parent_header": {},
-                "header": {
-                    "msg_id": str(uuid.uuid4()),
-                   "username": "",
-                   "session": self.kernel_id,
-                   "msg_type": "execute_request",
-                   },
-                "content": {
-                    "code": code,
-                    "silent": False,
-                    "user_expressions": jsonapi.loads(
-                        self.get_argument('user_expressions', default="{}")),
-                    "allow_stdin": False,
-                    },
-                "metadata": {},
-                }
-            self.zmq_handler.on_message(jsonapi.dumps(exec_message))
-
-    def timeout_request(self):
-        tornado.ioloop.IOLoop.instance().add_callback(self.finish_request)
+        self.zmq_handler = ZMQServiceHandler()
+        self.zmq_handler.open(self.application, self.kernel_id)
+        loop = tornado.ioloop.IOLoop.instance()
         
+        def kernel_callback(msg):
+            if msg['msg_type'] == 'execute_reply':
+                loop.remove_timeout(self.timeout_handle)
+                logger.debug('service request finished for %s', self.kernel_id)
+                streams = self.zmq_handler.streams
+                streams['success'] = msg['content']['status'] == 'ok'
+                streams['execute_reply'] = msg['content']
+                loop.add_callback(self.finish_request)
+                
+        self.zmq_handler.msg_from_kernel_callbacks.append(kernel_callback)
+        
+        def timeout_callback():
+            logger.debug('service request timed out for %s', self.kernel_id)
+            loop.add_callback(self.finish_request)
+
+        self.timeout_handle = loop.call_later(30, timeout_callback)
+        exec_message = {
+            'channel': 'shell',
+            'parent_header': {},
+            'header': {
+                'msg_id': str(uuid.uuid4()),
+                'username': '',
+                'session': self.kernel_id,
+                'msg_type': 'execute_request',
+               },
+            'content': {
+                'code': code,
+                'silent': False,
+                'user_expressions':
+                    jsonapi.loads(self.get_argument('user_expressions', '{}')),
+                'allow_stdin': False,
+                },
+            'metadata': {},
+            }
+        self.zmq_handler.on_message(jsonapi.dumps(exec_message))
+
     def finish_request(self):
         try: # in case kernel has already been killed
             self.application.km.end_session(self.kernel_id)
         except Exception as e:
-            logger.exception("blanket exception in finish_request: %s", e.message)
-        #statslogger.info(StatMessage(kernel_id = self.kernel_id, '%r SERVICE DONE'%self.kernel_id)
-        retval = self.zmq_handler.streams
+            logger.exception(
+                'blanket exception in service finish_request: %s', e.message)
         self.zmq_handler.on_close()
-        # if the timeout is calling the finish_request, the success and other attributes may not be set
-        retval.update(success=getattr(self, 'success', 'abort'))
-        if hasattr(self, 'execute_reply'):
-            retval.update(execute_reply=self.execute_reply)
-        if "Origin" in self.request.headers:
-            self.set_header("Access-Control-Allow-Origin",
-                            self.request.headers["Origin"])
-            self.set_header("Access-Control-Allow-Credentials", "true")
-        self.write(retval)
-        self.finish()
+        self.finish(self.zmq_handler.streams)
 
 
 class ZMQChannelsHandler(object):
