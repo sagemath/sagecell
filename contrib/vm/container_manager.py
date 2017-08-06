@@ -48,7 +48,7 @@ users = {"group": "sagecell", "GID": 8888,
 
 # Github repositories as (user, repository, branch)
 repositories = [
-    ("novoselt", "sage", "sagecell"),
+    ("sagemath", "sage", "master"),
     ("sagemath", "sagecell", "master"),
     ("matplotlib", "basemap", "master"),
 ]
