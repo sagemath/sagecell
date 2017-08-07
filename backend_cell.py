@@ -62,7 +62,7 @@ class BackendCell(BackendIPython):
         if path.startswith("../"):
             shutil.copy(path, ".")
             path = os.path.basename(path)
-        os.chmod(path, stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH)
+        os.chmod(path, stat.S_IMODE(os.stat(path).st_mode) | stat.S_IRGRP)
         if mimetype is None:
             mimetype = 'application/x-file'
         msg = {'text/plain': '%s file' % mimetype, mimetype: path}
