@@ -65,9 +65,11 @@ class BackendCell(BackendIPython):
         os.chmod(path, stat.S_IMODE(os.stat(path).st_mode) | stat.S_IRGRP)
         if mimetype is None:
             mimetype = 'application/x-file'
-        msg = {'text/plain': '%s file' % mimetype, mimetype: path}
-        display_message(msg)
-        sys._sage_.sent_files[path] = os.path.getmtime(path)
+        mt = os.path.getmtime(path)
+        display_message({
+            'text/plain': '%s file' % mimetype,
+            mimetype: path + '?m=%s' % mt})
+        sys._sage_.sent_files[path] = mt
 
     def display_html(self, s):
         display_message({'text/plain': 'html', 'text/html': s})
