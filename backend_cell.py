@@ -16,7 +16,6 @@ This module defines the SageMathCell backends for
 #*****************************************************************************
 
 import os
-import shutil
 import stat
 import sys
 import tempfile
@@ -26,7 +25,7 @@ from sage.repl.rich_output.backend_ipython import BackendIPython
 from sage.repl.rich_output.output_catalog import *
 
 
-from misc import display_message
+from misc import display_file, display_html, display_message
 
 
 class BackendCell(BackendIPython):
@@ -57,23 +56,6 @@ class BackendCell(BackendIPython):
         """
         return 'SageMathCell'
 
-    def display_file(self, path, mimetype=None):
-        path = os.path.relpath(path)
-        if path.startswith("../"):
-            shutil.copy(path, ".")
-            path = os.path.basename(path)
-        os.chmod(path, stat.S_IMODE(os.stat(path).st_mode) | stat.S_IRGRP)
-        if mimetype is None:
-            mimetype = 'application/x-file'
-        mt = os.path.getmtime(path)
-        display_message({
-            'text/plain': '%s file' % mimetype,
-            mimetype: path + '?m=%s' % mt})
-        sys._sage_.sent_files[path] = mt
-
-    def display_html(self, s):
-        display_message({'text/plain': 'html', 'text/html': s})
-
     def display_immediately(self, plain_text, rich_output):
         """
         Show output immediately.
@@ -100,24 +82,24 @@ class BackendCell(BackendIPython):
             return {u'text/plain': rich_output.ascii_art.get()}, {}
 
         if isinstance(rich_output, OutputLatex):
-            self.display_html(rich_output.mathjax())
+            display_html(rich_output.mathjax())
         elif isinstance(rich_output, OutputHtml):
-            self.display_html(rich_output.html.get())
+            display_html(rich_output.html.get())
 
         elif isinstance(rich_output, OutputImageGif):
-            self.display_file(rich_output.gif.filename(), 'text/image-filename')
+            display_file(rich_output.gif.filename(), 'text/image-filename')
         elif isinstance(rich_output, OutputImageJpg):
-            self.display_file(rich_output.jpg.filename(), 'text/image-filename')
+            display_file(rich_output.jpg.filename(), 'text/image-filename')
         elif isinstance(rich_output, OutputImagePdf):
-            self.display_file(rich_output.pdf.filename(), 'text/image-filename')
+            display_file(rich_output.pdf.filename(), 'text/image-filename')
         elif isinstance(rich_output, OutputImagePng):
-            self.display_file(rich_output.png.filename(), 'text/image-filename')
+            display_file(rich_output.png.filename(), 'text/image-filename')
         elif isinstance(rich_output, OutputImageSvg):
-            self.display_file(rich_output.svg.filename(), 'text/image-filename')
+            display_file(rich_output.svg.filename(), 'text/image-filename')
             
         elif isinstance(rich_output, OutputSceneCanvas3d):
-            self.display_file(rich_output.canvas3d.filename(),
-                              'application/x-canvas3d')
+            display_file(
+                rich_output.canvas3d.filename(), 'application/x-canvas3d')
         elif isinstance(rich_output, OutputSceneJmol):
             path = tempfile.mkdtemp(suffix=".jmol", dir=".")
             os.chmod(path, stat.S_IRWXU + stat.S_IXGRP + stat.S_IXOTH)
@@ -130,7 +112,7 @@ class BackendCell(BackendIPython):
             path = os.path.relpath(path)
             rich_output.html.save_as(path)
             os.chmod(path, stat.S_IRUSR + stat.S_IRGRP + stat.S_IROTH)
-            self.display_html("""
+            display_html("""
                 <iframe
                     scrolling="no"
                     src="cell://{}"

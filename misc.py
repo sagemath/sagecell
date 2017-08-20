@@ -7,9 +7,13 @@ try:
     from nose.tools import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater
 except ImportError:    
     pass
-import sys
-import re
+
 from datetime import datetime
+import os
+import re
+import shutil
+import stat
+import sys
 
 
 class Config(object):
@@ -123,6 +127,23 @@ def session_metadata(metadata):
     sys.stdout.flush()
     sys.stderr.flush()
     session.metadata = old_metadata
+
+def display_file(path, mimetype=None):
+    path = os.path.relpath(path)
+    if path.startswith("../"):
+        shutil.copy(path, ".")
+        path = os.path.basename(path)
+    os.chmod(path, stat.S_IMODE(os.stat(path).st_mode) | stat.S_IRGRP)
+    if mimetype is None:
+        mimetype = 'application/x-file'
+    mt = os.path.getmtime(path)
+    display_message({
+        'text/plain': '%s file' % mimetype,
+        mimetype: path + '?m=%s' % mt})
+    sys._sage_.sent_files[path] = mt
+
+def display_html(s):
+    display_message({'text/plain': 'html', 'text/html': s})
 
 def display_message(data, metadata=None):
     sys.stdout.session.send(sys.stdout.pub_thread,
