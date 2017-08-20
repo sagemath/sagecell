@@ -5,7 +5,7 @@ from log import receiver_logger
 from ipykernel.jsonutil import json_clean
 import zmq
 
-from misc import Timer, sage_json
+from misc import Timer, display_file, sage_json
 from untrusted_kernel_manager import UntrustedMultiKernelManager
 
 
@@ -120,14 +120,18 @@ and will be completely removed in future versions""",
                 for dir in dirs:
                     if dir.endswith(".jmol"):
                         dirs.remove(dir)
-                for nm in files:
-                    path = os.path.join(top, nm)
+                for name in files:
+                    path = os.path.join(top, name)
                     if path.startswith('./'):
                         path = path[2:]
                     mtime = os.stat(path).st_mtime
                     if (path == "sagemathcell.py"
                         or path in sys._sage_.sent_files
                         and sys._sage_.sent_files[path] >= mtime):
+                        continue
+                    if (path.startswith('Rplot')
+                        and path[-4:] in ['.bmp', 'jpeg', '.png', '.svg']):
+                        display_file(path, 'text/image-filename')
                         continue
                     new_files.append(path)
                     sys._sage_.sent_files[path] = mtime
