@@ -1,10 +1,9 @@
 #!/bin/sh
 
-/root/healthcheck status
+systemctl --quiet is-active sagecell
 if [ $? -ne 0 ]
 then
-    # health check disabled; print message to that effect and exit normally
-    echo "`date` Health check disabled; skipping status check"
+    echo "`date` Service is not active, skipping check"
     exit 0
 fi
 

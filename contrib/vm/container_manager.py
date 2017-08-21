@@ -263,7 +263,7 @@ backend compute{suffix}
     stick match path bytes(8,36) if { path_reg ^/kernel/.{36}/files/ }
     option httpchk
 
-    server {node} {ip}:8888 id {id} check port 9888
+    server {node} {ip}:8888 id {id} check
 """
 
 HAProxy_stats = """

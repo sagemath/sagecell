@@ -20,10 +20,6 @@ WorkingDirectory=/home/{server}/sagecell
 User={server}
 ExecStart=/home/{server}/sage/sage web_server.py
 
-ExecStartPost=/root/healthcheck on
-
-ExecStopPost=/root/healthcheck off
-
 
 [Install]
 WantedBy=multi-user.target
