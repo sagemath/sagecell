@@ -155,6 +155,7 @@ python_packages = [
 "Shapely",
 "SimPy",
 "statsmodels",
+"surface_dynamics",
 "tables",
 "moss", # This one only complains about missing dependencies
 ]
