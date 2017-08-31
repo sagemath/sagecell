@@ -15,7 +15,7 @@ We assume that you have access to the Internet and can install any needed depend
 In particular, system packages installed in the base container are listed [here](https://github.com/sagemath/sagecell/blob/master/contrib/vm/container_manager.py#L58).
 
 
-1.  Install required npm packages:
+1.  Install requirejs:
 
     ```bash
     sudo apt-get install npm
@@ -24,26 +24,16 @@ In particular, system packages installed in the base container are listed [here]
     sudo npm install -g requirejs
     ```
 
-2.  Optionally create a directory for all components:
+2.  Get and build Sage (`export MAKE="make -j8"` or something similar can speed things up):
 
     ```bash
-    mkdir sc_build
-    cd sc_build
-    ```
-
-3.  Get and build Sage (`export MAKE="make -j8"` or something similar can speed things up):
-
-    ```bash
-    git clone https://github.com/novoselt/sage.git
+    git clone https://github.com/sagemath/sage.git
     pushd sage
-    git checkout sagecell
     make
     popd
     ```
 
-    Note that we are building a special branch of Sage, do NOT use your regular Sage installation!
-    
-4.  Prepare Sage for SageMathCell:
+3.  Prepare Sage for SageMathCell:
 
     ```bash
     sage/sage -pip install --upgrade lockfile
@@ -53,7 +43,7 @@ In particular, system packages installed in the base container are listed [here]
 
     Note that version 1.0.3 of `sockjs-tornado` has a CORS issue fixed by https://github.com/mrjoes/sockjs-tornado/pull/83 You may delete these lines manually from `sage/local/lib/python2.7/site-packages/sockjs/tornado/basehandler.py`
 
-5.  Build SageMathCell:
+4.  Build SageMathCell:
 
     ```bash
     git clone https://github.com/sagemath/sagecell.git
