@@ -58,21 +58,18 @@ class TrustedMultiKernelManager(object):
                         self.new_session_prefork(comp_id)
                     logger.debug("Requested %d preforked kernels" % preforked)
 
-    def get_kernel_ids(self, comp = None):
+    def get_kernel_ids(self, comp=None):
         """ A function for obtaining kernel ids of a particular computer.
 
         :arg str comp: the id of the computer whose kernels you desire
         :returns: kernel ids of a computer if its id is given or all kernel ids if no id is given
         :rtype: list
         """
-        ids = []
-        if comp is not None and comp in self._comps:
-            ids = self._comps[comp]["kernels"].keys()
-        elif comp is not None and comp not in self._comps:
-            pass
-        else:
-            ids = self._kernels.keys()
-        return ids
+        if comp is None:
+            return self._kernels.keys()
+        if comp in self._comps:
+            return self._comps[comp]["kernels"].keys()
+        return []
 
     def get_hb_info(self, kernel_id):
         """ Returns basic heartbeat information for a given kernel. 
@@ -81,7 +78,6 @@ class TrustedMultiKernelManager(object):
         :returns: a tuple containing the kernel's beat interval and time until first beat
         :rtype: tuple
         """
-        
         comp_id = self._kernels[kernel_id]["comp_id"]
         comp = self._comps[comp_id]
         return (comp["beat_interval"], comp["first_beat"])
@@ -93,8 +89,8 @@ class TrustedMultiKernelManager(object):
         :returns: computer id assigned to added computer
         :rtype: string
         """
-        defaults = self.default_computer_config
-        cfg = dict(defaults.items() + config.items())
+        cfg = self.default_computer_config.copy()
+        cfg.update(config)
         cfg["kernels"] = {}
         
         comp_id = str(uuid.uuid4())
@@ -136,9 +132,8 @@ class TrustedMultiKernelManager(object):
 
             :arg str comp_id: the id of the computer whose kernels you want to purge
         """
-        reply = self._sender.send_msg({"type": "purge_kernels"}, comp_id)
-
-        for i in self._comps[comp_id]["kernels"].keys():
+        self._sender.send_msg({"type": "purge_kernels"}, comp_id)
+        for i in self._comps[comp_id]["kernels"]:
             del self._kernels[i]
         self._comps[comp_id]["kernels"] = {}
 
@@ -153,8 +148,8 @@ class TrustedMultiKernelManager(object):
         :arg str comp_id: the id of the computer that you want to remove
         """
         ssh_client = self._clients[comp_id]["ssh"]
-        reply = self._sender.send_msg({"type": "remove_computer"}, comp_id)
-        for i in self._comps[comp_id]["kernels"].keys():
+        self._sender.send_msg({"type": "remove_computer"}, comp_id)
+        for i in self._comps[comp_id]["kernels"]:
             del self._kernels[i]
         ssh_client.close()
         del self._comps[comp_id]
@@ -166,9 +161,9 @@ class TrustedMultiKernelManager(object):
         :arg str kernel_id: the id of the kernel you want restarted
         """
         comp_id = self._kernels[kernel_id]["comp_id"]
-        reply = self._sender.send_msg({"type": "restart_kernel",
-                                       "content": {"kernel_id": kernel_id}},
-                                      comp_id)
+        self._sender.send_msg({"type": "restart_kernel",
+                               "content": {"kernel_id": kernel_id}},
+                              comp_id)
 
     def interrupt_kernel(self, kernel_id):
         """ Interrupts a given kernel. 
@@ -214,12 +209,13 @@ class TrustedMultiKernelManager(object):
         :returns: kernel id assigned to the newly created kernel
         :rtype: string
         """
-
         if comp_id is None:
             comp_id = self._find_open_computer()
-
         resource_limits = self._comps[comp_id].get("resource_limits") if limited else None
-        reply = self._sender.send_msg({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id)
+        reply = self._sender.send_msg(
+            {"type":"start_kernel",
+             "content": {"resource_limits": resource_limits}},
+            comp_id)
         if reply["type"] == "success":
             self._setup_session(reply, comp_id)
             return reply["content"]["kernel_id"]
@@ -251,9 +247,13 @@ class TrustedMultiKernelManager(object):
             else:
                 logger.error("Error starting prefork kernel on computer %s: %s", comp_id, reply)
         logger.info("Trying to start kernel on %s", comp_id[:4])
-        self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
+        self._sender.send_msg_async(
+            {"type":"start_kernel",
+             "content": {"resource_limits": resource_limits}},
+            comp_id,
+            callback=cb)
 
-    def new_session_async(self, referer='', remote_ip='', timeout = None, callback=None):
+    def new_session_async(self, referer, remote_ip, timeout, callback):
         """ Starts a new kernel on an open computer.
 
         We try to get a kernel off a queue of preforked kernels to minimize
@@ -270,12 +270,12 @@ class TrustedMultiKernelManager(object):
         """
         try:
             preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
-            logger.info("Using kernel on %s.  Queue: %s kernels on %s computers"%(comp_id[:4], self._kernel_queue.qsize(), [i[1][:4] for i in self._kernel_queue.queue]))
+            logger.info(
+                "Using kernel on %s.  Queue: %s kernels.",
+                comp_id,
+                self._kernel_queue.qsize())
             kernel_info = self._kernels[preforked_kernel_id]
-            if timeout is None:
-                timeout = float(0)
-            else:
-                timeout = float(timeout)
+            timeout = float(timeout)
             import math
             if math.isnan(timeout) or timeout > self.max_kernel_timeout:
                 timeout = self.max_kernel_timeout
@@ -301,7 +301,11 @@ class TrustedMultiKernelManager(object):
                     callback(False)
 
             resource_limits = self._comps[comp_id].get("resource_limits")
-            self._sender.send_msg_async({"type":"start_kernel", "content": {"resource_limits": resource_limits}}, comp_id, callback=cb)
+            self._sender.send_msg_async(
+                {"type":"start_kernel",
+                 "content": {"resource_limits": resource_limits}},
+                comp_id,
+                callback=cb)
 
     def end_session(self, kernel_id):
         """ Kills an existing kernel on a given computer.
@@ -331,23 +335,13 @@ class TrustedMultiKernelManager(object):
         :returns: the comp_id of a computer with room to start a new kernel
         :rtype: string
         """ 
-        
         ids = self._comps.keys()
         random.shuffle(ids)
-        found_id = None
-        done = False
-        index = 0        
-
-        while (index < len(ids) and not done):
-            found_id = ids[index]
-            if len(self._comps[found_id]["kernels"].keys()) < self._comps[found_id]["max_kernels"]:
-                done = True
-            else:
-                index += 1
-        if done:
-            return found_id
-        else:
-            raise IOError("Could not find open computer. There are %d computers available."%len(ids))
+        for id in ids:
+            comp = self._comps[id]
+            if len(comp["kernels"]) < comp["max_kernels"]:
+                return id
+        raise IOError("Could not find open computer. There are %d computers available."%len(ids))
 
     def _create_connected_stream(self, host, port, socket_type):
         sock = self.context.socket(socket_type)
