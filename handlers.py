@@ -405,11 +405,7 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.zmq_handler.on_message(jsonapi.dumps(exec_message))
 
     def finish_request(self):
-        try: # in case kernel has already been killed
-            self.application.km.end_session(self.kernel_id)
-        except Exception as e:
-            logger.exception(
-                'blanket exception in service finish_request: %s', e.message)
+        self.application.km.end_session(self.kernel_id)
         self.zmq_handler.on_close()
         self.finish(self.zmq_handler.streams)
 
@@ -442,8 +438,8 @@ class ZMQChannelsHandler(object):
                     for f in self.msg_from_kernel_callbacks]):
                 msg["channel"] = stream.channel
                 self._output_message(msg)
-        except Exception as e:
-            logger.exception("blanket exception in _on_zmq_reply: %s", e.message)
+        except ValueError as e:
+            logger.exception("ValueError in _on_zmq_reply: %s", e.message)
         if stream.channel == "shell" and self.kill_kernel:
             self.channels["shell"].flush()
             self.kernel_died()
@@ -465,14 +461,11 @@ class ZMQChannelsHandler(object):
 
     def _reset_timeout(self, msg):
         if msg["header"]["msg_type"] == "kernel_timeout":
-            try:
-                timeout = float(msg["content"]["timeout"])
-                if (not math.isnan(timeout)) and timeout >= 0:
-                    if timeout > self.application.km.max_kernel_timeout:
-                        timeout = self.application.km.max_kernel_timeout
-                    self.kernel["timeout"] = timeout
-            except Exception as e:
-                logger.exception("blanket exception in _reset_timeout: %s", e.message)
+            timeout = float(msg["content"]["timeout"])
+            if (not math.isnan(timeout)) and timeout >= 0:
+                if timeout > self.application.km.max_kernel_timeout:
+                    timeout = self.application.km.max_kernel_timeout
+                self.kernel["timeout"] = timeout
             return False
 
     def kernel_died(self):
@@ -481,8 +474,6 @@ class ZMQChannelsHandler(object):
             self.application.km.end_session(self.kernel_id)
         except IOError:
             pass
-        except Exception as e:
-            logger.exception("blanket exception in kernel_died: %s", e.message)
         msg = {
             "channel": "iopub",
             'header': {
@@ -565,13 +556,10 @@ class ZMQChannelsHandler(object):
 
         def ping_or_dead():
             self.hb_stream.flush()
-            try:
-                if self.kernel["executing"] == 0 and time.time() > self.kernel["deadline"]:
-                    # only kill the kernel after all pending
-                    # execute requests have finished
-                    self._kernel_alive = False
-            except Exception as e:
-                logger.exception("blanket exception in ping_or_dead 1: %s", e.message)
+            if (self.kernel["executing"] == 0
+                and time.time() > self.kernel["deadline"]):
+                # only kill the kernel after all pending
+                # execute requests have finished
                 self._kernel_alive = False
             if self._kernel_alive:
                 self._kernel_alive = False
@@ -579,12 +567,8 @@ class ZMQChannelsHandler(object):
                 # flush stream to force immediate socket send
                 self.hb_stream.flush()
             else:
-                try:
-                    self.kernel_died()
-                except Exception as e:
-                    logger.exception("blanket exception in ping_or_dead 2: %s", e.message)
-                finally:
-                    self.stop_hb()
+                self.kernel_died()
+                self.stop_hb()
 
         beat_interval, first_beat = km.get_hb_info(self.kernel_id)
         loop = tornado.ioloop.IOLoop.instance()
