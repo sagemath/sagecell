@@ -29,11 +29,17 @@ class ForkingKernelManager(object):
                 raise
 
     def fork_kernel(self, config, pipe, resource_limits):
-        """ A function to be set as the target for the new kernel processes forked in ForkingKernelManager.start_kernel. This method forks and initializes a new kernel, uses the update_function to update the kernel's namespace, sets resource limits for the kernel, and sends kernel connection information through the Pipe object.
+        """The target for new processes in ForkingKernelManager.start_kernel.
+       
+        This method forks and initializes a new kernel, uses the update_function
+        to update the kernel's namespace, sets resource limits for the kernel,
+        and sends kernel connection information through the Pipe object.
 
         :arg traitlets.config.loader config: kernel configuration
-        :arg multiprocessing.Pipe pipe: a multiprocessing connection object which will send kernel ip, session, and port information to the other side
-        :arg dict resource_limits: a dict with keys resource.RLIMIT_* (see config_default documentation for explanation of valid options) and values of the limit for the given resource to be set in the kernel process
+        :arg multiprocessing.Pipe pipe: a pipe for sending kernel ip, session,
+            and port information to the other side
+        :arg dict resource_limits: a dictionary with keys resource.RLIMIT_*
+            (see config_default documentation for explanation of valid options)
         """
         os.setpgrp()
         logger = kernel_logger.getChild(str(uuid.uuid4())[:4])
@@ -56,8 +62,13 @@ class ForkingKernelManager(object):
         logger.debug("finished updating")
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
-        pipe.send({"ip": ka.ip, "key": ka.session.key, "shell_port": ka.shell_port,
-                "stdin_port": ka.stdin_port, "hb_port": ka.hb_port, "iopub_port": ka.iopub_port})
+        pipe.send({
+            "ip": ka.ip,
+            "key": ka.session.key,
+            "shell_port": ka.shell_port,
+            "stdin_port": ka.stdin_port,
+            "hb_port": ka.hb_port,
+            "iopub_port": ka.iopub_port})
         pipe.close()
         # The following line will erase JSON connection file with ports and
         # other numbers. Since we do not reuse the kernels, we don't really need
