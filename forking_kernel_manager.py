@@ -140,7 +140,7 @@ class ForkingKernelManager(object):
         try:
             os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             # todo: yield back to message processing loop while we join
-            proc.join()
+            proc.join(30)
         except Exception as e:
             # On Unix, we may get an ESRCH error if the process has already
             # terminated. Ignore it.
