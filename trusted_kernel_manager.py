@@ -319,7 +319,8 @@ class TrustedMultiKernelManager(object):
         comp_id = self._kernels[kernel_id]["comp_id"]
         def cb(reply):
             if (reply["type"] == "error"):
-                pass
+                logger.info(
+                    "Error while ending kernel %s Reply %s", kernel_id, reply)
             else:
                 logger.info("Ended kernel %s", kernel_id)
                 del self._kernels[kernel_id]
