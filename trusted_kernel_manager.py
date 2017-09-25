@@ -1,4 +1,4 @@
-import random, socket, time, uuid
+import math, random, socket, time, uuid
 from Queue import Queue, Empty
 
 from log import logger
@@ -13,11 +13,8 @@ from jupyter_client.session import Session
 
 class TrustedMultiKernelManager(object):
     """ A class for managing multiple kernels on the trusted side. """
-    def __init__(self, computers=None, default_computer_config=None,
-                 max_kernel_timeout=0.0, tmp_dir=None):
-
+    def __init__(self, computers=None, tmp_dir=None):
         self._kernel_queue = Queue()
-
         self._kernels = {}
         # kernel_id: {"comp_id": comp_id,
         #             "connection": {"key": hmac_key,
@@ -40,15 +37,9 @@ class TrustedMultiKernelManager(object):
         #           "channel": paramico channel}
         self._sessions = {}
         # kernel_id: Session
-
         self._sender = sender.AsyncSender() # Manages asynchronous communication
-
         self.context = zmq.Context()
-        self.default_computer_config = default_computer_config
-
-        self.max_kernel_timeout = float(max_kernel_timeout)
         self.tmp_dir = tmp_dir
-
         if computers is not None:
             for comp in computers:
                 comp_id = self.add_computer(comp)
@@ -89,19 +80,16 @@ class TrustedMultiKernelManager(object):
         :returns: computer id assigned to added computer
         :rtype: string
         """
-        cfg = self.default_computer_config.copy()
-        cfg.update(config)
-        cfg["kernels"] = {}
-        
+        config = config.copy()
+        config["kernels"] = {}
         comp_id = str(uuid.uuid4())
-        host = cfg["host"]
+        host = config["host"]
         ip = socket.gethostbyname(host)
-
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(host, username=cfg["username"])
+        client.connect(host, username=config["username"])
         command = "{} '{}/receiver.py' '{}' '{}' '{}'".format(
-            cfg["python"], cfg["location"], ip, comp_id, self.tmp_dir)
+            config["python"], config["location"], ip, comp_id, self.tmp_dir)
         logger.debug(command)
         channel = client.exec_command(command)[0].channel
         # Wait for untrusted side to respond with the bound port using paramiko
@@ -119,7 +107,7 @@ class TrustedMultiKernelManager(object):
             if output.count("\n") == 2:
                 port = int(output.split("\n")[0])
                 self._sender.register_computer(host, port, comp_id=comp_id)
-                self._comps[comp_id] = cfg
+                self._comps[comp_id] = config
                 self._clients[comp_id] = {"ssh": client, "channel": channel}
                 logger.info(
                     "ZMQ connection with computer %s at port %d established",
@@ -181,20 +169,16 @@ class TrustedMultiKernelManager(object):
             logger.info("Kernel %s not interrupted!"%kernel_id)
         return reply
 
-    def _setup_session(self, reply, comp_id, timeout=None):
+    def _setup_session(self, reply, comp_id):
         """
         Set up the kernel information contained in the untrusted reply message `reply` from computer `comp_id`.
         """
         reply_content = reply["content"]
         kernel_id = reply_content["kernel_id"]
         kernel_connection = reply_content["connection"]
-        if timeout is None :
-            timeout = self.max_kernel_timeout
         self._kernels[kernel_id] = {"comp_id": comp_id,
                                     "connection": kernel_connection,
-                                    "executing": 0, # number of active execute_requests
-                                    "deadline": time.time()+timeout,
-                                    "timeout": timeout}
+                                    "executing": 0}
         self._comps[comp_id]["kernels"][kernel_id] = None
         self._sessions[kernel_id] = Session(key=kernel_connection["key"])
 
@@ -241,7 +225,7 @@ class TrustedMultiKernelManager(object):
         def cb(reply):
             if reply["type"] == "success":
                 kernel_id = reply["content"]["kernel_id"]
-                self._setup_session(reply, comp_id, timeout=float('inf'))
+                self._setup_session(reply, comp_id)
                 self._kernel_queue.put((kernel_id, comp_id))
                 logger.info("Started preforked kernel on %s: %s", comp_id[:4], kernel_id)
             else:
@@ -269,34 +253,41 @@ class TrustedMultiKernelManager(object):
         :rtype: string
         """
         try:
-            preforked_kernel_id, comp_id = self._kernel_queue.get_nowait()
+            timeout = float(timeout)
+        except ValueError:
+            timeout = 0
+        if math.isnan(timeout):
+            timeout = 0
+
+        def setup_kernel(kernel_id):
+            comp = self._comps[comp_id]
+            kernel = self._kernels[kernel_id]
+            kernel["referer"] = referer
+            kernel["remote_ip"] = remote_ip
+            kernel["max_timeout"] = comp["max_timeout"]
+            kernel["timeout"] = min(timeout, kernel["max_timeout"])
+            now = time.time()
+            kernel["hard_deadline"] = now + comp["max_lifespan"]
+            kernel["deadline"] = min(
+                now + kernel["max_timeout"], kernel["hard_deadline"])
+            logger.info("Activated kernel %s on computer %s", kernel_id, comp_id)
+            callback(kernel_id)
+
+        try:
+            kernel_id, comp_id = self._kernel_queue.get_nowait()
             logger.info(
                 "Using kernel on %s.  Queue: %s kernels.",
                 comp_id,
                 self._kernel_queue.qsize())
-            kernel_info = self._kernels[preforked_kernel_id]
-            timeout = float(timeout)
-            import math
-            if math.isnan(timeout) or timeout > self.max_kernel_timeout:
-                timeout = self.max_kernel_timeout
-            kernel_info["deadline"] = time.time() + timeout
-            kernel_info["timeout"] = timeout
-            kernel_info["referer"] = referer
-            kernel_info["remote_ip"] = remote_ip
             self.new_session_prefork(comp_id)
-            logger.info("Activated kernel %s on computer %s (preforked)", preforked_kernel_id, comp_id)
-            callback(preforked_kernel_id)
+            setup_kernel(kernel_id)
         except Empty:
             comp_id = self._find_open_computer()
+            
             def cb(reply):
                 if reply["type"] == "success":
-                    kernel_id = reply["content"]["kernel_id"]
                     self._setup_session(reply, comp_id)
-                    kernel_info = self._kernels[kernel_id]
-                    kernel_info["referer"] = referer
-                    kernel_info["remote_ip"] = remote_ip
-                    logger.info("Activated kernel %s on computer %s", kernel_id, comp_id)
-                    callback(kernel_id)
+                    setup_kernel(reply["content"]["kernel_id"])
                 else:
                     callback(False)
 
@@ -380,9 +371,8 @@ if __name__ == "__main__":
     config = misc.Config()
 
     initial_comps = config.get_config("computers")
-    default_config = config.get_default_config("_default_config")
 
-    t = TrustedMultiKernelManager(computers = initial_comps, default_computer_config = default_config)
+    t = TrustedMultiKernelManager(computers=initial_comps)
     for i in range(5):
         t.new_session()
         

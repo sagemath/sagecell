@@ -140,14 +140,9 @@ class KernelHandler(tornado.web.RequestHandler):
             proto = self.request.protocol.replace("http", "ws", 1)
             host = self.request.host
             ws_url = "%s://%s/" % (proto, host)
-            km = self.application.km
-            timeout = self.get_argument("timeout", None)
-            if timeout is not None:
-                timeout = float(timeout)
-                if math.isnan(timeout) or timeout<0:
-                    timeout = None
+            timeout = self.get_argument("timeout", 0)
             kernel_id = yield tornado.gen.Task(
-               km.new_session_async,
+               self.application.km.new_session_async,
                referer=self.request.headers.get('Referer', ''),
                remote_ip=self.request.remote_ip,
                timeout=timeout)
@@ -265,8 +260,10 @@ class KernelConnection(sockjs.tornado.SockJSConnection):
             self.channels[kernel_id].on_message(json_message)
         except KeyError:
             # Ignore messages to nonexistent or killed kernels.
-            logger.info("%s message sent to nonexistent kernel: %s" %
-                        (message["header"]["msg_type"], kernel_id))
+            import traceback
+            logger.info("%s message sent to nonexistent kernel: %s\n%s" %
+                        (message["header"]["msg_type"], kernel_id,
+                        traceback.format_exc()))
 
     def on_close(self):
         for channel in self.channels.itervalues():
@@ -448,13 +445,12 @@ class ZMQChannelsHandler(object):
         if msg["header"]["msg_type"] in ("execute_reply",
                                          "sagenb.interact.update_interact_reply"):
             timeout = self.kernel["timeout"]
-            if timeout > self.application.km.max_kernel_timeout:
-                self.kernel["timeout"] = timeout = self.application.km.max_kernel_timeout
-            if timeout <= 0.0 and self.kernel["executing"] == 1:
+            if timeout == 0 and self.kernel["executing"] == 1:
                 # kill the kernel before the heartbeat is able to
                 self.kill_kernel = True
             else:
-                self.kernel["deadline"] = time.time() + timeout
+                self.kernel["deadline"] = min(
+                    time.time() + timeout, self.kernel["hard_deadline"])
                 self.kernel["executing"] -= 1
                 logger.debug("decreased execution counter for %s to %s",
                              self.kernel_id, self.kernel["executing"])
@@ -462,10 +458,9 @@ class ZMQChannelsHandler(object):
     def _reset_timeout(self, msg):
         if msg["header"]["msg_type"] == "kernel_timeout":
             timeout = float(msg["content"]["timeout"])
-            if (not math.isnan(timeout)) and timeout >= 0:
-                if timeout > self.application.km.max_kernel_timeout:
-                    timeout = self.application.km.max_kernel_timeout
-                self.kernel["timeout"] = timeout
+            if timeout >= 0:
+                self.kernel["timeout"] = min(
+                    timeout, self.kernel["max_timeout"])
             return False
 
     def kernel_died(self):

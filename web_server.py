@@ -46,14 +46,8 @@ class SageCellServer(tornado.web.Application):
             static_url_prefix = baseurl+"/static/",
             static_handler_class = handlers.StaticHandler
             )
-
-        initial_comps = self.config.get_config("computers")
-        default_comp = self.config.get_default_config("_default_config")
-        max_kernel_timeout = self.config.get_config("max_kernel_timeout")
         self.km = TrustedMultiKernelManager(
-            computers=initial_comps,
-            default_computer_config=default_comp,
-            max_kernel_timeout=max_kernel_timeout,
+            computers=self.config.get_config("computers"),
             tmp_dir=tmp_dir)
         db = __import__('db_'+self.config.get_config('db'))
         self.db = db.DB(self.config.get_config('db_config')['uri'])
