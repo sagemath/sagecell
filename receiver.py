@@ -6,7 +6,17 @@ from ipykernel.jsonutil import json_clean
 import zmq
 
 from misc import Timer, display_file, sage_json
-from forking_kernel_manager import ForkingKernelManager
+from forking_kernel_manager import ForkingKernelManager, KernelError
+
+
+def _message(content, error=False):
+    return {"content": content, "type": "error" if error else "success"}
+
+def _status(status, error=False):
+    return _message({"status": status}, error)
+
+def _error(status):
+    return _status(status, error=True)
 
 
 class Receiver(object):
@@ -40,17 +50,13 @@ class Receiver(object):
                 msg["content"] = {}
 
             self.timer()
-            logger.debug("Start handler %s" % msg_type)
+            logger.debug("start handler %s", msg_type)
             handler = getattr(self, msg_type)
             response = handler(msg["content"])
-            logger.debug("Finished handler %s: %s"%(msg_type, self.timer))
+            logger.debug("finished handler %s: %s", msg_type, self.timer)
 
             self.dealer.send(source, zmq.SNDMORE)
             self.dealer.send_pyobj(response)
-
-    def _form_message(self, content, error=False):
-        return {"content": content,
-                "type": "error" if error else "success"}
 
     def setup_sage(self):
         try:
@@ -80,7 +86,7 @@ class Receiver(object):
             try:
                 sage.all.plot(lambda x: x, (0,1)).save(StringIO.StringIO())
             except Exception as e:
-                logger.debug('plotting exception: %s'%e)
+                logger.debug('plotting exception: %s', e)
             self.sage_dict = {'sage': sage}
             return True
         except ImportError as e:
@@ -331,52 +337,49 @@ r = R()
     
     def invalid_message(self, msg_content):
         """Handler for unsupported messages."""
-        return self._form_message({"status": "Invalid message!"}, error = True)
+        return _error("Invalid message!")
 
     def start_kernel(self, msg_content):
         """Handler for start_kernel messages."""
         resource_limits = msg_content.get("resource_limits")
         try:
-            reply_content = self.km.start_kernel(resource_limits=resource_limits)
-            return self._form_message(reply_content)
+            return _message(
+                self.km.start_kernel(resource_limits=resource_limits))
         except Exception as e:
             logger.exception("Error starting kernel")
-            return self._form_message(str(e), error=True)
+            return _message(str(e), error=True)
 
     def kill_kernel(self, msg_content):
         """Handler for kill_kernel messages."""
         kernel_id = msg_content["kernel_id"]
-        success = self.km.kill_kernel(kernel_id)
-
-        reply_content = {"status": "Kernel %s killed!"%(kernel_id)}
-        if not success:
-            reply_content["status"] = "Could not kill kernel %s!"%(kernel_id)
-
-        return self._form_message(reply_content, error=(not success))
+        try:
+            if self.km.kill_kernel(kernel_id):
+                return _status("Kernel %s killed!" % kernel_id)
+            else:
+                return _error("Could not kill kernel %s!" % kernel_id)
+        except KernelError:
+            return _error("Could not kill non-existing kernel %s!" % kernel_id)
     
     def purge_kernels(self, msg_content):
         """Handler for purge_kernels messages."""
         failures = self.km.purge_kernels()
-        reply_content = {"status": "All kernels killed!"}
-        success = (len(failures) == 0)
-        if not success:
-            reply_content["status"] = "Could not kill kernels %s!"%(failures)
-        return self._form_message(reply_content, error=(not success))
+        if failures:
+            return _error("Could not kill kernels %s!" % failures)
+        else:
+            return _status("All kernels killed!")
 
-    def restart_kernel(self, content):
+    def restart_kernel(self, msg_content):
         """Handler for restart_kernel messages."""
-        kernel_id = content["kernel_id"]
-        return self._form_message(self.km.restart_kernel(kernel_id))
+        kernel_id = msg_content["kernel_id"]
+        return _message(self.km.restart_kernel(kernel_id))
 
     def interrupt_kernel(self, msg_content):
         """Handler for interrupt_kernel messages."""
         kernel_id = msg_content["kernel_id"]
-
-        reply_content = {"status": "Kernel %s interrupted!"%(kernel_id)}
-        success = self.km.interrupt_kernel(kernel_id)
-        if not success:
-            reply_content["status"] = "Could not interrupt kernel %s!"%(kernel_id)
-        return self._form_message(reply_content, error=(not success))
+        if self.km.interrupt_kernel(kernel_id):
+            return _status("Kernel %s interrupted!" % kernel_id)
+        else:
+            return _error("Could not interrupt kernel %s!" % kernel_id)
 
     def remove_computer(self, msg_content):
         """Handler for remove_computer messages."""

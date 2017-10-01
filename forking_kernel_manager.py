@@ -7,12 +7,9 @@ from ipykernel.kernelapp import IPKernelApp
 from traitlets.config.loader import Config
 
 
-
 class KernelError(Exception):
-    """
-    An error relating to starting up kernels
-    """
     pass
+
 
 class ForkingKernelManager(object):
     """Manager for multiple kernels and forking on the untrusted side."""
@@ -52,13 +49,14 @@ class ForkingKernelManager(object):
             ka.user_ns = InstrumentedNamespace()
             ka.initialize([])
         except:
-            logger.exception("Error initializing IPython kernel")
-            # FIXME: What's the point in proceeding after?!
+            logger.exception("error initializing IPython kernel")
+            raise KernelError("error initializing IPython kernel")
         try:
             if self.update_function is not None:
                 self.update_function(ka)
         except:
-            logger.exception("Error configuring up kernel")
+            logger.exception("error configuring up kernel")
+            raise KernelError("error configuring up kernel")
         logger.debug("finished updating")
         for r, limit in resource_limits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
@@ -96,7 +94,7 @@ class ForkingKernelManager(object):
         ka.start()
 
     def start_kernel(self, kernel_id=None, config=None, resource_limits=None):
-        """ A function for starting new kernels by forking.
+        """Start a new kernel by forking.
 
         :arg str kernel_id: the id of the kernel to be started.
             If no id is passed, a uuid will be generated.
@@ -122,19 +120,18 @@ class ForkingKernelManager(object):
         dir = os.path.join(self.dir, kernel_id)
         try:
             os.mkdir(dir)
-        except OSError:
-            # TODO: take care of race conditions and other problems with us
-            # using an 'unclean' directory
-            pass
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
         currdir = os.getcwd()
         os.chdir(dir)
-
         p, q = Pipe()
-        proc = Process(target=self.fork_kernel, args=(config, q, resource_limits))
+        proc = Process(
+            target=self.fork_kernel, args=(config, q, resource_limits))
         proc.start()
         os.chdir(currdir)
-        # todo: yield back to the message processing while we wait
-        for i in range(5):
+        # TODO: yield back to the message processing while we wait
+        for i in range(10):
             if p.poll(1):
                 connection = p.recv()
                 p.close()
@@ -144,64 +141,71 @@ class ForkingKernelManager(object):
                 kernel_logger.info("Kernel %s did not start after %d seconds."
                                    % (kernel_id[:4], i))
         p.close()
-        self.kill_process(proc)
+        self._kill_process(proc)
         raise KernelError("Kernel start timeout.")
 
-    def kill_process(self, proc):
+    def _kill_process(self, proc):
         try:
             os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            # todo: yield back to message processing loop while we join
+            # TODO: yield back to message processing loop while we join
             proc.join(30)
         except Exception as e:
             # On Unix, we may get an ESRCH error if the process has already
             # terminated. Ignore it.
-            from errno import ESRCH
-            if e.errno !=  ESRCH:
+            kernel_logger.exception("exception while killing a process group")
+            if e.errno !=  errno.ESRCH:
                 return False
         return True
 
     def kill_kernel(self, kernel_id):
-        """ A function for ending running kernel processes.
+        """Kill a running kernel.
 
         :arg str kernel_id: the id of the kernel to be killed
-        :returns: whether or not the kernel process was successfully killed
+        :returns: whether or not the kernel was successfully killed
         :rtype: bool
         """
-        if kernel_id in self.kernels:
-            proc = self.kernels[kernel_id][0]
-            if self.kill_process(proc):
-                del self.kernels[kernel_id]
-                return True
+        if kernel_id not in self.kernels:
+            raise KernelError(
+                "trying to kill a non-existing kernel %s" % kernel_id)
+        proc = self.kernels[kernel_id][0]
+        if self._kill_process(proc):
+            del self.kernels[kernel_id]
+            return True
         return False
 
     def interrupt_kernel(self, kernel_id):
-        """ A function for interrupting running kernel processes.
+        """Interrupt a running kernel.
 
         :arg str kernel_id: the id of the kernel to be interrupted
-        :returns: whether or not the kernel process was successfully interrupted
+        :returns: whether or not the kernel was successfully interrupted
         :rtype: bool
         """
-        success = False
-
-        if kernel_id in self.kernels:
-            try:
-                os.kill(self.kernels[kernel_id][0].pid, signal.SIGINT)
-                success = True
-            except:
-                pass
-
-        return success
+        if kernel_id not in self.kernels:
+            raise KernelError(
+                "trying to interrupt a non-existing kernel %s" % kernel_id)
+        try:
+            os.kill(self.kernels[kernel_id][0].pid, signal.SIGINT)
+            return True
+        except:
+            kernel_logger.exception("exception while interrupting a kernel")
+            return False
 
     def restart_kernel(self, kernel_id):
-        """ A function for restarting running kernel processes.
+        """Restart a running kernel.
 
         :arg str kernel_id: the id of the kernel to be restarted
-        :returns: kernel id and connection information which includes the kernel's ip, session key, and shell, heartbeat, stdin, and iopub port numbers for the restarted kernel
+        :returns: kernel id and connection information which includes the
+            kernel's ip, session key, and shell, heartbeat, stdin, and iopub
+            port numbers for the restarted kernel
         :rtype: dict
         """
+        if kernel_id not in self.kernels:
+            raise KernelError(
+                "trying to restart a non-existing kernel %s" % kernel_id)
         ports = self.kernels[kernel_id][1]
         self.kill_kernel(kernel_id)
-        return self.start_kernel(kernel_id, Config({"IPKernelApp": ports, "ip": self.ip}))
+        return self.start_kernel(
+            kernel_id, Config({"IPKernelApp": ports, "ip": self.ip}))
 
     def purge_kernels(self):
         return [id for id in self.kernels.keys() if not self.kill_kernel(id)]
