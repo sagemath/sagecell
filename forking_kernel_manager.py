@@ -203,13 +203,5 @@ class ForkingKernelManager(object):
         self.kill_kernel(kernel_id)
         return self.start_kernel(kernel_id, Config({"IPKernelApp": ports, "ip": self.ip}))
 
-if __name__ == "__main__":
-    def f(a,b,c,d):
-        return 1
-    a = ForkingKernelManager(f)
-    x = a.start_kernel()
-    y = a.start_kernel()
-    import time
-    time.sleep(5)
-    a.kill_kernel(x["kernel_id"])
-    a.kill_kernel(y["kernel_id"])
+    def purge_kernels(self):
+        return [id for id in self.kernels.keys() if not self.kill_kernel(id)]

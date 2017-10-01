@@ -6,7 +6,7 @@ from ipykernel.jsonutil import json_clean
 import zmq
 
 from misc import Timer, display_file, sage_json
-from untrusted_kernel_manager import UntrustedMultiKernelManager
+from forking_kernel_manager import ForkingKernelManager
 
 
 class Receiver(object):
@@ -20,7 +20,7 @@ class Receiver(object):
         self.sage_mode = self.setup_sage()
         print(self.sage_mode)
         sys.stdout.flush()
-        self.km = UntrustedMultiKernelManager(ip,
+        self.km = ForkingKernelManager(ip,
                 update_function=self.update_dict_with_sage, tmp_dir=tmp_dir)
         self.timer = Timer("", reset=True)
 
