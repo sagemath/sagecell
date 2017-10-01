@@ -1,4 +1,4 @@
-import base64, json, math, os.path, re, time, urllib, uuid, zlib
+import base64, json, os.path, re, time, urllib, uuid, zlib
 
 from log import StatsMessage, logger, stats_logger
 
@@ -551,11 +551,14 @@ class ZMQChannelsHandler(object):
 
         def ping_or_dead():
             self.hb_stream.flush()
-            if (self.kernel["executing"] == 0
-                and time.time() > self.kernel["deadline"]):
+            now = time.time()
+            if now > self.kernel["deadline"] and self.kernel["executing"] == 0:
                 # only kill the kernel after all pending
                 # execute requests have finished
                 self._kernel_alive = False
+            if now > self.kernel["hard_deadline"]:
+                self._kernel_alive = False
+                logger.info("hard deadline reached for %s", self.kernel_id)
             if self._kernel_alive:
                 self._kernel_alive = False
                 self.hb_stream.send(b'ping')
