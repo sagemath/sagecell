@@ -45,7 +45,7 @@ _default_config = {
     "resource_limits": {
         "RLIMIT_CPU": 120, # CPU time in seconds
         },
-    "max_lifespan" : 60 * 90, # From the session start
+    "max_lifespan" : 60 * 119, # From the session start
     "max_timeout" : 60 * 90, # Idling between interactions
     "max_kernels": 10,
     "preforked_kernels": 1,
