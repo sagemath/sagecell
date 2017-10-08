@@ -1,8 +1,10 @@
-import uuid
-import threading
-import zmq
-from zmq.eventloop.zmqstream import ZMQStream
 import pickle
+import threading
+import uuid
+
+
+import zmq
+
 
 class AsyncSender(object):
     """
@@ -13,18 +15,17 @@ class AsyncSender(object):
     def __init__(self, filename=None):
         self._dealers = {}
         if filename is None:
-            from uuid import uuid4
-            filename = 'router-ipc/router-%s.ipc'%uuid4()
-        self.filename = "ipc://"+filename
+            filename = 'router-ipc/router-%s.ipc' % uuid.uuid4()
+        self.filename = "ipc://" + filename
 
-        context = zmq.Context()
-        self.router = context.socket(zmq.ROUTER)
+        self.context = zmq.Context()
+        self.router = self.context.socket(zmq.ROUTER)
         self.router.bind(self.filename)
 
         self.poll = zmq.Poller()
         self.poll.register(self.router, zmq.POLLIN)
 
-        self.poller = threading.Thread(target = self._run)
+        self.poller = threading.Thread(target=self._run)
         self.poller.daemon = True
         self.poller.start()
 
@@ -68,7 +69,7 @@ class AsyncSender(object):
                     (dest, msg) = sock.recv_multipart()
                     self.router.send_multipart([dest, dealer_id, msg])
 
-    def register_computer(self, host, port, comp_id = None):
+    def register_computer(self, host, port, comp_id=None):
         """
         This registers an untrusted computer and sets up a
         DEALER socket to the specified host:port over TCP.
@@ -84,15 +85,10 @@ class AsyncSender(object):
         """
         if comp_id is None:
             comp_id = str(uuid.uuid4())
-
-        context = zmq.Context()
-        sock = context.socket(zmq.DEALER)
-        sock.connect("tcp://%s:%d"%(host,port))
-
+        sock = self.context.socket(zmq.DEALER)
+        sock.connect("tcp://%s:%d" % (host, port))
         self._dealers[comp_id] = sock
-
         self.poll.register(sock, zmq.POLLIN)
-
         return comp_id
 
     def send_msg(self, msg, comp_id):
@@ -110,43 +106,31 @@ class AsyncSender(object):
         :arg str comp_id: identifier returned by
             register_computer corresponding to a unique
         :returns: reply message from the untrusted side, or
-            an None if an invalid ID was specified
+            None if an invalid ID was specified
         """
-
-        _id = str(uuid.uuid4())
-        context = zmq.Context()
-        sock = context.socket(zmq.DEALER)
-        sock.setsockopt(zmq.IDENTITY, _id)
+        sock = self.context.socket(zmq.DEALER)
+        sock.setsockopt(zmq.IDENTITY, str(uuid.uuid4()))
         sock.connect(self.filename)
         sock.send(comp_id, zmq.SNDMORE)
         sock.send_pyobj(msg)
 
         source = sock.recv()
         reply = sock.recv_pyobj()
-        retval = None
-        if source == comp_id:
-            retval = reply
-
         sock.close()
-
-        return retval
+        return reply if source == comp_id else None
     
     def send_msg_async(self, msg, comp_id, callback):
-        _id = str(uuid.uuid4())
-        context = zmq.Context()
-        sock = context.socket(zmq.DEALER)
-        sock.setsockopt(zmq.IDENTITY, _id)
+        sock = self.context.socket(zmq.DEALER)
+        sock.setsockopt(zmq.IDENTITY, str(uuid.uuid4()))
         sock.connect(self.filename)
-        stream = ZMQStream(sock)
+        stream = zmq.eventloop.zmqstream.ZMQStream(sock)
         
         @stream.on_recv
         def on_recv(msg):
             reply = pickle.loads(msg[1])
             stream.close()
-            if msg[0] == comp_id:
-                callback(reply)
-            else:
-                callback(None)
+            callback(reply if msg[0] == comp_id else None)
+
         sock.send(comp_id, zmq.SNDMORE)
         sock.send_pyobj(msg)
     
