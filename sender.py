@@ -65,7 +65,7 @@ class AsyncSender(object):
                     (dest, msg) = sock.recv_multipart()
                     self.router.send_multipart([dest, dealer_id, msg])
 
-    def register_computer(self, host, port, comp_id=None):
+    def register_computer(self, host, port, comp_id):
         """
         This registers an untrusted computer and sets up a
         DEALER socket to the specified host:port over TCP.
@@ -74,18 +74,12 @@ class AsyncSender(object):
         :arg Int port: Port on the untrusted machine that
             has a DEALER socket bound for communication
         :arg str comp_id: A unique ID for the registered
-            DEALER socket. This is set to a uuid if it is
-            not specified
-        :returns: the unique ID ``comp_id``
-        :rtype: str
+            DEALER socket.
         """
-        if comp_id is None:
-            comp_id = str(uuid.uuid4())
         sock = self.context.socket(zmq.DEALER)
         sock.connect("tcp://%s:%d" % (host, port))
         self._dealers[comp_id] = sock
         self.poll.register(sock, zmq.POLLIN)
-        return comp_id
 
     def send_msg(self, msg, comp_id):
         """
