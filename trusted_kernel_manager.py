@@ -49,19 +49,6 @@ class TrustedMultiKernelManager(object):
                         self.new_session_prefork(comp_id)
                     logger.debug("Requested %d preforked kernels" % preforked)
 
-    def get_kernel_ids(self, comp=None):
-        """ A function for obtaining kernel ids of a particular computer.
-
-        :arg str comp: the id of the computer whose kernels you desire
-        :returns: kernel ids of a computer if its id is given or all kernel ids if no id is given
-        :rtype: list
-        """
-        if comp is None:
-            return self._kernels.keys()
-        if comp in self._comps:
-            return self._comps[comp]["kernels"].keys()
-        return []
-
     def get_hb_info(self, kernel_id):
         """ Returns basic heartbeat information for a given kernel. 
 
@@ -114,16 +101,6 @@ class TrustedMultiKernelManager(object):
                     comp_id, port)
                 return comp_id
         logger.error("connection to computer %s failed", comp_id)
-
-    def purge_kernels(self, comp_id):
-        """ Kills all kernels on a given computer. 
-
-            :arg str comp_id: the id of the computer whose kernels you want to purge
-        """
-        self._sender.send_msg({"type": "purge_kernels"}, comp_id)
-        for i in self._comps[comp_id]["kernels"]:
-            del self._kernels[i]
-        self._comps[comp_id]["kernels"] = {}
 
     def shutdown(self):
         """ Ends all kernel processes on all computers. """
@@ -364,36 +341,3 @@ class TrustedMultiKernelManager(object):
         
     def kernel_info(self, kernel_id):
         return self._kernels[kernel_id]
-
-
-if __name__ == "__main__":
-    import misc
-    config = misc.Config()
-
-    initial_comps = config.get_config("computers")
-
-    t = TrustedMultiKernelManager(computers=initial_comps)
-    for i in range(5):
-        t.new_session()
-        
-    vals = t._comps.values()
-    for i in range(len(vals)):
-        print("\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys())
-
-    print("\nList of all kernel ids ::: " + str(t.get_kernel_ids()))
-        
-    y = t.get_kernel_ids()
-    x = t._comps.keys()
-
-    t.remove_computer(x[0])
-            
-    vals = t._comps.values()
-    print(vals)
-    for i in range(len(vals)):
-        print("\nComputer #%d has kernels ::: "%i, vals[i]["kernels"].keys())
-
-    print("\nList of all kernel ids ::: " + str(t.get_kernel_ids()))
-
-    # Kill all kernels
-    for i in t._comps.keys():
-        t.remove_computer(i)
