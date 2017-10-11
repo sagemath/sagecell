@@ -173,39 +173,5 @@ class ForkingKernelManager(object):
             return True
         return False
 
-    def interrupt_kernel(self, kernel_id):
-        """Interrupt a running kernel.
-
-        :arg str kernel_id: the id of the kernel to be interrupted
-        :returns: whether or not the kernel was successfully interrupted
-        :rtype: bool
-        """
-        if kernel_id not in self.kernels:
-            raise KernelError(
-                "trying to interrupt a non-existing kernel %s" % kernel_id)
-        try:
-            os.kill(self.kernels[kernel_id][0].pid, signal.SIGINT)
-            return True
-        except:
-            kernel_logger.exception("exception while interrupting a kernel")
-            return False
-
-    def restart_kernel(self, kernel_id):
-        """Restart a running kernel.
-
-        :arg str kernel_id: the id of the kernel to be restarted
-        :returns: kernel id and connection information which includes the
-            kernel's ip, session key, and shell, heartbeat, stdin, and iopub
-            port numbers for the restarted kernel
-        :rtype: dict
-        """
-        if kernel_id not in self.kernels:
-            raise KernelError(
-                "trying to restart a non-existing kernel %s" % kernel_id)
-        ports = self.kernels[kernel_id][1]
-        self.kill_kernel(kernel_id)
-        return self.start_kernel(
-            kernel_id, Config({"IPKernelApp": ports, "ip": self.ip}))
-
     def purge_kernels(self):
         return [id for id in self.kernels.keys() if not self.kill_kernel(id)]

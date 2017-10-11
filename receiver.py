@@ -368,19 +368,6 @@ r = R()
         else:
             return _status("All kernels killed!")
 
-    def restart_kernel(self, msg_content):
-        """Handler for restart_kernel messages."""
-        kernel_id = msg_content["kernel_id"]
-        return _message(self.km.restart_kernel(kernel_id))
-
-    def interrupt_kernel(self, msg_content):
-        """Handler for interrupt_kernel messages."""
-        kernel_id = msg_content["kernel_id"]
-        if self.km.interrupt_kernel(kernel_id):
-            return _status("Kernel %s interrupted!" % kernel_id)
-        else:
-            return _error("Could not interrupt kernel %s!" % kernel_id)
-
     def remove_computer(self, msg_content):
         """Handler for remove_computer messages."""
         self.listen = False

@@ -120,32 +120,6 @@ class TrustedMultiKernelManager(object):
         del self._comps[comp_id]
         del self._clients[comp_id]
 
-    def restart_kernel(self, kernel_id):
-        """ Restarts a given kernel.
-
-        :arg str kernel_id: the id of the kernel you want restarted
-        """
-        comp_id = self._kernels[kernel_id]["comp_id"]
-        self._sender.send_msg({"type": "restart_kernel",
-                               "content": {"kernel_id": kernel_id}},
-                              comp_id)
-
-    def interrupt_kernel(self, kernel_id):
-        """ Interrupts a given kernel. 
-
-        :arg str kernel_id: the id of the kernel you want interrupted
-        """
-        comp_id = self._kernels[kernel_id]["comp_id"]
-        reply = self._sender.send_msg({"type": "interrupt_kernel",
-                                       "content": {"kernel_id": kernel_id}},
-                                      comp_id)
-
-        if reply["type"] == "success":
-            logger.info("Kernel %s interrupted."%kernel_id)
-        else:
-            logger.info("Kernel %s not interrupted!"%kernel_id)
-        return reply
-
     def _setup_session(self, reply, comp_id):
         """
         Set up the kernel information contained in the untrusted reply message `reply` from computer `comp_id`.
