@@ -261,7 +261,7 @@ backend compute{suffix}
     stick on urlp(CellSessionID)
     stick match req.hdr(Jupyter-Kernel-ID)
     stick store-response res.hdr(Jupyter-Kernel-ID)
-    stick match path bytes(8,36) if { path_reg ^/kernel/.{36}/files/ }
+    stick match path bytes(8,36) if { path_reg ^/kernel/.{36}/ }
     option httpchk
 
     server {node} {ip}:8888 id {id} check
