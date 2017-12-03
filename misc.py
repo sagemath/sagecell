@@ -45,7 +45,7 @@ class Config(object):
         except ImportError:
             pass
 
-    def get_config(self, attr):
+    def get(self, attr):
         """
         Get a config attribute. If the attribute is defined
         in the user-specified file, that is used, otherwise
@@ -57,7 +57,7 @@ class Config(object):
         :returns: the value of the named attribute, or
             None if the attribute does not exist.
         """
-        default_config_val = self.get_default_config(attr)
+        default_config_val = self.get_default(attr)
         config_val = default_config_val
 
         if self.config is not None:
@@ -71,7 +71,7 @@ class Config(object):
 
         return config_val
 
-    def get_default_config(self, attr):
+    def get_default(self, attr):
         """
         Get a config attribute from the default config file.
 
@@ -88,7 +88,7 @@ class Config(object):
 
         return config_val
 
-    def set_config(self, attr, value):
+    def set(self, attr, value):
         """
         Set a config attribute
 

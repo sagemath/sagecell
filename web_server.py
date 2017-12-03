@@ -47,10 +47,10 @@ class SageCellServer(tornado.web.Application):
             static_handler_class = handlers.StaticHandler
             )
         self.km = TrustedMultiKernelManager(
-            computers=self.config.get_config("computers"),
+            computers=self.config.get("computers"),
             tmp_dir=tmp_dir)
-        db = __import__('db_'+self.config.get_config('db'))
-        self.db = db.DB(self.config.get_config('db_config')['uri'])
+        db = __import__('db_'+self.config.get('db'))
+        self.db = db.DB(self.config.get('db_config')['uri'])
         self.ioloop = zmq.eventloop.IOLoop.instance()
 
         # to check for blocking when debugging, uncomment the following
@@ -79,7 +79,7 @@ if __name__ == "__main__":
                         help='port to launch the server')
     parser.add_argument('-b', '--baseurl', default="", help="base url")
     parser.add_argument('--interface', default=None, help="interface to listen on (default all)")
-    parser.add_argument('--tmp_dir', default=config.get_config("tmp_dir"), help="temporary directory for calculations")
+    parser.add_argument('--tmp_dir', default=config.get("tmp_dir"), help="temporary directory for calculations")
 
     args = parser.parse_args()
 
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     logger.info("starting tornado web server")
     from lockfile.pidlockfile import PIDLockFile
-    pidfile_path = config.get_config('pid_file')
+    pidfile_path = config.get('pid_file')
     pidlock = PIDLockFile(pidfile_path)
     if pidlock.is_locked():
         old_pid = pidlock.read_pid()

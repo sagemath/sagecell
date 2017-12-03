@@ -130,7 +130,7 @@ class KernelHandler(tornado.web.RequestHandler):
         elif method == "OPTIONS":
             self.options(*args, **kwargs)
         else:
-            if config.get_config("requires_tos") and \
+            if config.get("requires_tos") and \
                     self.get_argument("accepted_tos", "false") != "true":
                 self.set_status(403)
                 self.finish()
@@ -275,7 +275,7 @@ KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
 
 class TOSHandler(tornado.web.RequestHandler):
     """Handler for ``/tos.html``"""
-    tos = config.get_config("requires_tos")
+    tos = config.get("requires_tos")
     if tos:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "tos.html")
         with open(path) as f:
@@ -326,7 +326,7 @@ class ServiceHandler(tornado.web.RequestHandler):
             self.set_header(
                 'Access-Control-Allow-Origin', self.request.headers['Origin'])
             self.set_header('Access-Control-Allow-Credentials', 'true')
-        if (config.get_config('requires_tos')
+        if (config.get('requires_tos')
                 and self.get_argument('accepted_tos', 'false') != 'true'):
             self.set_status(403)
             self.finish(
