@@ -140,6 +140,7 @@ python_packages = [
 "h5py",
 "husl",
 "lxml",
+"mathchem",
 "munkres",
 "netcdf4",
 "numexpr",
