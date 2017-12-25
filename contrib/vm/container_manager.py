@@ -490,7 +490,7 @@ def install_sagecell():
     shutil.move("github/sagecell", ".")
     shutil.rmtree("github")
     os.chdir("sagecell")
-    with open("templates/provider.html", "w") as f:
+    with open("templates/provider.html", "w", encoding="utf-8") as f:
         f.write(provider_html)
     check_call("../sage/sage -sh -c 'make -B'")
     log.info("successfully compiled SageCell")
