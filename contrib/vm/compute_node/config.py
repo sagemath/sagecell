@@ -1,4 +1,5 @@
-import os.path
+import config_default
+
 
 # Global database running on Google Compute Engine with a static IP
 db = "web"
@@ -8,11 +9,11 @@ requires_tos = False
 
 pid_file = '/home/{server}/sagecell.pid'
 
-from config_default import _default_config
-
-_default_config.update({
-    "username": "{worker}",
-    "location": os.path.dirname(os.path.abspath(__file__)),
+config_default.provider_settings.update({
     "max_kernels": 120,
-    "preforked_kernels": 20,
+    "max_preforked": 20,
+    })
+
+config_default.provider_info.update({
+    "username": "{worker}",
     })

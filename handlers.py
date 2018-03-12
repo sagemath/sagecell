@@ -1,6 +1,12 @@
-import base64, json, os.path, re, time, urllib, uuid, zlib
-
-from log import StatsMessage, logger, stats_logger
+import base64
+import collections
+import json
+import os.path
+import re
+import time
+import urllib
+import uuid
+import zlib
 
 import tornado.gen
 import tornado.ioloop
@@ -8,6 +14,9 @@ import tornado.web
 import tornado.websocket
 import sockjs.tornado
 from zmq.utils import jsonapi
+
+from log import StatsMessage, logger, stats_logger
+
 
 try:
     from sage.all import gap, gp, maxima, r, singular
@@ -20,8 +29,9 @@ try:
     }
 except ImportError:
     tab_completion = {}
-from misc import sage_json, Config
-config = Config()
+
+import misc
+config = misc.Config()
 
 
 class RootHandler(tornado.web.RequestHandler):
@@ -140,25 +150,24 @@ class KernelHandler(tornado.web.RequestHandler):
             proto = self.request.protocol.replace("http", "ws", 1)
             host = self.request.host
             ws_url = "%s://%s/" % (proto, host)
-            timeout = self.get_argument("timeout", 0)
-            kernel_id = yield tornado.gen.Task(
-               self.application.km.new_session_async,
-               referer=self.request.headers.get('Referer', ''),
-               remote_ip=self.request.remote_ip,
-               timeout=timeout)
-            data = {"ws_url": ws_url, "id": kernel_id}
-            self.set_header("Jupyter-Kernel-ID", kernel_id)
+            timeout = float(self.get_argument("timeout", 0))
+            kernel = yield tornado.gen.Task(
+                self.application.kernel_dealer.get_kernel,
+                resource_limits=config.get("provider_settings")["default_limits"],
+                timeout=timeout)
+            kernel.referer=self.request.headers.get('Referer', '')
+            kernel.remote_ip=self.request.remote_ip
+            data = {"ws_url": ws_url, "id": kernel.id}
+            self.set_header("Jupyter-Kernel-ID", kernel.id)
             self.write(self.permissions(data))
             self.finish()
 
-
     def delete(self, kernel_id):
-        self.application.km.end_session(kernel_id)
+        self.application.kernel_dealer.kernel(kernel_id).stop()
         self.permissions()
         self.finish()
 
     def options(self, kernel_id=None):
-        logger.debug("KernelHandler.options for kernel_id %s", kernel_id)
         self.permissions()
         self.finish()
 
@@ -181,27 +190,35 @@ class Completer(object):
     
     name_pattern = re.compile(r"\b[a-z_]\w*$", re.IGNORECASE)
 
-    def __init__(self, km):
+    def __init__(self, kernel_dealer):
         self.waiting = {}
-        self.kernel_id = km.new_session(limited=False)
-        self.session = km._sessions[self.kernel_id]
-        self.stream = km.create_shell_stream(self.kernel_id)
-        self.stream.on_recv(self.on_recv)
+        self.kernel = None
+        
+        def callback(kernel):
+            self.kernel = kernel
+            self.kernel.channels["shell"].on_recv(self.on_recv)
+            
+        kernel_dealer.get_kernel({}, float("inf"), callback)
 
-    def registerRequest(self, kc, msg):
-        mode = msg["content"].get("mode", "sage")
+    def registerRequest(self, addr, msg):
+        content = msg["content"]
+        mode = content.get("mode", "sage")
         if mode in ("sage", "python"):
-            self.waiting[msg["header"]["msg_id"]] = kc
-            self.session.send(self.stream, msg)
+            self.waiting[msg["header"]["msg_id"]] = addr
+            if self.kernel is None:
+                # It is highly unlikely that we get a completion request before
+                # the kernel is ready, so we are not going to handle it.
+                logger.exception("completer kernel is not available")
+            self.kernel.session.send(self.kernel.channels["shell"], msg)
             return
         match = Completer.name_pattern.search(
-            msg["content"]["line"][:msg["content"]["cursor_pos"]])
+            content["line"][:content["cursor_pos"]])
         response = {
             "channel": "shell",
             "header": {
                 "msg_id": str(uuid.uuid4()),
                 "username": "",
-                "session": self.kernel_id,
+                "session": self.kernel.id,
                 "msg_type": "complete_reply"
             },
             "parent_header": msg["header"],
@@ -212,65 +229,55 @@ class Completer(object):
                 "cursor_start": match.start(),
             },
         }
-        kc.send("complete," + jsonapi.dumps(response))
+        addr.send("complete," + jsonapi.dumps(response))
 
     def on_recv(self, msg):
-        msg = self.session.feed_identities(msg)[1]
-        msg = self.session.unserialize(msg)
-        msg_id = msg["parent_header"]["msg_id"]
-        kc = self.waiting.pop(msg_id)
-        kc.send("complete," + jsonapi.dumps(msg, default=sage_json))
+        msg = self.kernel.session.feed_identities(msg)[1]
+        msg = self.kernel.session.unserialize(msg)
+        addr = self.waiting.pop(msg["parent_header"]["msg_id"])
+        addr.send("complete," + jsonapi.dumps(msg, default=misc.sage_json))
 
 
-class KernelConnection(sockjs.tornado.SockJSConnection):
+class SockJSHandler(sockjs.tornado.SockJSConnection):
 
     def on_open(self, request):
         self.channels = {}
 
     def on_message(self, message):
-        prefix, json_message = message.split(",", 1)
-        kernel_id = prefix.split("/", 1)[0]
-        message = jsonapi.loads(json_message)
-        logger.debug("KernelConnection.on_message: %s", message)
-        application = self.session.handler.application
-        if kernel_id == "complete":
-            if message["header"]["msg_type"] in ("complete_request",
-                                                 "object_info_request"):
-                application.completer.registerRequest(self, message)
+        prefix, message = message.split(",", 1)
+        id = prefix.split("/", 1)[0]
+        message = jsonapi.loads(message)
+        logger.debug("SockJSHandler.on_message: %s", message)
+        msg_type = message["header"]["msg_type"]
+        app = self.session.handler.application
+        if id == "complete":
+            if msg_type in ("complete_request", "object_info_request"):
+                app.completer.registerRequest(self, message)
             return
         try:
-            if kernel_id not in self.channels:
-                # handler may be None in certain circumstances (it seems to only be set
-                # in GET requests, not POST requests, so even using it here may
-                # only work with JSONP because of a race condition)
-                kernel_info = application.km.kernel_info(kernel_id)
-                self.kernel_info = {'remote_ip': kernel_info['remote_ip'],
-                                    'referer': kernel_info['referer'],
-                                    'timeout': kernel_info['timeout']}
-            if message["header"]["msg_type"] == "execute_request":
-                stats_logger.info(StatsMessage(
-                    kernel_id=kernel_id,
-                    remote_ip=self.kernel_info['remote_ip'],
-                    referer=self.kernel_info['referer'],
-                    code=message["content"]["code"],
-                    execute_type='request'))
-            if kernel_id not in self.channels:
-                self.channels[kernel_id] = SockJSChannelsHandler(self.send)
-                self.channels[kernel_id].open(application, kernel_id)
-            self.channels[kernel_id].on_message(json_message)
+            kernel = app.kernel_dealer.kernel(id)
         except KeyError:
             # Ignore messages to nonexistent or killed kernels.
-            import traceback
-            logger.info("%s message sent to nonexistent kernel: %s\n%s" %
-                        (message["header"]["msg_type"], kernel_id,
-                        traceback.format_exc()))
+            logger.warning("%s sent to nonexistent kernel %s", msg_type, id)
+            return
+        if id not in self.channels:
+            self.channels[id] = SockJSChannelsHandler(self.send)
+            self.channels[id].connect(kernel)
+        if msg_type == "execute_request":
+            stats_logger.info(StatsMessage(
+                kernel_id=id,
+                remote_ip=kernel.remote_ip,
+                referer=kernel.referer,
+                code=message["content"]["code"],
+                execute_type="request"))
+        self.channels[id].send(message)
 
     def on_close(self):
-        for channel in self.channels.itervalues():
-            channel.on_close()
+        while self.channels:
+            self.channels.popitem()[1].disconnect()
 
 
-KernelRouter = sockjs.tornado.SockJSRouter(KernelConnection, "/sockjs")
+KernelRouter = sockjs.tornado.SockJSRouter(SockJSHandler, "/sockjs")
 
 
 class TOSHandler(tornado.web.RequestHandler):
@@ -341,34 +348,28 @@ class ServiceHandler(tornado.web.RequestHandler):
             return
         remote_ip = self.request.remote_ip
         referer = self.request.headers.get('Referer', '')
-        self.kernel_id = yield tornado.gen.Task(
-            self.application.km.new_session_async,
-            referer=referer,
-            remote_ip=remote_ip,
+        self.kernel = yield tornado.gen.Task(
+            self.application.kernel_dealer.get_kernel,
+            resource_limits=config.get("provider_settings")["default_limits"],
             timeout=0)
         sm = StatsMessage(
-            kernel_id=self.kernel_id,
+            kernel_id=self.kernel.id,
             remote_ip=remote_ip,
             referer=referer,
             code=code,
             execute_type='service')
-        if remote_ip == '127.0.0.1' and self.kernel_id:
+        if remote_ip == '127.0.0.1':
             stats_logger.debug(sm)
         else:
             stats_logger.info(sm)
-        if not self.kernel_id:
-            logger.error('could not obtain a valid kernel_id')
-            self.set_status(503)
-            self.finish()
-            return
         self.zmq_handler = ZMQServiceHandler()
-        self.zmq_handler.open(self.application, self.kernel_id)
+        self.zmq_handler.connect(self.kernel)
         loop = tornado.ioloop.IOLoop.instance()
         
         def kernel_callback(msg):
             if msg['msg_type'] == 'execute_reply':
                 loop.remove_timeout(self.timeout_handle)
-                logger.debug('service request finished for %s', self.kernel_id)
+                logger.debug('service request finished for %s', self.kernel.id)
                 streams = self.zmq_handler.streams
                 streams['success'] = msg['content']['status'] == 'ok'
                 streams['execute_reply'] = msg['content']
@@ -377,7 +378,8 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.zmq_handler.msg_from_kernel_callbacks.append(kernel_callback)
         
         def timeout_callback():
-            logger.debug('service request timed out for %s', self.kernel_id)
+            logger.debug('service request timed out for %s', self.kernel.id)
+            self.kernel.stop()
             loop.add_callback(self.finish_request)
 
         self.timeout_handle = loop.call_later(30, timeout_callback)
@@ -387,7 +389,7 @@ class ServiceHandler(tornado.web.RequestHandler):
             'header': {
                 'msg_id': str(uuid.uuid4()),
                 'username': '',
-                'session': self.kernel_id,
+                'session': self.kernel.id,
                 'msg_type': 'execute_request',
                },
             'content': {
@@ -399,11 +401,9 @@ class ServiceHandler(tornado.web.RequestHandler):
                 },
             'metadata': {},
             }
-        self.zmq_handler.on_message(jsonapi.dumps(exec_message))
+        self.zmq_handler.send(exec_message)
 
     def finish_request(self):
-        self.application.km.end_session(self.kernel_id)
-        self.zmq_handler.on_close()
         self.finish(self.zmq_handler.streams)
 
 
@@ -423,57 +423,27 @@ class ZMQChannelsHandler(object):
         # can't encode buffers, so let's get rid of them if they exist
         msg.pop("buffers", None)
         # sage_json handles things like encoding dates and sage types
-        return jsonapi.dumps(msg, default=sage_json)
+        return jsonapi.dumps(msg, default=misc.sage_json)
 
-    def _on_zmq_reply(self, stream, msg_list):
-        if stream.closed():
-            return
-        try:
-            idents, msg_list = self.session.feed_identities(msg_list)
-            msg = self.session.unserialize(msg_list)
-            if all([f(msg) is not False
-                    for f in self.msg_from_kernel_callbacks]):
-                msg["channel"] = stream.channel
-                self._output_message(msg)
-        except ValueError as e:
-            logger.exception("ValueError in _on_zmq_reply: %s", e.message)
-        if stream.channel == "shell" and self.kill_kernel:
-            self.channels["shell"].flush()
-            self.kernel_died()
+    def connect(self, kernel):
+        self.kernel = kernel
+        self.msg_from_kernel_callbacks = []
+        self.msg_to_kernel_callbacks = []
+        for channel in ["iopub", "shell"]:
+            kernel.channels[channel].on_recv_stream(self.on_recv)
+        kernel.on_stop(self.kernel_stopped)
 
-    def _reset_deadline(self, msg):
-        if msg["header"]["msg_type"] in ("execute_reply",
-                                         "sagenb.interact.update_interact_reply"):
-            timeout = self.kernel["timeout"]
-            if timeout == 0 and self.kernel["executing"] == 1:
-                # kill the kernel before the heartbeat is able to
-                self.kill_kernel = True
-            else:
-                self.kernel["deadline"] = min(
-                    time.time() + timeout, self.kernel["hard_deadline"])
-                self.kernel["executing"] -= 1
-                logger.debug("decreased execution counter for %s to %s",
-                             self.kernel_id, self.kernel["executing"])
+    def disconnect(self):
+        for channel in ["iopub", "shell"]:
+            if not self.kernel.channels[channel].closed():
+                self.kernel.channels[channel].on_recv_stream(None)
 
-    def _reset_timeout(self, msg):
-        if msg["header"]["msg_type"] == "kernel_timeout":
-            timeout = float(msg["content"]["timeout"])
-            if timeout >= 0:
-                self.kernel["timeout"] = min(
-                    timeout, self.kernel["max_timeout"])
-            return False
-
-    def kernel_died(self):
-        try: # in case kernel has already been killed
-            self.channels["iopub"].flush()
-            self.application.km.end_session(self.kernel_id)
-        except IOError:
-            pass
+    def kernel_stopped(self):
         msg = {
             "channel": "iopub",
             'header': {
                 'msg_type': 'status',
-                'session': self.kernel_id,
+                'session': self.kernel.id,
                 'msg_id': str(uuid.uuid4()),
                 'username': ''
             },
@@ -481,132 +451,64 @@ class ZMQChannelsHandler(object):
             'metadata': {},
             'content': {'execution_state': 'dead'}
         }
-        self._output_message(msg)
-        self.on_close()
+        self.output_message(msg)
+        self.disconnect()
 
-    def on_close(self):
-        for stream in self.channels.itervalues():
-            if stream is not None and not stream.closed():
-                stream.on_recv_stream(None)
-                stream.close()
-        if hasattr(self, "hb_stream") and not self.hb_stream.closed():
-            self.stop_hb()
-        self.application.km.end_session(self.kernel_id)
+    def on_recv(self, stream, msg_list):
+        kernel = self.kernel
+        msg_list = kernel.session.feed_identities(msg_list)[1]
+        try:
+            msg = kernel.session.unserialize(msg_list)
+        except ValueError:
+            # FIXME: Why are we getting Duplicate Signature errors?
+            logger.exception("ValueError in ZMQChannelsHandler.on_recv")
+        msg["channel"] = stream.channel
+        # Useful but may be way too verbose even for debugging
+        #logger.debug("received from kernel %s", msg)
+        msg_type = msg["header"]["msg_type"]
+        if msg_type in ("execute_reply",
+                        "sagenb.interact.update_interact_reply"):
+            kernel.executing -= 1
+            logger.debug("decreased execution counter for %s to %s",
+                         kernel.id, kernel.executing)
+            if kernel.timeout > 0:
+                kernel.deadline = time.time() + kernel.timeout
+        if msg_type == "kernel_timeout":
+            timeout = float(msg["content"]["timeout"])
+            logger.debug("reset timeout for %s to %f", kernel.id, timeout)
+            if timeout >= 0:
+                kernel.timeout = min(timeout, config.get("max_timeout"))
+        else:
+            for callback in self.msg_from_kernel_callbacks:
+                callback(msg)
+            self.output_message(msg)
+        if kernel.executing == 0 and kernel.timeout == 0:
+            logger.debug("stopping on %s, %s", stream.channel, msg_type)
+            kernel.stop()
 
-    def on_message(self, msg):
-        # shell only, was just pass in iopub
-        if self.application.km._kernels.get(self.kernel_id) is not None:
-            msg = jsonapi.loads(msg)
-            for f in self.msg_to_kernel_callbacks:
-                f(msg)
-            if msg['header']['msg_type'] in ('execute_request',
-                                             'sagenb.interact.update_interact'):
-                self.kernel["executing"] += 1
-                logger.debug("increased execution counter for %s to %s",
-                             self.kernel_id, self.kernel["executing"])
-            self.session.send(self.channels["shell"], msg)
-
-    def open(self, application, kernel_id):
-        self.application = application
-        self.kernel_id = kernel_id
-        km = application.km
-        self.session = km._sessions[kernel_id]
-        self.kernel = km._kernels[kernel_id]
-        self.msg_from_kernel_callbacks = [self._reset_deadline,
-                                          self._reset_timeout]
-        self.msg_to_kernel_callbacks = []
-        
-        # Useful but may be way to verbose even for debugging
-        #def log_from(message): logger.debug("log_from %s", message)
-        #self.msg_from_kernel_callbacks.insert(0, log_from)
-        #def log_to(message): logger.debug("log_to %s", message)
-        #self.msg_to_kernel_callbacks.insert(0, log_to)
-        
-        self.kill_kernel = False
-        self.channels = {}
-        for channel in ('shell', 'iopub'):  #, 'stdin'
-            meth = getattr(km, 'create_' + channel + "_stream")
-            self.channels[channel] = stream = meth(kernel_id)
-            stream.channel = channel
-            stream.on_recv_stream(self._on_zmq_reply)
-        self.start_hb()
-
-    def start_hb(self):
-        """
-        Starts a series of delayed callbacks to send and
-        receive small messages from the heartbeat stream of
-        an IPython kernel. The specific delay paramaters for
-        the callbacks are set by configuration values in a
-        kernel manager associated with the web application.
-        """
-        logger.debug("start_hb for %s", self.kernel_id)
-        self._kernel_alive = True
-        km = self.application.km
-        self.hb_stream = km.create_hb_stream(self.kernel_id)
-
-        def beat_received(message):
-            self._kernel_alive = True
-
-        self.hb_stream.on_recv(beat_received)
-
-        def ping_or_dead():
-            self.hb_stream.flush()
-            now = time.time()
-            if now > self.kernel["deadline"] and self.kernel["executing"] == 0:
-                # only kill the kernel after all pending
-                # execute requests have finished
-                self._kernel_alive = False
-            if now > self.kernel["hard_deadline"]:
-                self._kernel_alive = False
-                logger.info("hard deadline reached for %s", self.kernel_id)
-            if self._kernel_alive:
-                self._kernel_alive = False
-                self.hb_stream.send(b'ping')
-                # flush stream to force immediate socket send
-                self.hb_stream.flush()
-            else:
-                self.kernel_died()
-                self.stop_hb()
-
-        beat_interval, first_beat = km.get_hb_info(self.kernel_id)
-        loop = tornado.ioloop.IOLoop.instance()
-        self._hb_periodic_callback = \
-            tornado.ioloop.PeriodicCallback(
-                ping_or_dead, beat_interval * 1000, loop)
-
-        def delayed_start():
-            # Make sure we haven't been closed during the wait.
-            logger.debug("delayed_start for %s", self.kernel_id)
-            if self._beating and not self.hb_stream.closed():
-                self._hb_periodic_callback.start()
-
-        self._start_hb_handle = loop.add_timeout(time.time() + first_beat, delayed_start)
-        self._beating = True
-
-    def stop_hb(self):
-        """Stop the heartbeating and cancel all related callbacks."""
-        logger.debug("stop_hb for %s", self.kernel_id)
-        if self._beating:
-            self._beating = False
-            self._hb_periodic_callback.stop()
-            tornado.ioloop.IOLoop.instance().remove_timeout(
-                self._start_hb_handle)
-            if not self.hb_stream.closed():
-                self.hb_stream.on_recv(None)
-                self.hb_stream.close()
+    def send(self, msg):
+        # Useful but may be way too verbose even for debugging
+        #logger.debug("sending to kernel %s", message)
+        for f in self.msg_to_kernel_callbacks:
+            f(msg)
+        kernel = self.kernel
+        if msg['header']['msg_type'] in ('execute_request',
+                                         'sagenb.interact.update_interact'):
+            kernel.executing += 1
+            logger.debug("increased execution counter for %s to %s",
+                kernel.id, kernel.executing)
+        kernel.session.send(kernel.channels["shell"], msg)
 
 
 class ZMQServiceHandler(ZMQChannelsHandler):
+    
+    def __init__(self):
+        super(ZMQServiceHandler, self).__init__()
+        self.streams = collections.defaultdict(unicode)
 
-    def _output_message(self, msg):
-        if msg["channel"] == "iopub":
-            if msg["header"]["msg_type"] == "stream":
-                self.streams[msg["content"]["name"]] += msg["content"]["text"]
-
-    def open(self, application, kernel_id):
-        super(ZMQServiceHandler, self).open(application, kernel_id)
-        from collections import defaultdict
-        self.streams = defaultdict(unicode)
+    def output_message(self, msg):
+        if msg["channel"] == "iopub" and msg["header"]["msg_type"] == "stream":
+            self.streams[msg["content"]["name"]] += msg["content"]["text"]
 
 
 class SockJSChannelsHandler(ZMQChannelsHandler):
@@ -614,19 +516,25 @@ class SockJSChannelsHandler(ZMQChannelsHandler):
     def __init__(self, callback):
         self.callback = callback
 
-    def _output_message(self, msg):
-        self.callback("%s/channels,%s" % (self.kernel_id, self._json_msg(msg)))
+    def output_message(self, msg):
+        self.callback("%s/channels,%s" % (self.kernel.id, self._json_msg(msg)))
 
 
 class WebChannelsHandler(ZMQChannelsHandler,
                          tornado.websocket.WebSocketHandler):
 
-    def _output_message(self, msg):
+    def on_close(self):
+        self.disconnect()
+
+    def on_message(self, msg):
+        self.send(jsonapi.loads(msg))
+
+    def open(self, kernel_id):
+        self.connect(self.application.kernel_dealer.kernel(kernel_id))
+
+    def output_message(self, msg):
         self.write_message(self._json_msg(msg))
         
-    def open(self, kernel_id):
-        super(WebChannelsHandler, self).open(self.application, kernel_id)
-
 
 class StaticHandler(tornado.web.StaticFileHandler):
     """Handler for static requests"""
