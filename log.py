@@ -50,6 +50,9 @@ class StdLog(object):
         self.logger = logger
         self.level = level
         
+    def fileno(self):
+        return 1
+        
     def flush(self):
         pass
         
