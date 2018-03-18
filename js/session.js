@@ -286,6 +286,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
     var killkernel = function(evt, data) {
         console.debug("killkernel for", data.kernel.id);
         if (data.kernel.id === that.kernel.id) {
+            that.spinner.style.display = "none";
             for (var i = 0; i < that.interacts.length; i++) {
                 that.interacts[i].disable();
             }
