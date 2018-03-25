@@ -49,7 +49,7 @@ provider_settings = {
     # RLIMIT_AS is more of a suggestion than a hard limit in Mac OS X
     # Also, Sage may allocate huge AS, making this limit pointless:
     # https://groups.google.com/d/topic/sage-devel/1MM7UPcrW18/discussion
-    "default_limits": {
+    "preforked_rlimits": {
         "RLIMIT_CPU": 120, # CPU time in seconds
         },
     }

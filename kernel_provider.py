@@ -30,10 +30,10 @@ class KernelProcess(Process):
     Configures a kernel process and does its best at cleaning up.
     """
     
-    def __init__(self, id, resource_limits, dir, waiter_port):
+    def __init__(self, id, rlimits, dir, waiter_port):
         super(KernelProcess, self).__init__()
         self.id = id
-        self.resource_limits = resource_limits
+        self.rlimits = rlimits
         self.dir = dir
         self.waiter_port = waiter_port
 
@@ -64,7 +64,7 @@ class KernelProcess(Process):
         # to forking. Stale connection files do cause problems.
         app.cleanup_connection_file()
         kernel_init.initialize(app.kernel)
-        for r, limit in self.resource_limits.iteritems():
+        for r, limit in self.rlimits.iteritems():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         logger.debug("kernel ready")
         context = zmq.Context.instance()
@@ -79,7 +79,7 @@ class KernelProcess(Process):
                 "iopub": app.iopub_port,
                 "shell": app.shell_port,
                 },
-            "limits": self.resource_limits,
+            "rlimits": self.rlimits,
             })
             
         def signal_handler(signum, frame):
@@ -119,7 +119,7 @@ class KernelProvider(object):
         reply = self.dealer.recv_json()
         logger.debug("received %s", reply)
         assert reply[0] == "settings"
-        self.default_limits = reply[1].pop("default_limits")
+        self.preforked_rlimits = reply[1].pop("preforked_rlimits")
         self.max_kernels = reply[1].pop("max_kernels")
         self.max_preforked = reply[1].pop("max_preforked")
         self.waiter = context.socket(zmq.PULL)
@@ -132,21 +132,21 @@ class KernelProvider(object):
         self.to_kill = []
         setup_sage()
 
-    def fork(self, resource_limits):
+    def fork(self, rlimits):
         r"""
         Start a new kernel by forking.
         
         INPUT:
         
-        - ``resource_limits`` - dictionary with keys ``resource.RLIMIT_*``
+        - ``rlimits`` - dictionary with keys ``resource.RLIMIT_*``
         
         OUTPUT:
         
         - ID of the forked kernel
         """
-        logger.debug("fork with limits %s", resource_limits)
+        logger.debug("fork with rlimits %s", rlimits)
         id = str(uuid.uuid4())
-        kernel = KernelProcess(id, resource_limits, self.dir, self.waiter_port)
+        kernel = KernelProcess(id, rlimits, self.dir, self.waiter_port)
         kernel.start()
         self.kernels[id] = kernel
         return id
@@ -205,9 +205,9 @@ class KernelProvider(object):
                 if msg[0] == "get":
                     # We expect a single "get" for every "ready" sent.
                     self.ready_sent = False
-                    if msg[1] == self.default_limits and self.preforked:
+                    if msg[1] == self.preforked_rlimits and self.preforked:
                         self.send_kernel(self.preforked.pop(0))
-                    elif msg[1] == self.default_limits and self.preforking:
+                    elif msg[1] == self.preforked_rlimits and self.preforking:
                         self.forking = self.preforking
                         self.preforking = None
                     else:
@@ -231,7 +231,7 @@ class KernelProvider(object):
             if (not (self.forking or self.preforking)
                 and len(self.preforked) < self.max_preforked
                 and len(self.kernels) < self.max_kernels):
-                self.preforking = self.fork(self.default_limits)
+                self.preforking = self.fork(self.preforked_rlimits)
         for id in self.kernels.keys():
             self.stop_kernel(id)
         while self.to_kill:

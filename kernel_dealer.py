@@ -17,14 +17,14 @@ class KernelConnection(object):
     Handles connections over ZMQ sockets to compute kernels.
     """
     
-    def __init__(self, dealer, id, connection, timeout):
+    def __init__(self, dealer, id, connection, lifespan, timeout):
         self._on_stop = None
         self._dealer = dealer
         self.id = id
         self.executing = 0
         now = time.time()
-        self.hard_deadline = now + config.get("max_lifespan")
-        self.timeout = min(timeout, config.get("max_timeout"))
+        self.hard_deadline = now + lifespan
+        self.timeout = timeout
         self.deadline = min(now + self.timeout, self.hard_deadline)
         self.session = jupyter_client.session.Session(key=connection["key"])
         self.channels = {}
@@ -156,17 +156,19 @@ class KernelDealer(object):
             self._try_to_get()
         elif msg[0] == "kernel":
             msg = msg[1]
-            for i, (limits, callback) in enumerate(self._expected_kernels):
-                if limits == msg["limits"]:
+            for i, (rlimits, callback) in enumerate(self._expected_kernels):
+                if rlimits == msg["rlimits"]:
                     self._kernel_origins[msg["id"]] = addr
                     self._expected_kernels.pop(i)
                     callback(msg)
                     break
             
-    def get_kernel(self, resource_limits, timeout, callback):
+    def get_kernel(self, callback,
+                   rlimits={}, lifespan=float("inf"), timeout=float("inf")):
 
         def cb(d):
-            d.pop("limits")
+            d.pop("rlimits")
+            d["lifespan"] = lifespan
             d["timeout"] = timeout
             kernel = KernelConnection(self, **d)
             self._kernels[kernel.id] = kernel
@@ -174,8 +176,8 @@ class KernelDealer(object):
             logger.info("dealing kernel %s", kernel.id)
             callback(kernel)
             
-        self._expected_kernels.append((resource_limits, cb))
-        self._get_queue.append(resource_limits)
+        self._expected_kernels.append((rlimits, cb))
+        self._get_queue.append(rlimits)
         self._try_to_get()
         
     def kernel(self, id):

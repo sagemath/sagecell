@@ -150,10 +150,12 @@ class KernelHandler(tornado.web.RequestHandler):
             proto = self.request.protocol.replace("http", "ws", 1)
             host = self.request.host
             ws_url = "%s://%s/" % (proto, host)
-            timeout = float(self.get_argument("timeout", 0))
+            timeout = min(float(self.get_argument("timeout", 0)),
+                          config.get("max_timeout"))
             kernel = yield tornado.gen.Task(
                 self.application.kernel_dealer.get_kernel,
-                resource_limits=config.get("provider_settings")["default_limits"],
+                rlimits=config.get("provider_settings")["preforked_rlimits"],
+                lifespan=config.get("max_lifespan"),
                 timeout=timeout)
             kernel.referer=self.request.headers.get('Referer', '')
             kernel.remote_ip=self.request.remote_ip
@@ -198,7 +200,7 @@ class Completer(object):
             self.kernel = kernel
             self.kernel.channels["shell"].on_recv(self.on_recv)
             
-        kernel_dealer.get_kernel({}, float("inf"), callback)
+        kernel_dealer.get_kernel(callback)
 
     def registerRequest(self, addr, msg):
         content = msg["content"]
@@ -350,7 +352,8 @@ class ServiceHandler(tornado.web.RequestHandler):
         referer = self.request.headers.get('Referer', '')
         self.kernel = yield tornado.gen.Task(
             self.application.kernel_dealer.get_kernel,
-            resource_limits=config.get("provider_settings")["default_limits"],
+            rlimits=config.get("provider_settings")["preforked_rlimits"],
+            lifespan=config.get("max_lifespan"),
             timeout=0)
         sm = StatsMessage(
             kernel_id=self.kernel.id,
