@@ -10,8 +10,8 @@ requires_tos = False
 pid_file = '/home/{server}/sagecell.pid'
 
 config_default.provider_settings.update({
-    "max_kernels": 120,
-    "max_preforked": 20,
+    "max_kernels": 80,
+    "max_preforked": 10,
     })
 
 config_default.provider_info.update({

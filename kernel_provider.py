@@ -207,6 +207,8 @@ class KernelProvider(object):
                     self.ready_sent = False
                     if msg[1] == self.preforked_rlimits and self.preforked:
                         self.send_kernel(self.preforked.pop(0))
+                        logger.debug("%d preforked kernels left",
+                                     len(self.preforked))
                     elif msg[1] == self.preforked_rlimits and self.preforking:
                         self.forking = self.preforking
                         self.preforking = None
