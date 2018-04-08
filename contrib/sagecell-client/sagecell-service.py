@@ -31,8 +31,7 @@ for i in range(retries):
         # interacts, better not to restart the server that "mostly works" and
         # instead we'll just accumulate statistics on these random errors to
         # help resolve them.
-        if ('success' in reply
-            and reply['success']
+        if (reply['success']
             and 'stdout' in reply
             and int(reply['stdout'].strip()) == a + b):
             exit(0)

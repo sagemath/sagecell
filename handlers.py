@@ -383,6 +383,7 @@ class ServiceHandler(tornado.web.RequestHandler):
         def timeout_callback():
             logger.debug('service request timed out for %s', self.kernel.id)
             self.kernel.stop()
+            self.zmq_handler.streams['success'] = False
             loop.add_callback(self.finish_request)
 
         self.timeout_handle = loop.call_later(30, timeout_callback)
