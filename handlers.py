@@ -461,11 +461,7 @@ class ZMQChannelsHandler(object):
     def on_recv(self, stream, msg_list):
         kernel = self.kernel
         msg_list = kernel.session.feed_identities(msg_list)[1]
-        try:
-            msg = kernel.session.unserialize(msg_list)
-        except ValueError:
-            # FIXME: Why are we getting Duplicate Signature errors?
-            logger.exception("ValueError in ZMQChannelsHandler.on_recv")
+        msg = kernel.session.unserialize(msg_list)
         msg["channel"] = stream.channel
         # Useful but may be way too verbose even for debugging
         #logger.debug("received from kernel %s", msg)
