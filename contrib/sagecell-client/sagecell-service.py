@@ -1,26 +1,30 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
-import urllib
-import urllib2
-import json
-import sys
-from random import randint
-import time
 from datetime import datetime
+import json
+import random
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 
-retries = 2
+
+retries = 3
 
 def message(s):
-    print('{}: {}'.format(datetime.now(), s))
+    print('{}: {} attempts left. {}'.format(datetime.now(), retries, s))
 
-for i in range(retries):
-    a, b = randint(-2**31, 2**31), randint(-2**31, 2**31)
+while retries:
+    retries -= 1
+    a, b = random.randint(-2**31, 2**31), random.randint(-2**31, 2**31)
     code = 'print({} + {})'.format(a, b)
-    # if you agree with the terms of service at /tos.html
-    data = urllib.urlencode(dict(code=code, accepted_tos="true"))
+    data = urllib.parse.urlencode(dict(code=code, accepted_tos="true"))
+    data = data.encode('ascii')
     try:
-        request = urllib2.urlopen(sys.argv[1] + '/service', data, timeout=30)
-        reply = json.loads(request.read())
+        with urllib.request.urlopen(
+                sys.argv[1] + '/service', data, timeout=35) as f:
+            reply = json.loads(f.read().decode('ascii'))
         # Every few hours we have a request that comes back as executed, but the
         # stdout is not in the dictionary. It seems that the compute message
         # never actually gets sent to the kernel and it appears the problem is
@@ -35,11 +39,9 @@ for i in range(retries):
             and 'stdout' in reply
             and int(reply['stdout'].strip()) == a + b):
             exit(0)
-        message("Reply %s. %d attempts left." % (reply, retries - 1 - i))
-    except Exception as e:
-        # Even exceptions may be transient...
-        import traceback
-        message(traceback.format_exc())
+        message(reply)
+    except urllib.error.URLError as e:
+        message(e)
     time.sleep(0.5)
-message("%d unsuccessful attempts, the server is not working!" % retries)
+message('The server is not working!')
 exit(1)
