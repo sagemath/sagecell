@@ -4,24 +4,10 @@
     <meta charset="utf-8">
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="root.css">
-    <link rel="stylesheet" href="all.min.css">
     <title>About SageMathCell</title>
   </head>
   <body>
     <h1>About SageMathCell</h1>
-    <ol class="sagecell_toc">
-      <li>
-        <a href="#instructions">Instructions</a>
-        <ol>
-          <li><a href="#embedding">Embedding in a web page</a></li>
-          <li><a href="#permalinks">Permalinks</a></li>
-        </ol>
-      </li>
-      <li><a href="#in-use">Where is it used?</a></li>
-      <li><a href="#technology">Technology used</a></li>
-      <li><a href="#history">A short history</a></li>
-      <li><a href="#authors">Authors</a></li>
-    </ol>
     <p>
       <a href="https://github.com/sagemath/sagecell">SageMathCell</a>
       is an <a href="https://github.com/sagemath/sagecell/blob/master/LICENSE.txt">open-source</a>,
@@ -31,12 +17,11 @@
       Sage computations into any webpage.
     </p>
     <p>
-      Here are <a href="amsjointslides-2013/index.html">slides</a>
+      <a href="amsjointslides-2013/index.html">Here are slides</a>
       to a short introductory talk about SageMathCell given at the
       Joint AMS/MAA Mathematical conference in San Diego, January 2013.
     </p>
-    <h2 id="instructions">Instructions</h2>
-    <h3 id="embedding">Embedding into a webpage</h3>
+    <h2 id="embedding">Embedding into a webpage</h2>
     Embedding a Sage cell into a webpage is straightforward:
     <ol>
       <li>
@@ -89,7 +74,7 @@
       </li>
     </ul>
 
-    <h3 id="fullexample">Full Example</h3>
+    <h2 id="fullexample">Full Example</h2>
     Here is a complete web page example:
 <pre data-lang="text/html">
 &lt;!DOCTYPE HTML&gt;
@@ -134,7 +119,7 @@ def f(n=(0,10)):
 &lt;/html&gt;
 </pre>
 
-    <h3 id="permalinks">Permalinks</h3>
+    <h2 id="permalinks">Permalinks</h2>
     SageMathCell has two types of permalinks generated with each
     computation (accessible from links at the upper right of any output).
     <dl>
@@ -186,26 +171,17 @@ def f(n=(0,10)):
             by Jason Grout
           </li>
           <li>
-            <a href="http://buzzard.ups.edu/">Rob Beezer&rsquo;s home page</a>
-            was also one of the first examples of embedding a Sage Cell in a web page
-          </li>
-          <li>
             Brandon Curtis</a> developed some very <a href="http://sage.brandoncurtis.com/">nice short examples</a> for a variety
             of areas.
           </li>
         </ul>
       </li>
       <li>
-        <a href="http://www.sagemath.org/eval.html">Short example computations</a>
-        on the Sage website
-      </li>
-      <li>
         The <a href="http://wiki.sagemath.org/interact/">Sage Wiki</a>
       </li>
       <li>
         SageMathCell powers the Sage
-        <a href="https://play.google.com/store/apps/details?id=org.sagemath.droid">Android</a> and
-        <a href="https://itunes.apple.com/us/app/sage-math/id496492945">iOS</a> apps
+        <a href="https://itunes.apple.com/us/app/sage-math/id496492945">iOS</a> app
       </li>
     </ul>
     <h2 id="technology">Technology used</h2>
@@ -214,27 +190,19 @@ def f(n=(0,10)):
     code remotely. We use:
     <ul>
       <li>
-        Custom IPython kernel managers, including a
-        <a href="https://github.com/sagemath/sagecell/blob/master/trusted_kernel_manager.py">Trusted MultiKernel Manager</a>
-        running in the web server, which communicates over
-        <a href="http://www.zeromq.org">&Oslash;MQ</a> with an
-        <a href="https://github.com/sagemath/sagecell/blob/master/untrusted_kernel_manager.py">Untrusted MultiKernel Manager</a>
-        running on a restricted computer account (for executing user code). The
-        untrusted multikernel manager launches new kernels using a
-        <a href="https://github.com/sagemath/sagecell/blob/master/forking_kernel_manager.py">Forking Kernel Manager</a>,
-        which starts kernels quickly by forking a master process and maintaining a queue of preforked kernels.
+        <a href="http://www.tornadoweb.org/">Tornado</a> web server (possibly
+        set up with something like <a href="http://nginx.org/">nginx</a>, to
+        serve static assets, and <a href="http://haproxy.1wt.eu/">HAProxy</a>,
+        to proxy connections)
+      </li>
+        <li>
+        <a href="http://www.zeromq.org">&Oslash;MQ</a> for communication between web server and IPython kernels
       </li>
       <li>
         A <a href="https://github.com/sagemath/sagecell/blob/master/interact_sagecell.py">new implementation</a>
         of Sage interacts which provides cleaner code and better functionality,
         along with a
         <a href="https://github.com/sagemath/sagecell/blob/master/interact_compatibility.py">backwards-compatible interact interface</a>
-      </li>
-      <li>
-        <a href="http://www.tornadoweb.org/">Tornado</a> web server (possibly
-        set up with something like <a href="http://nginx.org/">nginx</a>, to
-        serve static assets, and <a href="http://haproxy.1wt.eu/">HAProxy</a>,
-        to proxy connections)
       </li>
       <li>
         <a href="http://www.sqlite.org/">SQLite</a> (via
@@ -287,7 +255,7 @@ def f(n=(0,10)):
       Cervone, and John Travis from WeBWorK at
       <a href="http://wiki.sagemath.org/days31">Sage Days 31</a> to allow Sage
       cells to be embedded in WeBWorK problems and other external pages.  In
-      July 2011, the Sage Cell developers
+      July 2011, the SageMathCell developers
       <a href="https://groups.google.com/forum/?fromgroups=#!topic/sage-devel/SRnR9vdNmBc">announced</a>
       the release of an open beta for SageMathCell Version 1 on a
       public server for testing.
@@ -299,21 +267,19 @@ def f(n=(0,10)):
       continued maintaining and improving this codebase throughout the
       2011&ndash;2012 academic year. The Android and iOS apps, which relied on
       SageMathCell, were built by Ivan Andrus and Volker Braun. People
-      started incorporating Sage Cells into their curricular materials, and
+      started incorporating Sage cells into their curricular materials, and
       momentum was gathering. Alex and Jason attended
       <a href="http://wiki.sagemath.org/days35.5">Sage Days 35.5</a> to help
       in these and other efforts.
     </p>
     <p>
       By the spring of 2012, the IPython codebase had matured enough to be
-      included in Sage and serve as a base for the Cell Server. Steven Johnson
+      included in Sage and serve as a base for SageMathCell. Steven Johnson
       joined Jason, Ira, and Alex to work full-time (under NSF funding) during
       the summer of 2012 to go back to the drawing board and redesign and
       reimplement SageMathCell to take advantage of insights gained
       during the first year. Byron Varberg also joined the Drake Sage Group to
-      implement the
-      <a href="http://interact.sagemath.org">Sage Interact website</a>. Sage
-      Cell Server Version 2
+      implement the Sage Interact website. SageMathCell Version 2
       <a href="https://groups.google.com/forum/?fromgroups#!topic/sage-devel/8B3ihC93DYU">went beta</a>
       in July 2012.
     </p>
@@ -321,15 +287,20 @@ def f(n=(0,10)):
       In the summer and fall of 2012, David Smith started transitioning the MAA
       Calculus book to use Sage interacts for all interactive activities, which
       was tested at Hood College during the 2012&ndash;2013 academic year.
-      Jason, Ira, and Alex continued maintaining and improving the Cell Server
+      Jason, Ira, and Alex continued maintaining and improving SageMathCell
       codebase during the academic year as well.
+    </p>
+    <p>
+      In the summer of 2014, Andrey Novoseltsev picked up maintenance and
+      continued further development of SageMathCell.
     </p>
     <h2 id="authors">Authors</h2>
     <ul>
-      <li><a href="http://artsci.drake.edu/grout/doku.php/home">Jason Grout</a></li>
+      <li><a href="https://github.com/jasongrout">Jason Grout</a></li>
       <li><a href="https://github.com/ihanson">Ira Hanson</a></li>
       <li><a href="https://github.com/stevenJohnson">Steven Johnson</a></li>
       <li><a href="https://github.com/kramer314">Alex Kramer</a></li>
+      <li><a href="https://github.com/novoselt">Andrey Novoseltsev</a></li>
       <li><a href="http://wstein.org">William Stein</a></li>
     </ul>
     <p class="sagecell_disclaimer">
@@ -339,9 +310,5 @@ def f(n=(0,10)):
       author(s) and do not necessarily reflect the views of the National
       Science Foundation (NSF).
     </p>
-    <script src="codemirror.js"></script>
-    <script>
-        setTimeout(CodeMirror.colorize, 0);
-    </script>
   </body>
 </html>
