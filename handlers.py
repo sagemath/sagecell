@@ -488,7 +488,7 @@ class ZMQChannelsHandler(object):
 
     def send(self, msg):
         # Useful but may be way too verbose even for debugging
-        #logger.debug("sending to kernel %s", message)
+        #logger.debug("sending to kernel %s", msg)
         for f in self.msg_to_kernel_callbacks:
             f(msg)
         kernel = self.kernel
