@@ -7,8 +7,7 @@ then
     exit 0
 fi
 
-# Start Sage as the server user, otherwise directory permissions get messed up.
-su -l sc_serv sage/sage sagecell/contrib/sagecell-client/sagecell-service.py $1
+/home/{server}/sagecell/contrib/sagecell-client/sagecell-service.py $1
 if [ $? -ne 0 ]
 then
    echo "`date` Error in server. Restarting..."
