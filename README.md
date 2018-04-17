@@ -11,7 +11,7 @@ The worker account (which is your own one by default) will be able to execute ar
 
 # Simple Installation
 
-We assume that you have access to the Internet and can install any needed dependencies. If you need to know more precisely what tools are needed, please consult the scripts for building virtual machine images in [contib/vm](contrib/vm).
+We assume that you have access to the Internet and can install any needed dependencies. If you need to know more precisely what tools are needed, please consult the scripts for building virtual machine images in [contrib/vm](contrib/vm).
 In particular, system packages installed in the base container are listed [here](https://github.com/sagemath/sagecell/blob/master/contrib/vm/container_manager.py#L58).
 
 
@@ -59,7 +59,7 @@ Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copi
 
 1.  Go into the `sagecell` directory (you are there in the end of the above instructions).
 2.  Copy `config_default.py` to `config.py`. (Or fill `config.py` only with entries that you wish to change from default values.)
-3.  Edit `config.py` according to your needs. Of particular interest are `host` and `username` entries of the `_default_config` dictionary: you should be able to SSH to `username@host` *without typing in a password*. For example, by default, it assumes you can do `ssh localhost` without typing in a password. Unless you are running a private and **firewalled** server for youself, you’ll want to change this to a more restrictive account; otherwise **anyone will be able to execute any code under your username**. You can set up a passwordless account using SSH: type “ssh passwordless login” into Google to find lots of guides for doing this, like http://www.debian-administration.org/articles/152. You may also wish to adjust `db_config["uri"]` (make the database files readable *only* by the trusted account).
+3.  Edit `config.py` according to your needs. Of particular interest are `host` and `username` entries of the `provider_info` dictionary: you should be able to SSH to `username@host` *without typing in a password*. For example, by default, it assumes you can do `ssh localhost` without typing in a password. Unless you are running a private and **firewalled** server for youself, you’ll want to change this to a more restrictive account; otherwise **anyone will be able to execute any code under your username**. You can set up a passwordless account using SSH: type “ssh passwordless login” into Google to find lots of guides for doing this, like http://www.debian-administration.org/articles/152. You may also wish to adjust `db_config["uri"]` (make the database files readable *only* by the trusted account).
 4.  You may want to adjust `log.py` to suit your needs and/or adjust system configuration. By default logging is done via syslog which handles multiple processes better than plain files.
 5.  Start the server via
 
