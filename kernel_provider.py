@@ -42,8 +42,6 @@ class KernelProcess(Process):
         logger = log.kernel_logger.getChild(str(os.getpid()))
         logger.debug("forked kernel is running")
         log.std_redirect(logger)
-        # Close the global Context instance inherited from the parent process.
-        zmq.Context.instance().term()
         # Become a group leader for cleaner exit.
         os.setpgrp()
         dir = os.path.join(self.dir, self.id)
@@ -107,7 +105,7 @@ class KernelProvider(object):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
-        context = zmq.Context.instance()
+        context = zmq.Context()
         context.IPV6 = 1
         self.dealer = context.socket(zmq.DEALER)
         logger.debug("connecting to %s", address)
