@@ -5,7 +5,6 @@ import json
 import random
 import sys
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -40,7 +39,7 @@ while retries:
             and int(reply['stdout'].strip()) == a + b):
             exit(0)
         message(reply)
-    except urllib.error.URLError as e:
+    except Exception as e:
         message(e)
     time.sleep(0.5)
 message('The server is not working!')
