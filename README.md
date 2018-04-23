@@ -36,9 +36,9 @@ In particular, system packages installed in the base container are listed [here]
 3.  Prepare Sage for SageMathCell:
 
     ```bash
-    sage/sage -pip install --upgrade lockfile
-    sage/sage -pip install --upgrade paramiko
-    sage/sage -pip install --upgrade sockjs-tornado
+    sage/sage -pip install lockfile
+    sage/sage -pip install paramiko
+    sage/sage -pip install sockjs-tornado
     ```
 
     Note that version 1.0.3 of `sockjs-tornado` has a CORS issue fixed by https://github.com/mrjoes/sockjs-tornado/pull/83 You may delete these lines manually from `sage/local/lib/python2.7/site-packages/sockjs/tornado/basehandler.py`
