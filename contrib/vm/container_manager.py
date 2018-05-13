@@ -96,7 +96,6 @@ sage_optional_packages = [
 "4ti2",
 "biopython",
 "cbc",
-"cluster_seed",
 "cryptominisat",
 "database_cremona_ellcurve",
 "database_gap",
@@ -107,17 +106,13 @@ sage_optional_packages = [
 "dot2tex",  # needs graphviz
 "gap_packages",
 "gap3",
-"gnuplotpy",
 "guppy",
-"kash3",
 "latte_int",
 "lie",  # needs bison
 "lrslib",
 "mcqd",
-"nauty",
 "normaliz",
 "nose",
-"nzmath",
 "ore_algebra",
 "pybtex",   # needs unzip
 "pynormaliz",
