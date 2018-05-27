@@ -22,6 +22,7 @@ class KernelConnection(object):
         self._dealer = dealer
         self.id = id
         self.executing = 0
+        self.status = "starting"
         now = time.time()
         self.hard_deadline = now + lifespan
         self.timeout = timeout
@@ -88,7 +89,7 @@ class KernelConnection(object):
     def stop(self):
         logger.debug("stopping kernel %s", self.id)
         if not self.alive:
-            logger.exception("not alive already")
+            logger.warning("not alive already")
             return
         if self._on_stop:
             self._on_stop()

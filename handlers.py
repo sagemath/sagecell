@@ -366,16 +366,17 @@ class ServiceHandler(tornado.web.RequestHandler):
         else:
             stats_logger.info(sm)
         self.zmq_handler = ZMQServiceHandler()
+        streams = self.zmq_handler.streams
         self.zmq_handler.connect(self.kernel)
         loop = tornado.ioloop.IOLoop.instance()
         
         def kernel_callback(msg):
             if msg['msg_type'] == 'execute_reply':
                 loop.remove_timeout(self.timeout_handle)
-                logger.debug('service request finished for %s', self.kernel.id)
-                streams = self.zmq_handler.streams
                 streams['success'] = msg['content']['status'] == 'ok'
                 streams['execute_reply'] = msg['content']
+            if self.kernel.status == "idle" and 'success' in streams:
+                logger.debug('service request finished for %s', self.kernel.id)
                 loop.add_callback(self.finish_request)
                 
         self.zmq_handler.msg_from_kernel_callbacks.append(kernel_callback)
@@ -465,7 +466,9 @@ class ZMQChannelsHandler(object):
         msg["channel"] = stream.channel
         # Useful but may be way too verbose even for debugging
         #logger.debug("received from kernel %s", msg)
-        msg_type = msg["header"]["msg_type"]
+        msg_type = msg["msg_type"]
+        if msg_type == "status":
+            kernel.status = msg["content"]["execution_state"]
         if msg_type in ("execute_reply",
                         "sagenb.interact.update_interact_reply"):
             kernel.executing -= 1
@@ -482,7 +485,9 @@ class ZMQChannelsHandler(object):
             for callback in self.msg_from_kernel_callbacks:
                 callback(msg)
             self.output_message(msg)
-        if kernel.executing == 0 and kernel.timeout == 0:
+        if (kernel.executing == 0
+                and kernel.timeout == 0
+                and kernel.status == "idle"):
             logger.debug("stopping on %s, %s", stream.channel, msg_type)
             kernel.stop()
 
