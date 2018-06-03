@@ -477,12 +477,46 @@
     color: gray;
 }
 
-.sagecell .ansiblack {color: black;}
-.sagecell .ansired {color: darkred;}
-.sagecell .ansigreen {color: darkgreen;}
-.sagecell .ansiyellow {color: brown;}
-.sagecell .ansiblue {color: darkblue;}
-.sagecell .ansipurple {color: darkviolet;}
-.sagecell .ansicyan {color: steelblue;}
-.sagecell .ansigrey {color: grey;}
-.sagecell .ansibold {font-weight: bold;}
+/* These colors are constructed in
+ * notebook/static/notebook/less/ansicolors.less
+ * but were copied from
+ * notebook/static/style/ipython.min.css
+ * and processed in Python via
+ * replace("{\n  ", "{").replace("\n}", "}").replace("\n.","\n.sagecell .")
+ */
+.sagecell .ansi-black-fg {color: #3E424D;}
+.sagecell .ansi-black-bg {background-color: #3E424D;}
+.sagecell .ansi-black-intense-fg {color: #282C36;}
+.sagecell .ansi-black-intense-bg {background-color: #282C36;}
+.sagecell .ansi-red-fg {color: #E75C58;}
+.sagecell .ansi-red-bg {background-color: #E75C58;}
+.sagecell .ansi-red-intense-fg {color: #B22B31;}
+.sagecell .ansi-red-intense-bg {background-color: #B22B31;}
+.sagecell .ansi-green-fg {color: #00A250;}
+.sagecell .ansi-green-bg {background-color: #00A250;}
+.sagecell .ansi-green-intense-fg {color: #007427;}
+.sagecell .ansi-green-intense-bg {background-color: #007427;}
+.sagecell .ansi-yellow-fg {color: #DDB62B;}
+.sagecell .ansi-yellow-bg {background-color: #DDB62B;}
+.sagecell .ansi-yellow-intense-fg {color: #B27D12;}
+.sagecell .ansi-yellow-intense-bg {background-color: #B27D12;}
+.sagecell .ansi-blue-fg {color: #208FFB;}
+.sagecell .ansi-blue-bg {background-color: #208FFB;}
+.sagecell .ansi-blue-intense-fg {color: #0065CA;}
+.sagecell .ansi-blue-intense-bg {background-color: #0065CA;}
+.sagecell .ansi-magenta-fg {color: #D160C4;}
+.sagecell .ansi-magenta-bg {background-color: #D160C4;}
+.sagecell .ansi-magenta-intense-fg {color: #A03196;}
+.sagecell .ansi-magenta-intense-bg {background-color: #A03196;}
+.sagecell .ansi-cyan-fg {color: #60C6C8;}
+.sagecell .ansi-cyan-bg {background-color: #60C6C8;}
+.sagecell .ansi-cyan-intense-fg {color: #258F8F;}
+.sagecell .ansi-cyan-intense-bg {background-color: #258F8F;}
+.sagecell .ansi-white-fg {color: #C5C1B4;}
+.sagecell .ansi-white-bg {background-color: #C5C1B4;}
+.sagecell .ansi-white-intense-fg {color: #A1A6B2;}
+.sagecell .ansi-white-intense-bg {background-color: #A1A6B2;}
+.sagecell .ansi-default-inverse-fg {color: #FFFFFF;}
+.sagecell .ansi-default-inverse-bg {background-color: #000000;}
+.sagecell .ansi-bold {font-weight: bold;}
+.sagecell .ansi-underline {text-decoration: underline;}
