@@ -474,8 +474,6 @@ class ZMQChannelsHandler(object):
             kernel.executing -= 1
             logger.debug("decreased execution counter for %s to %s",
                          kernel.id, kernel.executing)
-            if kernel.timeout > 0:
-                kernel.deadline = time.time() + kernel.timeout
         if msg_type == "kernel_timeout":
             timeout = float(msg["content"]["timeout"])
             logger.debug("reset timeout for %s to %f", kernel.id, timeout)
@@ -485,9 +483,9 @@ class ZMQChannelsHandler(object):
             for callback in self.msg_from_kernel_callbacks:
                 callback(msg)
             self.output_message(msg)
-        if (kernel.executing == 0
-                and kernel.timeout == 0
-                and kernel.status == "idle"):
+        if kernel.timeout > 0:
+            kernel.deadline = time.time() + kernel.timeout
+        elif kernel.executing == 0 and kernel.status == "idle":
             logger.debug("stopping on %s, %s", stream.channel, msg_type)
             kernel.stop()
 

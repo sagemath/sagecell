@@ -26,7 +26,8 @@ class KernelConnection(object):
         now = time.time()
         self.hard_deadline = now + lifespan
         self.timeout = timeout
-        self.deadline = min(now + self.timeout, self.hard_deadline)
+        if timeout > 0:
+            self.deadline = now + self.timeout
         self.session = jupyter_client.session.Session(key=connection["key"])
         self.channels = {}
         context = zmq.Context.instance()
@@ -68,7 +69,10 @@ class KernelConnection(object):
             elif now > self.hard_deadline:
                 logger.info("hard deadline reached for %s", self.id)
                 self.stop()
-            elif now > self.deadline and self.executing == 0:
+            elif (self.timeout > 0
+                    and now > self.deadline
+                    and self.status == "idle"):
+                logger.info("kernel %s timed out", self.id)
                 self.stop()
             else:
                 hb.send(b'ping')
