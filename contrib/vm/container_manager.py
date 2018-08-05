@@ -519,29 +519,6 @@ def install_config_files():
         f.write("    up /root/firewall\n")
 
 
-def lock_down_worker():
-    r"""
-    Prevent someone from making *everyone* execute code at start up.
-    """
-    log.info("locking down worker account")
-    os.chdir(os.path.join("/home", users["worker"]))
-    # These commands (somewhat buggishly) lead to creation of files in .sage
-    # Also, we are not allowed to use multiline input starting with Sage 7.4
-    # https://trac.sagemath.org/ticket/21558
-    check_call("""su -l {worker} -c 'echo "
-        DihedralGroup(4).cayley_graph();
-        Dokchitser(conductor=1, gammaV=[0], weight=1, eps=1).init_coeffs([i+z for z in range(1,5)]);
-        gp(1);
-        " | /home/{server}/sage/sage'""")
-    # We have to run Sage twice to take care of R directory
-    # https://groups.google.com/d/topic/sage-devel/biFOWM82dew/discussion
-    check_call("""su -l {worker} -c 'echo "" | /home/{server}/sage/sage'""")
-    os.mkdir(".sage/.python-eggs")
-    os.chown(".sage/.python-eggs", users["worker_ID"], users["GID"])
-    check_call("touch .sage/init.sage")
-    check_call("chattr +i .sage/init.sage .sage")
-
-
 class SCLXC(object):
     r"""
     Wrapper for lxc.Container automatically performing prerequisite operations.
@@ -702,7 +679,6 @@ class SCLXC(object):
         """
         self.inside(install_sagecell)
         self.inside(install_config_files)
-        self.inside(lock_down_worker)
         self.c.set_config_item("lxc.cgroup.memory.limit_in_bytes", "8G")
         self.c.save_config()
         self.shutdown()

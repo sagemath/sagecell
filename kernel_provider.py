@@ -251,6 +251,8 @@ class KernelProvider(object):
 
             
 def setup_sage():
+    # Non-existing startup file that users cannot create.
+    os.environ["SAGE_STARTUP_FILE"] = "/init.sage"
     import sage
     import sage.all
     # override matplotlib and pylab show functions
