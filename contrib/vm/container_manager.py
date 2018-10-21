@@ -101,7 +101,6 @@ sage_optional_packages = [
 "database_gap",
 "database_jones_numfield",
 "database_odlyzko_zeta",
-"database_pari",
 "database_symbolic_data",
 "dot2tex",  # needs graphviz
 "gap_packages",
@@ -114,6 +113,10 @@ sage_optional_packages = [
 "normaliz",
 "nose",
 "ore_algebra",
+"pari_elldata",
+"pari_galpol",
+"pari_nftables",
+"pari_seadata",
 "pybtex",   # needs unzip
 "pynormaliz",
 "qepcad",
