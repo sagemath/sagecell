@@ -460,23 +460,6 @@ def install_packages():
     check_call("sage/sage -pip install --upgrade pip")
     for package in python_packages:
         check_call("sage/sage -pip install {}".format(package))
-    log.info("patching sockjs-tornado")
-    communicate("patch /home/{server}/sage/local/lib/python2.7/site-packages/"
-        "sockjs/tornado/basehandler.py", '''
-        --- a/sockjs/tornado/basehandler.py
-        +++ b/sockjs/tornado/basehandler.py
-        @@ -117,10 +117,6 @@ class PreflightHandler(BaseHandler):
-                 """Handles request authentication"""
-                 origin = self.request.headers.get('Origin', '*')
-         
-        -        # Respond with '*' to 'null' origin
-        -        if origin == 'null':
-        -            origin = '*'
-        -
-                 self.set_header('Access-Control-Allow-Origin', origin)
-         
-                 headers = self.request.headers.get('Access-Control-Request-Headers')
-        ''')
 
 
 def install_sagecell():

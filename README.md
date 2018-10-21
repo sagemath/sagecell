@@ -42,8 +42,6 @@ In particular, system packages installed in the base container are listed [here]
     sage/sage -pip install sqlalchemy
     ```
 
-    Note that version 1.0.3 of `sockjs-tornado` has a CORS issue fixed by https://github.com/mrjoes/sockjs-tornado/pull/83 You may delete these lines manually from `sage/local/lib/python2.7/site-packages/sockjs/tornado/basehandler.py`
-
 4.  Build SageMathCell:
 
     ```bash
