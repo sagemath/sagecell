@@ -50,55 +50,54 @@ class RootHandler(tornado.web.RequestHandler):
     upon a unique identifying permalink (uuid4-based)
     """
     @tornado.web.asynchronous
+    @tornado.gen.engine
     def get(self):
         logger.debug('RootHandler.get')
         args = self.request.arguments
         code = None
-        language = args["lang"][0] if "lang" in args else None
+        lang = args["lang"][0] if "lang" in args else None
         interacts = None
         if "c" in args:
-            # If the code is explicitly specified
+            # The code is explicitly specified
             code = "".join(args["c"])
         elif "z" in args:
-            # If the code is base64-compressed
+            # The code is base64-compressed
             try:
                 z = "".join(args["z"])
                 # We allow the user to strip off the ``=`` padding at the end
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
                 z += "=" * ((4 - (len(z) % 4)) % 4)
+                code = zlib.decompress(base64.urlsafe_b64decode(z))
                 if "interacts" in args:
                     interacts = "".join(args["interacts"])
                     interacts += "=" * ((4 - (len(interacts) % 4)) % 4)
-                    interacts = zlib.decompress(base64.urlsafe_b64decode(interacts))
-                code = zlib.decompress(base64.urlsafe_b64decode(z))
+                    interacts = zlib.decompress(
+                        base64.urlsafe_b64decode(interacts))
             except Exception as e:
                 self.set_status(400)
                 self.finish("Invalid zipped code: %s\n" % (e.message,))
                 return
-        if "q" in args:
+        elif "q" in args:
             # The code is referenced by a permalink identifier.
             q = "".join(args["q"])
             try:
-                self.application.db.get_exec_msg(q, self.return_root)
+                code, lang, interacts = (yield tornado.gen.Task(
+                    self.application.db.get, q))[0]
             except LookupError:
+                logger.warning("ID not found in permalink database %s", q)
                 self.set_status(404)
                 self.finish("ID not found in permalink database")
-        else:
-            self.return_root(code, language, interacts)
-
-    def return_root(self, code, language, interacts):
-        autoeval = None
+                return
         if code is not None:
-            if isinstance(code, unicode):
-                code = code.encode("utf8")
             code = urllib.quote(code)
-            autoeval = "false" if "autoeval" in self.request.arguments and self.get_argument("autoeval") == "false" else "true"
         if interacts is not None:
-            if isinstance(interacts, unicode):
-                interacts = interacts.encode("utf8")
             interacts = urllib.quote(interacts)
-        self.render("root.html", code=code, lang=language, interacts=interacts, autoeval=autoeval)
+        autoeval = self.get_argument(
+            "autoeval", "false" if code is None else "true" )
+        self.render(
+            "root.html",
+            code=code, lang=lang, interacts=interacts, autoeval=autoeval)
 
     def options(self):
         self.set_status(200)

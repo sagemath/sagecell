@@ -17,13 +17,13 @@ class StatsMessage(object):
 
 syslog = SysLogHandler(address="/dev/log", facility=SysLogHandler.LOG_LOCAL3)
 syslog.setFormatter(logging.Formatter(
-    "%(asctime)s %(process)5d %(name)-23s: %(message)s"))
+    "%(asctime)s %(process)5d %(name)-28s %(message)s"))
 
 # Default logger for SageCell
 logger = logging.getLogger("sagecell")
+permalink_logger = logger.getChild("permalink")
 stats_logger = logger.getChild("stats")
 # Intermediate loggers to be parents for actual receivers and kernels.
-receiver_logger = logger.getChild("receiver")
 kernel_logger = logger.getChild("kernel")
 provider_logger = logger.getChild("provider")
 

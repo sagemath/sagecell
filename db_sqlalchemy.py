@@ -16,6 +16,7 @@ import db
 
 Base = declarative_base()
 
+
 class ExecMessage(Base):
     """
     Table of input messages in JSON form.
@@ -26,8 +27,28 @@ class ExecMessage(Base):
     language = Column(String)
     interacts = Column(String)
     created = Column(DateTime, default=datetime.utcnow)
-    last_accessed = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_accessed = Column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     requested = Column(Integer, default=0)
+    
+    def __repr__(self):
+       return """\
+ident: {}
+Code:
+{}
+Interacts:
+{}
+Language: {}
+Created: {}
+Last accessed: {}
+Requested: {}""".format(
+            self.ident,
+            self.code,
+            self.interacts,
+            self.language,
+            self.created,
+            self.last_accessed,
+            self.requested)
 
 
 class DB(db.DB):
@@ -39,13 +60,13 @@ class DB(db.DB):
 
     def __init__(self, db_file):
         self.engine = create_engine(db_file)
-        self.SQLSession = sessionmaker(bind = self.engine)
+        self.SQLSession = sessionmaker(bind=self.engine)
         Base.metadata.create_all(self.engine)
         self.dbsession = self.SQLSession()
 
-    def new_exec_msg(self, code, language, interacts, callback):
+    def add(self, code, language, interacts, callback):
         """
-        See :meth:`db.DB.new_exec_msg`
+        See :meth:`db.DB.add`
         """
         while True:
             ident = "".join(random.choice(string.lowercase) for _ in range(6))
@@ -64,9 +85,9 @@ class DB(db.DB):
                 break
         callback(ident)
 
-    def get_exec_msg(self, key, callback):
+    def get(self, key, callback):
         """
-        See :meth:`db.DB.get_exec_msg`
+        See :meth:`db.DB.get`
         """
         msg = self.dbsession.query(ExecMessage).filter_by(ident=key).first()
         if msg:

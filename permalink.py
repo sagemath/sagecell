@@ -11,6 +11,8 @@ import zlib
 
 import tornado
 
+from log import permalink_logger as logger
+
 
 class PermalinkHandler(tornado.web.RequestHandler):
     """
@@ -26,32 +28,30 @@ class PermalinkHandler(tornado.web.RequestHandler):
     @tornado.gen.engine
     def post(self):
         args = self.request.arguments
-        retval = {"query": None, "zip": None}
-        if "code" in args:
-            code = "".join(args["code"])
-            language = "".join(args.get("language", ["sage"]))
-        else:
+        logger.debug("Storing permalink %s", args)
+        if "code" not in args:
             self.send_error(400)
             return
+        code = "".join(args["code"])
+        language = "".join(args.get("language", ["sage"]))
         interacts = "".join(args.get("interacts", ["[]"]))
+        retval = {}
         retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code))
         retval["query"] = yield tornado.gen.Task(
-            self.application.db.new_exec_msg,
-            code,
-            language,
-            interacts)
+            self.application.db.add, code, language, interacts)
         if "interacts" in args:
             retval["interacts"] = base64.urlsafe_b64encode(
                 zlib.compress(interacts))
         if "n" in args:
             retval["n"] = int("".join(args["n"]))
-        if "frame" not in args:
-            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
-            self.set_header("Access-Control-Allow-Credentials", "true")
-        else:
-            retval = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(retval),)
+        if "frame" in args:
+            retval = ('<script>parent.postMessage(%r,"*");</script>'
+                      % json.dumps(retval))
             self.set_header("Content-Type", "text/html")
-
+        else:
+            self.set_header("Access-Control-Allow-Origin",
+                            self.request.headers.get("Origin", "*"))
+            self.set_header("Access-Control-Allow-Credentials", "true")
         self.write(retval)
         self.finish()
 
@@ -60,19 +60,21 @@ class PermalinkHandler(tornado.web.RequestHandler):
     def get(self):
         try:
             q = "".join(self.request.arguments["q"])
-            response = yield tornado.gen.Task(self.application.db.get_exec_msg, q)
+            logger.debug("Looking up permalink %s", q)
+            response = (yield tornado.gen.Task(self.application.db.get, q))[0]
         except (LookupError, KeyError):
+            logger.warning("ID not found in permalink database %s", q)
             self.set_status(404)
             self.finish("ID not found in permalink database")
             return
-        # response_json is [code, language]
-        response_json = json.dumps(response[0])
-        if len(self.get_arguments("callback")) == 0:
-            self.write(response_json)
-            self.set_header("Access-Control-Allow-Origin", self.request.headers.get("Origin", "*"))
+        response = json.dumps(response)
+        if self.get_arguments("callback"):
+            self.write("%s(%r);" % (self.get_argument("callback"), response))
+            self.set_header("Content-Type", "application/javascript")
+        else:
+            self.write(response)
+            self.set_header("Access-Control-Allow-Origin",
+                            self.request.headers.get("Origin", "*"))
             self.set_header("Access-Control-Allow-Credentials", "true")
             self.set_header("Content-Type", "application/json")
-        else:
-            self.write("%s(%r);" % (self.get_argument("callback"), response_json))
-            self.set_header("Content-Type", "application/javascript")
         self.finish()
