@@ -58,11 +58,11 @@ class PermalinkHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @tornado.gen.engine
     def get(self):
+        q = self.get_argument("q")
         try:
-            q = "".join(self.request.arguments["q"])
             logger.debug("Looking up permalink %s", q)
             response = (yield tornado.gen.Task(self.application.db.get, q))[0]
-        except (LookupError, KeyError):
+        except LookupError:
             logger.warning("ID not found in permalink database %s", q)
             self.set_status(404)
             self.finish("ID not found in permalink database")
