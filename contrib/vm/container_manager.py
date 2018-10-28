@@ -683,20 +683,21 @@ class SCLXC(object):
     def save_logs(self):
         stamp_length = len("2014-12-28 15:00:02,315")
         root = self.c.get_config_item("lxc.rootfs")
-        logname = root + "/var/log/sagecell.log"
-        if not os.path.exists(logname):
+        logdir = os.path.join(root, "var", "log")
+        logname = "sagecell.log"
+        fullname = os.path.join(logdir, logname)
+        if not os.path.exists(fullname):
             return
-        with open(logname, "rb") as f:
+        with open(fullname, "rb") as f:
             start = f.read(stamp_length).decode()
             f.seek(0, os.SEEK_END)
             f.seek(max(f.tell() - 2**16, 0))
             end = f.readlines()[-1][:stamp_length].decode()
-        copyname = "container_logs/%s to %s on %s" % (start, end, self.name)
+        archname = "container_logs/%s to %s on %s" % (start, end, self.name)
         if not os.path.exists("container_logs"):
             os.mkdir("container_logs")
-        log.info("saving %s", copyname)
-        shutil.copy(logname, copyname)
-        check_call("bzip2 '{}'".format(copyname))
+        log.info("saving %s", archname)
+        shutil.make_archive(archname, "bztar", logdir, logname)
 
     def shutdown(self):
         if self.c.running and not self.c.shutdown(timeout):
