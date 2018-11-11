@@ -65,14 +65,15 @@ gfortran
 git
 imagemagick
 iptables
-libcairo-dev
+libcairo2-dev
 libffi-dev
 libsystemd-dev
 m4
 nginx
 npm
-php7.0-fpm
+php7.2-fpm
 rsyslog-relp
+ssh
 texlive
 texlive-latex-extra
 transfig
@@ -83,13 +84,13 @@ wget
 # Due to (other's) bugs, some packages cannot be installed during installation.
 # Let's also use it to separate "standard tools" and "extra stuff".
 packages_later = """
+ffmpeg
 graphviz
-libav-tools
 libgeos-dev
 libhdf5-dev
 libnetcdf-dev
 libxml2-dev
-libxslt-dev
+libxslt1-dev
 octave
 """.split()
 
@@ -196,12 +197,12 @@ if $syslogfacility-text == "local3" then
 
 # HA-Proxy configuration is regenerated every time the script is run.
 HAProxy_header = """\
-# Default from Ubuntu 16.04 LTS
+# Default from Ubuntu 18.04 LTS
 global
         log /dev/log    local0
         log /dev/log    local1 notice
         chroot /var/lib/haproxy
-        stats socket /run/haproxy/admin.sock mode 660 level admin
+        stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
         stats timeout 30s
         user haproxy
         group haproxy
@@ -214,7 +215,9 @@ global
         # Default ciphers to use on SSL-enabled listening sockets.
         # For more information, see ciphers(1SSL). This list is from:
         #  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
-        ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS
+        # An alternative list with additional directives can be obtained from
+        #  https://mozilla.github.io/server-side-tls/ssl-config-generator/?server=haproxy
+        ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS
         ssl-default-bind-options no-sslv3
 
 defaults
@@ -534,7 +537,7 @@ class SCLXC(object):
             clone.c.set_config_item("lxc.start.auto", "1")
             clone.c.set_config_item("lxc.start.delay", str(start_delay))
             clone.c.save_config()
-        logdir = clone.c.get_config_item("lxc.rootfs") + "/var/log/"
+        logdir = clone.c.get_config_item("lxc.rootfs.path") + "/var/log/"
         for logfile in ["sagecell.log", "sagecell-console.log"]:
             if os.path.exists(logdir + logfile):
                 os.remove(logdir + logfile)
@@ -549,10 +552,14 @@ class SCLXC(object):
         # Try to automatically pick up proxy from host
         os.environ["HTTP_PROXY"] = "apt"
         if not self.c.create(
-            "ubuntu", 0, {"packages": ",".join(packages)}, "btrfs"):
+            "download", 0,
+            {"dist": "ubuntu", "release": "bionic", "arch": "amd64"},
+            "btrfs"):
                 raise RuntimeError("failed to create " + self.name)
         os.environ.unsetenv("HTTP_PROXY")
 
+        log.info("installing packages")
+        self.inside("apt install -y " + " ".join(packages))
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
         log.info("installing later packages")
         self.inside("apt install -y " + " ".join(packages_later))
@@ -560,7 +567,6 @@ class SCLXC(object):
         self.inside(communicate, "/usr/bin/debconf-set-selections",
             "tmpreaper tmpreaper/readsecurity note")
         self.inside("apt install -y tmpreaper")
-        self.inside(os.symlink, "/usr/bin/nodejs", "/usr/bin/node")
         log.info("installing npm packages")
         self.inside("npm install -g requirejs")
         self.update()
@@ -624,7 +630,7 @@ class SCLXC(object):
         if not keeprepos:
             update_repositories()
         log.info("uploading repositories to %s", self.name)
-        root = self.c.get_config_item("lxc.rootfs")
+        root = self.c.get_config_item("lxc.rootfs.path")
         home = os.path.join(root, "home", users["server"])
         shutil.copytree("github", os.path.join(home, "github"), symlinks=True)
         self.inside("chown -R {server}:{group} /home/{server}/github")
@@ -684,7 +690,7 @@ class SCLXC(object):
 
     def save_logs(self):
         stamp_length = len("2014-12-28 15:00:02,315")
-        root = self.c.get_config_item("lxc.rootfs")
+        root = self.c.get_config_item("lxc.rootfs.path")
         logdir = os.path.join(root, "var", "log")
         logname = "sagecell.log"
         fullname = os.path.join(logdir, logname)
