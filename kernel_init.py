@@ -68,39 +68,35 @@ def initialize(kernel):
         
         @wraps(handler)
         def f(stream, ident, parent, *args, **kwargs):
-            kernel._publish_status(u'busy', parent)
             md = kernel.init_metadata(parent)
-            content = parent['content']
+            kernel._publish_status("busy", parent)
             # Set the parent message of the display hook and out streams.
             kernel.shell.set_parent(parent)
-            reply_content = {}
             try:
-                reply_content[u'result'] = handler(stream, ident, parent, *args, **kwargs)
+                reply = {
+                    "result": handler(stream, ident, parent, *args, **kwargs),
+                    "status": "ok",
+                    # TODO: this should be refactored probably to use existing
+                    # IPython code
+                    "user_expressions": kernel.shell.user_expressions(
+                        parent["content"].get("user_expressions", {}))
+                    }
             except:
-                status = u'error'
+                kernel.log.debug("handler exception for %s", key)
                 etype, evalue, tb = sys.exc_info()
+                reply = {
+                    "ename": etype.__name__,  # needed by finish_metadata
+                    "status": "error",
+                    "user_expressions": {}
+                    }
                 import traceback
                 tb_list = traceback.format_exception(etype, evalue, tb)
-                reply_content.update(kernel.shell._showtraceback(etype, evalue, tb_list))
-            else:
-                status = u'ok'
-            reply_content[u'status'] = status
-            sys.stdout.flush()
-            sys.stderr.flush()
-
-            # this should be refactored probably to use existing IPython code
-            if reply_content['status'] == 'ok':
-                reply_content[u'user_expressions'] = \
-                             kernel.shell.user_expressions(content.get(u'user_expressions', {}))
-            else:
-                # If there was an error, don't even try to compute
-                # expressions
-                reply_content[u'user_expressions'] = {}
+                kernel.shell._showtraceback(etype, evalue, tb_list)
 
             # Payloads should be retrieved regardless of outcome, so we can both
             # recover partial output (that could have been generated early in a
             # block, before an error) and clear the payload system always.
-            reply_content[u'payload'] = kernel.shell.payload_manager.read_payload()
+            reply['payload'] = kernel.shell.payload_manager.read_payload()
             # Be agressive about clearing the payload because we don't want
             # it to sit in memory until the next execute_request comes in.
             kernel.shell.payload_manager.clear_payload()
@@ -108,20 +104,16 @@ def initialize(kernel):
             sys.stdout.flush()
             sys.stderr.flush()
             # FIXME: on rare occasions, the flush doesn't seem to make it to the
-            # clients... This seems to mitigate the problem, but we definitely need
-            # to better understand what's going on.
+            # clients... This seems to mitigate the problem, but we definitely
+            # need to better understand what's going on.
             if kernel._execute_sleep:
                 time.sleep(kernel._execute_sleep)
 
-            reply_content = ipykernel.jsonutil.json_clean(reply_content)
-            md['status'] = reply_content['status']
-            if (reply_content['status'] == 'error' and
-                reply_content['ename'] == 'UnmetDependency'):
-                    md['dependencies_met'] = False
-            md = kernel.finish_metadata(parent, md, reply_content)
-            reply_msg = kernel.session.send(stream, key + u'_reply',
-                reply_content, parent, metadata=md, ident=ident)
-            kernel.log.debug("%s", reply_msg)
+            reply = ipykernel.jsonutil.json_clean(reply)
+            md = kernel.finish_metadata(parent, md, reply)
+            reply_msg = kernel.session.send(
+                stream, key + '_reply', reply, parent, metadata=md, ident=ident)
+            kernel.log.debug("handler reply for %s %s", key, reply_msg)
             kernel._publish_status(u'idle', parent)
         return f
         
