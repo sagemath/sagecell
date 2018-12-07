@@ -38,6 +38,8 @@ var stop = function(event) {
 }
 var close = null;
 
+var jmolCounter = 0;
+
 function Session(outputDiv, language, interact_vals, k, linked) {
     this.timer = utils.simpleTimer();
     this.outputDiv = outputDiv;
@@ -52,7 +54,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
 
     // Set this object because we aren't loading the full IPython JavaScript library
     IPython.notification_widget = {"set_message": console.debug};
-    
+
     this.interacts = [];
     if (window.addEventListener) {
         // Prevent Esc key from closing WebSockets and XMLHttpRequests in Firefox
@@ -63,8 +65,8 @@ function Session(outputDiv, language, interact_vals, k, linked) {
         });
     }
     /* Always use sockjs, until we can get websockets working reliably.
-     * Right now, if we have a very short computation (like 1+1), there is some sort of 
-     * race condition where the iopub handler does not get established before 
+     * Right now, if we have a very short computation (like 1+1), there is some sort of
+     * race condition where the iopub handler does not get established before
      * the kernel is closed down.  This only manifests itself on a remote server, since presumably
      * if you are running on a local server, the connection is established too quickly.
      *
@@ -394,7 +396,7 @@ Session.prototype.handle_execute_reply = function(msg) {
       if(msg.status==="error") {
         this.output('<pre class="sagecell_pyerr"></pre>',null)
             .html(utils.fixConsole(msg.traceback.join("\n")));
-    } 
+    }
     */
     // TODO: handle payloads with a payload callback, instead of in the execute_reply
     // That would be much less brittle
@@ -426,7 +428,7 @@ Session.prototype.handle_execute_reply = function(msg) {
             utils.fixConsole(payload.data['text/plain']));
     }
 }
-    
+
 Session.prototype.handle_output = function(msg, default_block_id) {
     console.debug("handle_output");
     var msg_type = msg.header.msg_type;
@@ -462,7 +464,7 @@ Session.prototype.handle_output = function(msg, default_block_id) {
     case "execute_result":
         var filepath = this.kernel.kernel_url + '/files/';
         // find any key of content that is in the display_handlers array and execute that handler
-        // if none found, do the text/plain 
+        // if none found, do the text/plain
         var already_handled = false;
         for (var key in content.data) {
             if (content.data.hasOwnProperty(key) && this.display_handlers[key]) {
@@ -547,7 +549,7 @@ Session.prototype.display_handlers = {
             script: "set defaultdirectory '" + filepath + data + "/scene.zip';\n script SCRIPT;\n",
             menuFile: utils.URLs.root + "static/SageMenu.mnu"
         };
-        this.output(Jmol.getAppletHtml("scJmol", info), block_id);
+        this.output(Jmol.getAppletHtml("scJmol" + jmolCounter++, info), block_id);
     },
     "application/x-canvas3d": function(data, block_id, filepath) {
         var div = this.output(document.createElement("div"), block_id);
