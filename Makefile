@@ -33,6 +33,7 @@ build:
 	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > build/mpl.js
 
 $(all-min-js): build $(all-min-css) js/*
+	# Host standalone jquery for compatibility with old instructions
 	cp build/components/jquery/jquery.min.js static
 	cp submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js build/jquery-ui-tp.js
 	cp -a js/* build
