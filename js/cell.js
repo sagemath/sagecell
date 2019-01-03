@@ -236,11 +236,11 @@ function init(cellInfo, k) {
     var editorType = temp[0];
     var editorData = temp[1];
     editorData.k = k;
-    input.find(".sagecell_advancedTitle").click(function () {
+    input.find(".sagecell_advancedTitle").on("click", function () {
         input.find(".sagecell_advancedFields").slideToggle();
         return false;
     });
-    langSelect.change(function () {
+    langSelect.on("change", function () {
         var mode = langSelect[0].value;
         editorData.setOption("mode", sagecell.modes[mode]);
     });
@@ -388,7 +388,7 @@ function init(cellInfo, k) {
         return false;
     };
     var button = input.find(".sagecell_evalButton").button();
-    button.click({"id": utils.uuid()}, cellInfo.submit);
+    button.on("click", {"id": utils.uuid()}, cellInfo.submit);
     if (cellInfo.code && cellInfo.autoeval) {
         button.click();
     }

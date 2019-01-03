@@ -143,12 +143,12 @@ function render(editorType, inputLocation, collapse) {
                                 "collapsible": true,
                                 "header": header});
     }
-    commands.keypress(function (event) {
+    commands.on("keypress", function (event) {
         if (event.which === 13 && event.shiftKey) {
             event.preventDefault();
         }
     });
-    commands.keyup(function (event) {
+    commands.on("keyup", function (event) {
         if (event.which === 13 && event.shiftKey) {
             inputLocation.find(".sagecell_evalButton").click();
         }
@@ -258,7 +258,7 @@ function render(editorType, inputLocation, collapse) {
             editorData.refresh();
         });
         $(editorData.getWrapperElement()).prepend(fullscreen);
-        fullscreen.click(function() {
+        fullscreen.on("click", function() {
             fullscreenToggle(editorData);
             editorData.focus();
         });
