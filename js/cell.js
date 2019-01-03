@@ -8,7 +8,7 @@ define([
     // Unreferenced dependencies
     "domReady!",
     "jquery-ui",
-    "jquery-ui-tp",
+    //"jquery-ui-tp",
     "colorpicker",
     "canvas3d_lib",
     "JSmol"
