@@ -323,11 +323,17 @@ Session.prototype.execute = function(code) {
         } else if (this.language !== "sage") {
             pre = "print " + this.language + ".eval";
         }
+        if (this.language === "octave") {
+            code = "set(gcf(), 'visible', 'off')\n" + code + "\nif (get(gcf(), 'children'))\n    saveas(gcf(), 'octave.png')\nendif";
+        }
         if (this.language === "r") {
             code = "options(bitmapType='cairo')\n" + code + "\ngraphics.off()";
         }
         if (pre) {
             code = pre + '("""' + code.replace(/"/g, '\\"') + '""").strip()'
+        }
+        if (this.language === "octave") {
+            code = "octave = Octave(); " + code;
         }
         if (this.language === "html") {
             code += "\nNone";

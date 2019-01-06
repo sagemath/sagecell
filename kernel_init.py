@@ -42,6 +42,9 @@ def initialize(kernel):
                     and path[-4:] in [".bmp", "jpeg", ".png", ".svg"]):
                     misc.display_file(path, "text/image-filename")
                     continue
+                if path == "octave.png":
+                    misc.display_file(path, "text/image-filename")
+                    continue
                 new_files.append(path)
                 sys._sage_.sent_files[path] = mtime
         ip = user_ns["get_ipython"]()
