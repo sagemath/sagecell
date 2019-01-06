@@ -323,11 +323,11 @@ Session.prototype.execute = function(code) {
         } else if (this.language !== "sage") {
             pre = "print " + this.language + ".eval";
         }
+        if (this.language === "r") {
+            code = "options(bitmapType='cairo')\n" + code + "\ngraphics.off()";
+        }
         if (pre) {
             code = pre + '("""' + code.replace(/"/g, '\\"') + '""").strip()'
-        }
-        if (this.language === "r") {
-            code += "\nr.eval('graphics.off()'); None";
         }
         if (this.language === "html") {
             code += "\nNone";

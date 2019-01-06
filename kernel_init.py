@@ -162,15 +162,6 @@ set_random_seed()
 from sage.repl.rich_output import get_display_manager
 from backend_cell import BackendCell
 get_display_manager().switch_backend(BackendCell(), shell=get_ipython())
-# Make sure that appropriate plotting options are set for R
-sys._sage_.old_R_start = R._start
-def _start(self):
-    sys._sage_.old_R_start(self)
-    self.eval("options(bitmapType='cairo', device='svg')")
-R._start = _start
-del _start
-# Make R interface pickup the new working directory
-r = R()
 """
     exec(sage_code, user_ns)
         
