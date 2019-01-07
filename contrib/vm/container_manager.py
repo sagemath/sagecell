@@ -75,10 +75,10 @@ php7.0-fpm
 rsyslog-relp
 texlive
 texlive-latex-extra
+transfig
 unattended-upgrades
 unzip
 wget
-xfig
 """.split()
 # Due to (other's) bugs, some packages cannot be installed during installation.
 # Let's also use it to separate "standard tools" and "extra stuff".
