@@ -59,6 +59,7 @@ automake
 bison
 build-essential
 dvipng
+epstool
 gettext
 gfortran
 git
@@ -77,6 +78,7 @@ texlive-latex-extra
 unattended-upgrades
 unzip
 wget
+xfig
 """.split()
 # Due to (other's) bugs, some packages cannot be installed during installation.
 # Let's also use it to separate "standard tools" and "extra stuff".
