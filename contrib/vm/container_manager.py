@@ -101,7 +101,6 @@ sage_optional_packages = [
 "cbc",
 "cryptominisat",
 "database_cremona_ellcurve",
-"database_gap",
 "database_jones_numfield",
 "database_odlyzko_zeta",
 "database_symbolic_data",
