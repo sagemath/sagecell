@@ -75,6 +75,9 @@ if (sagecell.root) {
 if (root.slice(-1) !== "/") {
     root += "/";
 }
+if (root === "http://sagecell.sagemath.org/") {
+    root = "https://sagecell.sagemath.org/";
+}
 var isXDomain = root !== window.location.protocol + "//" + window.location.host + "/";
 
 var ID;
