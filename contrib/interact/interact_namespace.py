@@ -12,9 +12,9 @@ C=slider('xy', ns, 0, 2, 'x-y')
 C.create()
 var('t')
 E=pythoncode('x',ns,"""
-print x
+print(x)
 show(plot(sin(x*t), (t,-3,3),plot_points=3,figsize=2))
-print 'hi'
+print('hi')
 """)
 E.create()
 D=input('xy',ns,'x')
@@ -291,11 +291,11 @@ class Checkbox(Control):
 class PythonCode(Control):
     """
     with interactive_namespace(x=4,y=20):
-        print "x="
+        print("x=")
         slider('x', (0,100)).create()
-        print "y="
+        print("y=")
         slider('y', (0,100)).create()
-        PythonCode('print x+y').create()
+        PythonCode('print(x+y)').create()
     """
     def __init__(self, code, ns=None):
         global __default_namespace__
@@ -350,13 +350,13 @@ load('/Users/grout/projects/sagenb/sagecell/contrib/interact/interact_namespace.
 
 @InteractFunction
 def f(x=1,y=2):
-    print x,y
+    print(x,y)
     from time import sleep
     sleep(1)
     if f.ns['y']>10: return
-    print 'changing y'
+    print('changing y')
     f.ns['y'] = f.ns['x']+f.ns['y']
-    print 'changing x'
+    print('changing x')
     f.ns['x'] = f.ns['x']+1
     sleep(1)
 
