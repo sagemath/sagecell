@@ -144,7 +144,6 @@ if __name__ == "__main__":
                 else:
                     logger.info("Process does not seem to be SageCell.")
             except psutil.NoSuchProcess:
-                pass
                 logger.info("No such process exist anymore.")
         logger.info("Breaking old lock.")
         pidlock.break_lock()
