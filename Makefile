@@ -30,7 +30,7 @@ build:
 		https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js \
 		https://raw.githubusercontent.com/requirejs/domReady/latest/domReady.js \
 		https://raw.githubusercontent.com/requirejs/text/latest/text.js
-	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print FigureManagerWebAgg.get_javascript().encode('utf8')" > build/mpl.js
+	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print(FigureManagerWebAgg.get_javascript().encode('utf8'))" > build/mpl.js
 
 $(all-min-js): build $(all-min-css) js/*
 	# Host standalone jquery for compatibility with old instructions
