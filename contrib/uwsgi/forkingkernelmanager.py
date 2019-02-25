@@ -51,7 +51,7 @@ class ForkingKernelManager(BlockingKernelManager):
         cfg.IPKernelApp.user_ns = self.user_ns
         cfg.IPKernelApp.user_module = self.user_module
         cfg.Session.key = self.session.key
-        print "Config: ",cfg, self.user_ns
+        print("Config:", cfg, self.user_ns)
         
         p = Process(target=kernel_target_f, args=(cfg,))
         p.start()
@@ -61,10 +61,10 @@ class ForkingKernelManager(BlockingKernelManager):
             """p is the Process object"""
         
             import os
-            print "Killing kernel process %d . . ."%p.pid,
+            print("Killing kernel process %d . . ." % p.pid)
             os.kill(p.pid,15)
             p.join()
-            print "done"
+            print("done")
         import atexit
         from functools import partial
         atexit.register(partial(killpid,p))
@@ -80,7 +80,7 @@ class ForkingKernelManager(BlockingKernelManager):
             # Attempt to kill the kernel.
             try:
                 import os
-                print "Killing kernel process %d . . ."%self.kernel.pid,
+                print("Killing kernel process %d . . ." % self.kernel.pid)
                 os.kill(self.kernel.pid,15)
                 self.kernel.join()
             except OSError, e:
@@ -115,8 +115,8 @@ if __name__ == '__main__':
     s=a.shell_channel
     
     
-    s.execute('print "hello"')
-    s.execute('print "world"')
+    s.execute('print("hello")')
+    s.execute('print("world")')
     # get replies:
     s.get_msg()
     s.get_msg()
@@ -126,5 +126,5 @@ if __name__ == '__main__':
     for msg in iopub.get_msgs():
         if msg['msg_type'] == 'stream':
             content = msg['content']
-            print "received %s:" % content['name']
-            print content['data']
+            print("received %s:" % content['name'])
+            print(content['data'])
