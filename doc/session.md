@@ -5,7 +5,7 @@ The user loads http://sagecell.sagemath.org and types the following computation 
 ```python
 @interact
 def f(x=(1, 1000, 1)):
-    print factor(x)
+    print(factor(x))
 ```
 
 The user then presses the “Evaluate” button. The client (the browser) sends an HTTP `POST` request to `http://sagecell.sagemath.org/kernel`. The following JSON is returned:
@@ -31,7 +31,7 @@ The client sends the following message to initiate the computation:
     },
     "metadata": {},
     "content": {
-        "code": "@interact\ndef f(x=(1, 1000, 1)):\n    print factor(x)",
+        "code": "@interact\ndef f(x=(1, 1000, 1)):\n    print(factor(x))",
         "silent": false,
         "user_variables": [],
         "user_expressions": {
@@ -52,7 +52,7 @@ It also sends an HTTP `POST` request to `http://sagecell.sagemath.org/permalink`
     },
     "metadata": {},
     "content": {
-        "code": "@interact\ndef f(x=(1, 1000, 1)):\n print factor(x)"
+        "code": "@interact\ndef f(x=(1, 1000, 1)):\n print(factor(x))"
     }
 }
 ```
@@ -110,7 +110,7 @@ This message tells the client that the kernel is working. When the client receiv
     "msg_id": "58116112-3d66-4a9f-b35f-18fa6b2ee155",
     "content": {
         "execution_count": 1,
-        "code": "@interact\ndef f(x=(1, 1000, 1)):\n    print factor(x)"
+        "code": "@interact\ndef f(x=(1, 1000, 1)):\n    print(factor(x))"
     },
     "header": {
         "username": "kernel",
