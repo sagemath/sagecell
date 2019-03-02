@@ -37,7 +37,7 @@ canvas.click(function(e) {
             newcell.text("Double-click to edit");
             newcell.editable(function(value, settings) {
                 data = value;
-                renderedHtml = converter.makeHtml(value);
+                var renderedHtml = converter.makeHtml(value);
                 $(this).data('cellcanvas_renderedHtml', renderedHtml) 
                 setTimeout(function() {MathJax.Hub.Queue(["Typeset",MathJax.Hub,id]);}, 100);
                 return(renderedHtml);
@@ -109,7 +109,7 @@ canvas.click(function(e) {
             newcell.html(renderedHtml);
         });
         savebody[0].appendChild(scripttag({text: "$(function() {sagecell.init(function() {"+cellsInit+"})})"}));
-        html = "<html><head>"+savehead.html()+"</head><body>"+savebody.html()+"</body></html>"
+        var html = "<html><head>"+savehead.html()+"</head><body>"+savebody.html()+"</body></html>"
         return html
     }
 
