@@ -114,7 +114,7 @@ function make(args, cellInfo, k) {
                     "mode": "normal",
                     "replaceOutput": true,
                     "languages": ["sage"]};
-    $.extend(cellInfo, defaults, args.template, args)
+    $.extend(cellInfo, defaults, args.template, args);
     // Since hide is an array, it is not actually merged as intended
     var hide = cellInfo.hide = $.merge([], defaults.hide);
     if (args.template !== undefined && args.template.hide !== undefined) {
