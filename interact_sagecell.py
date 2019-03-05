@@ -345,14 +345,13 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
     controls = zip(args, [None] * n + list(defaults)) + controls
     names = [c[0] for c in controls]
     controls = {n: automatic_control(c, var=n) for n, c in controls}
-    nameset = set(names)
 
     for n, c in controls.iteritems():
         if n.startswith("_"):
             raise ValueError("invalid control name: %s" % (n,))
         if isinstance(c, UpdateButton):
             update.add(n)
-    if len(update) == 0:
+    if not(update):
         update = names
     for n in update:
         controls[n].update = True
@@ -735,7 +734,7 @@ class Selector(InteractControl):
         self.width=str(width)
         if self.selector_type != "button" and self.selector_type != "radio":
             self.selector_type = "list"
-        if len(values) == 0:
+        if not(values):
             raise ValueError("values list cannot be empty")
         # Assign selector labels and values.
         if all(isinstance(v, tuple) and len(v) == 2 for v in values):
@@ -1308,7 +1307,7 @@ def automatic_control(control, var=None):
     return C
 
 def closest_index(values, value):
-    if value == None:
+    if value is None:
         return 0
     try:
         return values.index(value)
