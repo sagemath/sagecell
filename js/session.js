@@ -78,10 +78,8 @@ function Session(outputDiv, language, interact_vals, k, linked) {
         this.kernel = sagecell.kernels[k];
     } else {
         var old_ws = window.WebSocket;
-        // sometimes (IE8) window.console is not defined (until the console is opened)
-        var old_console = window.console;
-        var old_log = window.console && console.log;
         window.WebSocket = MultiSockJS;
+        // sometimes (IE8) window.console is not defined (until the console is opened)
         window.console = window.console || {};
         this.kernel = sagecell.kernels[k] = new Kernel.Kernel(utils.URLs.kernel);
         this.kernel.comm_manager.register_target('threejs', utils.always_new(widgets.ThreeJS(this)));
@@ -171,7 +169,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
     var n = 0;
     var code_links = {}, interact_links = {};
     var that = this;
-    var qr_prefix = "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl="
+    var qr_prefix = "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=";
     this.updateLinks = function(new_vals) {
         if (new_vals) {
             interact_links = {};
@@ -327,7 +325,7 @@ Session.prototype.execute = function(code) {
             code = "set(gcf(), 'visible', 'off')\n" + code + "\nif (get(gcf(), 'children'))\n    saveas(gcf(), 'octave.png')\nendif";
         }
         if (pre) {
-            code = pre + '("""' + code.replace(/"/g, '\\"') + '""").strip()'
+            code = pre + '("""' + code.replace(/"/g, '\\"') + '""").strip()';
         }
         if (this.language === "octave") {
             code = "octave = Octave(); " + code;

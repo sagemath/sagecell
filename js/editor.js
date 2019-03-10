@@ -156,7 +156,7 @@ function render(editorType, inputLocation, collapse) {
     if (editorType === "textarea") {
         editorData = {};
     } else if (editorType === "textarea-readonly") {
-        editorData = {}
+        editorData = {};
         commands.attr("readonly", "readonly");
     } else {
         var readOnly = false;

@@ -171,7 +171,7 @@ var selectAll = function(txt) {
 };
 
 InteractCell.prototype.renderCanvas = function(parent_block) {
-    this.cells = {}
+    this.cells = {};
     this.container = ce("div", {"class": "sagecell_interactContainer"});
     if (this.layout && this.layout.length>0) {
         for (var row = 0; row < this.layout.length; row++) {
@@ -256,7 +256,7 @@ InteractCell.prototype.renderCanvas = function(parent_block) {
     menuBar.appendChild(expText);
     menuBar.appendChild(starButton);
     this.bookmark_container = this.bookmark_container || this.container;
-    this.bookmark_container.appendChild(menuBar)
+    this.bookmark_container.appendChild(menuBar);
     this.bookmarks = list;
     list.addEventListener("mousedown", stop, true);
     this.set_export();
@@ -389,7 +389,6 @@ InteractCell.prototype.createBookmark = function(name, vals) {
     });
     var entry = ce("li", {}, [ce("a", {}, [ce("div", {}, [name]), del])]);
     var that = this;
-    var i = this.bookmarks.childNodes.length;
     del.addEventListener("click", function(event) {
         that.bookmarks.removeChild(entry);
         if (that.parent_block === null) {
