@@ -35,7 +35,7 @@ var interacts = {};
 
 var stop = function(event) {
     event.stopPropagation();
-}
+};
 var close = null;
 
 var jmolCounter = 0;
@@ -93,7 +93,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
 
         this.kernel.post = function(url, callback) {
             utils.sendRequest("POST", url, {}, function(data) { callback(JSON.parse(data)); });
-        }
+        };
 
     // Copied from Jupyter notebook and slightly modified to add deferred code execution
     this.kernel._ws_opened = function(evt) {
@@ -197,7 +197,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
                         var dict = {
                             "state": interact.state(),
                             "bookmarks": []
-                        }
+                        };
                         for (var j = 0; j < interact.bookmarks.childNodes.length; j++) {
                             var b = interact.bookmarks.childNodes[j];
                             if (b.firstChild.firstChild.hasChildNodes()) {
@@ -295,7 +295,7 @@ function Session(outputDiv, language, interact_vals, k, linked) {
             data.kernel.iopub_channel = {};
             sagecell.kernels[k] = null;
         }
-    }
+    };
     events.on("kernel_dead.Kernel", killkernel);
     events.on("kernel_disconnected.Kernel", killkernel);
     this.lock_output = false;
@@ -431,7 +431,7 @@ Session.prototype.handle_execute_reply = function(msg) {
         this.output('<pre class="sagecell_payload"></pre>', null).html(
             utils.fixConsole(payload.data['text/plain']));
     }
-}
+};
 
 Session.prototype.handle_output = function(msg, default_block_id) {
     console.debug("handle_output");
