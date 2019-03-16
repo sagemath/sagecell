@@ -15,16 +15,16 @@ from timing_util import timing, json, json_request
 from sagecell import Session
 
 code="""
-print 'beginning...'
+print('beginning...')
 with open('test.txt','r+') as f:
-    s=f.read()
+    s = f.read()
     f.seek(0)
     f.write(s.replace('test','finished'))
-print 'ending...'
+print('ending...')
 """
 
-FILE_CONTENTS='This is a test file'
-FILE_RESULT_CONTENTS=FILE_CONTENTS.replace('test','finished')
+FILE_CONTENTS = 'This is a test file'
+FILE_RESULT_CONTENTS = FILE_CONTENTS.replace('test','finished')
 
 class Transaction(object):
     def __init__(self, **kwargs):
@@ -61,12 +61,12 @@ class Transaction(object):
                         and m['content']['msg_type']=="files"):
                         returned_file=m['content']['content']['files'][0]
                         if returned_file!='test.txt':
-                            print "RETURNED FILENAME NOT CORRECT"
+                            print("RETURNED FILENAME NOT CORRECT")
                             raise ValueError("Returned filename not correct: %s"%returned_file)
                         with timing(response_times):
                             f=s.get_file(returned_file)
                         if f!=FILE_RESULT_CONTENTS:
-                            print "RETURNED FILE CONTENTS NOT CORRECT"
+                            print("RETURNED FILE CONTENTS NOT CORRECT")
                             raise ValueError("Returned file contents not correct: %s"%f)
                         # if we've made it this far, we're done
                         done=True
@@ -80,4 +80,4 @@ __all__=['Transaction']
 if __name__ == '__main__':
     trans = Transaction()
     trans.run()
-    print trans.custom_timers
+    print(trans.custom_timers)
