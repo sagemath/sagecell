@@ -38,11 +38,13 @@ class PermalinkServer(tornado.web.Application):
         super(PermalinkServer, self).__init__(handlers_list)
 
 if __name__ == "__main__":
-    import tornado.options
-    from tornado.options import define, options
-
-    define("port", default=8080, help="run on the given port", type=int)
-    tornado.options.parse_command_line()
+    import argparse
+    parser = argparse.ArgumentParser(
+        description='Launch a permalink database web server',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-p', '--port', type=int, default=8080,
+                        help='port to launch the server')
+    args = parser.parse_args()
 
     from lockfile.pidlockfile import PIDLockFile
     pidfile_path = PERMALINK_PID_FILE
