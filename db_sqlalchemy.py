@@ -3,8 +3,9 @@ SQLAlchemy Database Adapter
 ---------------------------
 """
 
-import string, random
 from datetime import datetime
+import random
+import string
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -69,12 +70,13 @@ class DB(db.DB):
         See :meth:`db.DB.add`
         """
         while True:
-            ident = "".join(random.choice(string.lowercase) for _ in range(6))
+            ident = "".join(
+                random.choice(string.ascii_lowercase) for _ in range(6))
             message = ExecMessage(
                 ident=ident,
-                code=code.decode("utf8"),
+                code=code,
                 language=language,
-                interacts=interacts.decode("utf8"))
+                interacts=interacts)
             try:
                 self.dbsession.add(message)
                 self.dbsession.commit()
@@ -90,9 +92,8 @@ class DB(db.DB):
         See :meth:`db.DB.get`
         """
         msg = self.dbsession.query(ExecMessage).filter_by(ident=key).first()
-        if msg:
-            msg.requested = ExecMessage.requested + 1
-            self.dbsession.commit()
         if msg is None:
             raise LookupError
+        msg.requested = ExecMessage.requested + 1
+        self.dbsession.commit()
         callback(msg.code, msg.language, msg.interacts)

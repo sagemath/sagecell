@@ -27,23 +27,21 @@ class PermalinkHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @tornado.gen.engine
     def post(self):
+        def encode(s):
+            return base64.urlsafe_b64encode(zlib.compress(s.encode("utf8")))
+            
         args = self.request.arguments
         logger.debug("Storing permalink %s", args)
-        if "code" not in args:
-            self.send_error(400)
-            return
-        code = "".join(args["code"])
-        language = "".join(args.get("language", ["sage"]))
-        interacts = "".join(args.get("interacts", ["[]"]))
+        code = self.get_argument("code")
+        language = self.get_argument("language", "sage")
+        interacts = self.get_argument("interacts", "[]")
         retval = {}
-        retval["zip"] = base64.urlsafe_b64encode(zlib.compress(code))
+        retval["zip"] = encode(code)
         retval["query"] = yield tornado.gen.Task(
             self.application.db.add, code, language, interacts)
-        if "interacts" in args:
-            retval["interacts"] = base64.urlsafe_b64encode(
-                zlib.compress(interacts))
+        retval["interacts"] = encode(interacts)
         if "n" in args:
-            retval["n"] = int("".join(args["n"]))
+            retval["n"] = int(self.get_argument("n"))
         if "frame" in args:
             retval = ('<script>parent.postMessage(%r,"*");</script>'
                       % json.dumps(retval))

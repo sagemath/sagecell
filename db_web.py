@@ -25,14 +25,14 @@ class DB(db.DB):
         See :meth:`db.DB.add`
         """
         body = urllib.urlencode({
-            'code': code,
-            'language': language,
-            'interacts': interacts})
+            "code": code.encode("utf8"),
+            "language": language.encode("utf8"),
+            "interacts": interacts.encode("utf8")})
             
         def cb(response):
             if response.code != 200:
                 raise RuntimeError("Error in response")
-            callback(json.loads(response.body)['query'])
+            callback(json.loads(response.body)["query"])
             
         http_client = tornado.httpclient.AsyncHTTPClient()
         http_client.fetch(self.url, cb, method="POST", body=body,
@@ -45,10 +45,7 @@ class DB(db.DB):
         def cb(response):
             if response.code != 200:
                 raise LookupError("Code lookup produced error")
-            code, language, interacts = json.loads(response.body)
-            code = code.encode("utf-8")
-            interacts = interacts.encode("utf-8")
-            callback(code, language, interacts)
+            callback(*json.loads(response.body))
 
         http_client = tornado.httpclient.AsyncHTTPClient()
         http_client.fetch("{}?q={}".format(self.url, key), cb, method="GET",
