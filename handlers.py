@@ -8,6 +8,7 @@ import urllib
 import uuid
 import zlib
 
+from tornado.escape import url_escape
 import tornado.gen
 import tornado.ioloop
 import tornado.web
@@ -55,32 +56,33 @@ class RootHandler(tornado.web.RequestHandler):
         logger.debug('RootHandler.get')
         args = self.request.arguments
         code = None
-        lang = args["lang"][0] if "lang" in args else None
+        lang = self.get_argument("lang", None)
         interacts = None
         if "c" in args:
             # The code is explicitly specified
-            code = "".join(args["c"])
+            code = self.get_argument("c")
         elif "z" in args:
             # The code is base64-compressed
-            try:
-                z = "".join(args["z"])
+            def get_decompressed(name):
+                a = args[name][-1]
                 # We allow the user to strip off the ``=`` padding at the end
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
-                z += "=" * ((4 - (len(z) % 4)) % 4)
-                code = zlib.decompress(base64.urlsafe_b64decode(z))
+                a += "=" * ((4 - (len(a) % 4)) % 4)
+                return zlib.decompress(
+                    base64.urlsafe_b64decode(a)).decode("utf8")
+                
+            try:
+                code = get_decompressed("z")
                 if "interacts" in args:
-                    interacts = "".join(args["interacts"])
-                    interacts += "=" * ((4 - (len(interacts) % 4)) % 4)
-                    interacts = zlib.decompress(
-                        base64.urlsafe_b64decode(interacts))
+                    interacts = get_decompressed("interacts")
             except Exception as e:
                 self.set_status(400)
                 self.finish("Invalid zipped code: %s\n" % (e.message,))
                 return
         elif "q" in args:
             # The code is referenced by a permalink identifier.
-            q = "".join(args["q"])
+            q = self.get_argument("q")
             try:
                 code, lang, interacts = (yield tornado.gen.Task(
                     self.application.db.get, q))[0]
@@ -90,9 +92,9 @@ class RootHandler(tornado.web.RequestHandler):
                 self.finish("ID not found in permalink database")
                 return
         if code is not None:
-            code = urllib.quote(code)
+            code = url_escape(code, plus=False)
         if interacts is not None:
-            interacts = urllib.quote(interacts)
+            interacts = url_escape(interacts, plus=False)
         autoeval = self.get_argument(
             "autoeval", "false" if code is None else "true" )
         self.render(

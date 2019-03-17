@@ -24,8 +24,8 @@ class DB(object):
         
         - ``interacts`` -- a string
         
-        - ``callback`` -- a function accepting a single argument, the identifier
-          key for the entry
+        - ``callback`` -- a function accepting a single string argument,
+          the identifier key for the entry
         """
         raise NotImplementedError
 
