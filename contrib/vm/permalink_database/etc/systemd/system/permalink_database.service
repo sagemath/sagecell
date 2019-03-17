@@ -16,7 +16,7 @@ ExecStartPre=\
 PermissionsStartOnly=true
 WorkingDirectory=/home/sc_data
 User=sc_data
-ExecStart=/usr/bin/python sagecell/permalink_server.py
+ExecStart=/usr/bin/python3 sagecell/permalink_server.py
 
 
 [Install]
