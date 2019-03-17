@@ -14,6 +14,7 @@ import tornado.ioloop
 import tornado.web
 
 import permalink
+from log import permalink_logger as logger
 
 
 PERMALINK_DB = "sqlalchemy"
@@ -68,12 +69,13 @@ if __name__ == "__main__":
         pidlock.break_lock()
         
     pidlock.acquire(timeout=10)
-    application = PermalinkServer()
-    http_server = tornado.httpserver.HTTPServer(application, xheaders=True)
-    http_server.listen(options.port)
+    app = PermalinkServer()
+    app.listen(port=args.port, xheaders=True)
 
     def handler(signum, frame):
-        tornado.ioloop.IOLoop.instance().stop()
+        logger.info("Received %s, shutting down...", signum)
+        ioloop = tornado.ioloop.IOLoop.current()
+        ioloop.add_callback_from_signal(ioloop.stop)
     
     signal.signal(signal.SIGHUP, handler)
     signal.signal(signal.SIGINT, handler)
@@ -85,5 +87,5 @@ if __name__ == "__main__":
     except ImportError:
         pass
         
-    tornado.ioloop.IOLoop.instance().start()
+    tornado.ioloop.IOLoop.current().start()
     pidlock.release()
