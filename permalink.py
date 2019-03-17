@@ -28,7 +28,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
     @tornado.gen.engine
     def post(self):
         def encode(s):
-            return base64.urlsafe_b64encode(zlib.compress(s.encode("utf8")))
+            return base64.urlsafe_b64encode(
+                zlib.compress(s.encode("utf8"))).decode("utf8")
             
         args = self.request.arguments
         logger.debug("Storing permalink %s", args)
