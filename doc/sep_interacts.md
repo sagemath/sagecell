@@ -43,12 +43,12 @@ class F(object):
     def __setattr__(self, name, value):
         super(F, self).__setattr__(name, value)
         if name in self._interactive_vars:
-            print "Variable update: %s %s updated to %s"%(self.object_id, name, value)
+            print("Variable update: %s %s updated to %s" % (self.object_id, name, value))
         
     def _update_right_panel(self):
-        print 'in right panel'
+        print('in right panel')
     def _update_left_panel(self):
-        print 'in left panel'
+        print('in left panel')
     def right_panel(self):
         output_id = uuid4()
         # push default output id
@@ -88,7 +88,7 @@ In fact, the current `@interact` can be reimplemented as such a class, so that
 ```python
 @interact
 def f(a=(0,1), b=x^2*y):
-    print a*b
+    print(a*b)
 ```
 gets transformed to something like
 ```python
@@ -100,7 +100,7 @@ class G(object):
         slider(self.interactive.a, (0,1))
         expressionbox(self.interactive.b,x^2*y)
     def output(self):
-        print self.a*self.b
+        print(self.a*self.b)
 g=G()
 table([[g.controls],[g.output]])
 ```
@@ -121,7 +121,7 @@ Internally, this determines makes a proxy global namespace, where `N` overshadow
 
 ```python
 def fff():
-    print y
+    print(y)
 ```
 where `y` is in the global namespace.  So...ChainDict has to populate itself with values from globals().  But then it's not up to date with the globals(), so the `y` above is never updated.
 
