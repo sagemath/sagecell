@@ -152,9 +152,9 @@ def _(v0=slider(srange(0.001,1,0.002)+srange(1,30.001,0.1)),theta0=slider(srange
     ranges.append([v0,theta0, R, cur_dist])
     new_max=sorted(ranges,key=lambda x:x[3])[-1][3]
     if new_max>old_max:
-        print "NEW Record!, maximum:",new_max,"(",old_max,")", "  at: ",sorted(ranges,key=lambda x:x[3])[-1][:3]
+        print("NEW Record!, maximum:",new_max,"(",old_max,")", "  at: ",sorted(ranges,key=lambda x:x[3])[-1][:3])
     else:
-        print "Try again to beat:",new_max," (",cur_dist ,")"   
+        print("Try again to beat:",new_max," (",cur_dist ,")")
     
     plts.append( line(zip(s[:,2],s[:,3]),figsize=(9,6),color='gray',aspect_ratio=1) )
     plt_last=line(zip(s[:,2],s[:,3]),figsize=(9,6),color='red',aspect_ratio=1)
@@ -214,8 +214,8 @@ def bin_poly_roots(Nmax = 10000,rank = 24,rand=True):
     return zera    
 @interact
 def _(nmax=[1000,5000,10000,20000,50000,100000],rank=slider(1,30,1,default=24)):
-    print 'Calculating roots, it will take approx.',nmax/500,'seconds'
-    print 'Total number of polynomials:',2**(rank+1), "we will take randomly",nmax
+    print('Calculating roots, it will take approx.',nmax/500,'seconds')
+    print('Total number of polynomials:',2**(rank+1), "we will take randomly",nmax)
     Rts = bin_poly_roots(Nmax=nmax,rank = 24)
     plt = point( zip(np.real(Rts),np.imag(Rts)),size=1 )
     
@@ -223,18 +223,18 @@ def _(nmax=[1000,5000,10000,20000,50000,100000],rank=slider(1,30,1,default=24)):
     def _(nmax2=slider(0,10000,100,default=0)):
         
         if nmax2==0:
-            print "Drawing roots of random polynommials"
+            print("Drawing roots of random polynommials")
             plt.show(figsize=5)
         else:
-            print 'Calculating first ',nmax2,'roots, it will take approx.',int(nmax2/500),'seconds'
+            print('Calculating first ',nmax2,'roots, it will take approx.',int(nmax2/500),'seconds')
             Rts2 = bin_poly_roots(Nmax=nmax2,rank = 24,rand=False)
-            print "Drawing roots of ordered polynommials."
+            print("Drawing roots of ordered polynommials.")
             plt2 = point( zip(np.real(Rts2),np.imag(Rts2)),size=1,color='red' ,figsize=4)
             (plt+plt2).show(figsize=5)
         @interact 
         def density_plot(bins=[0,40,100,200],vmax=(0.3,10,0.1)):
                 if bins==0:
-                    print "set nonzero bins to see a density of roots"
+                    print("set nonzero bins to see a density of roots")
                 else:
                     H, xedges, yedges  = np.histogram2d(np.real(Rts),np.imag(Rts),bins=(int(bins),int(bins)),range=[[-1.7, 1.7], [-1.7, 1.7]],normed=True)
                     matrix_plot(np.log(H),cmap='jet',vmax=vmax,figsize=5).show()
@@ -565,7 +565,7 @@ class hamline:
         self.topSearch = False
 
     def __repr__(self):
-        print "%sy + %sx = %s"%(self.a, self.b, self.c)
+        print("%sy + %sx = %s"%(self.a, self.b, self.c))
         return "[%s, %s, %s]"%(self.a, self.b, self.c)
 
 
@@ -730,7 +730,7 @@ def f(vertices=input_box("(1,-2) (2,2) (4,-1)  (6,5)  (-1,2)",
         P2Plot = polygon(v2, color=clr2)
         CLinePlot = plot(-(L.a/L.b)*x+L.c/L.b,n1-1,m1+1, thickness=.3, color='black') 
         show(P1Plot + P2Plot + CLinePlot)
-        print 'Self-intersecting polygons not allowed.'
+        print('Self-intersecting polygons not allowed.')
         return
         #import sys
         #sys.exit ("Your Polygon Has a Self Intersection.")
@@ -759,13 +759,13 @@ def f(vertices=input_box("(1,-2) (2,2) (4,-1)  (6,5)  (-1,2)",
     if NP1.vertex_list:
         P1BPLOT = polygon(NP1.vertex_list, color= 'green')
     else:
-        print 'No Bottom Found for P1, check for self-intersection or change error.'
+        print('No Bottom Found for P1, check for self-intersection or change error.')
         show(P1Plot+ P2Plot)
         return
     if NP2.vertex_list:
         P2BPLOT = polygon(NP2.vertex_list, color= 'yellow')
     else:
-        print 'No Bottom Found for P2, check for self-intersection or change error.'
+        print('No Bottom Found for P2, check for self-intersection or change error.')
         show(P1Plot+ P2Plot)
         return
     #### Displayed Graph and Quality of Approximation Printouts  
@@ -854,12 +854,12 @@ def coalbedo(gamma_value=(0,1,.1)):
 A = random_matrix(RDF,4,min=.1, max=.9)
 B = random_matrix(RDF,4,2,min=.1, max=.9)
 m = hmm.DiscreteHiddenMarkovModel(A, B, [.2,.1,.1,.6])
-print m
-print 'Log Likelihood:', m.log_likelihood([0,1,0,1,0,1])
-print 'Viterbi:', m.viterbi([1,1,0,1])
-print 'Baum-Welch:', m.baum_welch([1,1,0,1])
-print '20 Samples:', m.sample(20)
-print m
+print(m)
+print('Log Likelihood:', m.log_likelihood([0,1,0,1,0,1]))
+print('Viterbi:', m.viterbi([1,1,0,1]))
+print('Baum-Welch:', m.baum_welch([1,1,0,1]))
+print('20 Samples:', m.sample(20))
+print(m)
 m.graph().show()
 
 </script></div></li>
@@ -881,7 +881,7 @@ def mandel_plot(expo = slider(-10,10,0.1,2), \
          if abs(z) > 2:
             return z
       return z
-    print 'z <- z^%s + c' % expo    
+    print('z <- z^%s + c' % expo)
         
     p=complex_plot(mandel, zoom_x,zoom_y, plot_points=200, dpi=100)
     p.show(frame=True, aspect_ratio=1)
@@ -958,7 +958,7 @@ def matrix_induced_norm(A=matrix(QQ,2,[1,2,0,2]),p=slider(1,20,1,default=2,label
 @interact
 def rozwiniecie_okregu(n=slider(range(1,10)+range(10,100,10)+range(100,1000,100),default=3),x0=slider(srange(0,1,0.01),default=0)):
     if n>40:
-        print "It might take some time..."
+        print("It might take some time...")
     pol=(sqrt(1-x^2).taylor(x,x0,n))
     poly=pol.polynomial(CDF)
     plt1=complex_plot(abs( sqrt(1-x^2)) -1 ,(-2,2),(-2,2),plot_points=100,figsize=4) 
@@ -1168,7 +1168,7 @@ def f(n=(0,10,1)):
     for x in range(n):
         interact(f)
     else:
-        print ''
+        print('')
 
 </script></div></li>
 <li><br/>http://wiki.sagemath.org/interact/algebra<div class="sage"><script type="text/x-sage">
@@ -1211,9 +1211,9 @@ def render3d(a_gf, color_fan = True, verbose = False, highlights = 'all'):
     cone_info = [ieq_to_vert(q,linearities=[[1,-1,-1,-1,-1]]) for q in g_cones_ieqs]
     if verbose:
         for x in cone_info:
-            print x.ieqs() + [[1,1,0,0,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1]]
-            print x.linearities()
-            print ""
+            print(x.ieqs() + [[1,1,0,0,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1]])
+            print(x.linearities())
+            print("")
     cone_info = [Polyhedron(ieqs = x.ieqs() + [[1,1,0,0,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1]], linearities = x.linearities()) for x in cone_info]
 
     if color_fan == True:
@@ -1241,7 +1241,7 @@ def render3d(a_gf, color_fan = True, verbose = False, highlights = 'all'):
                     faces.append(render_solid(Polyhedron(vertices = cone_verts), color = color_list[i]))
                 i = i + 1
         except:
-            print cone_data._rays
+            print(cone_data._rays)
             raise RuntimeError
         for a_line in cone_lines:
             all_lines.append(a_line)
@@ -1261,7 +1261,7 @@ def Groebner_fan_browser(bsel = slider(0,100,.1,0,label='Individual basis select
     R4.<w,x,y,z> = PolynomialRing(QQ,4)
     if ideal_gens not in gbdict:
         id_gens = R4.ideal(list(ideal_gens.split(',')))
-        print id_gens
+        print(id_gens)
         gf4 = id_gens.groebner_fan()
         gf4rbs = gf4.reduced_groebner_bases()
         gbdict[ideal_gens] = (gf4,gf4rbs)
@@ -1349,16 +1349,16 @@ html("<h1>Double Precision Root Finding Using Bisection</h1>")
 @interact
 def _(f = cos(x) - x, a = float(0), b = float(1), eps=(-3,(-16..-1))):
      eps = 10^eps
-     print "eps = %s"%float(eps)
+     print("eps = %s"%float(eps))
      try:
          time c, intervals = bisect_method(f, a, b, eps)
      except ValueError:
-         print "f must have opposite sign at the endpoints of the interval"
+         print("f must have opposite sign at the endpoints of the interval")
          show(plot(f, a, b, color='red'), xmin=a, xmax=b)
      else:
-         print "root =", c
-         print "f(c) = %r"%f(c)
-         print "iterations =", len(intervals)
+         print("root =", c)
+         print("f(c) = %r"%f(c))
+         print("iterations =", len(intervals))
          P = plot(f, a, b, color='red')
          h = (P.ymax() - P.ymin())/ (1.5*len(intervals))
          L = sum(line([(c,h*i), (d,h*i)]) for i, (c,d) in enumerate(intervals) )
@@ -1390,12 +1390,12 @@ html("<h1>Double Precision Root Finding Using Newton's Method</h1>")
 @interact
 def _(f = x^2 - 2, c = float(0.5), eps=(-3,(-16..-1)), interval=float(0.5)):
      eps = 10^(eps)
-     print "eps = %s"%float(eps)
+     print("eps = %s"%float(eps))
      time z, iterates = newton_method(f, c, eps)
-     print "root =", z
-     print "f(c) = %r"%f(x=z)
+     print("root =", z)
+     print("f(c) = %r"%f(x=z))
      n = len(iterates)
-     print "iterations =", n
+     print("iterations =", n)
      html(iterates)
      P = plot(f, (x,z-interval, z+interval), rgbcolor='blue')
      h = P.ymax(); j = P.ymin()
@@ -1433,7 +1433,7 @@ def tangent_line(f = input_box(default=sin(x)), xbegin = slider(0,10,1/10,0), xe
     df = diff(f)
     tanf = f(x0i) + df(x0i)*(x-x0i)
     fplot = plot(f, prange[0], prange[1])
-    print 'Tangent line is y = ' + tanf._repr_()
+    print('Tangent line is y = ' + tanf._repr_())
     tanplot = plot(tanf, prange[0], prange[1], rgbcolor = (1,0,0))
     fmax = f.find_maximum_on_interval(prange[0], prange[1])[0]
     fmin = f.find_minimum_on_interval(prange[0], prange[1])[0]
@@ -1460,8 +1460,8 @@ def midpoint(n = slider(1,100,1,4), f = input_box(default = "x^2", type = str), 
     max_y = find_maximum_on_interval(func,a,b)[0]
     html('<h3>Numerical integrals with the midpoint rule</h3>')
     html('$\int_{a}^{b}{f(x) dx} {\\approx} \sum_i{f(x_i) \Delta x}$')
-    print "\n\nSage numerical answer: " + str(integral_numerical(func,a,b,max_points = 200)[0])
-    print "Midpoint estimated answer: " + str(RDF(dx*sum([midys[q] for q in range(n)])))
+    print("\n\nSage numerical answer: " + str(integral_numerical(func,a,b,max_points = 200)[0]))
+    print("Midpoint estimated answer: " + str(RDF(dx*sum([midys[q] for q in range(n)]))))
     show(plot(func,a,b) + rects, xmin = a, xmax = b, ymin = min_y, ymax = max_y)
 
 </script></div></li>
@@ -1558,8 +1558,8 @@ def _(f=sin(x), g=cos(x), xrange=input_box((0,1)), yrange='auto', a=1,
     try:
         f = SR(f); g = SR(g); a = SR(a)
     except TypeError, msg:
-        print msg[-200:]
-        print "Unable to make sense of f,g, or a as symbolic expressions."
+        print(msg[-200:])
+        print("Unable to make sense of f,g, or a as symbolic expressions.")
         return
     if not (isinstance(xrange, tuple) and len(xrange) == 2):
           xrange = (0,1)
@@ -1981,7 +1981,7 @@ def weights(n=slider(1,30,1,default=10),f=input_box(default=3*x+cos(10*x),type=S
     html("$$\sum_{i=1}^{i=%s}w_i\left(%s\\right)= %s\\approx %s =\int_{-1}^{1}%s \,dx$$"%(n,
         latex(f), approximation, integral, latex(scaled_func)))
     error_data = [trapezoid, simpson, integral-approximation,integral_error]
-    print "Trapezoid: %s, Simpson: %s, \nMethod: %s, Real: %s"%tuple(error_data)
+    print("Trapezoid: %s, Simpson: %s, \nMethod: %s, Real: %s"%tuple(error_data))
     show(bar_chart(error_data,width=1),ymin=min(error_data), ymax=max(error_data))
 </script></div></li>
 <li><br/><div class="sage"><script type="text/x-sage">
@@ -2080,9 +2080,9 @@ def _(t0 = slider(float(start), float(stop), float((stop-start)/24), float(start
     #
     # print textual info
     #
-    print "Position vector defined as r(t)=", position(t)
-    print "Speed is ", N(speed(t0))
-    print "Curvature is ", N(curvature)
+    print("Position vector defined as r(t)=", position(t))
+    print("Speed is ", N(speed(t0)))
+    print("Curvature is ", N(curvature))
     #
     # show accumulated graphical info
     # adjust x-,y- extents to get best plot
@@ -2198,13 +2198,13 @@ def _(t0 = slider(float(start), float(stop), float((stop-start)/24), float(start
     #
     # print textual info
     #
-    print "Position vector: r(t)=", position(t)
-    print "Speed is ", N(speed(t0))
-    print "Curvature is ", N(curvature)
-    ## print "Torsion is ", N(torsion)
-    print
-    print "Right-click on graphic to zoom to 400%"
-    print "Drag graphic to rotate"
+    print("Position vector: r(t)=", position(t))
+    print("Speed is ", N(speed(t0)))
+    print("Curvature is ", N(curvature))
+    ## print("Torsion is ", N(torsion))
+    print()
+    print("Right-click on graphic to zoom to 400%")
+    print("Drag graphic to rotate")
     #
     # show accumulated graphical info
     #
@@ -2738,10 +2738,10 @@ cir_bool=checkbox(True, "Show circles?"),
 auto_update=false):
     draw=True
     if h=='hypotrochoid' and (b>=1 or b<=0):
-        print "In a hypotrochoid, radius must be between 0 and 1."
+        print("In a hypotrochoid, radius must be between 0 and 1.")
         draw=False
     if h=='epitrochoid' and b<=0:
-        print "In a epitrochoid, radius must be positive"
+        print("In a epitrochoid, radius must be positive")
         draw=False
     if draw==True:
         if h=='hypotrochoid': b=-b 
@@ -2798,43 +2798,43 @@ def _(M=input_grid(D,D, default = example,
       precision = slider(5,100,5,20),
       auto_update=False):
     if det(M)==0:
-        print 'Failure: Matrix is not invertible'
+        print('Failure: Matrix is not invertible')
         return
     if M.base_ring() == RR:
         M = M.apply_map(RealField(precision))
     N=M
     M=M.augment(identity_matrix(D))
-    print 'We construct the augmented matrix'
+    print('We construct the augmented matrix')
     show(M)
     for m in range(0,D-1):
         if M[m,m] == 0:
             lista = [(M[j,m],j) for j in range(m,D)]
             maxi, c = max(lista)
             M[c,:],M[m,:]=M[m,:],M[c,:]
-            print 'We permute rows %d and %d'%(m+1,c+1)
+            print('We permute rows %d and %d'%(m+1,c+1))
             show(M)
         for n in range(m+1,D):
             a=M[m,m]
             if M[n,m]!=0:
-                print "We add %s times row %d to row %d"%(-M[n,m]/a, m+1, n+1)
+                print("We add %s times row %d to row %d"%(-M[n,m]/a, m+1, n+1))
                 M=M.with_added_multiple_of_row(n,m,-M[n,m]/a)
                 show(M)
     for m in range(D-1,-1,-1):
         for n in range(m-1,-1,-1):
             a=M[m,m]
             if M[n,m]!=0:
-                print "We add %s times row %d to the row %d"%(-M[n,m]/a, m+1, n+1)
+                print("We add %s times row %d to the row %d"%(-M[n,m]/a, m+1, n+1))
                 M=M.with_added_multiple_of_row(n,m,-M[n,m]/a)
                 show(M)       
     for m in range(0,D):
         if M[m,m]!=1:
-            print 'We divide row %d by %s'%(m+1,M[m,m])
+            print('We divide row %d by %s'%(m+1,M[m,m]))
             M = M.with_row_set_to_multiple_of_row(m,m,1/M[m,m])
             show(M)   
     M=M.submatrix(0,D,D)
-    print 'We keep the right submatrix, which contains the inverse'        
+    print('We keep the right submatrix, which contains the inverse')
     html('$$M^{-1}=%s$$'%latex(M))
-    print 'We check it actually is the inverse'
+    print('We check it actually is the inverse')
     html('$$M^{-1}*M=%s*%s=%s$$'%(latex(M),latex(N),latex(M*N)))
 </script></div></li>
 <li><br/><div class="sage"><script type="text/x-sage">
