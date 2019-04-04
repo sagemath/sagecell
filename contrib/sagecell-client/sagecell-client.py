@@ -25,7 +25,7 @@ class SageCell(object):
         # RESPONSE: {"id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://localhost:8888/"}
         # construct the websocket channel url from that
         self.kernel_url = '{ws_url}kernel/{id}/'.format(**response)
-        print self.kernel_url
+        print(self.kernel_url)
         websocket.setdefaulttimeout(timeout)
         self._ws = websocket.create_connection(
             self.kernel_url + 'channels',
