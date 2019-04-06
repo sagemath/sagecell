@@ -25,7 +25,7 @@ Radio button example::
 
     @interact
     def f(n = Selector(values=["Option1","Option2"], selector_type="radio", label=" ")):
-        print n
+        print(n)
 
 
 Push button example::
@@ -35,7 +35,7 @@ Push button example::
     def f(n = Button(text="Increment", default=0, value=1, width="10em", label=" ")):
         global result
         result = result + n
-        print "Result: ", result
+        print("Result: {}".format(result))
 
 
 Button bar example::
@@ -45,7 +45,7 @@ Button bar example::
     def f(n = ButtonBar(values=[(1,"Increment"),(-1,"Decrement")], default=0, width="10em", label=" ")):
         global result
         result = result + n
-        print "Result: ", result
+        print("Result: {}".format(result))
 
 Multislider example::
 
@@ -54,16 +54,16 @@ Multislider example::
     default = [3]*sliders
     @interact
     def f(n = MultiSlider(sliders = sliders, interval = interval, default = default), c = (1,100)):
-        print "Sum of cn for all n: %s"%float(sum(c * i for i in n))
+        print("Sum of cn for all n: %s" % float(sum(c * i for i in n)))
 
 Nested interacts::
 
     @interact
     def f(n=(0,10,1)):
-        print n
+        print(n)
         @interact
         def transformation(c=(0,n)):
-            print c
+            print(c)
 
 
 Nested interacts where the number of controls is changed::
@@ -72,7 +72,7 @@ Nested interacts where the number of controls is changed::
     def f(n=(0,10,1)):
         @interact(controls=[('x%d'%i, (0,10)) for i in range(n)])
         def s(multiplier=2, **kwargs):
-            print sum(kwargs.values())*multiplier
+            print(sum(kwargs.values()) * multiplier)
 
 
 Recursively nested interact::
@@ -82,7 +82,7 @@ Recursively nested interact::
     def f(n=(0,10,1)):
         global c
         c+=1
-        print 'f evaluated %d times'%c
+        print('f evaluated %d times' % c)
         for i in range(n):
             interact(f)
 """
@@ -421,7 +421,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
             try:
                 returned = f(*args, **control_vals)
             except:
-                print "Interact state: %r" % (__interacts[interact_id]["proxy"]._state())
+                print("Interact state: %r" % (__interacts[interact_id]["proxy"]._state()))
                 raise
         return returned
     # update global __interacts
