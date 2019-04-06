@@ -6,7 +6,7 @@ import random
 
 computation = """@interact
 def f(x=(1, 100, 1)):
-    print x^2"""
+    print(x^2)"""
 
 class Transaction(object):
     """
@@ -58,4 +58,4 @@ class Transaction(object):
 if __name__ == "__main__":
     t = Transaction()
     t.run()
-    print t.custom_timers
+    print(t.custom_timers)
