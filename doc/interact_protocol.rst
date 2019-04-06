@@ -78,7 +78,7 @@ default configurations and print the sum of their values::
 
     @interact
     def f(a = slider(), b = slider()):
-        print a + b
+        print(a + b)
 
 Updating Interacts
 ^^^^^^^^^^^^^^^^^^
@@ -192,13 +192,13 @@ could submit::
 
     @interact
     def f(n = ("Label", 15)):
-        print 2 * n
+        print(2 * n)
 
 This is equivalent to::
 
     @interact
     def f(n = input_box(label = "Label", default = 15, raw = True)):
-        print 2 * n
+        print(2 * n)
 
 The interact autoguessing present in Sage is fully supported.
 
@@ -211,7 +211,7 @@ USER types into SAGECELL::
 
     @interact
     def f(n = continuous_slider(interval = (1,20), stepsize = 1)):
-        print n
+        print(n)
 
 and presses "Submit".
 
