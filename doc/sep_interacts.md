@@ -254,7 +254,7 @@ The current Sage interacts provide a nice way to have limited scope.  With Sage 
 ```python
 @interact
 def f(n=(0,1)):
-    print n
+    print(n)
 ```
 defines some controls for manipulating `n`, and every time `n` is updated by changing the control, the function is rerun with the new `n` value.  A disadvantage of this approach is that there is a definite input and definite output region---it's not easy to mix the two (to have an interactive graph, for example).
 
