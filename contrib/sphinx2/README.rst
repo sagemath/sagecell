@@ -19,15 +19,15 @@ Example of usage::
 	    sage: D = [vector([0,0]), vector([1,0])]
 	    sage: @interact
 	    sage: def f(A = matrix([[1,1],[-1,1]]), D = '[[0,0],[1,0]]', k=(3..17)):
-	    ...       print "Det = ", A.det()
+	    ...       print("Det = {}".format(A.det()))
 	    ...       D = matrix(eval(D)).rows()
 	    ...       def Dn(k):
 	    ...           ans = []
 	    ...           for d in Tuples(D, k):
-	    ...               s = sum(A^n*d[n] for n in range(k))
+	    ...               s = sum(A**n * d[n] for n in range(k))
 	    ...               ans.append(s)
 	    ...           return ans
-	    ...       G = points([v.list() for v in Dn(k)],size=50)
+	    ...       G = points([v.list() for v in Dn(k)], size=50)
 	    ...       show(G, frame=True, axes=False)
 
 
