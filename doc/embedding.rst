@@ -42,7 +42,7 @@ like):
        <div id="mycell"><script type="text/x-sage">
    @interact
    def _(a=(1, 10)):
-       print factorial(a)
+       print(factorial(a))
     </script>
    </div>
 
@@ -52,7 +52,7 @@ like):
        <div class="compute"><script type="text/x-sage">
    @interact
    def f(n=(0,10)):
-       print 2^n
+       print(2^n)
    </script></div>
      </body>
    </html>
