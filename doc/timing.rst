@@ -37,11 +37,11 @@ Here are some tests that should be written:
  * tests exercising memory and cputime limits::
 
     import time
-    a=[]
+    a = []
     for i in range(20):
-        a.append([0]*50000000)
+        a.append([0] * 50000000)
         time.sleep(1)
-        print get_memory_usage()
+        print(get_memory_usage())
 
    or for time limits::
 
