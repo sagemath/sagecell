@@ -30,7 +30,7 @@ class Transaction(object):
         response_times=[]
         a=int(random()*self.MAXRAND)
         b=int(random()*self.MAXRAND)
-        code=json.dumps('print %d+%d'%(a,b))
+        code=json.dumps('print(%d+%d)' % (a, b))
         s=Session(self.BASE_URL)
         request=s.prepare_execution_request(code)
         sequence=0
@@ -54,7 +54,7 @@ class Transaction(object):
                         and m['content']['name']=="stdout"):
                         ans=int(m['content']['data'])
                         if ans!=a+b:
-                            print "COMPUTATION NOT CORRECT"
+                            print("COMPUTATION NOT CORRECT")
                             raise ValueError("Computation not correct: %s+%s!=%s, off by %s "%(a,b,ans, ans-a-b))
                         else:
                             done=True
@@ -78,4 +78,4 @@ if __name__ == '__main__':
     trans = Transaction(base_url=args.base_url, timeout=args.timeout)
     trans.run()
     if not args.quiet:
-        print trans.custom_timers
+        print(trans.custom_timers)
