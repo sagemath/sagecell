@@ -7,8 +7,8 @@ APTPROXY="http://your-proxy-here-or-delete-proxy-from-preseed/"
 MAC=52:54:00:5a:9e:c1   # Must start with 52:54:00
 
 VM_NAME=schostvm
-OSVARIANT=ubuntu16.04
-LOCATION="http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/"
+OSVARIANT=ubuntu18.04
+LOCATION="http://archive.ubuntu.com/ubuntu/dists/bionic/main/installer-amd64/"
 
 sed "s|APTPROXY|$APTPROXY|" preseed.host > preseed.cfg
 

@@ -26,7 +26,7 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
     ./build_host.sh
     ```
 
-    (If your `virt-install` does not understand `OSVARIANT=ubuntuxenial`, you may try a different version of Ubuntu here, while keeping the same `LOCATION`, `virt-install --os-variant list` may be useful. Using a different base OS is probably possible, but will likely require further changes to build commands.)
+    (If your `virt-install` does not understand `OSVARIANT=ubuntu18.04`, you may try a different version of Ubuntu here, while keeping the same `LOCATION`, `osinfo-query os` may be useful. Using a different base OS is probably possible, but will likely require further changes to build commands.)
 
 7.  You should get `ssh_host.sh` script that allows you to SSH as root to EVM. If it does not work, you probably need to adjust the IP address in it manually. Note that root password is disabled, you must use the SSH key generated during installation.
 

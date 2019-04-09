@@ -77,7 +77,7 @@ d-i passwd/make-user boolean false
 tasksel tasksel/first multiselect openssh-server, server, standard
 
 # Individual additional packages to install
-d-i pkgsel/include string haproxy lxc python3-psutil python3-yaml rsyslog-relp
+d-i pkgsel/include string haproxy lxc python3-lxc python3-psutil rsyslog-relp
         
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
