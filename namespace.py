@@ -1,4 +1,6 @@
 from collections import defaultdict
+
+
 class InstrumentedNamespace(dict):
     def __init__(self, *args, **kwargs):
         """
@@ -27,7 +29,6 @@ class InstrumentedNamespace(dict):
         """
         Set a value in the dictionary and run attached notification functions.
         """
-        init = False
         if key not in self:
             self.trigger(key, 'initialize', value)
         dict.__setitem__(self, key, value)

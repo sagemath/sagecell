@@ -97,6 +97,7 @@ from misc import session_metadata
 
 __interacts={}
 
+
 def update_interact(interact_id, name=None, value=None, do_update=True):
     interact_info = __interacts[interact_id]
     controls = interact_info["controls"]
@@ -271,7 +272,7 @@ class InteractProxy(object):
         def __repr__(self):
             return "[%s]" % (", ".join(repr(e) for e in self.list),)
 
-import sys
+
 try:
     sys._sage_.register_handler("sagenb.interact.update_interact", update_interact_msg)
 except AttributeError:
@@ -422,7 +423,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
             try:
                 returned = f(*args, **control_vals)
             except:
-                print "Interact state: %r" % (__interacts[interact_id]["proxy"]._state())
+                print("Interact state: %r" % (__interacts[interact_id]["proxy"]._state()))
                 raise
         return returned
     # update global __interacts
