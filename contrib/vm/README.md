@@ -1,10 +1,10 @@
 # Advanced Installation
 
-Here we describe how to setup a "production" instance of SageCell server.
+Here we describe how to setup a "production" instance of SageMathCell server.
 
 ## Create the "Enveloping Virtual Machine" (EVM).
 
-This is optional, if you are willing to dedicate a physical machine to SageCell, but it is assumed in scripts and instructions.
+This is optional, if you are willing to dedicate a physical machine to SageMathCell, but it is assumed in scripts and instructions.
 
 1.  Configure a package proxy, e.g. Apt-Cacher NG, for the machine that will host EVM.
 2.  Install KVM and configure it for your account, consult your OS documentation as necessary.
@@ -44,10 +44,13 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
     ```
 
 2.  Adjust it if necessary. In particular, note that the default permalink database server is the public one.
-3.  Run it. If all goes well, the base OS and the master SageCell container will be created. Expect it to take at least an hour.
+3.  Run it. The first time it adjusts system configuration and asks you to finish your session and start a new one. Then the base OS and the master SageMathCell container will be created. Expect it to take at least an hour.
 
     ```bash
-    ./container_manager.py | tee first_run.log
+    ./container_manager.py
+    exit
+    ./ssh_host.sh
+    ./container_manager.py
     ```
 
 4.  To create several compute nodes behind a load balancer, run
@@ -82,7 +85,7 @@ This is optional, if you are willing to dedicate a physical machine to SageCell,
     ProxyPreserveHost On
     ```
     
-2.  Configure (restricted) access to EVM:8888 for testing newer versions of SageCell.
+2.  Configure (restricted) access to EVM:8888 for testing newer versions of SageMathCell.
 3.  Configure (restricted) access to EVM:9999 for HA-Proxy statistics page.
 4.  If you are going to run multiple EVMs, consider adjusting `/etc/rsyslog.d/sagecell.conf` in them to collect all logs on a single server.
 
