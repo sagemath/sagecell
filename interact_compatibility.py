@@ -51,7 +51,7 @@ def __old_make_values_list(vmin, vmax, step_size):
         if step_size is None:
             step_size = (vmax-vmin)/499.0
         elif step_size <= 0:
-            raise ValueError, "invalid negative step size -- step size must be positive"
+            raise ValueError("invalid negative step size -- step size must be positive")
 
         #Compute list of values
         num_steps = int(math.ceil((vmax-vmin)/float(step_size)))
@@ -310,8 +310,9 @@ def color_selector(default=(0,0,1), label=None,
         #'widget': 'jpicker, 'colorpicker', 'farbtastic' 
         #    -- we don't need to support each one right now
     if widget!='colorpicker':
-        print "ColorSelector: Only widget='colorpicker' is supported; changing color widget"
+        print("ColorSelector: Only widget='colorpicker' is supported; changing color widget")
     return ColorSelector(default=default, label=label, hide_input=hide_box)
+
 
 def selector(values, label=None, default=None,
                  nrows=None, ncols=None, width=None, buttons=False):
@@ -376,14 +377,14 @@ def selector(values, label=None, default=None,
         ...      show(M)
         ...      show(matrix_plot(M,cmap='Oranges'))
         ...      f = M.charpoly()
-        ...      print f
+        ...      print(f)
         <html>...
 
     Here we create a drop-down::
 
         sage: @interact
         ... def _(a=selector([(2,'second'), (3,'third')])):
-        ...       print a
+        ...       print(a)
         <html>...
     """
     if buttons:

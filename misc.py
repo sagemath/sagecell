@@ -184,12 +184,11 @@ def sage_json(obj):
 ## Unit Testing Misc Functions
 ##########################################
 def assert_len(obj,l):
-    from nose.tools import assert_equal
     return assert_equal(len(obj), l, "Object %s should have length %s, but has length %s"%(obj,l,len(obj)))
 
 uuid_re = re.compile('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}')
+
 def assert_uuid(s):
-    from nose.tools import assert_regexp_matches
     return assert_regexp_matches(s, uuid_re)
 
 # from the attest python package - license is modified BSD
@@ -205,7 +204,7 @@ def capture_output(split=False):
         from attest import capture_output
 
     >>> with capture_output() as (out, err):
-    ...    print 'Captured'
+    ...    print('Captured')
     ...
     >>> out
     ['Captured']

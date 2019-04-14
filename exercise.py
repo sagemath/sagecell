@@ -48,7 +48,7 @@ class Exercise:
             else:
                 correct = bool(r)
                 comment = ''
-        except TypeError, msg:
+        except TypeError as msg:
             response += "<h3 style='color:darkgreen'>Huh? -- %s (attempt=%s)</h3>"%(msg, attempt)
         else:
             if correct:
