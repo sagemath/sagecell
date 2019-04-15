@@ -95,9 +95,9 @@ class KernelConnection(object):
         if not self.alive:
             logger.warning("not alive already")
             return
+        self.stop_hb()
         if self._on_stop:
             self._on_stop()
-        self.stop_hb()
         for stream in self.channels.itervalues():
             stream.close()
         self._dealer.stop_kernel(self.id)
