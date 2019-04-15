@@ -23,10 +23,7 @@ define([
 var undefined;
 
 Kernel.Kernel.prototype.kill = function () {
-    if (this.running) {
-        this.running = false;
-        utils.sendRequest("DELETE", this.kernel_url);
-    }
+    utils.sendRequest("DELETE", this.kernel_url);
 };
 
 var ce = utils.createElement;

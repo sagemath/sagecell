@@ -166,7 +166,10 @@ class KernelHandler(tornado.web.RequestHandler):
             self.finish()
 
     def delete(self, kernel_id):
-        self.application.kernel_dealer.kernel(kernel_id).stop()
+        try:
+            self.application.kernel_dealer.kernel(kernel_id).stop()
+        except KeyError:
+            logger.debug("DELETE for non-existing kernel %s", kernel_id)
         self.permissions()
         self.finish()
 
