@@ -440,9 +440,7 @@ class ZMQChannelsHandler(object):
         kernel.on_stop(self.kernel_stopped)
 
     def disconnect(self):
-        for channel in ["iopub", "shell"]:
-            if not self.kernel.channels[channel].closed():
-                self.kernel.channels[channel].on_recv_stream(None)
+        self.kernel.stop()
 
     def kernel_stopped(self):
         msg = {
@@ -458,7 +456,6 @@ class ZMQChannelsHandler(object):
             'content': {'execution_state': 'dead'}
         }
         self.output_message(msg)
-        self.disconnect()
 
     def on_recv(self, stream, msg_list):
         kernel = self.kernel
