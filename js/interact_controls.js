@@ -6,7 +6,6 @@ define([
     utils
 ) {
 "use strict";
-var undefined;
 
 var interact_control_throttle = 100;
 
