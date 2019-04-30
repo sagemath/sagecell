@@ -29,7 +29,7 @@ sagecell.templates = {
     }
 };
 
-sagecell.allLanguages = ["sage", "gap", "gp", "html", "maxima", "octave", "python", "r", "singular"];
+sagecell.allLanguages = ["sage", "gap", "gp", "html", "macaulay2", "maxima", "octave", "python", "r", "singular"];
 
 // Deal with IE's lack of Promise
 require(['es6-promise'], function(es6p) {

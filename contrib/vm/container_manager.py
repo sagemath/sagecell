@@ -310,6 +310,18 @@ def communicate(command, message):
             msg = "{} failed".format(command)
             log.error(msg)
             raise RuntimeError(msg)
+            
+
+def install_macaulay2():
+    r"""
+    Adjust system configuration and install Macaulay2.
+    """
+    with open("/etc/apt/sources.list.d/macaulay2.list", "w") as f:
+        f.write("deb https://faculty.math.illinois.edu/Macaulay2/Repositories/Ubuntu bionic main")
+    check_call("apt-key adv --keyserver hkp://keys.gnupg.net \
+                --recv-key CD9C0E09B0C780943A1AD85553F8BD99F40DCB31")
+    check_call("apt update")
+    check_call("apt install -y macaulay2")
 
 
 def timer_delay(delay, test=None):
@@ -557,6 +569,7 @@ class SCLXC(object):
                 raise RuntimeError("failed to create " + self.name)
         os.environ.unsetenv("HTTP_PROXY")
 
+        self.update()
         log.info("installing packages")
         self.inside("apt install -y " + " ".join(packages))
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
@@ -568,7 +581,7 @@ class SCLXC(object):
         self.inside("apt install -y tmpreaper")
         log.info("installing npm packages")
         self.inside("npm install -g requirejs")
-        self.update()
+        self.inside(install_macaulay2)
 
     def destroy(self):
         r"""
@@ -678,7 +691,6 @@ class SCLXC(object):
         # Let first-time tasks to run and complete.
         self.start()
         timer_delay(start_delay)
-        self.shutdown()
         
     def ip(self):
         self.start()
