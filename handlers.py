@@ -4,7 +4,6 @@ import json
 import os.path
 import re
 import time
-import urllib
 import uuid
 import zlib
 
