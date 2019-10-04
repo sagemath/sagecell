@@ -465,17 +465,15 @@ def install_packages():
     log.info("installing optional Sage packages")
     for package in sage_optional_packages:
         check_call("sage/sage -i -y {}".format(package))
-    # And we also install basemap
+    log.info("installing pip packages")
+    check_call("sage/sage -pip install --upgrade pip")
+    for package in python_packages:
+        check_call("sage/sage -pip install {}".format(package))
     log.info("installing basemap in Sage")
     shutil.move("github/basemap", ".")
     os.chdir("basemap")
     check_call("../sage/sage setup.py install")
     os.chdir("..")
-
-    log.info("installing pip packages")
-    check_call("sage/sage -pip install --upgrade pip")
-    for package in python_packages:
-        check_call("sage/sage -pip install {}".format(package))
 
 
 def install_sagecell():
