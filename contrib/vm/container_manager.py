@@ -449,6 +449,9 @@ def install_sage():
     os.chdir("sage")
     log.info("compiling Sage")
     check_call("make")
+    # FIXME: permissions are wrong in Sage 8.9.
+    os.chmod("local/share/jmol", stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP
+        | stat.S_IROTH | stat.S_IXOTH)
     communicate("./sage", r"""
         # make appropriate octave directory
         octave.eval('1+2')
