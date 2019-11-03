@@ -232,7 +232,7 @@ class KernelProvider(object):
                 and len(self.preforked) < self.max_preforked
                 and len(self.kernels) < self.max_kernels):
                 self.preforking = self.fork(self.preforked_rlimits)
-        for id in self.kernels.keys():
+        for id in list(self.kernels):
             self.stop_kernel(id)
         while self.to_kill:
             self.kill_check()
