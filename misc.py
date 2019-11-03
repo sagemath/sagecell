@@ -2,12 +2,6 @@
 Misc functions / classes
 """
 from contextlib import contextmanager
-# note: ensure sage's version of python has nose installed or starting new sessions may hang!
-try:
-    from nose.tools import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater
-except ImportError:    
-    pass
-
 from datetime import datetime
 import os
 import re
@@ -57,19 +51,17 @@ class Config(object):
         :returns: the value of the named attribute, or
             None if the attribute does not exist.
         """
-        default_config_val = self.get_default(attr)
-        config_val = default_config_val
-
+        result = self.get_default(attr)
         if self.config is not None:
             try:
-                config_val = getattr(self.config, attr)
+                val = getattr(self.config, attr)
+                if isinstance(val, dict):
+                    result.update(val)
+                else:
+                    result = val
             except AttributeError:
                 pass
-
-        if isinstance(config_val, dict):
-            config_val = dict(default_config_val.items() + config_val.items())
-
-        return config_val
+        return result
 
     def get_default(self, attr):
         """
