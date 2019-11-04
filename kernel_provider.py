@@ -62,7 +62,7 @@ class KernelProcess(Process):
         # to forking. Stale connection files do cause problems.
         app.cleanup_connection_file()
         kernel_init.initialize(app.kernel)
-        for r, limit in self.rlimits.iteritems():
+        for r, limit in self.rlimits.items():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         logger.debug("kernel ready")
         context = zmq.Context.instance()

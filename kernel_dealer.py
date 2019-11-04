@@ -99,7 +99,7 @@ class KernelConnection(object):
         self.stop_hb()
         if self._on_stop:
             self._on_stop()
-        for stream in self.channels.itervalues():
+        for stream in self.channels.values():
             stream.close()
         self._dealer.stop_kernel(self.id)
         
@@ -194,7 +194,7 @@ class KernelDealer(object):
         Stop all kernels and disconnect all providers.
         """
         self._stream.stop_on_recv()
-        for k in self._kernels.values():
+        for k in list(self._kernels.values()):
             k.stop()
         for addr in self._connected_providers:
             logger.debug("stopping %r", addr)
