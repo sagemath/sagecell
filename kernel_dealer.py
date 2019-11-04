@@ -29,7 +29,8 @@ class KernelConnection(object):
         self.timeout = timeout
         if timeout > 0:
             self.deadline = now + self.timeout
-        self.session = jupyter_client.session.Session(key=connection["key"])
+        self.session = jupyter_client.session.Session(
+            key=connection["key"].encode())
         self.channels = {}
         context = zmq.Context.instance()
         address = connection["ip"]

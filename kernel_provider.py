@@ -71,7 +71,7 @@ class KernelProcess(Process):
         socket.send_json({
             "id": self.id,
             "connection": {
-                "key": app.session.key,                
+                "key": app.session.key.decode(),
                 "ip": app.ip,
                 "hb": app.hb_port,
                 "iopub": app.iopub_port,
