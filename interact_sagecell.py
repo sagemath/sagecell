@@ -95,7 +95,7 @@ from sage.misc.decorators import decorator_defaults
 
 from misc import session_metadata
 
-__interacts={}
+__interacts = {}
 
 
 def update_interact(interact_id, name=None, value=None, do_update=True):
@@ -107,9 +107,9 @@ def update_interact(interact_id, name=None, value=None, do_update=True):
         if name not in proxy._changed:
             proxy._changed.append(str(name))
     if do_update and (name is None or controls[name].update):
-        kwargs = {n: c.adapter(c.value) for n, c in controls.iteritems()}
+        kwargs = {n: c.adapter(c.value) for n, c in controls.items()}
         interact_info["function"](control_vals=kwargs)
-        for c in controls.itervalues():
+        for c in controls.values():
             c.reset()
         proxy._changed = []
 
@@ -140,7 +140,7 @@ class InteractProxy(object):
             msg = control.message()
             msg["label"] = control.label if control.label is not None else name
             msg["update"] = control.update = not any(
-                isinstance(c, UpdateButton) for c in self.__interact["controls"].itervalues()
+                isinstance(c, UpdateButton) for c in self.__interact["controls"].values()
             )
             sys._sage_.display_message({
                 "application/sage-interact-new-control": {
@@ -218,7 +218,7 @@ class InteractProxy(object):
         if state is None:
             state = self._state()
         else:
-            state = {n: self.__interact["controls"][n].constrain(v) for n, v in state.iteritems()}
+            state = {n: self.__interact["controls"][n].constrain(v) for n, v in state.items()}
         msg = {
             "application/sage-interact-bookmark": {
                 "interact_id": self.__interact_id,
@@ -347,7 +347,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
     names = [c[0] for c in controls]
     controls = {n: automatic_control(c, var=n) for n, c in controls}
 
-    for n, c in controls.iteritems():
+    for n, c in controls.items():
         if n.startswith("_"):
             raise ValueError("invalid control name: %s" % (n,))
         if isinstance(c, UpdateButton):
@@ -360,7 +360,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
     if isinstance(layout, dict):
         rows = []
         rows.extend(layout.get("top", []))
-        for pos, ctrls in layout.iteritems():
+        for pos, ctrls in layout.items():
             if pos not in ("bottom", "top"):
                 rows.extend(ctrls)
         if output:
@@ -394,8 +394,8 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
         layout.append([("_output", 1)])
 
     interact_id=str(uuid.uuid4())
-    msgs = {n: c.message() for n, c in controls.iteritems()}
-    for n, m in msgs.iteritems():
+    msgs = {n: c.message() for n, c in controls.items()}
+    for n, m in msgs.items():
         if controls[n].label is not None:
             m["label"] = controls[n].label
         elif automatic_labels:
@@ -431,7 +431,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
         "controls": controls,
         "update": update
     }
-    for n, c in controls.iteritems():
+    for n, c in controls.items():
         c.globals = f.func_globals
     proxy = InteractProxy(interact_id, f)
     __interacts[interact_id]["proxy"] = proxy
