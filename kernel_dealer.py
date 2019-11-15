@@ -98,7 +98,7 @@ class KernelConnection(object):
         if self._on_stop:
             self._on_stop()
         self.stop_hb()
-        for stream in self.channels.itervalues():
+        for stream in self.channels.values():
             stream.close()
         self._dealer.stop_kernel(self.id)
         
