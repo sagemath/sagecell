@@ -520,7 +520,8 @@ class SockJSChannelsHandler(ZMQChannelsHandler):
         self.callback = callback
 
     def output_message(self, msg):
-        self.callback("%s/channels,%s" % (self.kernel.id, self._json_msg(msg)))
+        self.callback(
+            "%s/channels,%s" % (self.kernel.id, self._json_msg(msg).decode()))
 
 
 class WebChannelsHandler(ZMQChannelsHandler,
