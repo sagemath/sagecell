@@ -320,21 +320,22 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
     if isinstance(f, InteractProxy):
         f = f._InteractProxy__function
     update = set(update) if update is not None else set()
-    if isinstance(controls,(list,tuple)):
-        controls=list(controls)
-        for i,name in enumerate(controls):
+    if isinstance(controls, (list, tuple)):
+        controls = list(controls)
+        for i, name in enumerate(controls):
             if isinstance(name, str):
-                controls[i]=(name, None)
+                controls[i] = (name, None)
             elif not isinstance(name[0], str):
-                raise ValueError("interact control must have a string name, but %r isn't a string"%(name[0],))
+                raise ValueError(
+                    "interact control must have a string name, "
+                    "but %r isn't a string" % name[0])
     names = {c[0] for c in controls}
 
     import inspect
     (args, varargs, varkw, defaults) = inspect.getargspec(f)
     if args is None:
         args = []
-    if defaults is None:
-        defaults = []
+    defaults = [] if defaults is None else list(defaults)
     if len(args) > len(defaults):
         pass_proxy = True
         args = args[1:]
@@ -342,8 +343,8 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
         pass_proxy = False
     if len(names) != len(controls) or any(a in names for a in args):
         raise ValueError("duplicate argument in interact definition")
-    n=len(args)-len(defaults)
-    controls = zip(args, [None] * n + list(defaults)) + controls
+    defaults = [None] * (len(args) - len(defaults)) + defaults
+    controls = list(zip(args, defaults)) + controls
     names = [c[0] for c in controls]
     controls = {n: automatic_control(c, var=n) for n, c in controls}
 
