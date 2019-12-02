@@ -280,7 +280,7 @@ except AttributeError:
     pass
 
 @decorator_defaults
-def interact(f, controls=[], update=None, layout=None, locations=None,
+def interact(f, controls=None, update=None, layout=None, locations=None,
              output=True, readonly=False, automatic_labels=True):
     """
     A decorator that creates an interact.
@@ -320,82 +320,76 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
     """
     if isinstance(f, InteractProxy):
         f = f._InteractProxy__function
-    update = set(update) if update is not None else set()
-    if isinstance(controls, (list, tuple)):
-        controls = list(controls)
-        for i, name in enumerate(controls):
-            if isinstance(name, str):
-                controls[i] = (name, None)
-            elif not isinstance(name[0], str):
-                raise ValueError(
-                    "interact control must have a string name, "
-                    "but %r isn't a string" % name[0])
-    names = {c[0] for c in controls}
 
+    controls = [] if controls is None else list(controls)
+    for i, name in enumerate(controls):
+        if isinstance(name, str):
+            controls[i] = (name, None)
+        elif not isinstance(name[0], str):
+            raise ValueError(
+                "interact control must have a string name, "
+                "but %r isn't a string" % name[0])
     import inspect
-    (args, varargs, varkw, defaults) = inspect.getargspec(f)
-    if args is None:
-        args = []
-    defaults = [] if defaults is None else list(defaults)
-    if len(args) > len(defaults):
+    params = list(inspect.signature(f).parameters.values())
+    if params and params[0].default is params[0].empty:
         pass_proxy = True
-        args = args[1:]
+        params.pop(0)
     else:
         pass_proxy = False
-    if len(names) != len(controls) or any(a in names for a in args):
-        raise ValueError("duplicate argument in interact definition")
-    defaults = [None] * (len(args) - len(defaults)) + defaults
-    controls = list(zip(args, defaults)) + controls
+    controls = [(p.name, p.default if p.default is not p.empty else None)
+                for p in params] + controls
     names = [c[0] for c in controls]
+    if len(set(names)) != len(names):
+        raise ValueError("duplicate argument in interact definition")
     controls = {n: automatic_control(c, var=n) for n, c in controls}
 
+    update = set() if update is None else set(update)
     for n, c in controls.items():
         if n.startswith("_"):
-            raise ValueError("invalid control name: %s" % (n,))
+            raise ValueError("invalid control name: %s" % n)
         if isinstance(c, UpdateButton):
             update.add(n)
-    if not(update):
+    if not update:
         update = names
     for n in update:
         controls[n].update = True
 
     if isinstance(layout, dict):
-        rows = []
-        rows.extend(layout.get("top", []))
+        rows = layout.get("top", [])
         for pos, ctrls in layout.items():
             if pos not in ("bottom", "top"):
                 rows.extend(ctrls)
         if output:
-            rows.append([("_output",1)])
+            rows.append([("_output", 1)])
         rows.extend(layout.get("bottom", []))
         layout = rows
     elif layout is None:
         layout = []
 
     if locations is True:
-        locations="" # empty prefix
+        locations = "" # empty prefix
     if isinstance(locations, str):
-        prefix = '#'+locations
-        locations = {name: prefix+name for name in names+["_output","_bookmarks"]}
+        prefix = '#' + locations
+        locations = {n: prefix + n for n in names + ["_output", "_bookmarks"]}
 
     placed = set()
     if locations:
         placed.update(locations.keys())
     if layout:
-        for r in layout:
-            for i, c in enumerate(r):
+        for row in layout:
+            for i, c in enumerate(row):
                 if not isinstance(c, (list, tuple)):
                     c = (c, 1)
-                r[i] = c = (c[0], int(c[1]))
+                row[i] = c = (c[0], int(c[1]))
                 if c[0] is not None:
                     if c[0] in placed:
-                        raise ValueError("duplicate item %s in layout" % (c[0],))
+                        raise ValueError("duplicate item %s in layout" % c[0])
                     placed.add(c[0])
     layout.extend([(n, 1)] for n in names if n not in placed)
     if output and "_output" not in placed:
         layout.append([("_output", 1)])
 
-    interact_id=str(uuid.uuid4())
+    interact_id = str(uuid.uuid4())
     msgs = {n: c.message() for n, c in controls.items()}
     for n, m in msgs.items():
         if controls[n].label is not None:
@@ -417,6 +411,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
     }
     sys._sage_.display_message(msg)
     sys._sage_.reset_kernel_timeout(float('inf'))
+    
     def adapted_f(control_vals):
         args = [__interacts[interact_id]["proxy"]] if pass_proxy else []
         with session_metadata({'interact_id': interact_id}):
@@ -424,9 +419,11 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
             try:
                 returned = f(*args, **control_vals)
             except:
-                print("Interact state: %r" % (__interacts[interact_id]["proxy"]._state()))
+                print("Interact state: %r"
+                    % (__interacts[interact_id]["proxy"]._state()))
                 raise
         return returned
+    
     # update global __interacts
     __interacts[interact_id] = {
         "function": adapted_f,
@@ -439,6 +436,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
     __interacts[interact_id]["proxy"] = proxy
     update_interact(interact_id)
     return proxy
+
 
 def safe_sage_eval(code, globs):
     """
