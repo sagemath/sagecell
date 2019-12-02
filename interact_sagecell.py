@@ -230,7 +230,7 @@ class InteractProxy(object):
         sys._sage_.display_message(msg)
 
     def _set_bookmarks(self, bookmarks):
-        if isinstance(bookmarks, basestring):
+        if isinstance(bookmarks, str):
             bookmarks = json.loads(bookmarks)
             for name, state in bookmarks:
                 self._bookmark(name, state)
@@ -373,7 +373,7 @@ def interact(f, controls=[], update=None, layout=None, locations=None,
 
     if locations is True:
         locations="" # empty prefix
-    if isinstance(locations, basestring):
+    if isinstance(locations, str):
         prefix = '#'+locations
         locations = {name: prefix+name for name in names+["_output","_bookmarks"]}
 
@@ -698,7 +698,7 @@ class InputGrid(InteractControl):
         return [[self.constrain_elem(v) for v in row] for row in value]
 
     def constrain_elem(self, value, i=None):
-        return unicode(value if isinstance(value, basestring) else repr(value))
+        return unicode(value if isinstance(value, str) else repr(value))
 
 class Selector(InteractControl):
     """
@@ -1033,7 +1033,7 @@ class ColorSelector(InteractControl):
     def constrain(self, value):
         if self.Color:
             return self.Color(value).html_color()
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value
         return "#000000"
 
@@ -1242,7 +1242,7 @@ def automatic_control(control, var=None):
     
     # Checks for labels and control values
     for _ in range(2):
-        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], basestring):
+        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
             label, control = control
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
             # TODO: default_value isn't used effectively below in all instances 
@@ -1253,7 +1253,7 @@ def automatic_control(control, var=None):
         C = control
         if label:
             C.label = label
-    elif isinstance(control, basestring):
+    elif isinstance(control, str):
         C = InputBox(default = control, label = label)
     elif isinstance(control, bool):
         C = Checkbox(default = control, label = label, raw = True)
