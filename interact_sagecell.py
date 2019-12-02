@@ -137,7 +137,7 @@ class InteractProxy(object):
         if name not in self.__interact["controls"]:
             control = automatic_control(value, var=name)
             self.__interact["controls"][name] = control
-            control.globals = self.__function.func_globals
+            control.globals = self.__function.__globals__
             msg = control.message()
             msg["label"] = control.label if control.label is not None else name
             msg["update"] = control.update = not any(
@@ -431,7 +431,7 @@ def interact(f, controls=None, update=None, layout=None, locations=None,
         "update": update
     }
     for n, c in controls.items():
-        c.globals = f.func_globals
+        c.globals = f.__globals__
     proxy = InteractProxy(interact_id, f)
     __interacts[interact_id]["proxy"] = proxy
     update_interact(interact_id)
