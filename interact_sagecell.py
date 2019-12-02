@@ -15,7 +15,8 @@
 """
 Interacts
 
-The camelcase controls (like Selector or ButtonBar) have experimental APIs and may change.  The stable API is still the backwards-compatible API.
+The camelcase controls (like Selector or ButtonBar) have experimental APIs and
+may change.  The stable API is still the backwards-compatible API.
 
 Examples
 --------
@@ -862,16 +863,24 @@ class ContinuousSlider(InteractControl):
     :arg int default: initial value of the slider; if ``None``, the
         slider defaults to its minimum
     :arg int steps: number of steps the slider should have between min and max
-    :arg Number stepsize: size of step for the slider. If both step and stepsize are specified, stepsize takes precedence so long as it is valid.
+    :arg Number stepsize: size of step for the slider. If both step and stepsize
+        are specified, stepsize takes precedence so long as it is valid.
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
-    :arg bool range_slider: toggles whether the slider should select one value (default = False) or a range of values (True).
-    :arg bool display_value: toggles whether the slider value sould be displayed (default = True)
+    :arg bool range_slider: toggles whether the slider should select one value
+        (default = False) or a range of values (True).
+    :arg bool display_value: toggles whether the slider value sould be displayed
+        (default = True)
     
-    Note that while "number of steps" and/or "stepsize" can be specified for the slider, this is to enable snapping, rather than a restriction on the slider's values. The only restrictions placed on the values of the slider are the endpoints of its range.
+    Note that while "number of steps" and/or "stepsize" can be specified for the
+    slider, this is to enable snapping, rather than a restriction on the
+    slider's values. The only restrictions placed on the values of the slider
+    are the endpoints of its range.
     """
 
-    def __init__(self, interval=(0,100), default=None, steps=250, stepsize=0, label=None, range_slider=False, display_value=True, adapter=None):
+    def __init__(
+            self, interval=(0, 100), default=None, steps=250, stepsize=0,
+            label=None, range_slider=False, display_value=True, adapter=None):
         self.range_slider = range_slider
         self.display_value = display_value
         if len(interval) != 2 or interval[0] == interval[1]:
@@ -879,7 +888,9 @@ class ContinuousSlider(InteractControl):
         self.interval = tuple(sorted((float(interval[0]), float(interval[1]))))
         super(ContinuousSlider, self).__init__(default, label, adapter)
         self.steps = int(steps) if steps > 0 else 250
-        self.stepsize = float(stepsize if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0] else float(self.interval[1] - self.interval[0]) / self.steps)
+        self.stepsize = float(stepsize
+            if stepsize > 0 and stepsize <= self.interval[1] - self.interval[0]
+            else float(self.interval[1] - self.interval[0]) / self.steps)
 
     def message(self):
         """
@@ -908,21 +919,50 @@ class MultiSlider(InteractControl):
     """
     A multiple-slider interact control.
 
-    Defines a bank of vertical sliders (either discrete or continuous sliders, but not both in the same control).
+    Defines a bank of vertical sliders (either discrete or continuous sliders,
+    but not both in the same control).
 
     :arg int sliders: Number of sliders to generate
-    :arg list values: Values for each value slider in a multi-dimensional list for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1, .. ,slider_n_val_n]]. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to contain the same values, the outer list only needs to contain that one list of values.
-    :arg list interval: Intervals for each continuous slider in a list of tuples of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot be set if value sliders are specified. The length of the first dimension of the list should be equivalent to the number of sliders, but if all sliders are to have the same interval, the list only needs to contain that one tuple.
-    :arg string slider_type: type of sliders to generate. Currently, only "continuous" and "discrete" are valid, and other input defaults to "continuous."
-    :arg list default: Default value of each slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same default value, the list only needs to contain that one value.
-    :arg list stepsize: List of numbers representing the stepsize for each continuous slider. The length of the list should be equivalent to the number of sliders, but if all sliders are to have the same stepsize, the list only needs to contain that one value.
-    :arg list steps: List of numbers representing the number of steps for each continuous slider. Note that (as in the case of the regular continuous slider), specifying a valid stepsize will always take precedence over any specification of number of steps, valid or not. The length of this list should be equivalent to the number of sliders, but if all sliders are to have the same number of steps, the list only neesd to contain that one value.
-    :arg bool display_values: toggles whether the slider values sould be displayed (default = True)
+    :arg list values: Values for each value slider in a multi-dimensional list
+        for the form [[slider_1_val_1..slider_1_val_n], ... ,[slider_n_val_1,
+        .. ,slider_n_val_n]]. The length of the first dimension of the list
+        should be equivalent to the number of sliders, but if all sliders are to
+        contain the same values, the outer list only needs to contain that one
+        list of values.
+    :arg list interval: Intervals for each continuous slider in a list of tuples
+        of the form [(min_1, max_1), ... ,(min_n, max_n)]. This parameter cannot
+        be set if value sliders are specified. The length of the first dimension
+        of the list should be equivalent to the number of sliders, but if all
+        sliders are to have the same interval, the list only needs to contain
+        that one tuple.
+    :arg string slider_type: type of sliders to generate. Currently, only
+        "continuous" and "discrete" are valid, and other input defaults to
+        "continuous."
+    :arg list default: Default value of each slider. The length of the list
+        should be equivalent to the number of sliders, but if all sliders are to
+        have the same default value, the list only needs to contain that one
+        value.
+    :arg list stepsize: List of numbers representing the stepsize for each
+        continuous slider. The length of the list should be equivalent to the
+        number of sliders, but if all sliders are to have the same stepsize, the
+        list only needs to contain that one value.
+    :arg list steps: List of numbers representing the number of steps for each
+        continuous slider. Note that (as in the case of the regular continuous
+        slider), specifying a valid stepsize will always take precedence over
+        any specification of number of steps, valid or not. The length of this
+        list should be equivalent to the number of sliders, but if all sliders
+        are to have the same number of steps, the list only neesd to contain
+        that one value.
+    :arg bool display_values: toggles whether the slider values sould be
+        displayed (default = True)
     :arg str label: the label of the control, ``""`` for no label, and
         a default value (None) of the control's variable.
     """
 
-    def __init__(self, sliders=1, values=[[0,1]], interval=[(0,1)], slider_type="continuous",  default=None, stepsize=[0], steps=[250], display_values=True, label=None):
+    def __init__(
+            self, sliders=1, values=[[0, 1]], interval=[(0, 1)],
+            slider_type="continuous",  default=None, stepsize=[0], steps=[250],
+            display_values=True, label=None):
         from types import GeneratorType
         self.number = int(sliders)
         self.slider_type = slider_type
@@ -944,7 +984,8 @@ class MultiSlider(InteractControl):
                 self.values = [[0,1]] * self.number
             self.interval = [(0, len(self.values[i]) - 1) for i in range(self.number)]
             default = [closest_index(self.values[i], d) for i, d in enumerate(default)]
-            super(MultiSlider, self).__init__(default, label, lambda v: [self.values[i][v[i]] for i in range(self.number)])
+            super(MultiSlider, self).__init__(default, label,
+                lambda v: [self.values[i][v[i]] for i in range(self.number)])
         else:
             self.slider_type = "continuous"
             if len(interval) == self.number:
@@ -961,13 +1002,24 @@ class MultiSlider(InteractControl):
             if len(steps) == 1:
                 self.steps = [steps[0]] * self.number if steps[0] > 0 else [250] * self.number
             else:
-                self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.number else [250 for _ in self.interval]
+                self.steps = ([int(i) if i > 0 else 250 for i in steps] 
+                    if len(steps) == self.number
+                    else [250 for _ in self.interval])
             if len(stepsize) == self.number:
-                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in range(self.number)]
+                self.stepsize = [float(stepsize[i])
+                    if stepsize[i] > 0
+                        and stepsize[i] <= self.interval[i][1] - self.interval[i][0]
+                    else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i]
+                        for i in range(self.number)]
             elif len(stepsize) == 1:
-                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in range(self.number)]
+                self.stepsize = [float(stepsize[0])
+                    if stepsize[0] > 0
+                        and stepsize[0] <= self.interval[i][1] - self.interval[i][0]
+                    else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i]
+                        for i in range(self.number)]
             else:
-                self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.number]
+                self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i]
+                    for i in self.number]
 
     def message(self):
         """
@@ -1065,7 +1117,8 @@ class Button(InteractControl):
     """
 
     def __init__(self, default="", value ="", text="Button", width="", label=None):
-        super(Button, self).__init__(False, label, lambda v: self.clicked_value if v else self.default_value)
+        super(Button, self).__init__(
+            False, label, lambda v: self.clicked_value if v else self.default_value)
         self.text = text
         self.width = width
         self.default_value = default
@@ -1109,7 +1162,8 @@ class ButtonBar(InteractControl):
     """
 
     def __init__(self, values=[0], default="", nrows=None, ncols=None, width="", label=None):
-        super(ButtonBar, self).__init__(None, label, lambda v: self.default_value if v is None else self.values[int(v)])
+        super(ButtonBar, self).__init__(
+            None, label, lambda v: self.default_value if v is None else self.values[int(v)])
         self.default_value = default
         self.values = values[:]
         self.nrows = nrows
@@ -1242,7 +1296,9 @@ def automatic_control(control, var=None):
     for _ in range(2):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
             label, control = control
-        if isinstance(control, tuple) and len(control) == 2 and isinstance(control[1], (tuple, list, GeneratorType)):
+        if (isinstance(control, tuple)
+                and len(control) == 2
+                and isinstance(control[1], (tuple, list, GeneratorType))):
             # TODO: default_value isn't used effectively below in all instances 
             default_value, control = control
 
@@ -1267,16 +1323,19 @@ def automatic_control(control, var=None):
                 selectortype = "button"
             else:
                 selectortype = "list"
-            C = Selector(selector_type = selectortype, default = default_value, label = label, values = control)
+            C = Selector(selector_type=selectortype, default=default_value,
+                         label=label, values=control)
     elif isinstance(control, GeneratorType):
         values=take(10000,control)
         C = DiscreteSlider(default = default_value, values = values, label = label)
     elif isinstance (control, tuple):
         if len(control) == 2:
-            C = ContinuousSlider(default = default_value, interval = (control[0], control[1]), label = label)
+            C = ContinuousSlider(default=default_value,
+                interval=(control[0], control[1]), label = label)
         elif len(control) == 3:
             from sage.arith.srange import srange
-            C = DiscreteSlider(default=default_value, values=srange(control[0], control[1], control[2], include_endpoint=True), label=label)
+            C = DiscreteSlider(default=default_value, values=srange(control[0],
+                control[1], control[2], include_endpoint=True), label=label)
         else:
             values=list(control)
             C = DiscreteSlider(default = default_value, values = values, label = label)
@@ -1290,7 +1349,8 @@ def automatic_control(control, var=None):
                 nrows = control.nrows()
                 ncols = control.ncols()
                 default_value = control.list()
-                default_value = [[default_value[j * ncols + i] for i in range(ncols)] for j in range(nrows)]
+                default_value = [[default_value[j * ncols + i]
+                                 for i in range(ncols)] for j in range(nrows)]
                 C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
                               default = default_value, adapter=parent(control))
             elif is_Vector(control):
