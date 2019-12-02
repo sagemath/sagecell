@@ -579,11 +579,8 @@ class InputBox(InteractControl):
                 'keypress': self.keypress}
 
     def constrain(self, value):
-        if isinstance(value, str):
-            return value.decode("utf-8")
-        if isinstance(value, unicode):
-            return value
-        return unicode(repr(value))
+        return value if isinstance(value, str) else repr(value)
+
 
 class ExpressionBox(InputBox):
     """
@@ -698,7 +695,8 @@ class InputGrid(InteractControl):
         return [[self.constrain_elem(v) for v in row] for row in value]
 
     def constrain_elem(self, value, i=None):
-        return unicode(value if isinstance(value, str) else repr(value))
+        return value if isinstance(value, str) else repr(value)
+
 
 class Selector(InteractControl):
     """
@@ -741,10 +739,10 @@ class Selector(InteractControl):
         # Assign selector labels and values.
         if all(isinstance(v, tuple) and len(v) == 2 for v in values):
             self.values = [v[0] for v in values]
-            self.value_labels = [unicode(v[1]) for v in values]
+            self.value_labels = [str(v[1]) for v in values]
         else:
             self.values = values[:]
-            self.value_labels = [unicode(v) for v in self.values]
+            self.value_labels = [str(v) for v in self.values]
         default = 0 if default is None else self.values.index(default)
         super(Selector, self).__init__(default, label, self.values.__getitem__)
         # If not using a dropdown list,
@@ -1196,7 +1194,7 @@ class HtmlBox(InteractControl):
                 'value': self.value,}
 
     def constrain(self, value):
-        return unicode(value)
+        return str(value)
 
 class UpdateButton(Button):
     """

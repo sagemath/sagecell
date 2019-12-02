@@ -507,7 +507,7 @@ class ZMQServiceHandler(ZMQChannelsHandler):
     
     def __init__(self):
         super(ZMQServiceHandler, self).__init__()
-        self.streams = collections.defaultdict(unicode)
+        self.streams = collections.defaultdict(str)
 
     def output_message(self, msg):
         if msg["channel"] == "iopub" and msg["header"]["msg_type"] == "stream":
