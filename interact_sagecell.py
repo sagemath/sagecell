@@ -687,11 +687,11 @@ class InputGrid(InteractControl):
     def constrain(self, value):
         from types import GeneratorType
         if isinstance(value, GeneratorType):
-            return [[self.constrain_elem(value.next()) for _ in xrange(self.ncols)] for _ in xrange(self.nrows)]
+            return [[self.constrain_elem(value.next()) for _ in range(self.ncols)] for _ in range(self.nrows)]
         elif not isinstance(value, (list, tuple)):
-            return [[self.constrain_elem(value) for _ in xrange(self.ncols)] for _ in xrange(self.nrows)]
+            return [[self.constrain_elem(value) for _ in range(self.ncols)] for _ in range(self.nrows)]
         elif not all(isinstance(entry, (list, tuple)) for entry in value):
-            return [[self.constrain_elem(value[i * self.ncols + j]) for j in xrange(self.ncols)] for i in xrange(self.nrows)]
+            return [[self.constrain_elem(value[i * self.ncols + j]) for j in range(self.ncols)] for i in range(self.nrows)]
         return [[self.constrain_elem(v) for v in row] for row in value]
 
     def constrain_elem(self, value, i=None):
@@ -942,9 +942,9 @@ class MultiSlider(InteractControl):
                 self.values = [values[0][:]] * self.number
             else:
                 self.values = [[0,1]] * self.number
-            self.interval = [(0, len(self.values[i]) - 1) for i in xrange(self.number)]
+            self.interval = [(0, len(self.values[i]) - 1) for i in range(self.number)]
             default = [closest_index(self.values[i], d) for i, d in enumerate(default)]
-            super(MultiSlider, self).__init__(default, label, lambda v: [self.values[i][v[i]] for i in xrange(self.number)])
+            super(MultiSlider, self).__init__(default, label, lambda v: [self.values[i][v[i]] for i in range(self.number)])
         else:
             self.slider_type = "continuous"
             if len(interval) == self.number:
@@ -963,9 +963,9 @@ class MultiSlider(InteractControl):
             else:
                 self.steps = [int(i) if i > 0 else 250 for i in steps] if len(steps) == self.number else [250 for _ in self.interval]
             if len(stepsize) == self.number:
-                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(self.number)]
+                self.stepsize = [float(stepsize[i]) if stepsize[i] > 0 and stepsize[i] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in range(self.number)]
             elif len(stepsize) == 1:
-                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in xrange(self.number)]
+                self.stepsize = [float(stepsize[0]) if stepsize[0] > 0 and stepsize[0] <= self.interval[i][1] - self.interval[i][0] else float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in range(self.number)]
             else:
                 self.stepsize = [float(self.interval[i][1] - self.interval[i][0]) / self.steps[i] for i in self.number]
 
@@ -993,7 +993,7 @@ class MultiSlider(InteractControl):
         if isinstance(value, (list, tuple)) and len(value) == self.number:
             return [self.constrain_elem(v, i) for i, v in enumerate(value)]
         else:
-            return [self.constrain_elem(value, i) for i in xrange(self.number)]
+            return [self.constrain_elem(value, i) for i in range(self.number)]
 
     def constrain_elem(self, value, index):
         if self.slider_type == "discrete":
@@ -1313,7 +1313,7 @@ def closest_index(values, value):
         return values.index(value)
     except ValueError:
         try:
-            return min(xrange(len(values)), key=lambda i: abs(value - values[i]))
+            return min(range(len(values)), key=lambda i: abs(value - values[i]))
         except TypeError:
             return 0
 
