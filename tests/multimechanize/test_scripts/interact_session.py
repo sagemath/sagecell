@@ -39,7 +39,7 @@ class Transaction(object):
             assert output == "1\n", "Incorrect output: %r" % (output,)
             times = []
             self.custom_timers["initial computation"] = time.time() - t
-            for i in xrange(10):
+            for i in range(10):
                 time.sleep(1)
                 num = random.randint(1, 100)
                 t = time.time()
