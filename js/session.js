@@ -307,7 +307,7 @@ Session.prototype.send_message = function() {
 Session.prototype.execute = function(code) {
     if (this.kernel.opened) {
         console.debug('opened and executing in kernel:', this.timer());
-        var pre;
+        var pre, post = '';
         //TODO: do this wrapping of code on the server, not in javascript
         //Maybe the system can be sent in metadata in the execute_request message
         this.rawcode = code;
@@ -322,7 +322,12 @@ Session.prototype.execute = function(code) {
             code = "set(gcf(), 'visible', 'off')\n" + code + "\nif (get(gcf(), 'children'))\n    saveas(gcf(), 'octave.png')\nendif";
         }
         if (pre) {
-            code = pre + '("""' + code.replace(/"/g, '\\"') + '""").strip()';
+            if (this.language == "gap") {
+                // Solving this: http://doc.sagemath.org/html/en/reference/interfaces/sage/interfaces/gap.html#long-input
+                // With this: https://groups.google.com/d/msg/sage-devel/VEiahzqU2qs/L_oEkXzYBgAJ
+                post = ",allow_use_file=False";
+            }
+            code = pre + '("""' + code.replace(/"/g, '\\"') + '"""' + post + ').strip()';
         }
         if (this.language === "octave") {
             code = "octave = Octave(); " + code;
