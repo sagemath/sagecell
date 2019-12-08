@@ -127,10 +127,9 @@ class InteractiveGraphics(object):
 
 # Matplotlib's comm-based live plots.  See https://github.com/matplotlib/matplotlib/pull/2524
 from matplotlib.backends.backend_webagg_core import (
-    FigureManagerWebAgg, new_figure_manager_given_figure)
+    new_figure_manager_given_figure)
 import json
 
-from IPython.display import display,Javascript,HTML
 from base64 import b64encode
 
 class CommFigure(object):

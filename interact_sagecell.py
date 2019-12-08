@@ -1280,7 +1280,6 @@ def automatic_control(control, var=None):
     
     
     """
-    from numbers import Number
     from types import GeneratorType
     label = None
     default_value = None

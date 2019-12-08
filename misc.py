@@ -4,7 +4,6 @@ Misc functions / classes
 from contextlib import contextmanager
 from datetime import datetime
 import os
-import re
 import shutil
 import stat
 import sys
@@ -171,14 +170,3 @@ def sage_json(obj):
         return float(obj)
     else:
         raise TypeError("Object of type %s with value of %s is not JSON serializable" % (type(obj), repr(obj)))
-
-##########################################
-## Unit Testing Misc Functions
-##########################################
-def assert_len(obj,l):
-    return assert_equal(len(obj), l, "Object %s should have length %s, but has length %s"%(obj,l,len(obj)))
-
-uuid_re = re.compile('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}')
-
-def assert_uuid(s):
-    return assert_regexp_matches(s, uuid_re)
