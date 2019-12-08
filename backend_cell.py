@@ -97,9 +97,6 @@ class BackendCell(BackendIPython):
         elif isinstance(rich_output, OutputImageSvg):
             display_file(rich_output.svg.filename(), 'text/image-filename')
             
-        elif isinstance(rich_output, OutputSceneCanvas3d):
-            display_file(
-                rich_output.canvas3d.filename(), 'application/x-canvas3d')
         elif isinstance(rich_output, OutputSceneJmol):
             path = tempfile.mkdtemp(suffix=".jmol", dir=".")
             os.chmod(path, stat.S_IRWXU + stat.S_IXGRP + stat.S_IXOTH)
@@ -167,7 +164,6 @@ class BackendCell(BackendIPython):
             OutputImagePng,
             OutputImageSvg,
             
-            OutputSceneCanvas3d,
             OutputSceneJmol,
             OutputSceneThreejs,
             #OutputSceneWavefront,

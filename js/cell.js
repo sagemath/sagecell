@@ -10,7 +10,6 @@ define([
     "jquery-ui",
     //"jquery-ui-tp",
     "colorpicker",
-    "canvas3d_lib",
     "JSmol"
 ], function(
     $,

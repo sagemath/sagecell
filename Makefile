@@ -19,9 +19,7 @@ submodules:
 build:
 	-rm -r build
 	cp -a $(sage-root)/local/lib/python3.7/site-packages/notebook/static build
-	cp $(sage-root)/local/lib/python3.7/site-packages/sagenb/data/sage/js/canvas3d_lib.js \
-	   static/colorpicker/js/colorpicker.js \
-	   build
+	cp static/colorpicker/js/colorpicker.js build
 	ln -sfn $(sage-root)/local/share/jsmol static/jsmol
 	ln -sfn $(sage-root)/local/share/threejs static/threejs
 	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
