@@ -124,11 +124,12 @@ def update_interact_msg(stream, ident, msg):
         update_interact(interact_id)
 
 class InteractProxy(object):
+    
     def __init__(self, interact_id, function):
         self.__interact_id = interact_id
         self.__interact = globals()["__interacts"][self.__interact_id]
         self.__function = function
-        self._changed = self.__interact["controls"].keys()
+        self._changed = list(self.__interact["controls"])
 
     def __setattr__(self, name, value):
         if name.startswith("_"):
@@ -160,8 +161,9 @@ class InteractProxy(object):
             return
         self.__interact["controls"][name].value = value
         self.__send_update(name)
+    
     def __dir__(self):
-        items = self.__interact["controls"].keys()
+        items = list(self.__interact["controls"])
         for a in self.__dict__:
             if a.startswith("_") and not a.startswith("_InteractProxy__"):
                 items.append(a)
@@ -374,7 +376,7 @@ def interact(f, controls=None, update=None, layout=None, locations=None,
 
     placed = set()
     if locations:
-        placed.update(locations.keys())
+        placed.update(locations)
     if layout:
         for row in layout:
             for i, c in enumerate(row):
