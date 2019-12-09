@@ -235,6 +235,7 @@ function init(cellInfo, k) {
     var temp = editor.render(cellInfo.editor, input, cellInfo.collapse);
     var editorType = temp[0];
     var editorData = temp[1];
+    cellInfo.editorData = editorData;
     editorData.k = k;
     input.find(".sagecell_advancedTitle").on("click", function () {
         input.find(".sagecell_advancedFields").slideToggle();
