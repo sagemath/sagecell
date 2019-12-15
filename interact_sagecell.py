@@ -1072,7 +1072,7 @@ class ColorSelector(InteractControl):
 
     def __init__(self, default="#000000", hide_input=False, sage_color=True, label=None):
         try:
-            from sagenb.misc.misc import Color
+            from sage.plot.colors import Color
             self.Color = Color
         except ImportError:
             self.Color = None
@@ -1341,7 +1341,7 @@ def automatic_control(control, var=None):
     else:
         C = ExpressionBox(default = control, label=label)
         try:
-            from sagenb.misc.misc import Color
+            from sage.plot.colors import Color
             from sage.structure.element import is_Vector, is_Matrix
             from sage.all import parent
             if is_Matrix(control):

@@ -247,7 +247,7 @@ def input_box(default=None, label=None, type=None, width=80, height=1, **kwargs)
         sage: input_box('Multiline\nInput',label='Click to change value',type=str,height=5)
         Interact input box labeled 'Click to change value' with default value 'Multiline\nInput'
     """
-    from sagenb.misc.misc import Color
+    from sage.plot.colors import Color
 
     if type is Color:
         # kwargs are only used if the type is Color.  
