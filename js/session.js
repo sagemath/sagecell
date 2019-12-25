@@ -307,31 +307,30 @@ Session.prototype.send_message = function() {
 Session.prototype.execute = function(code) {
     if (this.kernel.opened) {
         console.debug('opened and executing in kernel:', this.timer());
-        var pre;
         //TODO: do this wrapping of code on the server, not in javascript
         //Maybe the system can be sent in metadata in the execute_request message
         this.rawcode = code;
-        if (this.language === "python") {
-            pre = "exec ";
-        } else if (this.language === "html") {
-            pre = "html";
-        } else if (this.language !== "sage") {
-            pre = "print " + this.language + ".eval";
-        }
+        // Modifying code in chosen language
         if (this.language === "octave") {
             code = "set(gcf(), 'visible', 'off')\n" + code + "\nif (get(gcf(), 'children'))\n    saveas(gcf(), 'octave.png')\nendif";
         }
-        if (pre) {
-            code = pre + '("""' + code.replace(/"/g, '\\"') + '""").strip()';
+        // Converting code into Python expression
+        if (this.language !== "sage") {
+            code = '("""' + code.replace(/"/g, '\\"') + '""")';
+            if (this.language === "python") {
+                code = "exec" + code;
+            } else if (this.language === "html") {
+                code = "html" + code;
+            } else {
+                code = "print(" + this.language + ".eval" + code + ".strip())";
+            }
         }
+        // Modifying Python expression
         if (this.language === "octave") {
             code = "octave = Octave(); " + code;
         }
         if (this.language === "r") {
             code = "r.eval(\"options(bitmapType='cairo')\"); " + code + "\nr.eval(\"graphics.off()\"); None";
-        }
-        if (this.language === "html") {
-            code += "\nNone";
         }
         this.code = code;
         var callbacks = {iopub: {"output": $.proxy(this.handle_output, this)},
