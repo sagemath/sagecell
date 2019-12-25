@@ -113,7 +113,6 @@ sage_optional_packages = [
 "mcqd",
 "normaliz",
 "nose",
-"ore_algebra",
 "pari_elldata",
 "pari_galpol",
 "pari_nftables",
