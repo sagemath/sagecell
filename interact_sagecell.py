@@ -688,7 +688,7 @@ class InputGrid(InteractControl):
     def constrain(self, value):
         from types import GeneratorType
         if isinstance(value, GeneratorType):
-            return [[self.constrain_elem(value.next()) for _ in range(self.ncols)] for _ in range(self.nrows)]
+            return [[self.constrain_elem(next(value)) for _ in range(self.ncols)] for _ in range(self.nrows)]
         elif not isinstance(value, (list, tuple)):
             return [[self.constrain_elem(value) for _ in range(self.ncols)] for _ in range(self.nrows)]
         elif not all(isinstance(entry, (list, tuple)) for entry in value):
