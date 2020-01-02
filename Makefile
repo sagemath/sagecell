@@ -18,10 +18,8 @@ submodules:
 
 build:
 	-rm -r build
-	cp -a $(sage-root)/local/lib/python2.7/site-packages/notebook/static build
-	cp $(sage-root)/local/lib/python2.7/site-packages/sagenb/data/sage/js/canvas3d_lib.js \
-	   static/colorpicker/js/colorpicker.js \
-	   build
+	cp -a $(sage-root)/local/lib/python3.7/site-packages/notebook/static build
+	cp static/colorpicker/js/colorpicker.js build
 	ln -sfn $(sage-root)/local/share/jsmol static/jsmol
 	ln -sfn $(sage-root)/local/share/threejs static/threejs
 	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
@@ -30,7 +28,7 @@ build:
 		https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js \
 		https://raw.githubusercontent.com/requirejs/domReady/latest/domReady.js \
 		https://raw.githubusercontent.com/requirejs/text/latest/text.js
-	python -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; print(FigureManagerWebAgg.get_javascript().encode('utf8'))" > build/mpl.js
+	python3 -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; f = open('build/mpl.js', 'w'); f.write(FigureManagerWebAgg.get_javascript())"
 
 $(all-min-js): build $(all-min-css) js/*
 	# Host standalone jquery for compatibility with old instructions

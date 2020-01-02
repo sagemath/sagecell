@@ -67,7 +67,7 @@ class RootHandler(tornado.web.RequestHandler):
                 # We allow the user to strip off the ``=`` padding at the end
                 # so that the URL doesn't have to have any escaping.
                 # Here we add back the ``=`` padding if we need it.
-                a += "=" * ((4 - (len(a) % 4)) % 4)
+                a += b"=" * ((4 - (len(a) % 4)) % 4)
                 return zlib.decompress(
                     base64.urlsafe_b64decode(a)).decode("utf8")
                 
@@ -77,7 +77,7 @@ class RootHandler(tornado.web.RequestHandler):
                     interacts = get_decompressed("interacts")
             except Exception as e:
                 self.set_status(400)
-                self.finish("Invalid zipped code: %s\n" % (e.message,))
+                self.finish("Invalid zipped code: %s" % e)
                 return
         elif "q" in args:
             # The code is referenced by a permalink identifier.
@@ -507,7 +507,7 @@ class ZMQServiceHandler(ZMQChannelsHandler):
     
     def __init__(self):
         super(ZMQServiceHandler, self).__init__()
-        self.streams = collections.defaultdict(unicode)
+        self.streams = collections.defaultdict(str)
 
     def output_message(self, msg):
         if msg["channel"] == "iopub" and msg["header"]["msg_type"] == "stream":
@@ -520,7 +520,8 @@ class SockJSChannelsHandler(ZMQChannelsHandler):
         self.callback = callback
 
     def output_message(self, msg):
-        self.callback("%s/channels,%s" % (self.kernel.id, self._json_msg(msg)))
+        self.callback(
+            "%s/channels,%s" % (self.kernel.id, self._json_msg(msg).decode()))
 
 
 class WebChannelsHandler(ZMQChannelsHandler,

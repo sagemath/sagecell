@@ -62,7 +62,7 @@ class KernelProcess(Process):
         # to forking. Stale connection files do cause problems.
         app.cleanup_connection_file()
         kernel_init.initialize(app.kernel)
-        for r, limit in self.rlimits.iteritems():
+        for r, limit in self.rlimits.items():
             resource.setrlimit(getattr(resource, r), (limit, limit))
         logger.debug("kernel ready")
         context = zmq.Context.instance()
@@ -71,7 +71,7 @@ class KernelProcess(Process):
         socket.send_json({
             "id": self.id,
             "connection": {
-                "key": app.session.key,                
+                "key": app.session.key.decode(),
                 "ip": app.ip,
                 "hb": app.hb_port,
                 "iopub": app.iopub_port,
@@ -232,7 +232,7 @@ class KernelProvider(object):
                 and len(self.preforked) < self.max_preforked
                 and len(self.kernels) < self.max_kernels):
                 self.preforking = self.fork(self.preforked_rlimits)
-        for id in self.kernels.keys():
+        for id in list(self.kernels):
             self.stop_kernel(id)
         while self.to_kill:
             self.kill_check()

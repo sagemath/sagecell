@@ -1,6 +1,7 @@
 import time
 
 import jupyter_client.session
+import tornado.ioloop
 import zmq
 
 from log import logger
@@ -28,7 +29,8 @@ class KernelConnection(object):
         self.timeout = timeout
         if timeout > 0:
             self.deadline = now + self.timeout
-        self.session = jupyter_client.session.Session(key=connection["key"])
+        self.session = jupyter_client.session.Session(
+            key=connection["key"].encode())
         self.channels = {}
         context = zmq.Context.instance()
         address = connection["ip"]
@@ -51,7 +53,7 @@ class KernelConnection(object):
     def start_hb(self):
         logger.debug("start_hb for %s", self.id)
         hb = self.channels["hb"]
-        ioloop = zmq.eventloop.IOLoop.current()
+        ioloop = tornado.ioloop.IOLoop.current()
 
         def pong(message):
             #logger.debug("pong for %s", self.id)
@@ -78,7 +80,7 @@ class KernelConnection(object):
                 hb.send(b'ping')
                 self._expecting_pong = True
 
-        self._hb_periodic_callback = zmq.eventloop.ioloop.PeriodicCallback(
+        self._hb_periodic_callback = tornado.ioloop.PeriodicCallback(
             ping, config.get("beat_interval") * 1000)
 
         def start_ping():
@@ -98,7 +100,7 @@ class KernelConnection(object):
         self.stop_hb()
         if self._on_stop:
             self._on_stop()
-        for stream in self.channels.itervalues():
+        for stream in self.channels.values():
             stream.close()
         self._dealer.stop_kernel(self.id)
         
@@ -106,7 +108,7 @@ class KernelConnection(object):
         logger.debug("stop_hb for %s", self.id)
         self.alive = False
         self._hb_periodic_callback.stop()
-        zmq.eventloop.IOLoop.current().remove_timeout(self._start_ping_handle)
+        tornado.ioloop.IOLoop.current().remove_timeout(self._start_ping_handle)
         self.channels["hb"].on_recv(None)
 
 
@@ -193,7 +195,7 @@ class KernelDealer(object):
         Stop all kernels and disconnect all providers.
         """
         self._stream.stop_on_recv()
-        for k in self._kernels.values():
+        for k in list(self._kernels.values()):
             k.stop()
         for addr in self._connected_providers:
             logger.debug("stopping %r", addr)

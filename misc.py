@@ -2,15 +2,8 @@
 Misc functions / classes
 """
 from contextlib import contextmanager
-# note: ensure sage's version of python has nose installed or starting new sessions may hang!
-try:
-    from nose.tools import assert_is, assert_equal, assert_in, assert_not_in, assert_raises, assert_regexp_matches, assert_is_instance, assert_is_not_none, assert_greater
-except ImportError:    
-    pass
-
 from datetime import datetime
 import os
-import re
 import shutil
 import stat
 import sys
@@ -57,19 +50,17 @@ class Config(object):
         :returns: the value of the named attribute, or
             None if the attribute does not exist.
         """
-        default_config_val = self.get_default(attr)
-        config_val = default_config_val
-
+        result = self.get_default(attr)
         if self.config is not None:
             try:
-                config_val = getattr(self.config, attr)
+                val = getattr(self.config, attr)
+                if isinstance(val, dict):
+                    result.update(val)
+                else:
+                    result = val
             except AttributeError:
                 pass
-
-        if isinstance(config_val, dict):
-            config_val = dict(default_config_val.items() + config_val.items())
-
-        return config_val
+        return result
 
     def get_default(self, attr):
         """
@@ -179,68 +170,3 @@ def sage_json(obj):
         return float(obj)
     else:
         raise TypeError("Object of type %s with value of %s is not JSON serializable" % (type(obj), repr(obj)))
-
-##########################################
-## Unit Testing Misc Functions
-##########################################
-def assert_len(obj,l):
-    return assert_equal(len(obj), l, "Object %s should have length %s, but has length %s"%(obj,l,len(obj)))
-
-uuid_re = re.compile('[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}')
-
-def assert_uuid(s):
-    return assert_regexp_matches(s, uuid_re)
-
-# from the attest python package - license is modified BSD
-from StringIO import StringIO
-@contextmanager
-def capture_output(split=False):
-    """Captures standard output and error during the context. Returns a
-    tuple of the two streams as lists of lines, added after the context has
-    executed.
-
-    .. testsetup::
-
-        from attest import capture_output
-
-    >>> with capture_output() as (out, err):
-    ...    print('Captured')
-    ...
-    >>> out
-    ['Captured']
-
-    """
-    stdout, stderr = sys.stdout, sys.stderr
-    sys.stdout, sys.stderr = StringIO(), StringIO()
-    out, err = [], []
-    try:
-        yield out, err
-    finally:
-        if split:
-            out.extend(sys.stdout.getvalue().splitlines())
-            err.extend(sys.stderr.getvalue().splitlines())
-        else:
-            out.append(sys.stdout.getvalue())
-            err.append(sys.stderr.getvalue())
-        sys.stdout, sys.stderr = stdout, stderr
-
-from time import time
-class Timer(object):
-    def __init__(self, name="", reset=False):
-        self.start = time()
-        self.name = name
-        self.reset = reset
-        
-    def __call__(self, reset=None):
-        if reset is None:
-            reset = self.reset
-        old_time = self.start
-        new_time = time()
-        if reset:
-            self.start = new_time
-        return new_time - old_time
-
-    def __repr__(self):
-        return str(self.name)+" %s ms"%(int(self(reset=True)*1000))
-
-globaltimer=Timer("Global timer")

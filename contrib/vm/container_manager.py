@@ -107,14 +107,12 @@ sage_optional_packages = [
 "dot2tex",  # needs graphviz
 "gap_packages",
 "gap3",
-"guppy",
 "latte_int",
 "lie",  # needs bison
 "lrslib",
 "mcqd",
 "normaliz",
 "nose",
-"ore_algebra",
 "pari_elldata",
 "pari_galpol",
 "pari_nftables",

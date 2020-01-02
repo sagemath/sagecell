@@ -77,14 +77,14 @@ class BackendCell(BackendIPython):
             Example plain text output
         """
         if isinstance(rich_output, OutputPlainText):
-            return {u'text/plain': rich_output.text.get()}, {}
+            return {u'text/plain': rich_output.text.get_unicode()}, {}
         if isinstance(rich_output, OutputAsciiArt):
-            return {u'text/plain': rich_output.ascii_art.get()}, {}
+            return {u'text/plain': rich_output.ascii_art.get_unicode()}, {}
 
         if isinstance(rich_output, OutputLatex):
             display_html(rich_output.mathjax())
         elif isinstance(rich_output, OutputHtml):
-            display_html(rich_output.html.get())
+            display_html(rich_output.html.get_unicode())
 
         elif isinstance(rich_output, OutputImageGif):
             display_file(rich_output.gif.filename(), 'text/image-filename')
@@ -97,9 +97,6 @@ class BackendCell(BackendIPython):
         elif isinstance(rich_output, OutputImageSvg):
             display_file(rich_output.svg.filename(), 'text/image-filename')
             
-        elif isinstance(rich_output, OutputSceneCanvas3d):
-            display_file(
-                rich_output.canvas3d.filename(), 'application/x-canvas3d')
         elif isinstance(rich_output, OutputSceneJmol):
             path = tempfile.mkdtemp(suffix=".jmol", dir=".")
             os.chmod(path, stat.S_IRWXU + stat.S_IXGRP + stat.S_IXOTH)
@@ -167,7 +164,6 @@ class BackendCell(BackendIPython):
             OutputImagePng,
             OutputImageSvg,
             
-            OutputSceneCanvas3d,
             OutputSceneJmol,
             OutputSceneThreejs,
             #OutputSceneWavefront,

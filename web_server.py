@@ -8,9 +8,8 @@ import struct
 
 import paramiko
 import psutil
+import tornado.ioloop
 import tornado.web
-import zmq.eventloop
-zmq.eventloop.ioloop.install()
 
 import handlers
 from log import logger
@@ -81,7 +80,7 @@ class SageCellServer(tornado.web.Application):
         self.completer = handlers.Completer(self.kernel_dealer)
         db = __import__('db_' + config.get('db'))
         self.db = db.DB(config.get('db_config')['uri'])
-        self.ioloop = zmq.eventloop.IOLoop.instance()
+        self.ioloop = tornado.ioloop.IOLoop.current()
 
         # to check for blocking when debugging, uncomment the following
         # and set the argument to the blocking timeout in seconds

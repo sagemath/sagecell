@@ -24,7 +24,7 @@ class DB(db.DB):
         """
         See :meth:`db.DB.add`
         """
-        body = urllib.urlencode({
+        body = urllib.parse.urlencode({
             "code": code.encode("utf8"),
             "language": language.encode("utf8"),
             "interacts": interacts.encode("utf8")})

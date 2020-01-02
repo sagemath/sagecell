@@ -51,14 +51,14 @@ def dynamic(*args, **kwds):
     for var in args:
         if not isinstance(var, str):
             i = id(var)
-            for k,v in sys._sage_.namespace.iteritems():
+            for k,v in sys._sage_.namespace.items():
                 if id(v) == i:
                     _dynamic(k)
             return
         else:
             _dynamic(var)
 
-    for var, control in kwds.iteritems():
+    for var, control in kwds.items():
         _dynamic(var, control)
 
 
