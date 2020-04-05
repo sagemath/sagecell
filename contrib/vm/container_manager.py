@@ -105,6 +105,7 @@ sage_optional_packages = [
 "database_odlyzko_zeta",
 "database_symbolic_data",
 "dot2tex",  # needs graphviz
+"fricas",
 "gap_packages",
 "gap3",
 "latte_int",
