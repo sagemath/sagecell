@@ -162,6 +162,8 @@ def initialize(kernel):
     sage_code = """
 # Ensure unique random state after forking
 set_random_seed()
+import numpy.random
+numpy.random.seed()
 from sage.repl.rich_output import get_display_manager
 from backend_cell import BackendCell
 get_display_manager().switch_backend(BackendCell(), shell=get_ipython())
