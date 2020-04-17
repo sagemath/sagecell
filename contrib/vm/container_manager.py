@@ -122,6 +122,7 @@ sage_optional_packages = [
 "pynormaliz",
 "qepcad",
 "saclib",
+"tides",
 "topcom",
 ]
 
