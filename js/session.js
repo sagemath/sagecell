@@ -327,7 +327,7 @@ Session.prototype.execute = function(code) {
         }
         // Modifying Python expression
         if (this.language === "octave") {
-            code = "octave = Octave(); " + code;
+            code = "if octave.path() != os.getcwd():\n    octave = Octave()\n" + code;
         }
         if (this.language === "r") {
             code = "r.eval(\"options(bitmapType='cairo')\"); " + code + "\nr.eval(\"graphics.off()\"); None";
