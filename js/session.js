@@ -312,7 +312,12 @@ Session.prototype.execute = function(code) {
         this.rawcode = code;
         // Modifying code in chosen language
         if (this.language === "octave") {
-            code = "set(gcf(), 'visible', 'off')\n" + code + "\nif (get(gcf(), 'children'))\n    saveas(gcf(), 'octave.png')\nendif";
+            code = "set(gcf(), 'visible', 'off')\n"
+                    + code + "\n"
+                    + "if (get(gcf(), 'children'))\n"
+                    + "    saveas(gcf(), 'octave.png')\n"
+                    + "    close\n"
+                    + "endif";
         }
         // Converting code into Python expression
         if (this.language !== "sage") {
