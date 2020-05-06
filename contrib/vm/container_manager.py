@@ -92,6 +92,7 @@ libnetcdf-dev
 libxml2-dev
 libxslt1-dev
 octave
+octave-statistics
 """.split()
 
 # Optional Sage packages to be installed
