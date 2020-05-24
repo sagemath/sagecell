@@ -79,7 +79,7 @@
     &lt;meta name="viewport" content="width=device-width"&gt;
     &lt;title&gt;SageMathCell&lt;/title&gt;
     &lt;script src="https://sagecell.sagemath.org/static/embedded_sagecell.js"&gt;&lt;/script&gt;
-    &lt;script&gt;$(function () {
+    &lt;script&gt;
     // Make the div with id 'mycell' a Sage cell
     sagecell.makeSagecell({inputLocation:  '#mycell',
                            template:       sagecell.templates.minimal,
@@ -87,7 +87,6 @@
     // Make *any* div with class 'compute' a Sage cell
     sagecell.makeSagecell({inputLocation: 'div.compute',
                            evalButtonText: 'Evaluate'});
-    });
     &lt;/script&gt;
   &lt;/head&gt;
   &lt;body&gt;
