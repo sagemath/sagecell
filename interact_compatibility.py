@@ -32,7 +32,10 @@ color_selector: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.h
 checkbox: http://www.sagemath.org/doc/reference/sagenb/notebook/interact.html#sagenb.notebook.interact.checkbox
 """
 
+from collections.abc import Iterable
 import math
+
+
 def __old_make_values_list(vmin, vmax, step_size):
     """
     This code is from slider_generic.__init__.
@@ -40,91 +43,45 @@ def __old_make_values_list(vmin, vmax, step_size):
     This code requires sage mode to be checked.
     """
     from sage.arith.srange import srange
-    if isinstance(vmin, list):
-        vals=vmin
+    if isinstance(vmin, Iterable):
+        values = list(vmin)
     else:
         if vmax is None:
-            vmax=vmin
-            vmin=0
+            vmin, vmax = 0, vmin
         #Compute step size; vmin and vmax are both defined here
         #500 is the length of the slider (in px)
         if step_size is None:
-            step_size = (vmax-vmin)/499.0
+            step_size = (vmax - vmin) / 499.0
         elif step_size <= 0:
-            raise ValueError("invalid negative step size -- step size must be positive")
+            raise ValueError("step_size must be positive")
 
         #Compute list of values
-        num_steps = int(math.ceil((vmax-vmin)/float(step_size)))
+        num_steps = int(math.ceil((vmax - vmin) / float(step_size)))
         if num_steps <= 1:
-            vals = [vmin, vmax]
-        else:
-            vals = srange(vmin, vmax, step_size, include_endpoint=True)
-            if vals[-1] != vmax:
-                try:
-                    if vals[-1] > vmax:
-                        vals[-1] = vmax
-                    else:
-                        vals.append(vmax)
-                except (ValueError, TypeError):
-                    pass
+            return [vmin, vmax]
+        values = srange(vmin, vmax, step_size, include_endpoint=True)
+        if values[-1] != vmax:
+            try:
+                if values[-1] > vmax:
+                    values[-1] = vmax
+                else:
+                    values.append(vmax)
+            except (ValueError, TypeError):
+                pass
     
     #If the list of values is small, use the whole list.
     #Otherwise, use evenly spaced values in the list.
-    if len(vals) == 0:
-        return_values = [0]
-    elif(len(vals)<=500):
-        return_values = vals
-    else:
-        vlen = (len(vals)-1)/499.0
-        return_values = [vals[(int)(i*vlen)] for i in range(500)]
-    return return_values
-
+    if not values:
+        return [0]
+    if len(values) <= 500:
+        return values
+    vlen = (len(values) - 1) / 499.0
+    return [values[(int)(i * vlen)] for i in range(500)]
 
 
 def slider(vmin, vmax=None,step_size=None, default=None, label=None,
            display_value=True):
     r"""
-    An interactive slider control, which can be used in conjunction
-    with the :func:`interact` command.
-
-    INPUT:
-
-    - ``vmin`` - an object
-
-    - ``vmax`` - an object (default: None); if None then ``vmin``
-      must be a list, and the slider then varies over elements of
-      the list.
-
-    - ``step_size`` - an integer (default: 1)
-
-    - ``default`` - an object (default: None); default value is
-      "closest" in ``vmin`` or range to this default.
-
-    - ``label`` - a string
-
-    - ``display_value`` - a bool, whether to display the current
-      value to the right of the slider
-
-    EXAMPLES:
-
-    We specify both ``vmin`` and ``vmax``.  We make the default
-    `3`, but since `3` isn't one of `3/17`-th spaced values
-    between `2` and `5`, `52/17` is instead chosen as the
-    default (it is closest)::
-
-        sage: slider(2, 5, 3/17, 3, 'alpha')
-        Slider: alpha [2--|52/17|---5]
-
-    Here we give a list::
-
-        sage: slider([1..10], None, None, 3, 'alpha')
-        Slider: alpha [1--|3|---10]
-
-    The elements of the list can be anything::
-
-        sage: slider([1, 'x', 'abc', 2/3], None, None, 'x', 'alpha')
-        Slider: alpha [1--|x|---2/3]            
-        """        r"""
     An interactive slider control, which can be used in conjunction
     with the :func:`interact` command.
 
