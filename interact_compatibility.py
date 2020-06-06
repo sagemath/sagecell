@@ -344,20 +344,18 @@ def selector(values, label=None, default=None,
         ...       print(a)
         <html>...
     """
-    if buttons:
-        selector_type='button'
-    else:
-        selector_type='list'
-
+    selector_type = 'button' if buttons else 'list'
+    values = list(values)
     # in the old code, if a selector had a single button, then it was
     # actually a pushbutton (i.e., it would trigger an update every time
     # it was pushed)
-    if selector_type=='button' and len(values)==1:
-        if isinstance(values[0], (list,tuple)) and len(values[0])==2:
-            buttonvalue, buttontext=values[0]
+    if selector_type == 'button' and len(values) == 1:
+        v0 = values[0]
+        if isinstance(v0, (list, tuple)) and len(v0) == 2:
+            value, text = v0
         else:
-            buttonvalue, buttontext=values[0],str(values[0])
-        return Button(value=buttonvalue, text=buttontext, default=buttonvalue, label=label, width=width)
+            value, text= v0, str(v0)
+        return Button(value=value, text=text, default=value, label=label, width=width)
 
     return Selector(values=values, default=default, label=label, selector_type=selector_type,
                     nrows=nrows, ncols=ncols, width=width)
