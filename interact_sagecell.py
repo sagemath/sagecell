@@ -88,13 +88,18 @@ Recursively nested interact::
             interact(f)
 """
 
-import uuid
-import sys
+
+import inspect
 import json
+import sys
+import uuid
+
 
 from sage.misc.decorators import decorator_defaults
 
+
 from misc import session_metadata
+
 
 __interacts = {}
 
@@ -280,6 +285,7 @@ try:
     sys._sage_.register_handler("sagenb.interact.update_interact", update_interact_msg)
 except AttributeError:
     pass
+
 
 @decorator_defaults
 def interact(f, controls=None, update=None, layout=None, locations=None,
@@ -1271,14 +1277,12 @@ class UpdateButton(Button):
 
 def automatic_control(control, var=None):
     """
-    Guesses the desired interact control from the syntax of the parameter.
+    Guess the desired interact control from the syntax of the parameter.
     
     :arg control: Parameter value.
     
     :returns: An InteractControl object.
     :rtype: InteractControl
-    
-    
     """
     from types import GeneratorType
     label = None
@@ -1287,7 +1291,6 @@ def automatic_control(control, var=None):
     # For backwards compatibility, we check to see if
     # auto_update=False as passed in. If so, we set up an
     # UpdateButton.  This should be deprecated.
-
     if var=="auto_update" and control is False:
         return UpdateButton()
     
@@ -1303,67 +1306,63 @@ def automatic_control(control, var=None):
 
     # Checks for interact controls that are verbosely defined
     if isinstance(control, InteractControl):
-        C = control
         if label:
-            C.label = label
-    elif isinstance(control, str):
-        C = InputBox(default = control, label = label)
-    elif isinstance(control, bool):
-        C = Checkbox(default = control, label = label, raw = True)
-    elif isinstance(control, list):
-        if len(control)==1:
-            if isinstance(control[0], (list,tuple)) and len(control[0])==2:
-                buttonvalue, buttontext=control[0]
+            control.label = label
+        return control
+    if isinstance(control, str):
+        return InputBox(default=control, label=label)
+    if isinstance(control, bool):
+        return Checkbox(default=control, label=label, raw=True)
+    if isinstance(control, range):
+        control = list(control)
+    if isinstance(control, list):
+        if len(control) == 1:
+            if isinstance(control[0], (list, tuple)) and len(control[0]) == 2:
+                buttonvalue, buttontext = control[0]
             else:
-                buttonvalue, buttontext=control[0],str(control[0])
-            C = Button(value=buttonvalue, text=buttontext, default=buttonvalue, label=label)
-        else:
-            if len(control) <= 5:
-                selectortype = "button"
-            else:
-                selectortype = "list"
-            C = Selector(selector_type=selectortype, default=default_value,
-                         label=label, values=control)
-    elif isinstance(control, GeneratorType):
-        values=take(10000,control)
-        C = DiscreteSlider(default = default_value, values = values, label = label)
-    elif isinstance (control, tuple):
+                buttonvalue, buttontext = control[0], str(control[0])
+            return Button(value=buttonvalue, text=buttontext,
+                          default=buttonvalue, label=label)
+        return Selector(control, default=default_value, label=label,
+                        selector_type="button" if len(control) <= 5 else "list")
+    if isinstance(control, GeneratorType) or inspect.isgenerator(control):
+        return DiscreteSlider(take(10000, control),
+                              default=default_value, label=label)
+    if isinstance (control, tuple):
         if len(control) == 2:
-            C = ContinuousSlider(default=default_value,
-                interval=(control[0], control[1]), label = label)
-        elif len(control) == 3:
+            return ContinuousSlider(interval=(control[0], control[1]),
+                                    default=default_value, label=label)
+        if len(control) == 3:
             from sage.arith.srange import srange
-            C = DiscreteSlider(default=default_value, values=srange(control[0],
-                control[1], control[2], include_endpoint=True), label=label)
-        else:
-            values=list(control)
-            C = DiscreteSlider(default = default_value, values = values, label = label)
-    else:
-        C = ExpressionBox(default = control, label=label)
-        try:
-            from sage.plot.colors import Color
-            from sage.structure.element import is_Vector, is_Matrix
-            from sage.all import parent
-            if is_Matrix(control):
-                nrows = control.nrows()
-                ncols = control.ncols()
-                default_value = control.list()
-                default_value = [[default_value[j * ncols + i]
-                                 for i in range(ncols)] for j in range(nrows)]
-                C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=parent(control))
-            elif is_Vector(control):
-                default_value = [control.list()]
-                nrows = 1
-                ncols = len(control)
-                C = InputGrid(nrows = nrows, ncols = ncols, label = label, 
-                              default = default_value, adapter=lambda x: parent(control)(x[0]))
-            elif isinstance(control, Color):
-                C = ColorSelector(default = control, label = label)
-        except:
-            pass
-    
-    return C
+            return DiscreteSlider(
+                srange(control[0], control[1], control[2],
+                       include_endpoint=True),
+                default=default_value, label=label)
+        return DiscreteSlider(list(control), default=default_value, label=label)
+    try:
+        from sage.plot.colors import Color
+        from sage.structure.element import is_Vector, is_Matrix
+        from sage.all import parent
+        if is_Matrix(control):
+            nrows = control.nrows()
+            ncols = control.ncols()
+            default_value = control.list()
+            default_value = [[default_value[j * ncols + i]
+                             for i in range(ncols)] for j in range(nrows)]
+            return InputGrid(nrows=nrows, ncols=ncols, label=label,
+                             default=default_value, adapter=parent(control))
+        if is_Vector(control):
+            nrows = 1
+            ncols = len(control)
+            default_value = [control.list()]
+            return InputGrid(nrows=nrows, ncols=ncols, label=label,
+                             default=default_value,
+                             adapter=lambda x: parent(control)(x[0]))
+        if isinstance(control, Color):
+            return ColorSelector(default=control, label=label)
+    except:
+        return ExpressionBox(default=control, label=label)
+
 
 def closest_index(values, value):
     if value is None:
