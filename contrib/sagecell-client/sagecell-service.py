@@ -1,12 +1,10 @@
 #! /usr/bin/env python3
 
 from datetime import datetime
-import json
 import random
+import requests
 import sys
 import time
-import urllib.parse
-import urllib.request
 
 
 retries = 3
@@ -18,12 +16,11 @@ while retries:
     retries -= 1
     a, b = random.randint(-2**31, 2**31), random.randint(-2**31, 2**31)
     code = 'print({} + {})'.format(a, b)
-    data = urllib.parse.urlencode(dict(code=code, accepted_tos="true"))
-    data = data.encode('ascii')
     try:
-        with urllib.request.urlopen(
-                sys.argv[1] + '/service', data, timeout=35) as f:
-            reply = json.loads(f.read().decode('ascii'))
+        r = requests.post(sys.argv[1] + '/service',
+                          data={"code": code, "accepted_tos": "true"},
+                          timeout=5)
+        reply = r.json()
         # Every few hours we have a request that comes back as executed, but the
         # stdout is not in the dictionary. It seems that the compute message
         # never actually gets sent to the kernel and it appears the problem is
