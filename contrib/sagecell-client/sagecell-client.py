@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 A small client illustrating how to interact with the Sage Cell Server, version 2
 
@@ -100,4 +100,4 @@ if __name__ == "__main__":
         url = 'https://sagecell.sagemath.org'
     a = SageCell(url)
     import pprint
-    pprint.pprint(a.execute_request('factorial(2012)'))
+    pprint.pprint(a.execute_request('factorial(2020)'))
