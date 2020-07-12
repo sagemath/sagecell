@@ -1285,15 +1285,17 @@ def automatic_control(control, var=None):
     :rtype: InteractControl
     """
     from types import GeneratorType
+    from sage.all import parent
+    from sage.plot.colors import Color
+    from sage.structure.element import is_Vector, is_Matrix
+
     label = None
     default_value = None
-
     # For backwards compatibility, we check to see if
     # auto_update=False as passed in. If so, we set up an
     # UpdateButton.  This should be deprecated.
     if var=="auto_update" and control is False:
         return UpdateButton()
-    
     # Checks for labels and control values
     for _ in range(2):
         if isinstance(control, tuple) and len(control) == 2 and isinstance(control[0], str):
@@ -1303,7 +1305,6 @@ def automatic_control(control, var=None):
                 and isinstance(control[1], (tuple, list, GeneratorType))):
             # TODO: default_value isn't used effectively below in all instances 
             default_value, control = control
-
     # Checks for interact controls that are verbosely defined
     if isinstance(control, InteractControl):
         if label:
@@ -1339,29 +1340,24 @@ def automatic_control(control, var=None):
                        include_endpoint=True),
                 default=default_value, label=label)
         return DiscreteSlider(list(control), default=default_value, label=label)
-    try:
-        from sage.plot.colors import Color
-        from sage.structure.element import is_Vector, is_Matrix
-        from sage.all import parent
-        if is_Matrix(control):
-            nrows = control.nrows()
-            ncols = control.ncols()
-            default_value = control.list()
-            default_value = [[default_value[j * ncols + i]
-                             for i in range(ncols)] for j in range(nrows)]
-            return InputGrid(nrows=nrows, ncols=ncols, label=label,
-                             default=default_value, adapter=parent(control))
-        if is_Vector(control):
-            nrows = 1
-            ncols = len(control)
-            default_value = [control.list()]
-            return InputGrid(nrows=nrows, ncols=ncols, label=label,
-                             default=default_value,
-                             adapter=lambda x: parent(control)(x[0]))
-        if isinstance(control, Color):
-            return ColorSelector(default=control, label=label)
-    except:
-        return ExpressionBox(default=control, label=label)
+    if is_Matrix(control):
+        nrows = control.nrows()
+        ncols = control.ncols()
+        default_value = control.list()
+        default_value = [[default_value[j * ncols + i]
+                         for i in range(ncols)] for j in range(nrows)]
+        return InputGrid(nrows=nrows, ncols=ncols, label=label,
+                         default=default_value, adapter=parent(control))
+    if is_Vector(control):
+        nrows = 1
+        ncols = len(control)
+        default_value = [control.list()]
+        return InputGrid(nrows=nrows, ncols=ncols, label=label,
+                         default=default_value,
+                         adapter=lambda x: parent(control)(x[0]))
+    if isinstance(control, Color):
+        return ColorSelector(default=control, label=label)
+    return ExpressionBox(default=control, label=label)
 
 
 def closest_index(values, value):
