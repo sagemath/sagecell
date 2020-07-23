@@ -60,23 +60,37 @@ bison
 build-essential
 dvipng
 epstool
+fig2dev
 gettext
 gfortran
 git
 imagemagick
 iptables
+libboost-dev
 libcairo2-dev
 libffi-dev
+libfile-slurp-perl
+libisl-dev
+libjson-perl
+libmongodb-perl
+libperl-dev
+libsvg-perl
 libsystemd-dev
+libterm-readkey-perl
+libterm-readline-gnu-perl
+libxml-libxslt-perl
+libxml-writer-perl
 m4
 nginx
+ninja-build
 npm
-php7.2-fpm
+pandoc
+pari-gp2c
+php7.4-fpm
 rsyslog-relp
 ssh
 texlive
 texlive-latex-extra
-transfig
 unattended-upgrades
 unzip
 wget
@@ -198,7 +212,7 @@ if $syslogfacility-text == "local3" then
 
 # HA-Proxy configuration is regenerated every time the script is run.
 HAProxy_header = """\
-# Default from Ubuntu 18.04 LTS
+# Default from Ubuntu 20.04 LTS
 global
         log /dev/log    local0
         log /dev/log    local1 notice
@@ -213,13 +227,10 @@ global
         ca-base /etc/ssl/certs
         crt-base /etc/ssl/private
 
-        # Default ciphers to use on SSL-enabled listening sockets.
-        # For more information, see ciphers(1SSL). This list is from:
-        #  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
-        # An alternative list with additional directives can be obtained from
-        #  https://mozilla.github.io/server-side-tls/ssl-config-generator/?server=haproxy
-        ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS
-        ssl-default-bind-options no-sslv3
+        # See: https://ssl-config.mozilla.org/#server=haproxy&server-version=2.0.3&config=intermediate
+        ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+        ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
+        ssl-default-bind-options ssl-min-ver TLSv1.2 no-tls-tickets
 
 defaults
         log     global
@@ -319,7 +330,7 @@ def install_macaulay2():
     Adjust system configuration and install Macaulay2.
     """
     with open("/etc/apt/sources.list.d/macaulay2.list", "w") as f:
-        f.write("deb https://faculty.math.illinois.edu/Macaulay2/Repositories/Ubuntu bionic main")
+        f.write("deb https://faculty.math.illinois.edu/Macaulay2/Repositories/Ubuntu focal main")
     check_call("apt-key adv --keyserver hkp://keys.gnupg.net \
                 --recv-key CD9C0E09B0C780943A1AD85553F8BD99F40DCB31")
     check_call("apt update")
@@ -567,7 +578,7 @@ class SCLXC(object):
         os.environ["HTTP_PROXY"] = "apt"
         if not self.c.create(
             "download", 0,
-            {"dist": "ubuntu", "release": "bionic", "arch": "amd64"},
+            {"dist": "ubuntu", "release": "focal", "arch": "amd64"},
             "btrfs"):
                 raise RuntimeError("failed to create " + self.name)
         os.environ.unsetenv("HTTP_PROXY")
@@ -798,7 +809,7 @@ def restart_haproxy(names, backup_names=[]):
         check_call("systemctl start haproxy")
 
 
-logging.config.dictConfig(yaml.load("""
+logging.config.dictConfig(yaml.safe_load("""
     version: 1
     formatters:
       file:
