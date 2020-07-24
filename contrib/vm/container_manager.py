@@ -66,7 +66,6 @@ gfortran
 git
 imagemagick
 iptables
-libboost-dev
 libcairo2-dev
 libffi-dev
 libfile-slurp-perl
