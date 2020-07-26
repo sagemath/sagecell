@@ -43,7 +43,7 @@ def __old_make_values_list(vmin, vmax, step_size):
     This code requires sage mode to be checked.
     """
     from sage.arith.srange import srange
-    if isinstance(vmin, Iterable):
+    if isinstance(vmin, (range, Iterable)):
         values = list(vmin)
     else:
         if vmax is None:
