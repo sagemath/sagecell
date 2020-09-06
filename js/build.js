@@ -1,4 +1,8 @@
 ({
+    map: {
+        '*': { 'jquery': 'jquery-private' },
+        'jquery-private': { 'jquery': 'jquery' }
+    },
     name: "main",
     out: "main_build.js",
     //optimize: "none",
