@@ -18,7 +18,7 @@ submodules:
 
 build:
 	-rm -r build
-	cp -a $(sage-root)/local/lib/python3.7/site-packages/notebook/static build
+	cp -a $(sage-root)/local/lib/python3.8/site-packages/notebook/static build
 	cp static/colorpicker/js/colorpicker.js build
 	ln -sfn $(sage-root)/local/share/jsmol static/jsmol
 	ln -sfn $(sage-root)/local/share/threejs static/threejs
