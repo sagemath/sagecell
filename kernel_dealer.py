@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 import jupyter_client.session
@@ -163,29 +164,28 @@ class KernelDealer(object):
             self._try_to_get()
         elif msg[0] == "kernel":
             msg = msg[1]
-            for i, (rlimits, callback) in enumerate(self._expected_kernels):
+            for i, (rlimits, f) in enumerate(self._expected_kernels):
                 if rlimits == msg["rlimits"]:
                     self._kernel_origins[msg["id"]] = addr
                     self._expected_kernels.pop(i)
-                    callback(msg)
+                    f.set_result(msg)
                     break
             
-    def get_kernel(self, callback,
-                   rlimits={}, lifespan=float("inf"), timeout=float("inf")):
-
-        def cb(d):
-            d.pop("rlimits")
-            d["lifespan"] = lifespan
-            d["timeout"] = timeout
-            kernel = KernelConnection(self, **d)
-            self._kernels[kernel.id] = kernel
-            logger.debug("tracking %d kernels", len(self._kernels))
-            logger.info("dealing kernel %s", kernel.id)
-            callback(kernel)
-            
-        self._expected_kernels.append((rlimits, cb))
+    async def get_kernel(self,
+            rlimits={}, lifespan=float("inf"), timeout=float("inf")):
+        f = asyncio.get_running_loop().create_future()
+        self._expected_kernels.append((rlimits, f))
         self._get_queue.append(rlimits)
         self._try_to_get()
+        d = await f
+        d.pop("rlimits")
+        d["lifespan"] = lifespan
+        d["timeout"] = timeout
+        kernel = KernelConnection(self, **d)
+        self._kernels[kernel.id] = kernel
+        logger.debug("tracking %d kernels", len(self._kernels))
+        logger.info("dealing kernel %s", kernel.id)
+        return kernel
         
     def kernel(self, id):
         return self._kernels[id]

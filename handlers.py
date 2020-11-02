@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import collections
 import json
@@ -49,9 +50,8 @@ class RootHandler(tornado.web.RequestHandler):
     ```<root_url>?q=<uuid>`` loads code from a database based
     upon a unique identifying permalink (uuid4-based)
     """
-    @tornado.web.asynchronous
-    @tornado.gen.engine
-    def get(self):
+    
+    async def get(self):
         logger.debug('RootHandler.get')
         args = self.request.arguments
         code = None
@@ -83,8 +83,7 @@ class RootHandler(tornado.web.RequestHandler):
             # The code is referenced by a permalink identifier.
             q = self.get_argument("q")
             try:
-                code, lang, interacts = (yield tornado.gen.Task(
-                    self.application.db.get, q))[0]
+                code, lang, interacts = (await self.application.db.get(q))[0]
             except LookupError:
                 logger.warning("ID not found in permalink database %s", q)
                 self.set_status(404)
@@ -131,9 +130,8 @@ class KernelHandler(tornado.web.RequestHandler):
     ``<ws_url>/iopub`` is the expected iopub stream url
     ``<ws_url>/shell`` is the expected shell stream url
     """
-    @tornado.web.asynchronous
-    @tornado.gen.engine
-    def post(self, *args, **kwargs):
+    
+    async def post(self, *args, **kwargs):
         method = self.get_argument("method", "POST")
         if method == "DELETE":
             self.delete(*args, **kwargs)
@@ -152,8 +150,7 @@ class KernelHandler(tornado.web.RequestHandler):
             ws_url = "%s://%s/" % (proto, host)
             timeout = min(float(self.get_argument("timeout", 0)),
                           config.get("max_timeout"))
-            kernel = yield tornado.gen.Task(
-                self.application.kernel_dealer.get_kernel,
+            kernel = await self.application.kernel_dealer.get_kernel(
                 rlimits=config.get("provider_settings")["preforked_rlimits"],
                 lifespan=config.get("max_lifespan"),
                 timeout=timeout)
@@ -197,23 +194,17 @@ class Completer(object):
 
     def __init__(self, kernel_dealer):
         self.waiting = {}
-        self.kernel = None
-        
-        def callback(kernel):
-            self.kernel = kernel
+        def cb(task):
+            self.kernel = task.result()
             self.kernel.channels["shell"].on_recv(self.on_recv)
-            
-        kernel_dealer.get_kernel(callback)
+            logger.info("completer kernel ready")
+        asyncio.ensure_future(kernel_dealer.get_kernel()).add_done_callback(cb)
 
     def registerRequest(self, addr, msg):
         content = msg["content"]
         mode = content.get("mode", "sage")
         if mode in ("sage", "python"):
             self.waiting[msg["header"]["msg_id"]] = addr
-            if self.kernel is None:
-                # It is highly unlikely that we get a completion request before
-                # the kernel is ready, so we are not going to handle it.
-                logger.exception("completer kernel is not available")
             self.kernel.session.send(self.kernel.channels["shell"], msg)
             return
         match = Completer.name_pattern.search(
@@ -240,7 +231,7 @@ class Completer(object):
         msg = self.kernel.session.feed_identities(msg)[1]
         msg = self.kernel.session.unserialize(msg)
         addr = self.waiting.pop(msg["parent_header"]["msg_id"])
-        addr.send("complete," + jsonapi.dumps(msg, default=misc.sage_json))
+        addr.send(b"complete," + jsonapi.dumps(msg, default=misc.sage_json))
 
 
 class SockJSHandler(sockjs.tornado.SockJSConnection):
@@ -331,9 +322,7 @@ class ServiceHandler(tornado.web.RequestHandler):
     checks...
     """
 
-    @tornado.web.asynchronous
-    @tornado.gen.engine
-    def post(self):
+    async def post(self):
         if 'Origin' in self.request.headers:
             self.set_header(
                 'Access-Control-Allow-Origin', self.request.headers['Origin'])
@@ -353,8 +342,7 @@ class ServiceHandler(tornado.web.RequestHandler):
             return
         remote_ip = self.request.remote_ip
         referer = self.request.headers.get('Referer', '')
-        self.kernel = yield tornado.gen.Task(
-            self.application.kernel_dealer.get_kernel,
+        self.kernel = await self.application.kernel_dealer.get_kernel(
             rlimits=config.get("provider_settings")["preforked_rlimits"],
             lifespan=config.get("max_lifespan"),
             timeout=0)
@@ -563,8 +551,8 @@ class FileHandler(StaticHandler):
         # cells. Dropping etag still makes use of modification time.
         return None
         
-    def get(self, kernel_id, file_path):
-        super(FileHandler, self).get('%s/%s'%(kernel_id, file_path))
+    async def get(self, kernel_id, file_path):
+        await super(FileHandler, self).get('%s/%s'%(kernel_id, file_path))
 
     def set_extra_headers(self, path):
         super(FileHandler, self).set_extra_headers(path)

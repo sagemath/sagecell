@@ -24,9 +24,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
     The specified id can be used to generate permalinks
     with the format ``<root_url>?q=<id>``.
     """
-    @tornado.web.asynchronous
-    @tornado.gen.engine
-    def post(self):
+
+    async def post(self):
         def encode(s):
             return base64.urlsafe_b64encode(
                 zlib.compress(s.encode("utf8"))).decode("utf8")
@@ -38,8 +37,8 @@ class PermalinkHandler(tornado.web.RequestHandler):
         interacts = self.get_argument("interacts", "[]")
         retval = {}
         retval["zip"] = encode(code)
-        retval["query"] = yield tornado.gen.Task(
-            self.application.db.add, code, language, interacts)
+        retval["query"] = await self.application.db.add(
+            code, language, interacts)
         retval["interacts"] = encode(interacts)
         if "n" in args:
             retval["n"] = int(self.get_argument("n"))
@@ -54,13 +53,11 @@ class PermalinkHandler(tornado.web.RequestHandler):
         self.write(retval)
         self.finish()
 
-    @tornado.web.asynchronous
-    @tornado.gen.engine
-    def get(self):
+    async def get(self):
         q = self.get_argument("q")
         try:
             logger.debug("Looking up permalink %s", q)
-            response = (yield tornado.gen.Task(self.application.db.get, q))[0]
+            response = (await self.application.db.get(q))[0]
         except LookupError:
             logger.warning("ID not found in permalink database %s", q)
             self.set_status(404)
