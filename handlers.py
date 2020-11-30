@@ -359,7 +359,7 @@ class ServiceHandler(tornado.web.RequestHandler):
         self.zmq_handler = ZMQServiceHandler()
         streams = self.zmq_handler.streams
         self.zmq_handler.connect(self.kernel)
-        loop = tornado.ioloop.IOLoop.instance()
+        loop = tornado.ioloop.IOLoop.current()
         
         def kernel_callback(msg):
             if msg['msg_type'] == 'execute_reply':
@@ -398,6 +398,7 @@ class ServiceHandler(tornado.web.RequestHandler):
             'metadata': {},
             }
         self.zmq_handler.send(exec_message)
+        self._auto_finish = False
 
     def finish_request(self):
         self.finish(self.zmq_handler.streams)
