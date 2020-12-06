@@ -20,7 +20,7 @@ class DB(db.DB):
     def __init__(self, url):
         self.url = url
 
-    def add(self, code, language, interacts, callback):
+    async def add(self, code, language, interacts):
         """
         See :meth:`db.DB.add`
         """
@@ -28,25 +28,18 @@ class DB(db.DB):
             "code": code.encode("utf8"),
             "language": language.encode("utf8"),
             "interacts": interacts.encode("utf8")})
-            
-        def cb(response):
-            if response.code != 200:
-                raise RuntimeError("Error in response")
-            callback(json.loads(response.body)["query"])
-            
         http_client = tornado.httpclient.AsyncHTTPClient()
-        http_client.fetch(self.url, cb, method="POST", body=body,
-                          headers={"Accept": "application/json"})
+        response = await http_client.fetch(
+            self.url, method="POST", body=body,
+            headers={"Accept": "application/json"})
+        return json.loads(response.body)["query"]
 
-    def get(self, key, callback):
+    async def get(self, key):
         """
         See :meth:`db.DB.get`
         """
-        def cb(response):
-            if response.code != 200:
-                raise LookupError("Code lookup produced error")
-            callback(*json.loads(response.body))
-
         http_client = tornado.httpclient.AsyncHTTPClient()
-        http_client.fetch("{}?q={}".format(self.url, key), cb, method="GET",
-                          headers={"Accept": "application/json"})
+        response = await http_client.fetch(
+            "{}?q={}".format(self.url, key), method="GET",
+            headers={"Accept": "application/json"})
+        return json.loads(response.body)

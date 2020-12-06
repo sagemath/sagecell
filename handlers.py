@@ -83,7 +83,7 @@ class RootHandler(tornado.web.RequestHandler):
             # The code is referenced by a permalink identifier.
             q = self.get_argument("q")
             try:
-                code, lang, interacts = (await self.application.db.get(q))[0]
+                code, lang, interacts = await self.application.db.get(q)
             except LookupError:
                 logger.warning("ID not found in permalink database %s", q)
                 self.set_status(404)

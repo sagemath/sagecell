@@ -12,7 +12,7 @@ class DB(object):
     Abstract base class for database adaptors.
     """
 
-    def add(self, code, language, interacts, callback):
+    async def add(self, code, language, interacts):
         """
         Add an entry to the database.
         
@@ -24,12 +24,13 @@ class DB(object):
         
         - ``interacts`` -- a string
         
-        - ``callback`` -- a function accepting a single string argument,
-          the identifier key for the entry
+        OUTPUT:
+        
+        - a string -- the identifier key for the entry
         """
         raise NotImplementedError
 
-    def get(self, key, callback):
+    async def get(self, key):
         """
         Retrieve the entry from the database matching ``key``.
         
@@ -37,7 +38,8 @@ class DB(object):
         
         - ``key`` -- a string
         
-        - ``callback`` -- a function accepting three string arguments: the code,
-          the language, and the interact state.
+        OUTPUT:
+        
+        - a tuple of three strings: the code, the language, the interact state.
         """
         raise NotImplementedError

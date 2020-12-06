@@ -65,7 +65,7 @@ class DB(db.DB):
         Base.metadata.create_all(self.engine)
         self.dbsession = self.SQLSession()
 
-    def add(self, code, language, interacts, callback):
+    async def add(self, code, language, interacts):
         """
         See :meth:`db.DB.add`
         """
@@ -85,9 +85,9 @@ class DB(db.DB):
                 self.dbsession.rollback()
             else:
                 break
-        callback(ident)
+        return ident
 
-    def get(self, key, callback):
+    async def get(self, key):
         """
         See :meth:`db.DB.get`
         """
@@ -96,4 +96,4 @@ class DB(db.DB):
             raise LookupError
         msg.requested = ExecMessage.requested + 1
         self.dbsession.commit()
-        callback(msg.code, msg.language, msg.interacts)
+        return (msg.code, msg.language, msg.interacts)
