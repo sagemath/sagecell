@@ -150,8 +150,10 @@ python_packages = [
 # Optional
 "admcycles",
 "APMonitor",
+"astropy",
 "bitarray",
 "ggplot",
+"healpy",
 "h5py",
 "husl",
 "lxml",
