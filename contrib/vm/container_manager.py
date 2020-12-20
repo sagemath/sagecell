@@ -64,6 +64,7 @@ fig2dev
 gettext
 gfortran
 git
+gnuplot
 imagemagick
 iptables
 libcairo2-dev
@@ -152,11 +153,14 @@ python_packages = [
 "APMonitor",
 "astropy",
 "bitarray",
+"bokeh",
+"gif",
 "ggplot",
 "healpy",
 "h5py",
 "husl",
 "lxml",
+"manimlib",
 "mathchem",
 "munkres",
 "netcdf4",
@@ -164,11 +168,14 @@ python_packages = [
 "oct2py",
 "pandas",
 "patsy",
+"plotly",
+"pygnuplot",
 "pyproj",
 "requests",
 "scikit-image",
 "scikit-learn",
 "scimath",
+"scitools3",
 "seaborn",
 "Shapely",
 "SimPy",
