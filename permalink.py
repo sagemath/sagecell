@@ -57,7 +57,7 @@ class PermalinkHandler(tornado.web.RequestHandler):
         q = self.get_argument("q")
         try:
             logger.debug("Looking up permalink %s", q)
-            response = (await self.application.db.get(q))[0]
+            response = await self.application.db.get(q)
         except LookupError:
             logger.warning("ID not found in permalink database %s", q)
             self.set_status(404)
