@@ -73,6 +73,7 @@ libfile-slurp-perl
 libisl-dev
 libjson-perl
 libmongodb-perl
+libopenmpi3
 libperl-dev
 libsvg-perl
 libsystemd-dev
@@ -169,7 +170,9 @@ python_packages = [
 "lxml",
 "manimlib",
 "mathchem",
+"mpi4py",
 "munkres",
+"nbodykit",
 "netcdf4",
 "numexpr",
 "oct2py",
