@@ -192,6 +192,7 @@ python_packages = [
 "selenium",
 "Shapely",
 "SimPy",
+"snappy",
 "statsmodels",
 "surface_dynamics",
 "tables",
