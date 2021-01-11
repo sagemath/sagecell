@@ -175,6 +175,7 @@ python_packages = [
 "munkres",
 "nbodykit",
 "netcdf4",
+"nltk",
 "numexpr",
 "oct2py",
 "pandas",
