@@ -158,6 +158,7 @@ python_packages = [
 "bokeh",
 "chart_studio",
 "dash",
+"dask[array]",
 "getdist",
 "gif",
 "ggplot",
