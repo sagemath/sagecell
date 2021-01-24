@@ -92,6 +92,7 @@ rsyslog-relp
 ssh
 texlive
 texlive-latex-extra
+tk-dev
 unattended-upgrades
 unzip
 wget
