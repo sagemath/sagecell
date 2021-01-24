@@ -195,11 +195,14 @@ python_packages = [
 "Shapely",
 "SimPy",
 "snappy",
+"spiceypy",
 "statsmodels",
 "surface_dynamics",
 "tables",
 "tensorflow",
+"theano",
 "tikzplotlib",
+"xarray",
 "moss", # This one only complains about missing dependencies
 ]
 
