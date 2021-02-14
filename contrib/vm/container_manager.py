@@ -166,6 +166,7 @@ python_packages = [
 "google-api-python-client",
 "graphviz",
 "gspread",
+"fipy",
 "folium",
 "healpy",
 "h5py",
