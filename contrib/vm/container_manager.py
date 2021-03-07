@@ -212,6 +212,7 @@ python_packages = [
 "tensorflow",
 "theano",
 "tikzplotlib",
+"WeasyPrint",
 "xarray",
 "moss", # This one only complains about missing dependencies
 ]
