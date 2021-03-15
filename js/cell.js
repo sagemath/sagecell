@@ -35,23 +35,23 @@ fs.parentNode.insertBefore(style, fs);
 
 if (window.MathJax === undefined) {
     var script = document.createElement("script");
-    script.type = "text/x-mathjax-config";
-    script.text = "MathJax.Hub.Config(" + JSON.stringify({
-        "extensions": ["jsMath2jax.js", "tex2jax.js"],
-        "tex2jax": {
-            "inlineMath": [["$", "$"], ["\\(", "\\)"]],
-            "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
-            "processEscapes": true,
-            "processEnvironments": true
+    script.type = "text/javascript";
+    script.text = "window.MathJax = " + JSON.stringify({
+        tex: {
+          inlineMath: [["$", "$"], ["\\(", "\\)"]],
+          displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+          processEscapes: true,
+          processEnvironments: true,
+          packages: ['base', 'color']
         },
-        "TeX": {
-            "extensions": ["color.js"]
+        loader: {
+          load: ['[tex]/color']
         }
-    }) + ");";
+    }) + ";";
     fs.parentNode.insertBefore(script, fs);
     script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML";
+    script.src  = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js";
     fs.parentNode.insertBefore(script, fs);
 }
 // Preload images

@@ -489,8 +489,13 @@ Session.prototype.handle_output = function(msg, default_block_id) {
     this.appendMsg(content, "Accepted: ");
     // need to mathjax the entire output, since output_block could just be part of the output
     var output = this.outputDiv.find(".sagecell_output").get(0);
-    MathJax.Hub.Queue(["Typeset",MathJax.Hub, output]);
-    MathJax.Hub.Queue([function() {$(output).find(".math").removeClass('math');}]);
+    if (MathJax.version.startsWith('2')) { // MathJax 2
+        MathJax.Hub.Queue(["Typeset", MathJax.Hub, output]);
+        MathJax.Hub.Queue([function() {$(output).find(".math").removeClass('math');}]);
+    }
+    else { // MathJax 3
+        MathJax.typesetPromise([output]);
+    }
 };
 
 // dispatch table on mime type

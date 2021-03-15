@@ -227,12 +227,14 @@ InputGrid.prototype.rendered = function(id) {
     var table = ce("table", {"style": "width: auto; vertical-align: middle; display: inline-table;"});
     this.button = ce("button", {"style": "vertical-align: middle;"}, ["Submit"]);
     var div = ce("div", {}, [table, this.button]);
+    var i = -1;
     for (var row = 0; row < this.control.nrows; row++) {
         var tr = ce("tr");
         for (var col = 0; col < this.control.ncols; col++) {
             var textbox = ce("input", {"value": this.control["default"][row][col],
                                        "size": this.control.width,
                                        "autocapitalize": "off", "autocorrect": "off", "autocomplete": "off"});
+            textbox.id = id + "_" + (++i)
             if (this.control.evaluate) {
                 textbox.style.fontFamily = "monospace";
             }
@@ -241,7 +243,6 @@ InputGrid.prototype.rendered = function(id) {
         }
         table.appendChild(tr);
     }
-    this.textboxes.attr("id", id);
     return div;
 };
 
@@ -299,7 +300,7 @@ MultiSlider.prototype.rendered = function() {
         if (this.control.subtype === "continuous") {
             var textbox = ce("input", {
                 "class": "sagecell_interactValueBox",
-                "type": "number", 
+                "type": "number",
                 "min": this.control.range[i][0],
                 "max": this.control.range[i][1],
                 "step": "any"
