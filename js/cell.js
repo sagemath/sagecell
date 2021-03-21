@@ -38,8 +38,8 @@ if (window.MathJax === undefined) {
     script.type = "text/javascript";
     script.text = `window.MathJax = {
         tex: {
-          inlineMath: [["$", "$"], ["\\(", "\\)"]],
-          displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+          inlineMath: [["$", "$"], ["\\\\(", "\\\\)"]],
+          displayMath: [["$$", "$$"], ["\\\\[", "\\\\]"]],
           processEscapes: true,
           processEnvironments: true,
           packages: {'[+]': ['color']}
