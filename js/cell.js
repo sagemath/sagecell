@@ -34,6 +34,27 @@ var fs = document.getElementsByTagName('script')[0];
 fs.parentNode.insertBefore(style, fs);
 
 if (window.MathJax === undefined) {
+//    // MathJax 2
+//    var script = document.createElement("script");
+//    script.type = "text/x-mathjax-config";
+//    script.text = "MathJax.Hub.Config(" + JSON.stringify({
+//        "extensions": ["jsMath2jax.js", "tex2jax.js"],
+//        "tex2jax": {
+//            "inlineMath": [["$", "$"], ["\\(", "\\)"]],
+//            "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
+//            "processEscapes": true,
+//            "processEnvironments": true
+//        },
+//        "TeX": {
+//            "extensions": ["color.js"]
+//        }
+//    }) + ");";
+//    fs.parentNode.insertBefore(script, fs);
+//    script = document.createElement("script");
+//    script.type = "text/javascript";
+//    script.src  = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML";
+//    fs.parentNode.insertBefore(script, fs);
+    // MathJax 3
     var script = document.createElement("script");
     script.type = "text/javascript";
     script.text = `window.MathJax = {
@@ -42,10 +63,6 @@ if (window.MathJax === undefined) {
           displayMath: [["$$", "$$"], ["\\\\[", "\\\\]"]],
           processEscapes: true,
           processEnvironments: true,
-          packages: {'[+]': ['color']}
-        },
-        loader: {
-          load: ['[tex]/color']
         },
         options: {
           renderActions: { /* remove when dropping MathJax2 compatibility */
@@ -66,7 +83,7 @@ if (window.MathJax === undefined) {
     fs.parentNode.insertBefore(script, fs);
     script = document.createElement("script");
     script.type = "text/javascript";
-    script.src  = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js";
+    script.src  = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js";
     fs.parentNode.insertBefore(script, fs);
 }
 // Preload images
