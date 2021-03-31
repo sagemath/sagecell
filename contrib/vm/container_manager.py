@@ -66,6 +66,7 @@ gfortran
 git
 gnuplot
 imagemagick
+ipset
 iptables
 libcairo2-dev
 libffi-dev
