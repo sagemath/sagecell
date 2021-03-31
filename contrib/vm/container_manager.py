@@ -109,6 +109,7 @@ libnetcdf-dev
 libxml2-dev
 libxslt1-dev
 octave
+octave-econometrics
 octave-statistics
 """.split()
 
