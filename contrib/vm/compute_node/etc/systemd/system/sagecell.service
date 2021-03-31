@@ -8,6 +8,7 @@ NotifyAccess=all
 Restart=always
 SyslogIdentifier=SageMathCell
 
+ExecStartPre=/root/firewall
 ExecStartPre=\
     -/usr/bin/pkill -u {worker} ;\
     /bin/rm -rf /tmp/sagecell ;\

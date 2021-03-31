@@ -573,8 +573,6 @@ def install_config_files():
             name = os.path.join(root, file)
             adjust_names(shutil.copy(name, name[1:]))
     check_call("systemctl enable sagecell")
-    with open("/etc/network/interfaces", "a") as f:
-        f.write("    up /root/firewall\n")
 
 
 class SCLXC(object):
