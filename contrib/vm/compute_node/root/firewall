@@ -1,11 +1,34 @@
 #!/usr/bin/env bash
 
 ipset create allowed hash:net
+
 ipset add allowed 130.211.113.153   # Permalinks
 ipset add allowed 91.189.88.0/24    # Canonical Group Limited, archive.ubuntu.com
 ipset add allowed 128.174.0.0/16    # University of Illinois, Macaulay2
-ipset add allowed 140.82.112.0/20   # GitHub, github.com
-ipset add allowed 185.199.108.0/22   # GitHub, raw.githubusercontent.com
+
+
+ipset add allowed 162.255.119.162   # data.astropy.org
+ipset add allowed 141.38.0.0/16     # Deutscher Wetterdienst
+ipset add allowed 162.125.0.0/16    # Dropbox
+ipset add allowed 193.144.0.0/14    # ESA - Villafranca Satellite Tracking Station
+ipset add allowed 88.131.0.0/16     # European Centre for Disease Prevention and Control
+
+ipset add allowed 140.82.112.0/20   # GitHub
+ipset add allowed 185.199.108.0/22
+
+ipset add allowed 142.250.0.0/15    # Google services
+ipset add allowed 172.217.0.0/16
+ipset add allowed 216.58.192.0/19
+
+ipset add allowed 131.142.0.0/16    # Harvard-Smithsonian Center for Astrophysics
+ipset add allowed 82.165.72.196     # mathtrek.eu
+
+ipset add allowed 129.164.0.0/16    # NASA
+ipset add allowed 137.78.0.0/16
+
+ipset add allowed 130.88.0.0/16     # University of Manchester
+ipset add allowed 130.79.0.0/16     # Universite de Strasbourg
+ipset add allowed 35.244.233.98     # www.kaggle.com
 
 
 iptables --flush
