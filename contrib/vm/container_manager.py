@@ -219,6 +219,12 @@ python_packages = [
 "moss", # This one only complains about missing dependencies
 ]
 
+# R packages
+R_packages = [
+"deSolve",
+"ggplot2",
+"swirl",
+]
 
 # limits configuration for the host - will not be overwritten later
 limits_conf = """\
@@ -529,6 +535,12 @@ def install_packages():
     check_call("sage/sage -pip install --upgrade pip")
     for package in python_packages:
         check_call("sage/sage -pip install {}".format(package))
+    log.info("installing R packages")
+    for package in R_packages:
+        communicate("./sage", r"""
+            r.eval("install.packages('{}')".format(package))
+            quit
+            """)
     log.info("installing basemap in Sage")
     shutil.move("github/basemap", ".")
     os.chdir("basemap")
