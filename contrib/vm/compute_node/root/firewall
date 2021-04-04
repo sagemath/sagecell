@@ -30,6 +30,8 @@ ipset add allowed 137.78.0.0/16
 ipset add allowed 216.105.38.13     # sourceforge.net
 ipset add allowed 130.88.0.0/16     # University of Manchester
 ipset add allowed 130.79.0.0/16     # Universite de Strasbourg
+ipset add allowed 108.167.142.230   # tssfl.com
+
 ipset add allowed 137.208.0.0/16    # Vienna University of Economics and Business, CRAN
 ipset add allowed 35.244.233.98     # www.kaggle.com
 
