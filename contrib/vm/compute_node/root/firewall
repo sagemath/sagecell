@@ -12,6 +12,7 @@ ipset add allowed 141.38.0.0/16     # Deutscher Wetterdienst
 ipset add allowed 162.125.0.0/16    # Dropbox
 ipset add allowed 193.144.0.0/14    # ESA - Villafranca Satellite Tracking Station
 ipset add allowed 88.131.0.0/16     # European Centre for Disease Prevention and Control
+ipset add allowed 151.101.0.0/16    # Fastly, PyPi.org
 
 ipset add allowed 140.82.112.0/20   # GitHub
 ipset add allowed 185.199.108.0/22
@@ -29,7 +30,7 @@ ipset add allowed 137.78.0.0/16
 ipset add allowed 216.105.38.13     # sourceforge.net
 ipset add allowed 130.88.0.0/16     # University of Manchester
 ipset add allowed 130.79.0.0/16     # Universite de Strasbourg
-ipset add allowed 137.208.0.0/16    # Vienna University of Economics and Business
+ipset add allowed 137.208.0.0/16    # Vienna University of Economics and Business, CRAN
 ipset add allowed 35.244.233.98     # www.kaggle.com
 
 

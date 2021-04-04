@@ -195,6 +195,7 @@ python_packages = [
 "pygnuplot",
 "pyproj",
 "pyswarms",
+"python-snappy",
 "pyvo",
 "requests",
 "scikit-image",
