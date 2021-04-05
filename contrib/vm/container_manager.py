@@ -529,19 +529,21 @@ def install_packages():
     Assuming Sage is already installed, install optional packages.
     """
     become_server()
+    os.chdir("sage")
     log.info("installing optional Sage packages")
     for package in sage_optional_packages:
-        check_call("sage/sage -i -y {}".format(package))
+        check_call("./sage -i -y {}".format(package))
     log.info("installing pip packages")
-    check_call("sage/sage -pip install --upgrade pip")
+    check_call("./sage -pip install --upgrade pip")
     for package in python_packages:
-        check_call("sage/sage -pip install {}".format(package))
+        check_call("./sage -pip install {}".format(package))
     log.info("installing R packages")
     for package in R_packages:
         communicate("./sage", r"""
             r.eval("install.packages('{}')".format(package))
             quit
             """)
+    os.chdir("..")
     log.info("installing basemap in Sage")
     shutil.move("github/basemap", ".")
     os.chdir("basemap")
