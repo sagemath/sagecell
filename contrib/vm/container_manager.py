@@ -540,9 +540,9 @@ def install_packages():
     log.info("installing R packages")
     for package in R_packages:
         communicate("./sage", r"""
-            r.eval("install.packages('{}')".format(package))
+            r.eval("install.packages('{}')")
             quit
-            """)
+            """.format(package))
     os.chdir("..")
     log.info("installing basemap in Sage")
     shutil.move("github/basemap", ".")
