@@ -29,6 +29,10 @@ In particular, system packages installed in the base container are listed [here]
     ```bash
     git clone https://github.com/sagemath/sage.git
     pushd sage
+    ./bootstrap
+    ./configure --enable-download-from-upstream-url
+    # read messages at the end, follow instructions given there.
+    # possibly install more system packages (using apt-get, if on Debian/Ubuntu)
     make
     popd
     ```
