@@ -76,6 +76,7 @@ libjson-perl
 libmongodb-perl
 libopenmpi3
 libperl-dev
+libsnappy-dev
 libsvg-perl
 libsystemd-dev
 libterm-readkey-perl
@@ -192,6 +193,7 @@ python_packages = [
 "patsy",
 "plotly",
 "pydot",
+"pyforest",
 "pygnuplot",
 "pyproj",
 "pyswarms",
