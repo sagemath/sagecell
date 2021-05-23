@@ -50,7 +50,6 @@ users = {"group": "sagecell", "GID": 8888,
 repositories = [
     ("sagemath", "sage", "master"),
     ("sagemath", "sagecell", "master"),
-    ("matplotlib", "basemap", "master"),
 ]
 
 # Packages to be installed in the base container
@@ -76,6 +75,7 @@ libjson-perl
 libmongodb-perl
 libopenmpi3
 libperl-dev
+libproj-dev
 libsnappy-dev
 libsvg-perl
 libsystemd-dev
@@ -90,6 +90,7 @@ npm
 pandoc
 pari-gp2c
 php7.4-fpm
+proj-bin
 rsyslog-relp
 ssh
 texlive
@@ -160,6 +161,7 @@ python_packages = [
 "astroquery",
 "bitarray",
 "bokeh",
+"cartopy",
 "chart_studio",
 "dash",
 "dask[array]",
@@ -545,11 +547,6 @@ def install_packages():
             r.eval("install.packages('{}')")
             quit
             """.format(package))
-    os.chdir("..")
-    log.info("installing basemap in Sage")
-    shutil.move("github/basemap", ".")
-    os.chdir("basemap")
-    check_call("../sage/sage setup.py install")
     os.chdir("..")
 
 
