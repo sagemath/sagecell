@@ -7,7 +7,9 @@ ipset add allowed 91.189.88.0/24    # Canonical Group Limited, archive.ubuntu.co
 ipset add allowed 128.174.0.0/16    # University of Illinois, Macaulay2
 
 
+ipset add allowed 217.160.0.231     # codetables.de
 ipset add allowed 162.255.119.162   # data.astropy.org
+ipset add allowed 94.136.40.82      # designtheory.org
 ipset add allowed 141.38.0.0/16     # Deutscher Wetterdienst
 ipset add allowed 162.125.0.0/16    # Dropbox
 ipset add allowed 193.144.0.0/14    # ESA - Villafranca Satellite Tracking Station
@@ -21,19 +23,30 @@ ipset add allowed 142.250.0.0/15    # Google services
 ipset add allowed 172.217.0.0/16
 ipset add allowed 216.58.192.0/19
 
+ipset add allowed 89.107.186.22     # graphclasses.org
 ipset add allowed 131.142.0.0/16    # Harvard-Smithsonian Center for Astrophysics
+
+ipset add allowed 35.155.106.45     # ljcr.dmgordon.org/mathtrek.eu
+ipset add allowed 35.166.140.139
+
 ipset add allowed 82.165.72.196     # mathtrek.eu
 
 ipset add allowed 129.164.0.0/16    # NASA
 ipset add allowed 137.78.0.0/16
 
+ipset add allowed 206.188.192.120   # neilsloane.com
+ipset add allowed 104.239.138.29    # oeis.org
 ipset add allowed 216.105.38.13     # sourceforge.net
 ipset add allowed 130.88.0.0/16     # University of Manchester
 ipset add allowed 130.79.0.0/16     # Universite de Strasbourg
 ipset add allowed 108.167.142.230   # tssfl.com
+ipset add allowed 104.244.40.0/21   # Twitter
 
 ipset add allowed 137.208.0.0/16    # Vienna University of Economics and Business, CRAN
 ipset add allowed 35.244.233.98     # www.kaggle.com
+
+ipset add allowed 69.147.64.0/18    # Yahoo
+ipset add allowed 188.125.95.0/24
 
 
 iptables --flush
