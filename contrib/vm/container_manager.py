@@ -159,6 +159,7 @@ python_packages = [
 "APMonitor",
 "astropy",
 "astroquery",
+"bioinfokit",
 "bitarray",
 "bokeh",
 "cartopy",
@@ -219,6 +220,7 @@ python_packages = [
 "tensorflow",
 "theano",
 "tikzplotlib",
+"tweepy",
 "WeasyPrint",
 "xarray",
 "moss", # This one only complains about missing dependencies
