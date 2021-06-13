@@ -164,11 +164,13 @@ python_packages = [
 "bokeh",
 "cartopy",
 "chart_studio",
+"covid-daily",
 "dash",
 "dask[array]",
 "getdist",
-"gif",
 "ggplot",
+"gif",
+"giotto-tda",
 "google-api-python-client",
 "graphviz",
 "gspread",
@@ -205,6 +207,7 @@ python_packages = [
 "requests",
 "scikit-image",
 "scikit-learn",
+"scikit-tda",
 "scimath",
 "scitools3",
 "scrapy",
@@ -231,6 +234,7 @@ R_packages = [
 "deSolve",
 "ggplot2",
 "swirl",
+"tidyverse",
 ]
 
 # limits configuration for the host - will not be overwritten later
