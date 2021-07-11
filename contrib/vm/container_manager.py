@@ -193,6 +193,7 @@ python_packages = [
 "msedge-selenium-tools",
 "munkres",
 "nbodykit",
+"nest_asyncio",
 "netcdf4",
 "nltk",
 "numexpr",
@@ -235,6 +236,7 @@ python_packages = [
 "tweepy",
 "twint",
 "WeasyPrint",
+"wordcloud",
 "xarray",
 "moss", # This one only complains about missing dependencies
 ]
