@@ -203,6 +203,7 @@ python_packages = [
 "pandas",
 "patsy",
 "plotly",
+"pretty_html_table",
 "pydot",
 "pyforest",
 "pygnuplot",
