@@ -159,6 +159,7 @@ python_packages = [
 "APMonitor",
 "astropy",
 "astroquery",
+"autoviz",
 "bioinfokit",
 "bitarray",
 "bokeh",
