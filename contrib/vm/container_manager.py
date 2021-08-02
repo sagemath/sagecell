@@ -166,6 +166,7 @@ python_packages = [
 "cartopy",
 "chart_studio",
 "covid-daily",
+"cramjam",
 "cufflinks",
 "dash",
 "dask[array]",
@@ -240,6 +241,7 @@ python_packages = [
 "WeasyPrint",
 "wordcloud",
 "xarray",
+"xlrd",
 "moss", # This one only complains about missing dependencies
 ]
 
