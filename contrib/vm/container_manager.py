@@ -408,7 +408,7 @@ def install_macaulay2():
     """
     with open("/etc/apt/sources.list.d/macaulay2.list", "w") as f:
         f.write("deb https://faculty.math.illinois.edu/Macaulay2/Repositories/Ubuntu focal main")
-    check_call("apt-key adv --keyserver hkp://keys.gnupg.net \
+    check_call("apt-key adv --keyserver hkp://keyserver.ubuntu.com \
                 --recv-key CD9C0E09B0C780943A1AD85553F8BD99F40DCB31")
     check_call("apt update")
     check_call("apt install -y macaulay2")
