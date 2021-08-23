@@ -185,6 +185,5 @@ class BackendCell(BackendIPython):
             '...<script ...</script>...'
         """
         return """
-<script src="/static/threejs/build/three.min.js"></script>
-<script src="/static/threejs/examples/js/controls/OrbitControls.js"></script>
+<script src="/static/threejs/three.min.js"></script>
         """
