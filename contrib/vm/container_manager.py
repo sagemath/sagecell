@@ -505,8 +505,16 @@ def setup_container_users():
     os.setuid(0)
     os.seteuid(users["worker_ID"])
     os.mkdir(".ssh", 0o700)
-    files_to_lock = ".ssh .bashrc .bash_profile .bash_logout .profile"
-    check_call("touch " + files_to_lock)
+    os.mkdir(".sage")
+    files_to_lock = [
+        ".sage/local",
+        ".ssh",
+        ".bash_logout",
+        ".bash_profile",
+        ".bashrc",
+        ".profile",
+        ]
+    check_call(" ".join(["touch"] + files_to_lock))
     os.setuid(0)
     shutil.copy2(os.path.join(shome, ".ssh/id_rsa.pub"),
                  ".ssh/authorized_keys")
@@ -514,7 +522,7 @@ def setup_container_users():
     # Get the localhost in the known_hosts file.
     check_call("su -l {server} -c "
                "'ssh -q -oStrictHostKeyChecking=no {worker}@localhost whoami'")
-    for f in files_to_lock.split():
+    for f in files_to_lock:
         check_call("chattr -R +i " + f)
 
 
