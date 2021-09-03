@@ -337,7 +337,6 @@ def interact(f, controls=None, update=None, layout=None, locations=None,
             raise ValueError(
                 "interact control must have a string name, "
                 "but %r isn't a string" % name[0])
-    import inspect
     params = list(inspect.signature(f).parameters.values())
     if params and params[0].default is params[0].empty:
         pass_proxy = True
