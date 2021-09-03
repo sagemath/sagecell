@@ -251,6 +251,7 @@ python_packages = [
 R_packages = [
 "deSolve",
 "ggplot2",
+"survey",
 "swirl",
 "tidyverse",
 ]
