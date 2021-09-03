@@ -186,6 +186,7 @@ python_packages = [
 "itikz",
 "keras",
 "keyring",
+"koboextractor",
 "lenstools",
 "lhsmdu",
 "lxml",
