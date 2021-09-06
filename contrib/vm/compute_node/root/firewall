@@ -26,6 +26,12 @@ ipset add allowed 216.58.192.0/19
 ipset add allowed 89.107.186.22     # graphclasses.org
 ipset add allowed 131.142.0.0/16    # Harvard-Smithsonian Center for Astrophysics
 
+ipset add allowed 108.128.53.182    # elb.koboroute.org
+ipset add allowed 52.214.202.32
+ipset add allowed 54.77.106.83
+ipset add allowed 34.207.37.27      # elb.kobotoolbox.org
+ipset add allowed 34.232.35.237
+
 ipset add allowed 35.155.106.45     # ljcr.dmgordon.org/mathtrek.eu
 ipset add allowed 35.166.140.139
 
