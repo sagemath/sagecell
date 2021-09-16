@@ -509,6 +509,7 @@ def setup_container_users():
     os.mkdir(".ssh", 0o700)
     os.mkdir(".sage")
     files_to_lock = [
+        ".cache/pip",
         ".sage/local",
         ".ssh",
         ".bash_logout",
