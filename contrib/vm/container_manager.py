@@ -506,8 +506,9 @@ def setup_container_users():
     os.chdir(whome)
     os.setuid(0)
     os.seteuid(users["worker_ID"])
-    os.mkdir(".ssh", 0o700)
+    os.mkdir(".cache", 0o700)
     os.mkdir(".sage")
+    os.mkdir(".ssh", 0o700)
     files_to_lock = [
         ".cache/pip",
         ".sage/local",
