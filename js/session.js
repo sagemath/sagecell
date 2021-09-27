@@ -321,7 +321,7 @@ Session.prototype.execute = function(code) {
         }
         // Converting code into Python expression
         if (this.language !== "sage") {
-            code = '("""' + code.replace(/"/g, '\\"') + '""")';
+            code = '("""' + code.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '""")';
             if (this.language === "python") {
                 code = "exec" + code;
             } else if (this.language === "html") {
