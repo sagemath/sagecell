@@ -234,6 +234,7 @@ python_packages = [
 "surface_dynamics",
 "sweetviz",
 "tables",
+"ternary",
 "theano",
 "tikzplotlib",
 "torch",
