@@ -155,6 +155,7 @@ python_packages = [
 "sockjs-tornado",
 "git+https://github.com/systemd/python-systemd.git",
 # Optional
+"future",   # fipy does not work without it installed first
 "admcycles",
 "APMonitor",
 "astropy",
