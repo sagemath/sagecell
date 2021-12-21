@@ -43,12 +43,12 @@ ipset add allowed 137.78.0.0/16
 ipset add allowed 206.188.192.120   # neilsloane.com
 ipset add allowed 104.239.138.29    # oeis.org
 ipset add allowed 216.105.38.13     # sourceforge.net
-ipset add allowed 130.88.0.0/16     # University of Manchester
-ipset add allowed 130.79.0.0/16     # Universite de Strasbourg
 ipset add allowed 108.167.142.230   # tssfl.com
 ipset add allowed 104.244.40.0/21   # Twitter
-
+ipset add allowed 130.88.0.0/16     # University of Manchester
+ipset add allowed 130.79.0.0/16     # Universite de Strasbourg
 ipset add allowed 137.208.0.0/16    # Vienna University of Economics and Business, CRAN
+ipset add allowed 134.147.222.194   # www.findstat.org
 ipset add allowed 35.244.233.98     # www.kaggle.com
 
 ipset add allowed 69.147.64.0/18    # Yahoo
