@@ -214,6 +214,7 @@ python_packages = [
 "pydot",
 "pyforest",
 "pygnuplot",
+"PyPDF4",
 "pyproj",
 "pyswarms",
 "python-snappy",
