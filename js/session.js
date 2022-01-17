@@ -327,7 +327,7 @@ Session.prototype.execute = function(code) {
             } else if (this.language === "html") {
                 code = "html" + code;
             } else {
-                code = "print(" + this.language + ".eval" + code + ".strip())";
+                code = "print(" + this.language + ".eval" + code + ")";
             }
         }
         // Modifying Python expression
