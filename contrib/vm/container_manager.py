@@ -239,6 +239,7 @@ python_packages = [
 "surface_dynamics",
 "sweetviz",
 "tables",
+"tbcontrol",
 "theano",
 "tikzplotlib",
 "torch",
