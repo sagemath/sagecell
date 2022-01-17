@@ -173,6 +173,7 @@ python_packages = [
 "dash",
 "dask[array]",
 "emoji",
+"geopandas",
 "getdist",
 "ggplot",
 "gif",
