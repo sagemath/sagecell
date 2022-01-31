@@ -134,7 +134,6 @@ sage_optional_packages = [
 "lrslib",
 "mcqd",
 "normaliz",
-"nose",
 "pari_elldata",
 "pari_galpol",
 "pari_nftables",
