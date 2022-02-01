@@ -164,7 +164,7 @@ python_packages = [
 "bitarray",
 "bokeh",
 "calplot",
-"cartopy",
+"cartopy==0.19.0.post1", # Compatibility issues as of January 2022
 "chart_studio",
 "covid-daily",
 "cramjam",
