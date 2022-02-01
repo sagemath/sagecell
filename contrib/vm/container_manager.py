@@ -151,6 +151,7 @@ python_packages = [
 # Dependencies of SageMathCell
 "lockfile",
 "paramiko",
+"psutil",
 "sockjs-tornado",
 "git+https://github.com/systemd/python-systemd.git",
 # Optional
