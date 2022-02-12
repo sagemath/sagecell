@@ -142,7 +142,7 @@ def initialize(kernel):
 
     # Enable Sage types to be sent via session messages
     from zmq.utils import jsonapi
-    kernel.session.pack = lambda x: jsonapi.dumps(x, default=misc.  sage_json)
+    kernel.session.pack = lambda x: jsonapi.dumps(x, default=misc.sage_json)
 
     sys._sage_ = _sage_
     user_ns = kernel.shell.user_module.__dict__

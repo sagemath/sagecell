@@ -1,6 +1,7 @@
 """
 Misc functions / classes
 """
+from binascii import b2a_base64
 from contextlib import contextmanager
 from datetime import datetime
 import os
@@ -161,12 +162,19 @@ def javascript(code):
 
 
 def sage_json(obj):
+    # Similar to json_default in jupyter_client/jsonutil.py
     import sage.all
     if isinstance(obj, datetime):
         return obj.isoformat()
-    elif isinstance(obj, sage.rings.integer.Integer):
+    if isinstance(obj, sage.rings.integer.Integer):
         return int(obj)
-    elif isinstance(obj, (sage.rings.real_mpfr.RealLiteral, sage.rings.real_mpfr.RealNumber, sage.rings.real_double.RealDoubleElement)):
+    if isinstance(obj, (
+            sage.rings.real_mpfr.RealLiteral,
+            sage.rings.real_mpfr.RealNumber,
+            sage.rings.real_double.RealDoubleElement)):
         return float(obj)
-    else:
-        raise TypeError("Object of type %s with value of %s is not JSON serializable" % (type(obj), repr(obj)))
+    if isinstance(obj, bytes):
+        return b2a_base64(obj).decode('ascii')
+    raise TypeError(
+        "Object of type %s with value of %s is not JSON serializable"
+        % (type(obj), repr(obj)))
