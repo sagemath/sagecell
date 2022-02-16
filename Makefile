@@ -19,7 +19,7 @@ submodules:
 build:
 	-rm -r build
 	mkdir -p build/vendor
-	cp -a $(SAGE_VENV)/lib/python3.9/site-packages/notebook/static build/vendor
+	cp -a $(SAGE_VENV)/lib/python3.9/site-packages/notebook/static -T build/vendor
 	cp static/colorpicker/js/colorpicker.js build/vendor
 	ln -sfn $(SAGE_VENV)/share/jupyter/nbextensions/jupyter_jsmol/jsmol static/jsmol
 	ln -sfn $(sage-root)/local/share/threejs-sage/r122 static/threejs
@@ -33,14 +33,14 @@ build:
 
 $(all-min-js): build $(all-min-css) js/*
 	# Host standalone jquery for compatibility with old instructions
-	cp build/components/jquery/jquery.min.js static
+	cp build/vendor/components/jquery/jquery.min.js static
 	cp submodules/jquery-ui-touch-punch/jquery.ui.touch-punch.min.js build/vendor/jquery-ui-tp.js
 	cp -a js/* build
 	cd build && r.js -o build.js
 	cp build/main_build.js $(all-min-js)
 
 $(all-min-css): build $(sagecell-css)
-	cp -a build/components/jquery-ui/themes/smoothness/* static
+	cp -a build/vendor/components/jquery-ui/themes/smoothness/* static
 	r.js -o cssIn=static/main.css out=$(all-min-css)
 
 $(embed-css): $(sagecell-css)
