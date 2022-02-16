@@ -68,7 +68,7 @@ if (sagecell.root) {
             break;
         }
     }
-    if (root === "" || root === "/") {
+    if (!root || root === "/") {
         root = window.location.protocol + "//" + window.location.host + "/";
     }
 }
