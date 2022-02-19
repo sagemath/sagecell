@@ -70,7 +70,7 @@ _gaq.push(["sagecell._trackPageview"]);
     window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
 })();
 
-require(["sagecell", "cell", "es6-promise"], function (sagecell, cell, es6p) {
+require(["./sagecell", "./cell", "es6-promise"], function (sagecell, cell, es6p) {
     "use strict";
     var undefined;
 

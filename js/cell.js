@@ -1,9 +1,9 @@
 define([
-    "sagecell",
+    "./sagecell",
     "jquery",
-    "editor",
-    "session",
-    "utils",
+    "./editor",
+    "./session",
+    "./utils",
     "text!cell_body.html",
     "text!all.min.css",
     "domReady",

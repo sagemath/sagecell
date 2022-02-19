@@ -1,6 +1,6 @@
 define([
     "jquery",
-    "utils",
+    "./utils",
     "mpl", // Creates global namespace
 ], function ($, utils) {
     "use strict";

@@ -1,8 +1,8 @@
 define([
-    "sagecell",
+    "./sagecell",
     "jquery",
-    "multisockjs",
-    "utils",
+    "./multisockjs",
+    "./utils",
     "codemirror/lib/codemirror",
     // Unreferenced dependencies
     "codemirror/addon/display/autorefresh",

@@ -1,4 +1,4 @@
-define(["jquery", "base/js/events", "interact_data", "utils"], function (
+define(["jquery", "base/js/events", "./interact_data", "./utils"], function (
     $,
     events,
     InteractData,
