@@ -1,4 +1,5 @@
 define([
+    "sagecell",
     "jquery",
     "base/js/namespace",
     "base/js/events",
@@ -9,6 +10,7 @@ define([
     "utils",
     "widgets",
 ], function (
+    sagecell,
     $,
     IPython,
     events,

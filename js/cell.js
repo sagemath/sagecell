@@ -1,17 +1,18 @@
 define([
+    "sagecell",
     "jquery",
     "editor",
     "session",
     "utils",
     "text!cell_body.html",
     "text!all.min.css",
+    "domReady",
     // Unreferenced dependencies
-    "domReady!",
     "jquery-ui",
     //"jquery-ui-tp",
     "colorpicker",
     "JSmol",
-], function ($, editor, Session, utils, cell_body, css) {
+], function (sagecell, $, editor, Session, utils, cell_body, css, domReady) {
     "use strict";
     var undefined;
 
@@ -22,19 +23,20 @@ define([
         r: "r",
     };
 
-    var style = document.createElement("style");
-    style.innerHTML = css.replace(
-        /url\((?!data:)/g,
-        "url(" + utils.URLs.root + "static/"
-    );
-    var fs = document.getElementsByTagName("script")[0];
-    fs.parentNode.insertBefore(style, fs);
+    domReady(function () {
+        var style = document.createElement("style");
+        style.innerHTML = css.replace(
+            /url\((?!data:)/g,
+            "url(" + utils.URLs.root + "static/"
+        );
+        var fs = document.getElementsByTagName("script")[0];
+        fs.parentNode.insertBefore(style, fs);
 
-    if (window.MathJax === undefined) {
-        // MathJax 3
-        var script = document.createElement("script");
-        script.type = "text/javascript";
-        script.text = `window.MathJax = {
+        if (window.MathJax === undefined) {
+            // MathJax 3
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.text = `window.MathJax = {
         tex: {
           inlineMath: [["$", "$"], ["\\\\(", "\\\\)"]],
           displayMath: [["$$", "$$"], ["\\\\[", "\\\\]"]],
@@ -57,19 +59,23 @@ define([
           }
         }
     };`;
-        fs.parentNode.insertBefore(script, fs);
-        script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src =
-            "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js";
-        fs.parentNode.insertBefore(script, fs);
-    }
+            fs.parentNode.insertBefore(script, fs);
+            script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src =
+                "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js";
+            fs.parentNode.insertBefore(script, fs);
+        }
+    });
     // Preload images
     new Image().src = utils.URLs.spinner;
 
     sagecell.kernels = [];
 
-    function make(args, cellInfo, k) {
+    // `_make` cannot be run before the dom is ready.
+    // This internal version is wrapped before being passed
+    // to the outside world.
+    function _make(args, cellInfo, k) {
         if (args.inputLocation === undefined) {
             throw "Must specify an inputLocation!";
         }
@@ -90,7 +96,7 @@ define([
                 var args_i = $.extend({}, args);
                 args_i.inputLocation = input[i];
                 var cellInfo_i = {};
-                make(args_i, cellInfo_i, k);
+                _make(args_i, cellInfo_i, k);
                 cellInfo.array.push(cellInfo_i);
             }
             return;
@@ -364,7 +370,11 @@ define([
     }
 
     return {
-        make: make,
+        make: function (args, cellInfo, k) {
+            return domReady(function () {
+                return _make(args, cellInfo, k);
+            });
+        },
         delete: function (cellInfo) {
             $(cellInfo.inputLocation).remove();
             $(cellInfo.outputLocation).remove();

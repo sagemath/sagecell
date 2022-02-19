@@ -1,4 +1,4 @@
-define(["jquery", "base/js/utils"], function ($, utils) {
+define(["sagecell", "jquery", "base/js/utils"], function (sagecell, $, utils) {
     "use strict";
     var undefined;
 
