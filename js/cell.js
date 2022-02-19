@@ -31,26 +31,6 @@ define([
     fs.parentNode.insertBefore(style, fs);
 
     if (window.MathJax === undefined) {
-        //    // MathJax 2
-        //    var script = document.createElement("script");
-        //    script.type = "text/x-mathjax-config";
-        //    script.text = "MathJax.Hub.Config(" + JSON.stringify({
-        //        "extensions": ["jsMath2jax.js", "tex2jax.js"],
-        //        "tex2jax": {
-        //            "inlineMath": [["$", "$"], ["\\(", "\\)"]],
-        //            "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
-        //            "processEscapes": true,
-        //            "processEnvironments": true
-        //        },
-        //        "TeX": {
-        //            "extensions": ["color.js"]
-        //        }
-        //    }) + ");";
-        //    fs.parentNode.insertBefore(script, fs);
-        //    script = document.createElement("script");
-        //    script.type = "text/javascript";
-        //    script.src  = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML";
-        //    fs.parentNode.insertBefore(script, fs);
         // MathJax 3
         var script = document.createElement("script");
         script.type = "text/javascript";
@@ -292,87 +272,6 @@ define([
             var mode = langSelect[0].value;
             editorData.setOption("mode", sagecell.modes[mode]);
         });
-        /* Old files code
-    function fileRemover(i, li) {
-        return function () {
-            delete files[i];
-            li.parentNode.removeChild(li);
-        }
-    }
-    var fileButton = input.find(".sagecell_addFile");
-    var input = ce("input", {type: "file", multiple: "true", name: "file"});
-    if (navigator.userAgent.indexOf("MSIE") === -1) {
-        // Create an off-screen file input box if not in Internet Explorer
-        input.style.position = "absolute";
-        input.style.top = "0px";
-        input.style.left = "-9999px";
-        fileButton.click(function () {
-            input.click();
-        });
-        document.body.appendChild(input);
-    } else {
-        // Put the input box in the file upload box in Internet Explorer
-        fileButton.remove();
-        input.find(".sagecell_clearFiles").before(input,
-                document.createElement("br"));
-    }
-    function change() {
-        var delButton = ce("span", {title: "Remove file"});
-        $(delButton).addClass("sagecell_deleteButton");
-        var fileList = input.find(".sagecell_fileList");
-        var li = document.createElement("li");
-        li.appendChild(delButton.cloneNode(false));
-        li.appendChild(document.createElement("span"));
-        $(li.childNodes[1]).addClass("sagecell_fileName");
-        if (input.files) {
-            for (var i = 0; i < input.files.length; i++) {
-                if (window.FormData) {
-                    var f = li.cloneNode(true);
-                    files.push(input.files[i]);
-                    f.childNodes[1].appendChild(
-                            document.createTextNode(input.files[i].name));
-                    $(f.childNodes[0]).click(fileRemover(files.length - 1, f));
-                    fileList.append(f);
-                } else {
-                    li.childNodes[1].appendChild(
-                            document.createTextNode(input.files[i].name));
-                    if (i < input.files.length - 1) {
-                        li.childNodes[1].appendChild(document.createElement("br"));
-                    }
-                }
-            }
-            if (!window.FormData) {
-                files.push(input);
-                $(li.childNodes[0]).click(fileRemover(files.length - 1, li));
-                if (input.files.length > 1) {
-                    li.childNodes[0].setAttribute("title", "Remove files")
-                }
-                fileList.append(li);
-            }
-        } else {
-            files.push(input);
-            li.childNodes[1].appendChild(document.createTextNode(
-                    input.value.substr(input.value.lastIndexOf("\\") + 1)));
-            $(li.childNodes[0]).click(fileRemover(files.length - 1, li));
-            fileList.append(li);
-        }
-        var newInput = ce("input", {type: "file", multiple: "true", name: "file"});
-        if (navigator.userAgent.indexOf("MSIE") === -1) {
-            newInput.style.position = "absolute";
-            newInput.style.top = "0px";
-            newInput.style.left = "-9999px";
-        }
-        $(newInput).change(change);
-        input.parentNode.replaceChild(newInput, input);
-        input = newInput;
-    }
-    $(input).change(change);
-    input.find(".sagecell_clearFiles").click(function () {
-        files = [];
-        input.find(".sagecell_fileList").empty();
-        return false;
-    });
-    */
         function startEvaluation(evt) {
             if (last_session[evt.data.id]) {
                 if (!last_session[evt.data.id].linked) {
