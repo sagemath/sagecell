@@ -70,7 +70,11 @@ _gaq.push(["sagecell._trackPageview"]);
     window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
 })();
 
-require(["./sagecell", "./cell", "es6-promise"], function (sagecell, cell, es6p) {
+require(["./sagecell", "./cell", "es6-promise"], function (
+    sagecell,
+    cell,
+    es6p
+) {
     "use strict";
     var undefined;
 
@@ -79,22 +83,33 @@ require(["./sagecell", "./cell", "es6-promise"], function (sagecell, cell, es6p)
         es6p.polyfill();
     }
 
+    /**
+     * Retrieve the kernel index associated with `key`. If
+     * needed, this function will push `null` onto the kernel
+     * stack, providing a space for the kernel to be initialized.
+     */
+    function linkKeyToIndex(key) {
+        sagecell.linkKeys = sagecell.linkKeys || {};
+        if (key in sagecell.linkKeys) {
+            return sagecell.linkKeys[key];
+        }
+
+        sagecell.kernels = sagecell.kernels || [];
+        // Make sure we have a kernel to share for our new key.
+        const index = sagecell.kernels.push(null) - 1;
+        sagecell.linkKeys[key] = index;
+        return index;
+    }
+
     sagecell._makeSagecell = function (args) {
         console.info("sagecell.makeSagecell called");
         var cellInfo = {};
-        if (cell) {
-            cell.make(args, cellInfo);
-            console.info("sagecell.makeSagecell finished");
+        if (args.linked && args.linkKey) {
+            cell.make(args, cellInfo, linkKeyToIndex(args.linkKey));
         } else {
-            setTimeout(function tryAgain() {
-                if (cell) {
-                    cell.make(args, cellInfo);
-                    console.info("sagecell.makeSagecell finished after delay");
-                } else {
-                    setTimeout(tryAgain);
-                }
-            });
+            cell.make(args, cellInfo);
         }
+        console.info("sagecell.makeSagecell finished");
         return cellInfo;
     };
     sagecell.deleteSagecell = function (cellInfo) {
