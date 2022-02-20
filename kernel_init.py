@@ -72,7 +72,7 @@ def initialize(kernel):
         @wraps(handler)
         def f(stream, ident, parent, *args, **kwargs):
             md = kernel.init_metadata(parent)
-            kernel._publish_status("busy", parent)
+            kernel._publish_status("busy", "shell", parent)
             # Set the parent message of the display hook and out streams.
             kernel.shell.set_parent(parent)
             try:
@@ -117,7 +117,7 @@ def initialize(kernel):
             reply_msg = kernel.session.send(
                 stream, key + '_reply', reply, parent, metadata=md, ident=ident)
             kernel.log.debug("handler reply for %s %s", key, reply_msg)
-            kernel._publish_status(u'idle', parent)
+            kernel._publish_status("idle", "shell", parent)
         return f
         
     def register_handler(key, handler):
