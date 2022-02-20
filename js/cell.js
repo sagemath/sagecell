@@ -1,6 +1,6 @@
 define([
-    "./sagecell",
     "jquery",
+    "./sagecell",
     "./editor",
     "./session",
     "./utils",
@@ -12,7 +12,7 @@ define([
     //"jquery-ui-tp",
     "colorpicker",
     "JSmol",
-], function (sagecell, $, editor, Session, utils, cell_body, css, domReady) {
+], function ($, sagecell, editor, Session, utils, cell_body, css, domReady) {
     "use strict";
     var undefined;
 
