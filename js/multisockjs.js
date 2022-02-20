@@ -1,4 +1,4 @@
-define(["sockjs", "utils"], function (SockJS, utils) {
+define(["sockjs", "./utils"], function (SockJS, utils) {
     "use strict";
     var undefined;
 

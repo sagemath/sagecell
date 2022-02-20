@@ -1,7 +1,8 @@
 define([
     "jquery",
-    "multisockjs",
-    "utils",
+    "./sagecell",
+    "./multisockjs",
+    "./utils",
     "codemirror/lib/codemirror",
     // Unreferenced dependencies
     "codemirror/addon/display/autorefresh",
@@ -22,7 +23,7 @@ define([
     "codemirror/mode/python/python",
     "codemirror/mode/r/r",
     "codemirror/mode/xml/xml",
-], function ($, MultiSockJS, utils, CodeMirror) {
+], function ($, sagecell, MultiSockJS, utils, CodeMirror) {
     "use strict";
     var undefined;
 

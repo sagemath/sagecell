@@ -18,51 +18,72 @@ _gaq.push(["sagecell._trackPageview"]);
     s.parentNode.insertBefore(ga, s);
 })();
 
+/**
+ * Creates a promise and hoists its `resolve` method so that
+ * it can be called externally.
+ */
+function makeResolvablePromise() {
+    const ret = { promise: null, resolve: null };
+    ret.promise = new Promise((resolve) => {
+        ret.resolve = resolve;
+    });
+    return ret;
+}
+
+// Set up the global sagecell variable. This needs to be done right away because other
+// scripts want to access window.sagecell.
 (function () {
+    window.sagecell = window.sagecell || {};
+    Object.assign(window.sagecell, {
+        templates: {
+            minimal: {
+                // for an evaluate button and nothing else.
+                editor: "textarea-readonly",
+                hide: ["editor", "files", "permalink"],
+            },
+            restricted: {
+                // to display/evaluate code that can't be edited.
+                editor: "codemirror-readonly",
+                hide: ["files", "permalink"],
+            },
+        },
+        allLanguages: [
+            "sage",
+            "gap",
+            "gp",
+            "html",
+            "macaulay2",
+            "maxima",
+            "octave",
+            "python",
+            "r",
+            "singular",
+        ],
+        // makeSagecell must be available as soon as the script loads,
+        // but we may not be ready to process data right away, so we
+        // provide a wrapper that will poll until sagecell is ready.
+        makeSagecell: function (args) {
+            window.sagecell._initPromise.promise
+                .then(() => {
+                    window.sagecell._makeSagecell(args);
+                })
+                .catch((e) => {
+                    console.warn("Encountered error in makeSagecell", e);
+                });
+        },
+        _initPromise: makeResolvablePromise(),
+    });
+
+    // Purely for backwards compatibility
+    window.singlecell = window.sagecell;
+    window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
+})();
+
+require(["./sagecell", "./cell"], function (sagecell, cell) {
     "use strict";
     var undefined;
 
-    window.sagecell = window.sagecell || {};
-
-    sagecell.templates = {
-        minimal: {
-            // for an evaluate button and nothing else.
-            editor: "textarea-readonly",
-            hide: ["editor", "files", "permalink"],
-        },
-        restricted: {
-            // to display/evaluate code that can't be edited.
-            editor: "codemirror-readonly",
-            hide: ["files", "permalink"],
-        },
-    };
-
-    sagecell.allLanguages = [
-        "sage",
-        "gap",
-        "gp",
-        "html",
-        "macaulay2",
-        "maxima",
-        "octave",
-        "python",
-        "r",
-        "singular",
-    ];
-
-    // Deal with IE's lack of Promise
-    require(["es6-promise"], function (es6p) {
-        if (es6p) {
-            es6p.polyfill();
-        }
-    });
-
-    var cell;
-    require(["cell"], function (cell_arg) {
-        cell = cell_arg;
-        console.debug("cell set");
-    });
-    sagecell.makeSagecell = function (args) {
+    sagecell._makeSagecell = function (args) {
         console.info("sagecell.makeSagecell called");
         var cellInfo = {};
         if (cell) {
@@ -90,7 +111,5 @@ _gaq.push(["sagecell._trackPageview"]);
         cell.restoreInputForm(cellInfo);
     };
 
-    // Purely for backwards compability
-    window.singlecell = window.sagecell;
-    window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
-})();
+    sagecell._initPromise.resolve();
+});
