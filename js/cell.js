@@ -96,7 +96,7 @@ define([
                     var args_i = $.extend({}, args);
                     args_i.inputLocation = input[i];
                     var cellInfo_i = {};
-                    _make(args_i, cellInfo_i, k);
+                    make(args_i, cellInfo_i, k);
                     cellInfo.array.push(cellInfo_i);
                 }
                 return;

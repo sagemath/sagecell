@@ -18,11 +18,21 @@ _gaq.push(["sagecell._trackPageview"]);
     s.parentNode.insertBefore(ga, s);
 })();
 
+/**
+ * Creates a promise and hoists its `resolve` method so that
+ * it can be called externally.
+ */
+function makeResolvablePromise() {
+    const ret = { promise: null, resolve: null };
+    ret.promise = new Promise((resolve) => {
+        ret.resolve = resolve;
+    });
+    return ret;
+}
+
 // Set up the global sagecell variable. This needs to be done right away because other
 // scripts want to access window.sagecell.
 (function () {
-    const POLL_TIMEOUT = 10;
-
     window.sagecell = window.sagecell || {};
     Object.assign(window.sagecell, {
         templates: {
@@ -53,16 +63,15 @@ _gaq.push(["sagecell._trackPageview"]);
         // but we may not be ready to process data right away, so we
         // provide a wrapper that will poll until sagecell is ready.
         makeSagecell: function (args) {
-            if (window.sagecell && window.sagecell._makeSagecell) {
-                return window.sagecell._makeSagecell(args);
-            }
-            console.log(
-                "Sagecell not initialized yet; trying again after timeout."
-            );
-            window.setTimeout(() => {
-                this.makeSagecell(args);
-            }, POLL_TIMEOUT);
+            window.sagecell._initPromise.promise
+                .then(() => {
+                    window.sagecell._makeSagecell(args);
+                })
+                .catch((e) => {
+                    console.warn("Encountered error in makeSagecell", e);
+                });
         },
+        _initPromise: makeResolvablePromise(),
     });
 
     // Purely for backwards compatibility
@@ -70,14 +79,9 @@ _gaq.push(["sagecell._trackPageview"]);
     window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
 })();
 
-require(["./sagecell", "./cell", "es6-promise"], function (sagecell, cell, es6p) {
+require(["./sagecell", "./cell"], function (sagecell, cell) {
     "use strict";
     var undefined;
-
-    // Deal with IE's lack of Promise
-    if (es6p) {
-        es6p.polyfill();
-    }
 
     sagecell._makeSagecell = function (args) {
         console.info("sagecell.makeSagecell called");
@@ -106,4 +110,6 @@ require(["./sagecell", "./cell", "es6-promise"], function (sagecell, cell, es6p)
     sagecell.restoreInputForm = function (cellInfo) {
         cell.restoreInputForm(cellInfo);
     };
+
+    sagecell._initPromise.resolve();
 });
