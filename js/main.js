@@ -103,6 +103,11 @@ require(["./sagecell", "./cell"], function (sagecell, cell) {
 
     sagecell._makeSagecell = function (args) {
         console.info("sagecell.makeSagecell called");
+        // If `args.linkKey` is set, we force the `linked` option to be true.
+        if (args.linkKey) {
+            args = Object.assign({}, args, { linked: true });
+        }
+
         var cellInfo = {};
         if (args.linked && args.linkKey) {
             cell.make(args, cellInfo, linkKeyToIndex(args.linkKey));
