@@ -248,6 +248,17 @@ will affect the execution of code from another cell:
 
 This option is ``false`` by default.
 
+If you would like to link cells created with different calls to ``makeSagecell``, you
+can use the ``linkKey`` attribute to specify a unique key. All cells initialized with
+the same ``linkKey`` will share a kernel.
+
+.. code-block:: javascript
+
+   { ..
+   linked: boolean,
+   linkKey: string
+   .. }
+
 Evaluate button text
 ^^^^^^^^^^^^^^^^^^^^
 

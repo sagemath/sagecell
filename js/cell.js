@@ -88,7 +88,7 @@ define([
                     throw "inputLocation must be unique if outputLocation is specified";
                 }
                 cellInfo.array = [];
-                if (args.linked) {
+                if (args.linked && k === undefined) {
                     args.autoeval = false;
                     k = sagecell.kernels.push(null) - 1;
                 }
