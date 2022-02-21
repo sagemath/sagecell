@@ -1,6 +1,6 @@
 define([
-    "./sagecell",
     "jquery",
+    "./sagecell",
     "./multisockjs",
     "./utils",
     "codemirror/lib/codemirror",
@@ -23,7 +23,7 @@ define([
     "codemirror/mode/python/python",
     "codemirror/mode/r/r",
     "codemirror/mode/xml/xml",
-], function (sagecell, $, MultiSockJS, utils, CodeMirror) {
+], function ($, sagecell, MultiSockJS, utils, CodeMirror) {
     "use strict";
     var undefined;
 
