@@ -1,18 +1,24 @@
-define([
-    "jquery",
-    "./sagecell",
-    "./editor",
-    "./session",
-    "./utils",
-    "text!cell_body.html",
-    "text!all.min.css",
-    "domReady",
-    // Unreferenced dependencies
-    "jquery-ui",
-    //"jquery-ui-tp",
-    "colorpicker",
-    "JSmol",
-], function ($, sagecell, editor, Session, utils, cell_body, css, domReady) {
+import $ from "jquery";
+import sagecell from "./sagecell";
+import editor from "./editor";
+import Session from "./session";
+import utils from "./utils";
+import domReady from "requirejs-domready";
+import { initializeURLs, URLs } from "./urls";
+import { _gaq } from "./gaq";
+
+// Imports for side-effects only
+import "webpack-jquery-ui";
+import "jsmol";
+import "colorpicker";
+
+// The contents of these files is imported as strings
+//import css from "all.min.css";
+import cell_body from "./cell_body.html";
+
+import {css} from "./css"
+
+const cell = (function () {
     "use strict";
     var undefined;
 
@@ -24,10 +30,12 @@ define([
     };
 
     domReady(function () {
+        initializeURLs();
+
         var style = document.createElement("style");
         style.innerHTML = css.replace(
             /url\((?!data:)/g,
-            "url(" + utils.URLs.root + "static/"
+            "url(" + URLs.root + "static/"
         );
         var fs = document.getElementsByTagName("script")[0];
         fs.parentNode.insertBefore(style, fs);
@@ -66,9 +74,10 @@ define([
                 "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js";
             fs.parentNode.insertBefore(script, fs);
         }
+
+        // Preload images
+        new Image().src = URLs.spinner;
     });
-    // Preload images
-    new Image().src = utils.URLs.spinner;
 
     sagecell.kernels = [];
 
@@ -334,38 +343,33 @@ define([
             }
             deferred_eval.push([startEvaluation, evt]);
             if (deferred_eval.length === 1) {
-                utils.sendRequest(
-                    "POST",
-                    utils.URLs.terms,
-                    {},
-                    function (data) {
-                        if (data.length === 0) {
-                            accepted_tos = true;
-                            deferredEvaluation();
-                        } else {
-                            var terms = $(document.createElement("div"));
-                            terms.html(data);
-                            terms.dialog({
-                                modal: true,
-                                height: 400,
-                                width: 600,
-                                appendTo: input,
-                                title: "Terms of Service",
-                                buttons: {
-                                    Accept: function () {
-                                        $(this).dialog("close");
-                                        accepted_tos = true;
-                                        localStorage.accepted_tos = true;
-                                        deferredEvaluation();
-                                    },
-                                    Cancel: function () {
-                                        $(this).dialog("close");
-                                    },
+                utils.sendRequest("POST", URLs.terms, {}, function (data) {
+                    if (data.length === 0) {
+                        accepted_tos = true;
+                        deferredEvaluation();
+                    } else {
+                        var terms = $(document.createElement("div"));
+                        terms.html(data);
+                        terms.dialog({
+                            modal: true,
+                            height: 400,
+                            width: 600,
+                            appendTo: input,
+                            title: "Terms of Service",
+                            buttons: {
+                                Accept: function () {
+                                    $(this).dialog("close");
+                                    accepted_tos = true;
+                                    localStorage.accepted_tos = true;
+                                    deferredEvaluation();
                                 },
-                            });
-                        }
+                                Cancel: function () {
+                                    $(this).dialog("close");
+                                },
+                            },
+                        });
                     }
-                );
+                });
             }
             // return false to make *sure* any containing form doesn't submit
             return false;
@@ -399,4 +403,6 @@ define([
             moved.remove();
         },
     };
-});
+})();
+
+export default cell;

@@ -1,8 +1,10 @@
-define([
-    "jquery",
-    "./utils",
-    "mpl", // Creates global namespace
-], function ($, utils) {
+import $ from "jquery";
+import utils from "./utils";
+
+// Creates global namespace
+import "mpl";
+
+define(function () {
     "use strict";
     var undefined;
 

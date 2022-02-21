@@ -1,9 +1,10 @@
-define(["jquery", "base/js/events", "./interact_data", "./utils"], function (
-    $,
-    events,
-    InteractData,
-    utils
-) {
+import $ from "jquery";
+import InteractData from "./interact_data";
+import utils from "./utils";
+
+import "base/js/events";
+
+define(function () {
     "use strict";
     var undefined;
 

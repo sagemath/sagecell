@@ -1,29 +1,30 @@
-define([
-    "jquery",
-    "./sagecell",
-    "./multisockjs",
-    "./utils",
-    "codemirror/lib/codemirror",
-    // Unreferenced dependencies
-    "codemirror/addon/display/autorefresh",
-    "codemirror/addon/display/fullscreen",
-    "codemirror/addon/edit/matchbrackets",
-    "codemirror/addon/fold/foldcode",
-    "codemirror/addon/fold/foldgutter",
-    "codemirror/addon/fold/brace-fold",
-    "codemirror/addon/fold/xml-fold",
-    "codemirror/addon/fold/comment-fold",
-    "codemirror/addon/fold/indent-fold",
-    "codemirror/addon/hint/show-hint",
-    "codemirror/addon/runmode/runmode",
-    "codemirror/addon/runmode/colorize",
-    "codemirror/mode/css/css",
-    "codemirror/mode/htmlmixed/htmlmixed",
-    "codemirror/mode/javascript/javascript",
-    "codemirror/mode/python/python",
-    "codemirror/mode/r/r",
-    "codemirror/mode/xml/xml",
-], function ($, sagecell, MultiSockJS, utils, CodeMirror) {
+import $ from "jquery";
+import sagecell from "./sagecell";
+import utils from "./utils";
+import MultiSockJS from "./multisockjs";
+import CodeMirror from "codemirror/lib/codemirror";
+
+// These are imported just for their side-effects
+import "codemirror/addon/display/autorefresh";
+import "codemirror/addon/display/fullscreen";
+import "codemirror/addon/edit/matchbrackets";
+import "codemirror/addon/fold/foldcode";
+import "codemirror/addon/fold/foldgutter";
+import "codemirror/addon/fold/brace-fold";
+import "codemirror/addon/fold/xml-fold";
+import "codemirror/addon/fold/comment-fold";
+import "codemirror/addon/fold/indent-fold";
+import "codemirror/addon/hint/show-hint";
+import "codemirror/addon/runmode/runmode";
+import "codemirror/addon/runmode/colorize";
+import "codemirror/mode/css/css";
+import "codemirror/mode/htmlmixed/htmlmixed";
+import "codemirror/mode/javascript/javascript";
+import "codemirror/mode/python/python";
+import "codemirror/mode/r/r";
+import "codemirror/mode/xml/xml";
+
+define(function () {
     "use strict";
     var undefined;
 

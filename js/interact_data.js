@@ -1,4 +1,7 @@
-define(["jquery", "./utils"], function ($, utils) {
+import $ from "jquery";
+import utils from "./utils";
+
+define(function () {
     "use strict";
     var undefined;
 

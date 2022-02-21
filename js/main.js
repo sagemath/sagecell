@@ -1,7 +1,10 @@
+import sagecell from "./sagecell";
+import cell from "./cell"
+
 // TODO: put this tracking code in a site-specific file.
 // TODO: finish implementing our own stats service that handles,
 //       the phone apps, for example.
-var _gaq = _gaq || [];
+import { _gaq } from "./gaq";
 _gaq.push(["sagecell._setAccount", "UA-29124745-1"]);
 _gaq.push(["sagecell._setDomainName", "sagemath.org"]);
 _gaq.push(["sagecell._trackPageview"]);
@@ -33,8 +36,7 @@ function makeResolvablePromise() {
 // Set up the global sagecell variable. This needs to be done right away because other
 // scripts want to access window.sagecell.
 (function () {
-    window.sagecell = window.sagecell || {};
-    Object.assign(window.sagecell, {
+    Object.assign(sagecell, {
         templates: {
             minimal: {
                 // for an evaluate button and nothing else.
@@ -63,7 +65,7 @@ function makeResolvablePromise() {
         // but we may not be ready to process data right away, so we
         // provide a wrapper that will poll until sagecell is ready.
         makeSagecell: function (args) {
-            window.sagecell._initPromise.promise
+            sagecell._initPromise.promise
                 .then(() => {
                     window.sagecell._makeSagecell(args);
                 })
@@ -75,11 +77,11 @@ function makeResolvablePromise() {
     });
 
     // Purely for backwards compatibility
-    window.singlecell = window.sagecell;
+    window.singlecell = sagecell;
     window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
 })();
 
-require(["./sagecell", "./cell"], function (sagecell, cell) {
+(function () {
     "use strict";
     var undefined;
 
@@ -128,4 +130,4 @@ require(["./sagecell", "./cell"], function (sagecell, cell) {
     };
 
     sagecell._initPromise.resolve();
-});
+})();

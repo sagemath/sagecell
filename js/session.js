@@ -1,26 +1,18 @@
-define([
-    "jquery",
-    "./sagecell",
-    "base/js/namespace",
-    "base/js/events",
-    "services/kernels/kernel",
-    "./interact_cell",
-    "./interact_controls",
-    "./multisockjs",
-    "./utils",
-    "./widgets",
-], function (
-    $,
-    sagecell,
-    IPython,
-    events,
-    Kernel,
-    InteractCell,
-    interact_controls,
-    MultiSockJS,
-    utils,
-    widgets
-) {
+import $ from "jquery";
+import sagecell from "./sagecell";
+
+import IPython from "base/js/namespace";
+import events from "base/js/events";
+import Kernel from "services/kernels/kernel";
+import InteractCell from "./interact_cell";
+import interact_controls from "./interact_controls";
+import MultiSockJS from "./multisockjs";
+import utils from "./utils";
+import widgets from "./widgets";
+
+import { URLs } from "./urls";
+
+define(function () {
     "use strict";
     var undefined;
 
@@ -79,9 +71,7 @@ define([
             window.WebSocket = MultiSockJS;
             // sometimes (IE8) window.console is not defined (until the console is opened)
             window.console = window.console || {};
-            this.kernel = sagecell.kernels[k] = new Kernel.Kernel(
-                utils.URLs.kernel
-            );
+            this.kernel = sagecell.kernels[k] = new Kernel.Kernel(URLs.kernel);
             this.kernel.comm_manager.register_target(
                 "threejs",
                 utils.always_new(widgets.ThreeJS(this))
@@ -184,14 +174,14 @@ define([
                         { class: "sagecell_sessionOutput sagecell_active" },
                         [
                             (this.spinner = ce("img", {
-                                src: utils.URLs.spinner,
+                                src: URLs.spinner,
                                 alt: "Loading",
                                 class: "sagecell_spinner",
                             })),
                         ]
                     )),
                     ce("div", { class: "sagecell_poweredBy" }, [
-                        ce("a", { href: utils.URLs.help, target: "_blank" }, [
+                        ce("a", { href: URLs.help, target: "_blank" }, [
                             "Help",
                         ]),
                         " | Powered by ",
@@ -273,7 +263,7 @@ define([
                 }
                 utils.sendRequest(
                     "POST",
-                    utils.URLs.permalink,
+                    URLs.permalink,
                     args,
                     function (data) {
                         data = JSON.parse(data);
@@ -282,9 +272,9 @@ define([
                             return;
                         }
                         pl_qlink.href = links.query =
-                            utils.URLs.root + "?q=" + data.query;
+                            URLs.root + "?q=" + data.query;
                         links.zip =
-                            utils.URLs.root +
+                            URLs.root +
                             "?z=" +
                             data.zip +
                             "&lang=" +
@@ -713,8 +703,8 @@ define([
                 height: 500,
                 width: 500,
                 color: "white",
-                j2sPath: utils.URLs.root + "static/jsmol/j2s",
-                serverURL: utils.URLs.root + "static/jsmol/php/jsmol.php",
+                j2sPath: URLs.root + "static/jsmol/j2s",
+                serverURL: URLs.root + "static/jsmol/php/jsmol.php",
                 coverImage: filepath + data + "/preview.png",
                 deferUncover: true,
                 disableInitialConsole: true,
@@ -723,7 +713,7 @@ define([
                     filepath +
                     data +
                     "/scene.zip';\n script SCRIPT;\n",
-                menuFile: utils.URLs.root + "static/SageMenu.mnu",
+                menuFile: URLs.root + "static/SageMenu.mnu",
             };
             this.output(
                 Jmol.getAppletHtml("scJmol" + jmolCounter++, info),
