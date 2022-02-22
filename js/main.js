@@ -1,5 +1,5 @@
 import sagecell from "./sagecell";
-import cell from "./cell"
+import cell from "./cell";
 
 // TODO: put this tracking code in a site-specific file.
 // TODO: finish implementing our own stats service that handles,
@@ -35,99 +35,95 @@ function makeResolvablePromise() {
 
 // Set up the global sagecell variable. This needs to be done right away because other
 // scripts want to access window.sagecell.
-(function () {
-    Object.assign(sagecell, {
-        templates: {
-            minimal: {
-                // for an evaluate button and nothing else.
-                editor: "textarea-readonly",
-                hide: ["editor", "files", "permalink"],
-            },
-            restricted: {
-                // to display/evaluate code that can't be edited.
-                editor: "codemirror-readonly",
-                hide: ["files", "permalink"],
-            },
+Object.assign(sagecell, {
+    templates: {
+        minimal: {
+            // for an evaluate button and nothing else.
+            editor: "textarea-readonly",
+            hide: ["editor", "files", "permalink"],
         },
-        allLanguages: [
-            "sage",
-            "gap",
-            "gp",
-            "html",
-            "macaulay2",
-            "maxima",
-            "octave",
-            "python",
-            "r",
-            "singular",
-        ],
-        // makeSagecell must be available as soon as the script loads,
-        // but we may not be ready to process data right away, so we
-        // provide a wrapper that will poll until sagecell is ready.
-        makeSagecell: function (args) {
-            sagecell._initPromise.promise
-                .then(() => {
-                    window.sagecell._makeSagecell(args);
-                })
-                .catch((e) => {
-                    console.warn("Encountered error in makeSagecell", e);
-                });
+        restricted: {
+            // to display/evaluate code that can't be edited.
+            editor: "codemirror-readonly",
+            hide: ["files", "permalink"],
         },
-        _initPromise: makeResolvablePromise(),
-    });
+    },
+    allLanguages: [
+        "sage",
+        "gap",
+        "gp",
+        "html",
+        "macaulay2",
+        "maxima",
+        "octave",
+        "python",
+        "r",
+        "singular",
+    ],
+    // makeSagecell must be available as soon as the script loads,
+    // but we may not be ready to process data right away, so we
+    // provide a wrapper that will poll until sagecell is ready.
+    makeSagecell: function (args) {
+        sagecell._initPromise.promise
+            .then(() => {
+                window.sagecell._makeSagecell(args);
+            })
+            .catch((e) => {
+                console.warn("Encountered error in makeSagecell", e);
+            });
+    },
+    _initPromise: makeResolvablePromise(),
+});
 
-    // Purely for backwards compatibility
-    window.singlecell = sagecell;
-    window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
-})();
+// Purely for backwards compatibility
+window.singlecell = sagecell;
+window.singlecell.makeSinglecell = window.singlecell.makeSagecell;
 
-(function () {
-    "use strict";
-    var undefined;
-
-    /**
-     * Retrieve the kernel index associated with `key`. If
-     * needed, this function will push `null` onto the kernel
-     * stack, providing a space for the kernel to be initialized.
-     */
-    function linkKeyToIndex(key) {
-        sagecell.linkKeys = sagecell.linkKeys || {};
-        if (key in sagecell.linkKeys) {
-            return sagecell.linkKeys[key];
-        }
-
-        sagecell.kernels = sagecell.kernels || [];
-        // Make sure we have a kernel to share for our new key.
-        const index = sagecell.kernels.push(null) - 1;
-        sagecell.linkKeys[key] = index;
-        return index;
+/**
+ * Retrieve the kernel index associated with `key`. If
+ * needed, this function will push `null` onto the kernel
+ * stack, providing a space for the kernel to be initialized.
+ */
+function linkKeyToIndex(key) {
+    sagecell.linkKeys = sagecell.linkKeys || {};
+    if (key in sagecell.linkKeys) {
+        return sagecell.linkKeys[key];
     }
 
-    sagecell._makeSagecell = function (args) {
-        console.info("sagecell.makeSagecell called");
-        // If `args.linkKey` is set, we force the `linked` option to be true.
-        if (args.linkKey) {
-            args = Object.assign({}, args, { linked: true });
-        }
+    sagecell.kernels = sagecell.kernels || [];
+    // Make sure we have a kernel to share for our new key.
+    const index = sagecell.kernels.push(null) - 1;
+    sagecell.linkKeys[key] = index;
+    return index;
+}
 
-        var cellInfo = {};
-        if (args.linked && args.linkKey) {
-            cell.make(args, cellInfo, linkKeyToIndex(args.linkKey));
-        } else {
-            cell.make(args, cellInfo);
-        }
-        console.info("sagecell.makeSagecell finished");
-        return cellInfo;
-    };
-    sagecell.deleteSagecell = function (cellInfo) {
-        cell.delete(cellInfo);
-    };
-    sagecell.moveInputForm = function (cellInfo) {
-        cell.moveInputForm(cellInfo);
-    };
-    sagecell.restoreInputForm = function (cellInfo) {
-        cell.restoreInputForm(cellInfo);
-    };
+sagecell._makeSagecell = function (args) {
+    console.info("sagecell.makeSagecell called");
+    // If `args.linkKey` is set, we force the `linked` option to be true.
+    if (args.linkKey) {
+        args = Object.assign({}, args, { linked: true });
+    }
 
-    sagecell._initPromise.resolve();
-})();
+    var cellInfo = {};
+    if (args.linked && args.linkKey) {
+        cell.make(args, cellInfo, linkKeyToIndex(args.linkKey));
+    } else {
+        cell.make(args, cellInfo);
+    }
+    console.info("sagecell.makeSagecell finished");
+    return cellInfo;
+};
+sagecell.deleteSagecell = function (cellInfo) {
+    cell.delete(cellInfo);
+};
+sagecell.moveInputForm = function (cellInfo) {
+    cell.moveInputForm(cellInfo);
+};
+sagecell.restoreInputForm = function (cellInfo) {
+    cell.restoreInputForm(cellInfo);
+};
+
+sagecell._initPromise.resolve();
+
+export default sagecell;
+export { sagecell };

@@ -8,7 +8,7 @@
     "build:deps": "mkdir -p build/vendor && cp static/sagecell.css static/fontawesome.css build/vendor && node fetch_vendor_js.mjs",
     "build": "webpack --mode production",
     "watch": "webpack --watch --mode development"
-},
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/sagemath/"
@@ -42,6 +42,7 @@
     "@babel/plugin-transform-modules-amd": "^7.16.7",
     "@babel/preset-env": "^7.16.11",
     "babel-loader": "^8.2.3",
+    "eslint": "^8.9.0",
     "raw-loader": "^4.0.2",
     "webpack": "^5.68.0",
     "webpack-bundle-analyzer": "^4.5.0",
