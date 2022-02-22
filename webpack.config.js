@@ -4,7 +4,7 @@ const path = require("path");
 module.exports = {
     entry: "./js/main.js",
     output: {
-        filename: "./sagecell_embed.js",
+        filename: "./embedded_sagecell.js",
         path: path.resolve(__dirname, "build"),
     },
     // Enable sourcemaps for debugging webpack's output.

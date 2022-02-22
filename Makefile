@@ -23,9 +23,9 @@ build:
 
 $(all-min-js): build js/*
 	npm run build
-	cp build/sagecell_embed.js $(all-min-js)
-	cp build/sagecell_embed.js.map $(all-min-js-map)
-	cp build/sagecell_embed.js.LICENSE.txt $(all-min-js-license)
+	cp build/embedded_sagecell.js $(all-min-js)
+	cp build/embedded_sagecell.js.map $(all-min-js-map)
+	cp build/embedded_sagecell.js.LICENSE.txt $(all-min-js-license)
 
 $(embed-css): $(sagecell-css)
 	sed -e 's/;/ !important;/g' < $(sagecell-css) > $(embed-css)
