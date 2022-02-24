@@ -26,10 +26,6 @@ const URLS = {
         "https://raw.githubusercontent.com/jupyter/notebook/master/notebook/static/services/kernels/serialize.js",
     "mpl.js":
         "https://raw.githubusercontent.com/matplotlib/matplotlib/main/lib/matplotlib/backends/web_backend/js/mpl.js",
-    "colorpicker.js":
-        "https://raw.githubusercontent.com/thorst/jQuery-ColorPicker/master/colorpicker.js",
-    "colorpicker.css":
-        "https://raw.githubusercontent.com/thorst/jQuery-ColorPicker/master/colorpicker.css",
 };
 
 async function fetchFile(fileName, url) {

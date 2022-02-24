@@ -16,7 +16,7 @@ import "colorpicker";
 //import css from "all.min.css";
 import cell_body from "./cell_body.html";
 
-import {css} from "./css"
+import { css } from "./css";
 
 const cell = (function () {
     "use strict";
@@ -34,8 +34,8 @@ const cell = (function () {
 
         var style = document.createElement("style");
         style.innerHTML = css.replace(
-            /url\((?!data:)/g,
-            "url(" + URLs.root + "static/"
+            /(url\(["']?(?!["']?data:))/g,
+            "$1" + URLs.root + "static/"
         );
         var fs = document.getElementsByTagName("script")[0];
         fs.parentNode.insertBefore(style, fs);
