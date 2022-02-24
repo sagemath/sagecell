@@ -19,7 +19,26 @@ submodules:
 
 build:
 	npm install
+	ifeq ($(strip $(FETCH_SAGE_DEPS)),)
+# The standard build process is to copy all Javascript dependencies from a existing sage install
+	npm run build:copystatic
+	cp -a $(SAGE_VENV)/lib/python3.9/site-packages/notebook/static -T build/vendor
+	cp static/colorpicker/js/colorpicker.js build/vendor
+	ln -sfn $(SAGE_VENV)/share/jupyter/nbextensions/jupyter_jsmol/jsmol static/jsmol
+	ln -sfn $(sage-root)/local/share/threejs-sage/r122 static/threejs
+	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
+	cp static/jsmol/JSmol.min.nojq.js build/vendor/JSmol.js
+	wget -P build/vendor \
+		https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js \
+		https://raw.githubusercontent.com/requirejs/domReady/latest/domReady.js \
+		https://raw.githubusercontent.com/requirejs/text/latest/text.js
+	python3 -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; f = open('build/vendor/mpl.js', 'w'); f.write(FigureManagerWebAgg.get_javascript())"
+
+	else
+# Fetch Javascript dependencies from github
 	npm run build:deps
+
+	endif
 
 $(all-min-js): build js/*
 	npm run build

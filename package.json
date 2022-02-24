@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:deps": "mkdir -p build/vendor && cp static/sagecell.css static/fontawesome.css build/vendor && node fetch_vendor_js.mjs",
+    "build:copystatic": "mkdir -p build/vendor && cp static/sagecell.css static/fontawesome.css static/colorpicker/js/colorpicker.js static/colorpicker/css/colorpicker.css build/vendor",
+    "build:deps": "npm run build:copystatic && node fetch_vendor_js.mjs",
     "build": "webpack --mode production",
     "watch": "webpack --watch --mode development"
 },
