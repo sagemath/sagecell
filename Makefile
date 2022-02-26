@@ -17,7 +17,7 @@ all: submodules $(all-min-js) $(embed-css) $(tos-static)
 submodules:
 	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
 
-build: build/vendor/*
+build:
 	npm install
 ifeq ($(strip $(FETCH_SAGE_DEPS)),)
 # The standard build process is to copy all Javascript dependencies from a existing sage install
