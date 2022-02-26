@@ -17,9 +17,9 @@ all: submodules $(all-min-js) $(embed-css) $(tos-static)
 submodules:
 	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
 
-build:
+build: build/vendor/*
 	npm install
-	ifeq ($(strip $(FETCH_SAGE_DEPS)),)
+ifeq ($(strip $(FETCH_SAGE_DEPS)),)
 # The standard build process is to copy all Javascript dependencies from a existing sage install
 	-rm -r build
 	npm run build:copystatic
@@ -35,11 +35,11 @@ build:
 		https://raw.githubusercontent.com/requirejs/text/latest/text.js
 	python3 -c "from matplotlib.backends.backend_webagg_core import FigureManagerWebAgg; f = open('build/vendor/mpl.js', 'w'); f.write(FigureManagerWebAgg.get_javascript())"
 
-	else
+else
 # Fetch Javascript dependencies from github
 	npm run build:deps
 
-	endif
+endif
 
 $(all-min-js): build js/*
 	npm run build
