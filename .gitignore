@@ -1,11 +1,13 @@
 *.pyc
 *~
 
-/build/
+/build*/
 /doc/_build/*
 /static/SageMenu.mnu
 /static/all.min.css
 /static/embedded_sagecell.js
+/static/embedded_sagecell.js.map
+/static/embedded_sagecell.js.LICENSE.txt
 /static/images/
 /static/jquery.min.js
 /static/jquery-ui.min.css
@@ -16,3 +18,4 @@
 /tests/multimechanize/results/
 /config.py
 /sqlite.db
+node_modules

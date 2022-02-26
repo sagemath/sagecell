@@ -1,4 +1,8 @@
-define(["sockjs", "./utils"], function (SockJS, utils) {
+import { URLs } from "./urls";
+import SockJS from "sockjs-client";
+import utils from "./utils";
+
+define(function () {
     "use strict";
     var undefined;
 
@@ -13,9 +17,9 @@ define(["sockjs", "./utils"], function (SockJS, utils) {
         ) {
             MultiSockJS.channels = {};
             MultiSockJS.to_init = [];
-            console.debug("Initializing MultiSockJS to " + utils.URLs.sockjs);
+            console.debug("Initializing MultiSockJS to " + URLs.sockjs);
             MultiSockJS.sockjs = new SockJS(
-                utils.URLs.sockjs + "?CellSessionID=" + utils.cellSessionID()
+                URLs.sockjs + "?CellSessionID=" + utils.cellSessionID()
             );
 
             MultiSockJS.sockjs.onopen = function (e) {

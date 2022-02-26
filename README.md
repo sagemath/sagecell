@@ -21,7 +21,6 @@ In particular, system packages installed in the base container are listed [here]
     sudo apt-get install npm
     # On Debian based systems we need to make an alias
     sudo ln -s /usr/bin/nodejs /usr/bin/node
-    sudo npm install -g requirejs
     ```
 
 2.  Get and build Sage (`export MAKE="make -j8"` or something similar can speed things up):
@@ -55,8 +54,19 @@ In particular, system packages installed in the base container are listed [here]
     ../sage/sage -sh -c make
     ```
     
-Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copied](https://github.com/sagemath/sagecell/blob/master/Makefile#L23) from the [Jupyter notebook](https://github.com/jupyter/notebook) bundled with SageMath.
+To build just the Javascript components, from the `sagecell` directory run
 
+```bash
+make static/embedded_sagecell.js
+```
+
+By default, Javascript dependencies are copied from an existing Sage install. To fetch dependencies
+from Github instead, you can run
+
+```bash
+export FETCH_SAGE_DEPS=yes
+make static/embedded_sagecell.js
+```
 
 # Configuration
 
@@ -74,6 +84,33 @@ Major JavaScript dependencies, including Require.js and CodeMirror.js, are [copi
 
     When you want to shut down the server, press `Ctrl-C` in the same terminal.
 
+
+# Javascript Development
+
+Javascript source files are compiled using [Webpack](https://webpack.js.org/). Sagecell depends on source files copied
+from the Jupyter notebook project. To start development navigate to the `sagecell` source directory and run
+
+```bash
+npm install
+npm run build:deps
+```
+
+After this, all dependencies will be located in the `build/vendor` directory. You can now run
+
+```bash
+npm run build
+```
+
+to build `build/embedded_sagecell.js`
+
+or
+
+```bash
+npm run watch
+```
+
+to build `build/embedded_sagecell.js` and watch files for changes. If a file is changed, `embedded_sagecell.js` will be automatically
+rebuilt.
 
 # License
 
