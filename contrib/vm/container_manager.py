@@ -462,7 +462,6 @@ def update_repositories():
         git("checkout " + branch)
         if call("git symbolic-ref -q HEAD") == 0:
             git("pull")
-        git("submodule update --init --recursive")
         os.chdir(os.pardir)
     os.chdir(os.pardir)
 

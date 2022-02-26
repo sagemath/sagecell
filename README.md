@@ -50,7 +50,6 @@ In particular, system packages installed in the base container are listed [here]
     ```bash
     git clone https://github.com/sagemath/sagecell.git
     pushd sagecell
-    git submodule update --init --recursive
     ../sage/sage -sh -c make
     ```
     

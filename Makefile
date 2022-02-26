@@ -10,12 +10,9 @@ tos-default = templates/tos_default.html
 tos = templates/tos.html
 tos-static = static/tos.html
 
-all: submodules $(all-min-js) $(embed-css) $(tos-static)
+all: $(all-min-js) $(embed-css) $(tos-static)
 
-.PHONY: submodules $(tos-static)
-
-submodules:
-	if git submodule status | grep -q ^[+-]; then git submodule update --init > /dev/null; fi
+.PHONY: $(tos-static)
 
 build:
 	npm install
