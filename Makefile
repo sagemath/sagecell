@@ -21,6 +21,7 @@ build:
 	npm install
 	ifeq ($(strip $(FETCH_SAGE_DEPS)),)
 # The standard build process is to copy all Javascript dependencies from a existing sage install
+	-rm -r build
 	npm run build:copystatic
 	cp -a $(SAGE_VENV)/lib/python3.9/site-packages/notebook/static -T build/vendor
 	cp static/colorpicker/js/colorpicker.js build/vendor

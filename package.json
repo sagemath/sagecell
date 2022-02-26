@@ -9,7 +9,7 @@
     "build:deps": "npm run build:copystatic && node fetch_vendor_js.mjs",
     "build": "webpack --mode production",
     "watch": "webpack --watch --mode development"
-},
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/sagemath/"
@@ -17,20 +17,18 @@
   "keywords": [
     "sage"
   ],
-  "author": "Andrey Novoseltsev",
+  "author": "Jason Grout, Andrey Novoseltsev, Ira Hanson, Alex Kramer",
   "license": "SEE LICENSE IN LICENSE.txt",
   "dependencies": {
     "codemirror": "^5.65.1",
+    "domready": "^1.0.8",
     "es6-promise": "^4.2.8",
     "jquery": "^3.6.0",
     "jquery-ui": "^1.13.1",
     "jquery-ui-themes": "^1.12.0",
-    "jquery-ui-touch-punch": "^0.2.3",
     "jsmol": "^1.0.0",
     "moment": "^2.29.1",
     "node-fetch": "^3.2.0",
-    "requirejs": "^2.3.6",
-    "requirejs-domready": "^2.0.3",
     "sockjs": "^0.3.24",
     "sockjs-client": "^1.5.2",
     "source-map-loader": "^3.0.1",

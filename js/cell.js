@@ -3,7 +3,7 @@ import sagecell from "./sagecell";
 import editor from "./editor";
 import Session from "./session";
 import utils from "./utils";
-import domReady from "requirejs-domready";
+import domReady from "domready";
 import { initializeURLs, URLs } from "./urls";
 import { _gaq } from "./gaq";
 
