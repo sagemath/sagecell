@@ -50,7 +50,6 @@ In particular, system packages installed in the base container are listed [here]
     ```bash
     git clone https://github.com/sagemath/sagecell.git
     pushd sagecell
-    git submodule update --init --recursive
     ../sage/sage -sh -c make
     ```
     
@@ -60,6 +59,13 @@ To build just the Javascript components, from the `sagecell` directory run
 make static/embedded_sagecell.js
 ```
 
+By default, Javascript dependencies are copied from an existing Sage install. To fetch dependencies
+from Github instead, you can run
+
+```bash
+export FETCH_SAGE_DEPS=yes
+make static/embedded_sagecell.js
+```
 
 # Configuration
 

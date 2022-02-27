@@ -3,7 +3,7 @@ import sagecell from "./sagecell";
 import editor from "./editor";
 import Session from "./session";
 import utils from "./utils";
-import domReady from "requirejs-domready";
+import domReady from "domready";
 import { initializeURLs, URLs } from "./urls";
 import { _gaq } from "./gaq";
 
@@ -30,8 +30,8 @@ domReady(function () {
 
     var style = document.createElement("style");
     style.innerHTML = css.replace(
-        /url\((?!data:)/g,
-        "url(" + URLs.root + "static/"
+        /(url\(["']?(?!["']?data:))/g,
+        "$1" + URLs.root + "static/"
     );
     var fs = document.getElementsByTagName("script")[0];
     fs.parentNode.insertBefore(style, fs);
