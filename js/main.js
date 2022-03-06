@@ -1,5 +1,6 @@
 import sagecell from "./sagecell";
 import cell from "./cell";
+import "./jquery-global";
 
 // TODO: put this tracking code in a site-specific file.
 // TODO: finish implementing our own stats service that handles,
@@ -26,9 +27,12 @@ _gaq.push(["sagecell._trackPageview"]);
  * it can be called externally.
  */
 function makeResolvablePromise() {
-    const ret = { promise: null, resolve: null };
+    const ret = { promise: null, resolve: null, state: "pending" };
     ret.promise = new Promise((resolve) => {
-        ret.resolve = resolve;
+        ret.resolve = (...args) => {
+            ret.state = "fulfilled";
+            return resolve(...args);
+        };
     });
     return ret;
 }
@@ -64,13 +68,24 @@ Object.assign(sagecell, {
     // but we may not be ready to process data right away, so we
     // provide a wrapper that will poll until sagecell is ready.
     makeSagecell: function (args) {
-        sagecell._initPromise.promise
-            .then(() => {
-                window.sagecell._makeSagecell(args);
-            })
-            .catch((e) => {
-                console.warn("Encountered error in makeSagecell", e);
-            });
+        // Clients expect to receive a `cellInfo` object right away.
+        // However, this object cannot be made available until the page loads.
+        // If we're not ready, we return a stub object that gets updated with
+        // the proper data when it becomes available.
+        if (sagecell._initPromise.state === "pending") {
+            const ret = {};
+            sagecell._initPromise.promise
+                .then(() => {
+                    const cellInfo = window.sagecell._makeSagecell(args);
+                    Object.assign(ret, cellInfo);
+                })
+                .catch((e) => {
+                    console.warn("Encountered error in makeSagecell", e);
+                });
+            return ret;
+        } else {
+            return window.sagecell._makeSagecell(args);
+        }
     },
     _initPromise: makeResolvablePromise(),
 });
