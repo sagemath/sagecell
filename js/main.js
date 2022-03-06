@@ -1,5 +1,6 @@
 import sagecell from "./sagecell";
 import cell from "./cell";
+import "./jquery-global";
 
 // TODO: put this tracking code in a site-specific file.
 // TODO: finish implementing our own stats service that handles,
