@@ -3,6 +3,7 @@ import utils from "./utils";
 
 // Creates global namespace
 import "mpl";
+import { console } from "./console";
 
 export const widgets = {
     Graphics: function (session) {

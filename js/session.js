@@ -11,6 +11,7 @@ import utils from "./utils";
 import widgets from "./widgets";
 
 import { URLs } from "./urls";
+import { console } from "./console";
 
 Kernel.Kernel.prototype.kill = function () {
     utils.sendRequest("DELETE", this.kernel_url);
