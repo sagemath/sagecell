@@ -1,6 +1,7 @@
 import { URLs } from "./urls";
 import SockJS from "sockjs-client";
 import utils from "./utils";
+import { console } from "./console";
 
 export function MultiSockJS(url, prefix) {
     console.debug(

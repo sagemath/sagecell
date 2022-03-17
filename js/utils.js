@@ -1,6 +1,7 @@
 import $ from "jquery";
 import utils from "base/js/utils";
 import { URLs } from "./urls";
+import { console } from "./console";
 
 /* IPython url_join_encode and url_path_join is used in the cell server with URLs with hostnames, so we make it handle those correctly
     this is a temporary kludge.  A much better fix would be to introduce a kernel_base_url parameter in the kernel

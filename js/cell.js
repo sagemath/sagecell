@@ -17,6 +17,7 @@ import "colorpicker";
 import cell_body from "./cell_body.html";
 
 import { css } from "./css";
+import { console } from "./console";
 
 sagecell.modes = {
     sage: "python",

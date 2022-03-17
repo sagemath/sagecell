@@ -33,6 +33,11 @@ ________________________________
    Built-in embedding templates. See :ref:`templates <Templates>` in the
    Embedding documentation for more information.
 
+.. _sagecell.quietMode:
+.. attribute:: sagecell.quietMode
+
+   Boolean. When set to true, only essential messages are printed to the console.
+
 .. _sagecell.init_embed:
 .. function:: sagecell.init(callback)
 
