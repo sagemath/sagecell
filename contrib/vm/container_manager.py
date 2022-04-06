@@ -228,7 +228,6 @@ python_packages = [
 "scikit-learn",
 "scikit-tda",
 "scimath",
-"scitools3",
 "scrapy",
 "seaborn",
 "selenium",
