@@ -1,0 +1,10 @@
+/var/log/sagecell.log {
+    size 1G
+    rotate 5
+    missingok
+    compress
+    delaycompress
+    postrotate
+        /usr/lib/rsyslog/rsyslog-rotate
+    endscript
+}
