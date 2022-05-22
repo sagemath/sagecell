@@ -180,7 +180,7 @@ python_packages = [
 "getdist",
 "ggplot",
 "gif",
-"giotto-tda",
+#"giotto-tda", asks sudo access as of May 2022
 "google-api-python-client",
 "graphviz",
 "gspread",
