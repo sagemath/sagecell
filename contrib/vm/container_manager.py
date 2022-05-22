@@ -175,7 +175,7 @@ python_packages = [
 "dask[array]",
 "emoji",
 "geopandas",
-"geoplot",
+#"geoplot", does not build even with libgdal-dev as of May 2022
 "getdist",
 "ggplot",
 "gif",
