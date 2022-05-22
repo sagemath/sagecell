@@ -119,6 +119,7 @@ octave-statistics
 sage_optional_packages = [
 "4ti2",
 "biopython",
+"bliss",
 "cbc",
 "cryptominisat",
 "database_cremona_ellcurve",
