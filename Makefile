@@ -43,6 +43,8 @@ $(all-min-js): build js/*
 	cp build/embedded_sagecell.js $(all-min-js)
 	cp build/embedded_sagecell.js.map $(all-min-js-map)
 	cp build/embedded_sagecell.js.LICENSE.txt $(all-min-js-license)
+	# Host standalone jquery for compatibility with old instructions
+	cp build/vendor/components/jquery/jquery.min.js static
 
 $(embed-css): $(sagecell-css)
 	sed -e 's/;/ !important;/g' < $(sagecell-css) > $(embed-css)
