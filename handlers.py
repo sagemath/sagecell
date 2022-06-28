@@ -174,17 +174,18 @@ class KernelHandler(tornado.web.RequestHandler):
         self.finish()
 
     def permissions(self, data=None):
-        if "frame" not in self.request.arguments:
-            if "Origin" in self.request.headers:
-                self.set_header("Access-Control-Allow-Origin",
-                                self.request.headers["Origin"])
-                self.set_header("Access-Control-Allow-Credentials", "true")
-                self.set_header("Access-Control-Allow-Methods",
-                                "POST, GET, OPTIONS, DELETE")
-                self.set_header("Access-Control-Allow-Headers", "Content-Type")
-        else:
-            data = '<script>parent.postMessage(%r,"*");</script>' % (json.dumps(data),)
+        if "frame" in self.request.arguments:
+            data = '<script>parent.postMessage(%r,"*");</script>' % json.dumps(data)
             self.set_header("Content-Type", "text/html")
+        elif "Origin" in self.request.headers:
+            self.set_header(
+                "Access-Control-Allow-Origin", self.request.headers["Origin"])
+            self.set_header(
+                "Access-Control-Allow-Credentials", "true")
+            self.set_header(
+                "Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
+            self.set_header(
+                "Access-Control-Allow-Headers", "X-CSRF-Token, Content-Type")
         return data
 
 
