@@ -185,7 +185,7 @@ class KernelHandler(tornado.web.RequestHandler):
             self.set_header(
                 "Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE")
             self.set_header(
-                "Access-Control-Allow-Headers", "X-CSRF-Token, Content-Type")
+                "Access-Control-Allow-Headers", "X-XSRFToken, Content-Type")
         return data
 
 
