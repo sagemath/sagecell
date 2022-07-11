@@ -19,8 +19,10 @@ ipset add allowed 151.101.0.0/16    # Fastly, PyPi.org
 ipset add allowed 140.82.112.0/20   # GitHub
 ipset add allowed 185.199.108.0/22
 
-ipset add allowed 142.250.0.0/15    # Google services
+ipset add allowed 108.177.0.0/17    # Google services
+ipset add allowed 142.250.0.0/15
 ipset add allowed 172.217.0.0/16
+ipset add allowed 173.194.0.0/16
 ipset add allowed 216.58.192.0/19
 
 ipset add allowed 89.107.186.22     # graphclasses.org
