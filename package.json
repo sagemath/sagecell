@@ -27,7 +27,7 @@
     "jquery-ui": "^1.13.2",
     "jquery-ui-themes": "^1.12.0",
     "jsmol": "^1.0.0",
-    "moment": "^2.29.2",
+    "moment": "^2.29.4",
     "node-fetch": "^3.2.0",
     "sockjs": "^0.3.24",
     "sockjs-client": "^1.5.2",
