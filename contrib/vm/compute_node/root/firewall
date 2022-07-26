@@ -4,6 +4,7 @@ ipset create allowed hash:net
 
 ipset add allowed 130.211.113.153   # Permalinks
 ipset add allowed 91.189.88.0/24    # Canonical Group Limited, archive.ubuntu.com
+ipset add allowed 185.125.188.0/22
 ipset add allowed 128.174.0.0/16    # University of Illinois, Macaulay2
 
 
