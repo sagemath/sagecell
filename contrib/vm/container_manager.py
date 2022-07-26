@@ -592,6 +592,11 @@ def install_packages():
             r.eval("install.packages('{}')")
             quit
             """.format(package))
+        if "ImportError" in check_output(
+                f"./sage -c \"r.library('{package}')\""):
+            msg = f"R package {package} didn't install"
+            log.error(msg)
+            raise RuntimeError(msg)
     os.chdir("..")
 
 
