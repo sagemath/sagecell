@@ -260,8 +260,10 @@ python_packages = [
 # R packages
 R_packages = [
 "deSolve",
+"GGally",
 "ggplot2",
 "pracma",
+"rms",
 "survey",
 "swirl",
 "tidyverse",
