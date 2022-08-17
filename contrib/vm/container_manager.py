@@ -229,7 +229,7 @@ python_packages = [
 "scikit-image",
 "scikit-learn",
 "scikit-tda",
-"scimath",
+"scimath==4.2.0",  # 5.0.0 does not install as of August 2022
 "scrapy",
 "seaborn",
 "selenium",
