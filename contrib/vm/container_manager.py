@@ -37,7 +37,7 @@ lxcn_version_prefix = "sage-"       # Prefix for fixed version compute nodes
 # Timeout in seconds to wait for a container to shutdown, network to start etc.
 timeout = 120
 # Time after which SageCell should be up and running.
-start_delay = 66
+start_delay = 126
 # How long to wait after starting new containers before destroying old ones.
 deploy_delay = 2*60*60  # Two hours to allow all interacts finish "naturally".
 
