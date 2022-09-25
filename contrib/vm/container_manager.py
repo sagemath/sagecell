@@ -691,7 +691,7 @@ class SCLXC(object):
             {"dist": "ubuntu", "release": "focal", "arch": "amd64"},
             "btrfs"):
                 raise RuntimeError("failed to create " + self.name)
-        os.environ.unsetenv("HTTP_PROXY")
+        os.environ.pop("HTTP_PROXY")
 
         self.update()
         log.info("installing packages")
