@@ -353,7 +353,7 @@ defaults
 HAProxy_section = r"""
 frontend http{suffix}
     bind *:{port}
-    reqrep ^([^\ \t]*[\ \t])(/embedded_sagecell\.js[\ \t].*)     \1/static\2
+    http-request replace-path (/embedded_sagecell\.js.*) /static\1 if { url_beg /embedded_sagecell }
     use_backend static{suffix} if { path_beg /static }
     use_backend compute{suffix}
     monitor-uri /?healthcheck
