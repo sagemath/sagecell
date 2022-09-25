@@ -22,7 +22,7 @@ ifeq ($(strip $(FETCH_SAGE_DEPS)),)
 	npm run build:copystatic
 	cp -a $(SAGE_VENV)/lib/python3.*/site-packages/notebook/static -T build/vendor
 	cp static/colorpicker/js/colorpicker.js build/vendor
-	ln -sfn $(SAGE_VENV)/share/jupyter/nbextensions/jupyter_jsmol/jsmol static/jsmol
+	ln -sfn $(SAGE_VENV)/share/jupyter/nbextensions/jupyter-jsmol/jsmol static/jsmol
 	ln -sfn $(sage-root)/local/share/threejs-sage/r122 static/threejs
 	ln -sf $(sage-root)/local/share/jmol/appletweb/SageMenu.mnu static/SageMenu.mnu
 	cp static/jsmol/JSmol.min.nojq.js build/vendor/JSmol.js
