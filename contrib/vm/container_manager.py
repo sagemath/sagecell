@@ -108,6 +108,7 @@ graphviz
 libgeos-dev
 libhdf5-dev
 libnetcdf-dev
+libopenmpi-dev
 libxml2-dev
 libxslt1-dev
 octave
