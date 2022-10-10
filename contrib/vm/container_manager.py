@@ -89,8 +89,9 @@ ninja-build
 npm
 pandoc
 pari-gp2c
-php7.4-fpm
+php8.1-fpm
 proj-bin
+python3-requests
 rsyslog-relp
 ssh
 texlive
@@ -424,7 +425,7 @@ def install_macaulay2():
     Adjust system configuration and install Macaulay2.
     """
     with open("/etc/apt/sources.list.d/macaulay2.list", "w") as f:
-        f.write("deb https://faculty.math.illinois.edu/Macaulay2/Repositories/Ubuntu focal main")
+        f.write("deb https://faculty.math.illinois.edu/Macaulay2/Repositories/Ubuntu jammy main")
     check_call("apt-key adv --keyserver hkp://keyserver.ubuntu.com \
                 --recv-key CD9C0E09B0C780943A1AD85553F8BD99F40DCB31")
     check_call("apt update")
@@ -692,7 +693,7 @@ class SCLXC(object):
         os.environ["HTTP_PROXY"] = "apt"
         if not self.c.create(
             "download", 0,
-            {"dist": "ubuntu", "release": "focal", "arch": "amd64"},
+            {"dist": "ubuntu", "release": "jammy", "arch": "amd64"},
             "btrfs"):
                 raise RuntimeError("failed to create " + self.name)
         os.environ.pop("HTTP_PROXY")
