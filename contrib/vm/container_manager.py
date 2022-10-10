@@ -511,13 +511,16 @@ def setup_container_users():
                "--disabled-password {worker}")
 
     shome = os.path.join("/home", users["server"])
-    whome = os.path.join("/home", users["worker"])
+    os.chmod(shome, stat.S_IRWXU |
+                    stat.S_IRGRP | stat.S_IXGRP |
+                    stat.S_IROTH | stat.S_IXOTH)
     os.chdir(shome)
     os.setegid(users["GID"])
     os.seteuid(users["server_ID"])
     os.mkdir(".ssh", 0o700)
     check_call("ssh-keygen -q -N '' -f .ssh/id_rsa")
 
+    whome = os.path.join("/home", users["worker"])
     os.chdir(whome)
     os.setuid(0)
     os.seteuid(users["worker_ID"])
