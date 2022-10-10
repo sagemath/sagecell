@@ -307,7 +307,7 @@ if $syslogfacility-text == "local3" then
 
 # HA-Proxy configuration is regenerated every time the script is run.
 HAProxy_header = """\
-# Default from Ubuntu 20.04 LTS
+# Default from Ubuntu 22.04 LTS
 global
         log /dev/log    local0
         log /dev/log    local1 notice
