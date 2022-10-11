@@ -168,7 +168,7 @@ python_packages = [
 "bitarray",
 "bokeh",
 "calplot",
-"cartopy==0.19.0.post1", # Compatibility issues as of January 2022
+"cartopy",
 "chart_studio",
 "colorlog",
 "covid-daily",
@@ -178,11 +178,11 @@ python_packages = [
 "dask[array]",
 "emoji",
 "geopandas",
-#"geoplot", does not build even with libgdal-dev as of May 2022
+"geoplot",
 "getdist",
 "ggplot",
 "gif",
-#"giotto-tda", asks sudo access as of May 2022
+"giotto-tda",
 "google-api-python-client",
 "graphviz",
 "gspread",
@@ -231,7 +231,7 @@ python_packages = [
 "scikit-image",
 "scikit-learn",
 "scikit-tda",
-"scimath==4.2.0",  # 5.0.0 does not install as of August 2022
+"scimath",
 "scrapy",
 "seaborn",
 "selenium",
