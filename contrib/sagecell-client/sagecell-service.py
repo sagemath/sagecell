@@ -15,7 +15,11 @@ def message(s):
 while retries:
     retries -= 1
     a, b = random.randint(-2**31, 2**31), random.randint(-2**31, 2**31)
-    code = 'print({} + {})'.format(a, b)
+    # The handling of temporary files in Sage 9.7 does not allow SageMathCell to
+    # function properly if there are no regular requests producing temporary
+    # files. To fight it, we'll generate one during health checks. See
+    # https://groups.google.com/g/sage-devel/c/jpwUb8OCVVc/m/R4r5bnOkBQAJ
+    code = 'show(plot(sin)); print({} + {})'.format(a, b)
     try:
         r = requests.post(sys.argv[1] + '/service',
                           data={"code": code, "accepted_tos": "true"},
