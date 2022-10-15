@@ -697,8 +697,6 @@ class SCLXC(object):
         self.inside(communicate, "/usr/bin/debconf-set-selections",
             "tmpreaper tmpreaper/readsecurity note")
         self.inside("apt install -y tmpreaper")
-        log.info("installing npm packages")
-        self.inside("npm install -g requirejs")
 
     def destroy(self):
         r"""
