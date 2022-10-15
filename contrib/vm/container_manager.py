@@ -112,6 +112,7 @@ libnetcdf-dev
 libopenmpi-dev
 libxml2-dev
 libxslt1-dev
+macaulay2
 octave
 octave-econometrics
 octave-statistics
@@ -420,18 +421,6 @@ def communicate(command, message):
             raise RuntimeError(msg)
             
 
-def install_macaulay2():
-    r"""
-    Adjust system configuration and install Macaulay2.
-    """
-    with open("/etc/apt/sources.list.d/macaulay2.list", "w") as f:
-        f.write("deb https://faculty.math.illinois.edu/Macaulay2/Repositories/Ubuntu jammy main")
-    check_call("apt-key adv --keyserver hkp://keyserver.ubuntu.com \
-                --recv-key CD9C0E09B0C780943A1AD85553F8BD99F40DCB31")
-    check_call("apt update")
-    check_call("apt install -y macaulay2")
-
-
 def timer_delay(delay, test=None):
     r"""
     Wait with a countdown timer.
@@ -710,7 +699,6 @@ class SCLXC(object):
         self.inside("apt install -y tmpreaper")
         log.info("installing npm packages")
         self.inside("npm install -g requirejs")
-        self.inside(install_macaulay2)
 
     def destroy(self):
         r"""
