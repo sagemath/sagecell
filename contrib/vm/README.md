@@ -4,7 +4,7 @@ Here we describe how to setup a "production" instance of SageMathCell server.
 
 ## Create the "Enveloping Virtual Machine" (EVM).
 
-This is optional, if you are willing to dedicate a physical machine to SageMathCell, but it is assumed in scripts and instructions.
+This is optional, if you are willing to dedicate a physical machine to SageMathCell. The automating scripts are not tested since 2018 - please adjust them to current versions and your needs.
 
 1.  Configure a package proxy, e.g. Apt-Cacher NG, for the machine that will host EVM.
 2.  Install KVM and configure it for your account, consult your OS documentation as necessary.
