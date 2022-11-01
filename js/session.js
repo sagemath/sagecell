@@ -370,6 +370,7 @@ Session.prototype.execute = function (code) {
         // Modifying code in chosen language
         if (this.language === "octave") {
             code =
+                "warning('off', 'Octave:gnuplot-graphics')\n" +
                 "set(gcf(), 'visible', 'off')\n" +
                 code +
                 "\n" +
