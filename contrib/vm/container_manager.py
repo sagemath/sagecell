@@ -53,70 +53,208 @@ repositories = [
 ]
 
 # Packages to be installed in the base container
-packages = """
-automake
-bison
-build-essential
-dvipng
-epstool
-fig2dev
-gettext
-gfortran
-git
-gnuplot
-imagemagick
-ipset
-iptables
-libcairo2-dev
-libffi-dev
-libfile-slurp-perl
-libisl-dev
-libjson-perl
-libmongodb-perl
-libopenmpi3
-libperl-dev
-libproj-dev
-libsnappy-dev
-libsvg-perl
-libsystemd-dev
-libterm-readkey-perl
-libterm-readline-gnu-perl
-libxml-libxslt-perl
-libxml-writer-perl
-m4
-nginx
-ninja-build
-npm
-pandoc
-pari-gp2c
-php8.1-fpm
-proj-bin
-python3-requests
-rsyslog-relp
-ssh
-texlive
-texlive-latex-extra
-tk-dev
-unattended-upgrades
-unzip
-wget
-""".split()
-# Due to (other's) bugs, some packages cannot be installed during installation.
-# Let's also use it to separate "standard tools" and "extra stuff".
-packages_later = """
-ffmpeg
-graphviz
-libgeos-dev
-libhdf5-dev
-libnetcdf-dev
-libopenmpi-dev
-libxml2-dev
-libxslt1-dev
-macaulay2
-octave
-octave-econometrics
-octave-statistics
-""".split()
+system_packages = [
+# SageMath prerequisites as of Sage 9.7
+'bc',
+'binutils',
+'bzip2',
+'ca-certificates',
+'cliquer',
+'cmake',
+'curl',
+'ecl',
+'eclib-tools',
+'fflas-ffpack',
+'flintqs',
+'g++',
+'gcc',
+'gengetopt',
+'gfan',
+'gfortran',
+'glpk-utils',
+'gmp-ecm',
+'lcalc',
+'libatomic-ops-dev',
+'libboost-dev',
+'libbraiding-dev',
+'libbrial-dev',
+'libbrial-groebner-dev',
+'libbz2-dev',
+'libcdd-dev',
+'libcdd-tools',
+'libcliquer-dev',
+'libcurl4-openssl-dev',
+'libec-dev',
+'libecm-dev',
+'libffi-dev',
+'libflint-arb-dev',
+'libflint-dev',
+'libfplll-dev',
+'libfreetype6-dev',
+'libgc-dev',
+'libgd-dev',
+'libgf2x-dev',
+'libgiac-dev',
+'libgivaro-dev',
+'libglpk-dev',
+'libgmp-dev',
+'libgsl-dev',
+'libhomfly-dev',
+'libiml-dev',
+'liblfunction-dev',
+'liblinbox-dev',
+'liblrcalc-dev',
+'liblzma-dev',
+'libm4ri-dev',
+'libm4rie-dev',
+'libmpc-dev',
+'libmpfi-dev',
+'libmpfr-dev',
+'libncurses5-dev',
+'libntl-dev',
+'libopenblas-dev',
+'libpari-dev',
+'libpcre3-dev',
+'libplanarity-dev',
+'libppl-dev',
+'libprimesieve-dev',
+'libpython3-dev',
+'libqhull-dev',
+'libreadline-dev',
+'librw-dev',
+'libsingular4-dev',
+'libsqlite3-dev',
+'libssl-dev',
+'libsuitesparse-dev',
+'libsymmetrica2-dev',
+'libz-dev',
+'libzmq3-dev',
+'libzn-poly-dev',
+'m4',
+'make',
+'nauty',
+'ninja-build',
+'openssl',
+'palp',
+'pari-doc',
+'pari-elldata',
+'pari-galdata',
+'pari-galpol',
+'pari-gp2c',
+'pari-seadata',
+'patch',
+'perl',
+'pkg-config',
+'planarity',
+'ppl-dev',
+'python3',
+'python3-distutils',
+'python3-venv',
+'r-base-dev',
+'r-cran-lattice',
+'singular',
+'singular-doc',
+'sqlite3',
+'sympow',
+'tachyon',
+'tar',
+'tox',
+'xcas',
+'xz-utils',
+# SageMath development
+'autoconf',
+'automake',
+'git',
+'gpgconf',
+'libtool',
+'openssh',
+'openssh-client',
+'pkg-config',
+# SageMath recommendations
+'default-jdk',
+'dvipng',
+'ffmpeg',
+'imagemagick',
+'latexmk',
+'libavdevice-dev',
+'pandoc',
+'tex-gyre',
+'texlive-fonts-recommended',
+'texlive-lang-cyrillic',
+'texlive-lang-english',
+'texlive-lang-european',
+'texlive-lang-french',
+'texlive-lang-german',
+'texlive-lang-italian',
+'texlive-lang-japanese',
+'texlive-lang-polish',
+'texlive-lang-portuguese',
+'texlive-lang-spanish',
+'texlive-latex-extra',
+'texlive-xetex',
+# SageMath optional
+'4ti2',
+'clang',
+'coinor-cbc',
+'coinor-libcbc-dev',
+'graphviz',
+'libfile-slurp-perl',
+'libgraphviz-dev',
+'libigraph-dev',
+'libisl-dev',
+'libjson-perl',
+'libmongodb-perl',
+'libnauty-dev',
+'libperl-dev',
+'libpolymake-dev',
+'libsvg-perl',
+'libterm-readkey-perl',
+'libterm-readline-gnu-perl',
+'libxml-libxslt-perl',
+'libxml-writer-perl',
+'libxml2-dev',
+'lrslib',
+'pari-gp2c',
+'pdf2svg',
+'polymake',
+'texinfo',
+# SageMathCell
+'bison',
+'build-essential',
+'epstool',
+'fig2dev',
+'gettext',
+'gnuplot',
+'ipset',
+'iptables',
+'libcairo2-dev',
+'libgeos-dev',
+'libhdf5-dev',
+'libnetcdf-dev',
+'libopenmpi-dev',
+'libopenmpi3',
+'libproj-dev',
+'libsnappy-dev',
+'libsystemd-dev',
+'libxslt1-dev',
+'macaulay2',
+'nginx',
+'npm',
+'octave',
+'octave-econometrics',
+'octave-statistics',
+'php8.1-fpm',
+'proj-bin',
+'python3-requests',
+'rsyslog-relp',
+'ssh',
+'texlive',
+'tk-dev',
+'tmpreaper',
+'unattended-upgrades',
+'unzip',
+'wget',
+]
 
 # Optional Sage packages to be installed
 sage_optional_packages = [
@@ -699,15 +837,12 @@ class SCLXC(object):
         os.environ.pop("HTTP_PROXY")
 
         self.update()
-        log.info("installing packages")
-        self.inside("apt install -y " + " ".join(packages))
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
-        log.info("installing later packages")
-        self.inside("apt install -y " + " ".join(packages_later))
         # Need to preseed or there will be a dialog
         self.inside(communicate, "/usr/bin/debconf-set-selections",
             "tmpreaper tmpreaper/readsecurity note")
-        self.inside("apt install -y tmpreaper")
+        log.info("installing packages")
+        self.inside("apt install -y " + " ".join(system_packages))
 
     def destroy(self):
         r"""
