@@ -216,7 +216,7 @@ system_packages = [
 'lrslib',
 'pari-gp2c',
 'pdf2svg',
-'polymake',
+# 'polymake', triggers firefox snap that does not work in containers
 'texinfo',
 # SageMathCell
 'bison',
