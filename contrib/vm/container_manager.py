@@ -167,7 +167,7 @@ system_packages = [
 'git',
 'gpgconf',
 'libtool',
-'openssh',
+# 'openssh', not available on Ubuntu 22.04
 'openssh-client',
 'pkg-config',
 # SageMath recommendations
