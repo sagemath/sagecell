@@ -837,12 +837,13 @@ class SCLXC(object):
         os.environ.pop("HTTP_PROXY")
 
         self.update()
-        self.inside("/usr/sbin/deluser ubuntu --remove-home")
         # Need to preseed or there will be a dialog
         self.inside(communicate, "/usr/bin/debconf-set-selections",
             "tmpreaper tmpreaper/readsecurity note")
         log.info("installing packages")
         self.inside("apt install -y " + " ".join(system_packages))
+        # Relies on perl, so has to be after package installation
+        self.inside("/usr/sbin/deluser ubuntu --remove-home")
 
     def destroy(self):
         r"""
