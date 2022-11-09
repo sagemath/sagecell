@@ -311,7 +311,7 @@ sage_optional_packages = [
 "qepcad",
 "saclib",
 "tides",
-"topcom",
+#"topcom", Does not work as of November 2022 with relying on system packages
 ]
 
 # Python packages to be installed into Sage (via pip)
