@@ -254,6 +254,32 @@ system_packages = [
 'unattended-upgrades',
 'unzip',
 'wget',
+# R packages
+'r-cran-desolve',
+'r-cran-ggally',
+'r-cran-ggplot2',
+'r-cran-lazyeval',
+'r-cran-pracma',
+'r-cran-reticulate',
+'r-cran-rhandsontable',
+'r-cran-rms',
+'r-cran-survey',
+'r-cran-tidyverse',
+]
+
+# R packages that are not available as system ones
+R_packages = [
+"flextable",
+"formattable",
+"gt",
+"gtExtras",
+"huxtable",
+"kable",
+"kableExtra",
+"pixiedust",
+"reactable",
+"reactablefmtr",
+"swirl",
 ]
 
 # Optional Sage packages to be installed
@@ -398,30 +424,6 @@ python_packages = [
 "moss", # This one only complains about missing dependencies
 ]
 
-# R packages
-R_packages = [
-"deSolve",
-"flextable",
-"formattable",
-"GGally",
-"ggplot2",
-"gt",
-"gtExtras",
-"huxtable",
-"kable",
-"kableExtra",
-"lazyeval",
-"pixiedust",
-"pracma",
-"reactable",
-"reactablefmtr",
-"reticulate",
-"rhandsontable",
-"rms",
-"survey",
-"swirl",
-"tidyverse",
-]
 
 # limits configuration for the host - will not be overwritten later
 limits_conf = """\
@@ -733,17 +735,6 @@ def install_packages():
     check_call("./sage -pip install --upgrade pip")
     for package in python_packages:
         check_call("./sage -pip install {}".format(package))
-    log.info("installing R packages")
-    for package in R_packages:
-        communicate("./sage", r"""
-            r.eval("install.packages('{}')")
-            quit
-            """.format(package))
-        if "ImportError" in check_output(
-                f"./sage -c \"r.library('{package}')\""):
-            msg = f"R package {package} didn't install"
-            log.error(msg)
-            raise RuntimeError(msg)
     os.chdir("..")
 
 
@@ -844,6 +835,9 @@ class SCLXC(object):
         self.inside("apt install -y " + " ".join(system_packages))
         # Relies on perl, so has to be after package installation
         self.inside("/usr/sbin/deluser ubuntu --remove-home")
+        log.info("installing R packages")
+        for package in R_packages:
+            self.inside(f"""Rscript -e 'install.packages("{package}")'""")
 
     def destroy(self):
         r"""
