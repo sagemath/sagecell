@@ -274,7 +274,6 @@ R_packages = [
 "gt",
 "gtExtras",
 "huxtable",
-"kable",
 "kableExtra",
 "pixiedust",
 "reactable",
