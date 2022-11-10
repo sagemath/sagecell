@@ -838,6 +838,7 @@ class SCLXC(object):
         log.info("installing R packages")
         for package in R_packages:
             self.inside(f"""Rscript -e 'install.packages("{package}")'""")
+            self.inside(f"""Rscript -e 'library("{package}")'""")
 
     def destroy(self):
         r"""
