@@ -77,14 +77,14 @@ class BackendCell(BackendIPython):
             Example plain text output
         """
         if isinstance(rich_output, OutputPlainText):
-            return {u'text/plain': rich_output.text.get_unicode()}, {}
+            return {u'text/plain': rich_output.text.get_str()}, {}
         if isinstance(rich_output, OutputAsciiArt):
-            return {u'text/plain': rich_output.ascii_art.get_unicode()}, {}
+            return {u'text/plain': rich_output.ascii_art.get_str()}, {}
 
         if isinstance(rich_output, OutputLatex):
-            display_html(rich_output.mathjax())
+            display_html(rich_output.latex.get_str())
         elif isinstance(rich_output, OutputHtml):
-            display_html(rich_output.html.get_unicode())
+            display_html(rich_output.html.get_str())
 
         elif isinstance(rich_output, OutputImageGif):
             display_file(rich_output.gif.filename(), 'text/image-filename')
