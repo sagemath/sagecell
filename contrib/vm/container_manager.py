@@ -391,6 +391,7 @@ python_packages = [
 "python-snappy",
 "python-ternary",
 "pyvo",
+"qiskit",
 "requests",
 "scikit-image",
 "scikit-learn",
