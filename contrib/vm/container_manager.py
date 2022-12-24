@@ -392,6 +392,7 @@ python_packages = [
 "python-ternary",
 "pyvo",
 "qiskit",
+"qiskit[nature]",
 "requests",
 "scikit-image",
 "scikit-learn",
