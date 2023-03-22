@@ -27,18 +27,25 @@
 # either expressed or implied, of the FreeBSD Project.
 ###############################################################################
 
+import os
+import sys
 from uuid import uuid4
+
+from comm import create_comm
+import matplotlib.figure
+
+
 def uuid():
     return str(uuid4())
 
-from comm import SageCellComm as Comm
 
+def sagecell_comm(*args, **kwargs):
+    sys._sage_.reset_kernel_timeout(float('inf'))
+    return create_comm(*args, **kwargs)
 
 ###
 # Interactive 2d Graphics
 ###
-
-import os, matplotlib.figure
 
 STORED_INTERACTIVE_GRAPHICS = [];
 class InteractiveGraphics(object):
@@ -115,14 +122,9 @@ class InteractiveGraphics(object):
             filename = '%s.png'%file_id
 
         fig.savefig(filename)
-
-        from comm import SageCellComm as Comm
-        self.comm = Comm(data={"filename": filename}, target_name='graphicswidget')
-        import sys
+        self.comm = sagecell_comm(data={"filename": filename}, target_name='graphicswidget')
         sys._sage_.sent_files[filename] = os.path.getmtime(filename)
-
         self.comm.on_msg(on_msg)
-
 
 
 # Matplotlib's comm-based live plots.  See https://github.com/matplotlib/matplotlib/pull/2524
@@ -163,7 +165,7 @@ class CommSocket(object):
         self.manager = manager
         self.uuid = uuid()
         #display(HTML("<div id='%s'></div>"%self.uuid))
-        self.comm = Comm('matplotlib', data={'id': self.uuid})
+        self.comm = sagecell_comm('matplotlib', data={'id': self.uuid})
 
     def open(self):
         # Register the websocket with the FigureManager.
