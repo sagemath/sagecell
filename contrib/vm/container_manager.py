@@ -349,7 +349,6 @@ python_packages = [
 "gif",
 "giotto-tda",
 "google-api-python-client",
-"gradio",
 "graphviz",
 "gspread",
 "fipy",
