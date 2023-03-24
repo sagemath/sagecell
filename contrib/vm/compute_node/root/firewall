@@ -8,6 +8,7 @@ ipset add allowed 185.125.188.0/22
 ipset add allowed 128.174.0.0/16    # University of Illinois, Macaulay2
 
 
+ipset add allowed 52.152.96.252     # api.openai.com
 ipset add allowed 217.160.0.231     # codetables.de
 ipset add allowed 162.255.119.162   # data.astropy.org
 ipset add allowed 94.136.40.82      # designtheory.org
