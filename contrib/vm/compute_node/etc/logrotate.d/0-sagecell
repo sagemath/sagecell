@@ -1,7 +1,10 @@
-/var/log/sagecell.log {
+/var/log/syslog
+/var/log/sagecell.log
+{
     size 1G
     rotate 5
     missingok
+    notifempty
     compress
     delaycompress
     postrotate
