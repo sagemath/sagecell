@@ -5,7 +5,6 @@ import Session from "./session";
 import utils from "./utils";
 import domReady from "domready";
 import { initializeURLs, URLs } from "./urls";
-import { _gaq } from "./gaq";
 
 // Imports for side-effects only
 import "webpack-jquery-ui";
@@ -246,12 +245,6 @@ function make(args, cellInfo, k) {
         if (hide.indexOf("fullScreen") != -1) {
             input.find(".sagecell_fullScreen").css("display", "none");
         }
-        _gaq.push([
-            "sagecell._trackEvent",
-            "SageCell",
-            "Make",
-            window.location.origin + window.location.pathname,
-        ]);
     });
 }
 
@@ -300,12 +293,6 @@ function init(cellInfo, k) {
         ) {
             editorData.save();
         }
-        _gaq.push([
-            "sagecell._trackEvent",
-            "SageCell",
-            "Execute",
-            window.location.origin + window.location.pathname,
-        ]);
 
         var code = input.find(".sagecell_commands").val();
         var language = langSelect[0].value;

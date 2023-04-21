@@ -2,14 +2,7 @@ import sagecell from "./sagecell";
 import cell from "./cell";
 import "./jquery-global";
 
-// TODO: put this tracking code in a site-specific file.
-// TODO: finish implementing our own stats service that handles,
-//       the phone apps, for example.
-import { _gaq } from "./gaq";
 import { console } from "./console";
-_gaq.push(["sagecell._setAccount", "UA-29124745-1"]);
-_gaq.push(["sagecell._setDomainName", "sagemath.org"]);
-_gaq.push(["sagecell._trackPageview"]);
 
 (function () {
     var ga = document.createElement("script");
