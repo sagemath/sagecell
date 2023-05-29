@@ -383,6 +383,7 @@ python_packages = [
 "pandas-profiling",
 "patsy",
 "plotly",
+"polars",
 "pretty_html_table",
 "pydot",
 "pyforest",
