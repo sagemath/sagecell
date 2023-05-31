@@ -271,10 +271,12 @@ system_packages = [
 R_packages = [
 "flextable",
 "formattable",
+"ggformula",
 "gt",
 "gtExtras",
 "huxtable",
 "kableExtra",
+"mosaic",
 "pixiedust",
 "reactable",
 "reactablefmtr",
