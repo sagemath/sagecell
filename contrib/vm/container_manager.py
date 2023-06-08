@@ -257,6 +257,7 @@ system_packages = [
 # R packages
 'r-cran-desolve',
 'r-cran-ggally',
+'r-cran-ggeffects',
 'r-cran-ggplot2',
 'r-cran-lazyeval',
 'r-cran-pracma',
@@ -272,6 +273,7 @@ R_packages = [
 "flextable",
 "formattable",
 "ggformula",
+"glmmTMB",
 "gt",
 "gtExtras",
 "huxtable",
