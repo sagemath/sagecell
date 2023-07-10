@@ -52,6 +52,7 @@ ipset add allowed 104.244.40.0/21   # Twitter
 ipset add allowed 130.88.0.0/16     # University of Manchester
 ipset add allowed 130.79.0.0/16     # Universite de Strasbourg
 ipset add allowed 137.208.0.0/16    # Vienna University of Economics and Business, CRAN
+ipset add allowed 208.80.152.0/22   # Wikimedia
 ipset add allowed 134.147.222.194   # www.findstat.org
 ipset add allowed 35.244.233.98     # www.kaggle.com
 
