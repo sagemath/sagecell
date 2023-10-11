@@ -328,6 +328,7 @@ python_packages = [
 # Optional
 "future",   # fipy does not work without it installed first
 "admcycles",
+"altair",
 "APMonitor",
 "astropy",
 "astroquery",
@@ -425,6 +426,7 @@ python_packages = [
 "transformers",
 "tweepy",
 "twint",
+"vega_datasets",
 "WeasyPrint",
 "wordcloud",
 "xarray",
