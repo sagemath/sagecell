@@ -320,6 +320,7 @@ sage_optional_packages = [
 # Python packages to be installed into Sage (via pip)
 python_packages = [
 # Dependencies of SageMathCell
+"comm",
 "lockfile",
 "paramiko",
 "psutil",
