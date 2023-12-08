@@ -376,7 +376,6 @@ python_packages = [
 "mpi4py",
 "msedge-selenium-tools",
 "munkres",
-"nbodykit",
 "nest_asyncio",
 "netcdf4",
 "nltk",
