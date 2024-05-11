@@ -48,7 +48,7 @@ users = {"group": "sagecell", "GID": 8888,
 
 # Github repositories as (user, repository, branch)
 repositories = [
-    ("sagemath", "sage", "master"),
+    ("sagemath", "sage", "10.2"), # Jupyter js code is gone in Sage-10.3 and will require substantial work to deal with
     ("sagemath", "sagecell", "master"),
 ]
 
