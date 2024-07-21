@@ -346,6 +346,7 @@ python_packages = [
 "cufflinks",
 "dash",
 "dask[array]",
+"drawdata",
 "duckdb",
 "emoji",
 "galgebra",
