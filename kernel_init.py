@@ -53,7 +53,7 @@ def initialize(kernel):
     
     class TempClass(object):
         pass
-        
+
     _sage_ = TempClass()
     _sage_.display_message = misc.display_message
     _sage_.stream_message = misc.stream_message
@@ -63,9 +63,7 @@ def initialize(kernel):
     _sage_.sent_files = {}
     _sage_.threejs = threejs
     
-    import graphics
-    _sage_.InteractiveGraphics = graphics.InteractiveGraphics
-    
+
     def handler_wrapper(key, handler):
         from functools import wraps
         
