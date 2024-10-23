@@ -77,8 +77,6 @@ system_packages = [
 'libatomic-ops-dev',
 'libboost-dev',
 'libbraiding-dev',
-'libbrial-dev',
-'libbrial-groebner-dev',
 'libbz2-dev',
 'libcdd-dev',
 'libcdd-tools',
@@ -87,7 +85,6 @@ system_packages = [
 'libec-dev',
 'libecm-dev',
 'libffi-dev',
-'libflint-arb-dev',
 'libflint-dev',
 'libfplll-dev',
 'libfreetype6-dev',
@@ -148,7 +145,6 @@ system_packages = [
 'planarity',
 'ppl-dev',
 'python3',
-'python3-distutils',
 'python3-venv',
 'r-base-dev',
 'r-cran-lattice',
@@ -243,7 +239,7 @@ system_packages = [
 'octave',
 'octave-econometrics',
 'octave-statistics',
-'php8.1-fpm',
+'php8.3-fpm',
 'proj-bin',
 'python3-requests',
 'rsyslog-relp',
@@ -291,7 +287,6 @@ sage_optional_packages = [
 "biopython",
 "bliss",
 "cbc",
-"cryptominisat",
 "database_cremona_ellcurve",
 "database_jones_numfield",
 "database_odlyzko_zeta",
@@ -839,7 +834,7 @@ class SCLXC(object):
         os.environ["HTTP_PROXY"] = "apt"
         if not self.c.create(
             "download", 0,
-            {"dist": "ubuntu", "release": "jammy", "arch": "amd64"},
+            {"dist": "ubuntu", "release": "noble", "arch": "amd64"},
             "btrfs"):
                 raise RuntimeError("failed to create " + self.name)
         os.environ.pop("HTTP_PROXY")
