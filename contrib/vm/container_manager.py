@@ -671,7 +671,7 @@ def setup_container_users():
     os.setegid(users["GID"])
     os.seteuid(users["server_ID"])
     os.mkdir(".ssh", 0o700)
-    check_call("ssh-keygen -q -N '' -f .ssh/id_rsa")
+    check_call("ssh-keygen -t ed25519 -q -N '' -f .ssh/id_ed25519")
 
     whome = os.path.join("/home", users["worker"])
     os.chdir(whome)
@@ -691,7 +691,7 @@ def setup_container_users():
         ]
     check_call(" ".join(["touch"] + files_to_lock))
     os.setuid(0)
-    shutil.copy2(os.path.join(shome, ".ssh/id_rsa.pub"),
+    shutil.copy2(os.path.join(shome, ".ssh/id_ed25519.pub"),
                  ".ssh/authorized_keys")
     os.chown(".ssh/authorized_keys", users["worker_ID"], users["GID"])
     # Get the localhost in the known_hosts file.
