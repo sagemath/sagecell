@@ -7,6 +7,7 @@ import logging
 import logging.config
 import os
 import pwd
+import random
 import shlex
 import shutil
 import stat
@@ -817,7 +818,9 @@ class SCLXC(object):
         if autostart:
             clone.c.set_config_item("lxc.start.auto", "1")
             clone.c.set_config_item("lxc.start.delay", str(start_delay))
-            clone.c.save_config()
+        clone.c.set_config_item("lxc.net.0.hwaddr",
+            "02:00:" + ":".join(["%02x" % random.randint(0, 255) for _ in range(4)]))
+        clone.c.save_config()
         logdir = clone.c.get_config_item("lxc.rootfs.path") + "/var/log/"
         for logfile in ["sagecell.log", "sagecell-console.log"]:
             if os.path.exists(logdir + logfile):
