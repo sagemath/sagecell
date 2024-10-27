@@ -376,6 +376,7 @@ python_packages = [
 "manimlib",
 "mapclassify",
 "mathchem",
+"mistralai",
 "mpi4py",
 "msedge-selenium-tools",
 "munkres",
