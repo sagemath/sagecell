@@ -35,9 +35,9 @@ beat_interval = 0.5
 first_beat = 1.0
 
 # Allowed idling between interactions with a kernel
-max_timeout = 60 * 90
+max_timeout = 60 * 15
 # Even an actively used kernel will be killed after this time
-max_lifespan = 60 * 119
+max_lifespan = 60 * 30
 
 # Recommended settings for kernel providers
 provider_settings = {
@@ -50,7 +50,7 @@ provider_settings = {
     # Also, Sage may allocate huge AS, making this limit pointless:
     # https://groups.google.com/d/topic/sage-devel/1MM7UPcrW18/discussion
     "preforked_rlimits": {
-        "RLIMIT_CPU": 120, # CPU time in seconds
+        "RLIMIT_CPU": 30, # CPU time in seconds
         },
     }
 
