@@ -41,6 +41,9 @@ ipset add allowed 35.166.140.139
 
 ipset add allowed 82.165.72.196     # mathtrek.eu
 
+ipset add allowed 104.18.22.152     # api.mistral.ai
+ipset add allowed 104.18.23.152
+
 ipset add allowed 129.164.0.0/16    # NASA
 ipset add allowed 137.78.0.0/16
 
