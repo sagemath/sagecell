@@ -208,7 +208,7 @@ export function Session(outputDiv, language, interact_vals, k, linked) {
         interact_links = {};
     var that = this;
     var qr_prefix =
-        "https://chart.googleapis.com/chart?cht=qr&chs=200x200&chl=";
+        "https://quickchart.io/qr?ecLevel=H&size=200&format=svg&text=";
     this.updateLinks = function (new_vals) {
         if (new_vals) {
             interact_links = {};
