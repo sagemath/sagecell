@@ -343,6 +343,7 @@ python_packages = [
 "dash",
 "dask[array]",
 "drawdata",
+"dropbox",
 "duckdb",
 "emoji",
 "galgebra",
