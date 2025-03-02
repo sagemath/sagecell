@@ -240,6 +240,7 @@ system_packages = [
 'octave',
 'octave-econometrics',
 'octave-statistics',
+'octave-symbolic',
 'php8.3-fpm',
 'proj-bin',
 'python3-requests',
