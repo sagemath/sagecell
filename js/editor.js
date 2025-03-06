@@ -231,6 +231,7 @@ function render(editorType, inputLocation, collapse) {
             readOnly: readOnly,
             foldGutter: true,
             gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+            screenReaderLabel: "Sagecell editor",
             extraKeys: {
                 Tab: function (cm) {
                     var cur = cm.getCursor();
