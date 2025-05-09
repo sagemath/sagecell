@@ -230,7 +230,7 @@ class Completer(object):
 
     def on_recv(self, msg):
         msg = self.kernel.session.feed_identities(msg)[1]
-        msg = self.kernel.session.unserialize(msg)
+        msg = self.kernel.session.deserialize(msg)
         addr = self.waiting.pop(msg["parent_header"]["msg_id"])
         addr.send(b"complete," + jsonapi.dumps(msg, default=misc.sage_json))
 
@@ -452,7 +452,7 @@ class ZMQChannelsHandler(object):
     def on_recv(self, stream, msg_list):
         kernel = self.kernel
         msg_list = kernel.session.feed_identities(msg_list)[1]
-        msg = kernel.session.unserialize(msg_list)
+        msg = kernel.session.deserialize(msg_list)
         msg["channel"] = stream.channel
         # Useful but may be way too verbose even for debugging
         #logger.debug("received from kernel %s", msg)

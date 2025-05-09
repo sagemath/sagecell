@@ -59,13 +59,6 @@ To build just the Javascript components, from the `sagecell` directory run
 make static/embedded_sagecell.js
 ```
 
-By default, Javascript dependencies are copied from an existing Sage install. To fetch dependencies
-from Github instead, you can run
-
-```bash
-export FETCH_SAGE_DEPS=yes
-make static/embedded_sagecell.js
-```
 
 # Configuration
 
