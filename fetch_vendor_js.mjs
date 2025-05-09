@@ -28,8 +28,6 @@ const URLS = {
         "https://raw.githubusercontent.com/jupyter/nbclassic/master/nbclassic/static/services/kernels/serialize.js",
     "mpl.js":
         "https://raw.githubusercontent.com/matplotlib/matplotlib/main/lib/matplotlib/backends/web_backend/js/mpl.js",
-    "sockjs.js":
-        "https://raw.githubusercontent.com/sockjs/sockjs-client/master/dist/sockjs.js",
 };
 
 async function fetchFile(fileName, url) {
