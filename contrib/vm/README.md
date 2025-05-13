@@ -4,7 +4,11 @@ Here we describe how to setup a "production" instance of SageMathCell server.
 
 ## Create the "Enveloping Virtual Machine" (EVM).
 
-This is optional, if you are willing to dedicate a physical machine to SageMathCell. The automating scripts are not tested since 2018 - please adjust them to current versions and your needs.
+This is optional, if you are willing to dedicate a physical machine to SageMathCell. In any case **/var/lib/lxc must be a BTRFS system on an SSD.**
+
+It does not really matter how you create it. It is up to you also what resources you allocate to it. But something like 4 CPU cores, 32 GB RAM, and 200 GB SSD is a good starting point.
+
+**The automating scripts are NOT TESTED SINCE 2018.** Adjust them to current versions and your needs or use them just as a guidance, if desired.
 
 1.  Configure a package proxy, e.g. Apt-Cacher NG, for the machine that will host EVM.
 2.  Install KVM and configure it for your account, consult your OS documentation as necessary.
@@ -118,17 +122,17 @@ This is optional, if you are willing to dedicate a physical machine to SageMathC
     cp github/sagecell/contrib/vm/container_manager.py . && patch container_manager.py local.patch
     ```
 
-4.  Build the new version of the master container and deploy:
+4.  Build new versions of all containers and deploy:
 
     ```bash
-    ./container_manager.py -m --deploy
+    ./container_manager.py -b -s -p -m --deploy
     ```
 
     Note that after the new version is started, the script will wait for a couple hours to make sure that users in the middle of interacting with the old one have finished their work.
 5. If you want to first test the new version while keeping the old one in production, run instead
 
     ```bash
-    ./container_manager.py -m -t
+    ./container_manager.py -b -s -p -m -t
     ```
 
     and once you are satisfied with it
@@ -137,7 +141,7 @@ This is optional, if you are willing to dedicate a physical machine to SageMathC
     ./container_manager.py --deploy
     ```
     
-6. If you know that only some changes to SageMathCell source code were made, you can skip building Sage and its packages from scratch: `./container_manager.py -p -m`
+6. If you know that only some changes to SageMathCell source code were made, you can skip building Sage and its packages from scratch: `./container_manager.py -m`
 7. For some other options check the built-in help: `./container_manager.py -h`
 
 **If these instructions are unclear or do not work, please let us know!**
