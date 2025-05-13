@@ -744,12 +744,24 @@ def install_packages():
     become_server()
     os.chdir("sage")
     log.info("installing optional Sage packages")
+
+    def numpy_ver():
+        return check_output("./sage -c 'import numpy; print(numpy.__version__)'").strip()
+
+    before = numpy_ver()
+    log.info(f"numpy version before packages is {before}")
     for package in sage_optional_packages:
         check_call("./sage -i -y {}".format(package))
+        after = numpy_ver()
+        if before != after:
+            log.info(f"numpy version is {after} after {package}")
     log.info("installing pip packages")
     check_call("./sage -pip install --upgrade pip")
     for package in python_packages:
         check_call("./sage -pip install {}".format(package))
+        after = numpy_ver()
+        if before != after:
+            log.info(f"numpy version is {after} after {package}")
     os.chdir("..")
 
 
