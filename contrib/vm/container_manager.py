@@ -28,12 +28,12 @@ provider_html = r"""
 
 # Container names
 lxcn_base = "base"      # OS and packages
+lxcn_sage = "sage"      # Sage without extra packages
 lxcn_precell = "precell"    # Everything but SageCell and system configuration
 lxcn_sagecell = "sagecell"      # Sage and SageCell
 lxcn_backup = "sagecell-backup"     # Saved master for restoration if necessary
 lxcn_tester = "sctest"  # Accessible via special port, for testing
 lxcn_prefix = "sc-"     # Prefix for main compute nodes
-lxcn_version_prefix = "sage-"       # Prefix for fixed version compute nodes
 
 # Timeout in seconds to wait for a container to shutdown, network to start etc.
 timeout = 120
@@ -815,7 +815,7 @@ class SCLXC(object):
         self.name = name
         self.c = lxc.Container(self.name)
 
-    def clone(self, clone_name, autostart=False, update=False):
+    def clone(self, clone_name, autostart=False, update=True):
         r"""
         Clone self, create a base container and destroy old clone if necessary.
         """
@@ -843,31 +843,103 @@ class SCLXC(object):
 
     def create(self):
         r"""
-        Create a base contrainer, destroy old one if necessary.
+        Create this container based on the previous one, destroy old one if necessary.
+
+        It is the logical sequence of creating a fully configured SageMathCell container
+        from scratch, but broken into several steps. Previous steps for the current container
+        are performed if necessary, based on names. Random name is assumed to be a copy
+        of "the end result".
         """
         self.destroy()
         log.info("creating %s", self.name)
-        # Try to automatically pick up proxy from host
-        os.environ["HTTP_PROXY"] = "apt"
-        if not self.c.create(
-            "download", 0,
-            {"dist": "ubuntu", "release": "noble", "arch": "amd64"},
-            "btrfs"):
-                raise RuntimeError("failed to create " + self.name)
-        os.environ.pop("HTTP_PROXY")
+        if self.name == lxcn_base:
+            # From scratch
+            # Try to automatically pick up proxy from host
+            os.environ["HTTP_PROXY"] = "apt"
+            if not self.c.create(
+                "download", 0,
+                {"dist": "ubuntu", "release": "noble", "arch": "amd64"},
+                "btrfs"):
+                    raise RuntimeError("failed to create " + self.name)
+            os.environ.pop("HTTP_PROXY")
 
-        self.update()
-        # Need to preseed or there will be a dialog
-        self.inside(communicate, "/usr/bin/debconf-set-selections",
-            "tmpreaper tmpreaper/readsecurity note")
-        log.info("installing packages")
-        self.inside("apt install -y " + " ".join(system_packages))
-        # Relies on perl, so has to be after package installation
-        self.inside("/usr/sbin/deluser ubuntu --remove-home")
-        log.info("installing R packages")
-        for package in R_packages:
-            self.inside(f"""Rscript -e 'install.packages("{package}")'""")
-            self.inside(f"""Rscript -e 'library("{package}")'""")
+            self.update()
+            # Need to preseed or there will be a dialog
+            self.inside(communicate, "/usr/bin/debconf-set-selections",
+                "tmpreaper tmpreaper/readsecurity note")
+            log.info("installing packages")
+            self.inside("apt install -y " + " ".join(system_packages))
+            # Relies on perl, so has to be after package installation
+            self.inside("/usr/sbin/deluser ubuntu --remove-home")
+            log.info("installing R packages")
+            for package in R_packages:
+                self.inside(f"""Rscript -e 'install.packages("{package}")'""")
+                self.inside(f"""Rscript -e 'library("{package}")'""")
+        elif self.name == lxcn_sage:
+            self.c = SCLXC(lxcn_base).clone(lxcn_sage).c
+            create_host_users()
+            self.inside(setup_container_users)
+            # FIXME: work with temp folders properly
+            self.inside(os.mkdir, "/tmp/sagecell", 0o730)
+            self.inside(os.chown, "/tmp/sagecell",
+                        users["server_ID"], users["GID"])
+            self.inside(os.chmod, "/tmp/sagecell", stat.S_ISGID)
+            # Copy repositories into container
+            update_repositories()
+            log.info("uploading repositories to %s", self.name)
+            root = self.c.get_config_item("lxc.rootfs.path")
+            home = os.path.join(root, "home", users["server"])
+            shutil.copytree("github", os.path.join(home, "github"), symlinks=True)
+            self.inside("chown -R {server}:{group} /home/{server}/github")
+            dot_cache = os.path.join(home, ".cache")
+            try:
+                shutil.copytree("dot_cache", dot_cache, symlinks=True)
+                self.inside("chown -R {server}:{group} /home/{server}/.cache")
+            except FileNotFoundError:
+                pass
+            self.inside(install_sage)
+        elif self.name == lxcn_precell:
+            self.c = SCLXC(lxcn_sage).clone(lxcn_precell).c
+            self.inside(install_packages)
+            # Remove old versions of packages
+            upstream = os.path.join(home, "sage/upstream")
+            packages = dict()
+            for f in os.listdir(upstream):
+                filename = os.path.join(upstream, f)
+                name = f.split("-", 1)[0]
+                if name not in packages:
+                    packages[name] = []
+                packages[name].append((os.stat(filename).st_mtime, filename))
+            for package in packages.values():
+                package.sort()
+                package.pop()
+                for _, filename in package:
+                    os.remove(filename)
+            try:
+                shutil.rmtree("github/sage/upstream")
+            except FileNotFoundError:
+                pass
+            shutil.move(upstream, "github/sage/upstream")
+            try:
+                shutil.rmtree("dot_cache")
+            except FileNotFoundError:
+                pass
+            shutil.copytree(dot_cache, "dot_cache", symlinks=True)
+        elif self.name == lxcn_sagecell:
+            self.c = SCLXC(lxcn_precell).clone(lxcn_sagecell).c
+            self.inside(install_sagecell)
+            self.inside("su -c 'git -C /home/{server}/github/sagecell pull' {server}")
+            self.inside(install_config_files)
+            self.c.set_config_item("lxc.cgroup.memory.limit_in_bytes", "8G")
+            self.c.save_config()
+            self.shutdown()
+            # Let first-time tasks to run and complete.
+            self.start()
+            timer_delay(start_delay)
+        else:
+            # If the name is not recognized as some intermediate step, we assume
+            # that a copy of the fully built SageMathCell is desired
+            self.c = SCLXC(lxcn_sageecell).clone(self.name).c
 
     def destroy(self):
         r"""
@@ -908,76 +980,6 @@ class SCLXC(object):
                 raise RuntimeError("failed to execute {} with arguments {}"
                                    .format(command, args))
 
-    def prepare_for_sagecell(self, keeprepos=False):
-        r"""
-        Set up everything necessary for SageCell installation.
-
-        INPUT:
-
-        - ``keeprepos`` -- if ``True``, GitHub repositories will NOT be updated
-          and set to proper state (useful for development).
-        """
-        create_host_users()
-        self.inside(setup_container_users)
-        # FIXME: work with temp folders properly
-        self.inside(os.mkdir, "/tmp/sagecell", 0o730)
-        self.inside(os.chown, "/tmp/sagecell",
-                    users["server_ID"], users["GID"])
-        self.inside(os.chmod, "/tmp/sagecell", stat.S_ISGID)
-        # Copy repositories into container
-        if not keeprepos:
-            update_repositories()
-        log.info("uploading repositories to %s", self.name)
-        root = self.c.get_config_item("lxc.rootfs.path")
-        home = os.path.join(root, "home", users["server"])
-        shutil.copytree("github", os.path.join(home, "github"), symlinks=True)
-        self.inside("chown -R {server}:{group} /home/{server}/github")
-        dot_cache = os.path.join(home, ".cache")
-        try:
-            shutil.copytree("dot_cache", dot_cache, symlinks=True)
-            self.inside("chown -R {server}:{group} /home/{server}/.cache")
-        except FileNotFoundError:
-            pass
-        self.inside(install_sage)
-        self.inside(install_packages)
-        # Remove old versions of packages
-        upstream = os.path.join(home, "sage/upstream")
-        packages = dict()
-        for f in os.listdir(upstream):
-            filename = os.path.join(upstream, f)
-            name = f.split("-", 1)[0]
-            if name not in packages:
-                packages[name] = []
-            packages[name].append((os.stat(filename).st_mtime, filename))
-        for package in packages.values():
-            package.sort()
-            package.pop()
-            for _, filename in package:
-                os.remove(filename)
-        try:
-            shutil.rmtree("github/sage/upstream")
-        except FileNotFoundError:
-            pass
-        shutil.move(upstream, "github/sage/upstream")
-        try:
-            shutil.rmtree("dot_cache")
-        except FileNotFoundError:
-            pass
-        shutil.copytree(dot_cache, "dot_cache", symlinks=True)
-
-    def install_sagecell(self):
-        r"""
-        Set up SageCell to run on startup.
-        """
-        self.inside(install_sagecell)
-        self.inside(install_config_files)
-        self.c.set_config_item("lxc.cgroup.memory.limit_in_bytes", "8G")
-        self.c.save_config()
-        self.shutdown()
-        # Let first-time tasks to run and complete.
-        self.start()
-        timer_delay(start_delay)
-        
     def ip(self):
         self.start()
         return self.c.get_ips()[0]
@@ -1109,19 +1111,16 @@ parser = argparse.ArgumentParser(description="manage SageCell LXC containers",
                                  epilog="""
     Missing necessary containers are always created automatically.
 
-    Default action without any options is to make sure that the master
-    container is present and update its system packages.
-
     This script always overwrites system-wide HA-proxy configuration file and
     restarts HA-Proxy to resolve container names to new IP addresses.""")
-parser.add_argument("-b", "--base", action="store_true",
-                    help="rebuild 'OS and standard packages' container")
-parser.add_argument("--keeprepos", action="store_true",
-                    help="keep GitHub repositories at their present state")
-parser.add_argument("-p", "--useprecell", action="store_true",
-                    help="don't rebuild Sage and extra packages for master")
 parser.add_argument("--savemaster", action="store_true",
                     help="save existing master container")
+parser.add_argument("-b", "--base", action="store_true",
+                    help="rebuild 'OS and standard packages' container")
+parser.add_argument("-s", "--sage", action="store_true",
+                    help="rebuild Sage container")
+parser.add_argument("-p", "--precell", action="store_true",
+                    help="rebuild container with extra packages")
 group = parser.add_mutually_exclusive_group()
 group.add_argument("-m", "--master", action="store_true",
                     help="rebuild 'Sage and SageCell' container")
@@ -1149,35 +1148,23 @@ if not os.path.exists("/etc/rsyslog.d/sagecell.conf"):
         f.write(rsyslog_conf)
     check_call("systemctl restart rsyslog")
 
-# Main chain: base -- precell -- (sagecell, backup)
-base = SCLXC(lxcn_base)
-if args.base:
-    base.create()
-
-sagecell = SCLXC(lxcn_sagecell)
+# Main chain: base -- sage -- precell -- (sagecell, backup) -- sc-NA/sc-NB
 if args.savemaster:
-    sagecell.clone(lxcn_backup)
+    SCLXC(lxcn_backup).create()
+if args.base:
+    SCLXC(lxcn_base).create()
+if args.sage:
+    SCLXC(lxcn_sage).create()
+if args.precell:
+    SCLXC(lxcn_precell).create()
+if args.master:
+    SCLXC(lxcn_sagecell).create()
 if args.restoremaster:
-    sagecell = SCLXC(lxcn_backup).clone(lxcn_sagecell)
-
-if args.master or not sagecell.is_defined():
-    precell = SCLXC(lxcn_precell)
-    if precell.is_defined() and args.useprecell:
-        precell.update()
-        if not args.keeprepos:
-            precell.inside(
-                "su -c 'git -C /home/{server}/github/sagecell pull' {server}")
-    else:
-        precell = base.clone(lxcn_precell, update=True)
-        precell.prepare_for_sagecell(args.keeprepos)
-    sagecell = precell.clone(lxcn_sagecell)
-    sagecell.install_sagecell()
-else:
-    sagecell.update()
+    SCLXC(lxcn_backup).clone(lxcn_sagecell)
 
 # Autostart containers: tester and deployed nodes.
 if args.tester:
-    sagecell.clone(lxcn_tester, autostart=True).start()
+    SCLXC(lxcn_sagecell).clone(lxcn_tester, autostart=True).start()
 
 A_names = ["{}{}{}".format(lxcn_prefix, n, "A")
              for n in range(number_of_compute_nodes)]
@@ -1191,9 +1178,11 @@ else:
     up_names, old_names = [], A_names
 
 if args.deploy:
+    sagecell = SCLXC(lxcn_sagecell)
+    sagecell.update()
     up_names, old_names = old_names, up_names
     for n in up_names:
-        sagecell.clone(n, autostart=True).start()
+        sagecell.clone(n, autostart=True, update=False).start()
     log.info("waiting for new containers to fully initialize...")
     timer_delay(start_delay)
     old_nodes = list(map(SCLXC, old_names))
