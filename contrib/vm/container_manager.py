@@ -325,13 +325,13 @@ python_packages = [
 "git+https://github.com/systemd/python-systemd.git",
 # Optional
 "future",   # fipy does not work without it installed first
-"--no-build-isolation git+https://github.com/abelfunctions/abelfunctions",
+#"--no-build-isolation git+https://github.com/abelfunctions/abelfunctions", downgrades numpy
 "admcycles",
 "altair",
 "APMonitor",
 "astropy",
 "astroquery",
-"autoviz",
+#"autoviz", downgrades numpy
 "bioinfokit",
 "bitarray",
 "bokeh",
