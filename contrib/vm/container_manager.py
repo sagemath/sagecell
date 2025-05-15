@@ -744,24 +744,15 @@ def install_packages():
     become_server()
     os.chdir("sage")
     log.info("installing optional Sage packages")
-
-    def numpy_ver():
-        return check_output("./sage -c 'import numpy; print(numpy.__version__)'").strip()
-
-    before = numpy_ver()
-    log.info(f"numpy version before packages is {before}")
     for package in sage_optional_packages:
         check_call("./sage -i -y {}".format(package))
-        after = numpy_ver()
-        if before != after:
-            log.info(f"numpy version is {after} after {package}")
     log.info("installing pip packages")
     check_call("./sage -pip install --upgrade pip")
+    numpy_ver = check_output("./sage -c 'import numpy; print(numpy.__version__)'").strip()
+    log.info(f"numpy version is expected to stay at {numpy_ver}")
     for package in python_packages:
-        check_call("./sage -pip install {}".format(package))
-        after = numpy_ver()
-        if before != after:
-            log.info(f"numpy version is {after} after {package}")
+        # Many packages may downgrade numpy, so we force it to be at the Sage version
+        check_call(f"./sage -pip install numpy=={numpy_ver} {package}")
     os.chdir("..")
 
 
@@ -851,6 +842,8 @@ class SCLXC(object):
         of "the end result".
         """
         self.destroy()
+        root = self.c.get_config_item("lxc.rootfs.path")
+        home = os.path.join(root, "home", users["server"])
         log.info("creating %s", self.name)
         if self.name == lxcn_base:
             # From scratch
@@ -887,8 +880,6 @@ class SCLXC(object):
             # Copy repositories into container
             update_repositories()
             log.info("uploading repositories to %s", self.name)
-            root = self.c.get_config_item("lxc.rootfs.path")
-            home = os.path.join(root, "home", users["server"])
             shutil.copytree("github", os.path.join(home, "github"), symlinks=True)
             self.inside("chown -R {server}:{group} /home/{server}/github")
             dot_cache = os.path.join(home, ".cache")
