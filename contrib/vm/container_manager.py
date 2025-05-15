@@ -354,7 +354,7 @@ python_packages = [
 "getdist",
 "ggplot",
 "gif",
-"giotto-tda",
+#"giotto-tda", wants sudo
 "google-api-python-client",
 "google-generativeai",
 "graphviz",
@@ -373,7 +373,7 @@ python_packages = [
 "langchain-openai",
 "langserve",
 "langserve[all]",
-"lenstools",
+#"lenstools", complaints there is no numpy
 "lhsmdu",
 "lxml",
 "manimlib",
@@ -412,7 +412,7 @@ python_packages = [
 "scikit-image",
 "scikit-learn",
 "scikit-tda",
-"scimath",
+#"scimath", does not build
 "scrapy",
 "seaborn",
 "selenium",
@@ -423,11 +423,11 @@ python_packages = [
 "SpeechRecognition",
 "spiceypy",
 "statsmodels",
-"surface_dynamics",
+#"surface_dynamics", does not build
 "sweetviz",
 "tables",
 "tbcontrol",
-"theano",
+#"theano", does not build
 "tikzplotlib",
 "torch",
 "transformers",
