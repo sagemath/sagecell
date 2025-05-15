@@ -297,6 +297,8 @@ sage_optional_packages = [
 "fricas",
 "gap_packages",
 "gap3",
+"jmol",
+"jupyter_jsmol",
 "latte_int",
 "lie",  # needs bison
 "lrslib",
