@@ -842,8 +842,6 @@ class SCLXC(object):
         of "the end result".
         """
         self.destroy()
-        root = self.c.get_config_item("lxc.rootfs.path")
-        home = os.path.join(root, "home", users["server"])
         log.info("creating %s", self.name)
         if self.name == lxcn_base:
             # From scratch
@@ -880,6 +878,8 @@ class SCLXC(object):
             # Copy repositories into container
             update_repositories()
             log.info("uploading repositories to %s", self.name)
+            root = self.c.get_config_item("lxc.rootfs.path")
+            home = os.path.join(root, "home", users["server"])
             shutil.copytree("github", os.path.join(home, "github"), symlinks=True)
             self.inside("chown -R {server}:{group} /home/{server}/github")
             dot_cache = os.path.join(home, ".cache")
@@ -893,6 +893,8 @@ class SCLXC(object):
             self.c = SCLXC(lxcn_sage).clone(lxcn_precell).c
             self.inside(install_packages)
             # Remove old versions of packages
+            root = self.c.get_config_item("lxc.rootfs.path")
+            home = os.path.join(root, "home", users["server"])
             upstream = os.path.join(home, "sage/upstream")
             packages = dict()
             for f in os.listdir(upstream):
