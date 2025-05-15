@@ -880,9 +880,9 @@ class SCLXC(object):
             log.info("uploading repositories to %s", self.name)
             root = self.c.get_config_item("lxc.rootfs.path")
             home = os.path.join(root, "home", users["server"])
+            dot_cache = os.path.join(home, ".cache")
             shutil.copytree("github", os.path.join(home, "github"), symlinks=True)
             self.inside("chown -R {server}:{group} /home/{server}/github")
-            dot_cache = os.path.join(home, ".cache")
             try:
                 shutil.copytree("dot_cache", dot_cache, symlinks=True)
                 self.inside("chown -R {server}:{group} /home/{server}/.cache")
@@ -895,6 +895,7 @@ class SCLXC(object):
             # Remove old versions of packages
             root = self.c.get_config_item("lxc.rootfs.path")
             home = os.path.join(root, "home", users["server"])
+            dot_cache = os.path.join(home, ".cache")
             upstream = os.path.join(home, "sage/upstream")
             packages = dict()
             for f in os.listdir(upstream):
@@ -932,7 +933,7 @@ class SCLXC(object):
         else:
             # If the name is not recognized as some intermediate step, we assume
             # that a copy of the fully built SageMathCell is desired
-            self.c = SCLXC(lxcn_sageecell).clone(self.name).c
+            self.c = SCLXC(lxcn_sagecell).clone(self.name).c
 
     def destroy(self):
         r"""
