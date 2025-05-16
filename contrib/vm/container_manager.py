@@ -923,8 +923,8 @@ class SCLXC(object):
             shutil.copytree(dot_cache, "dot_cache", symlinks=True)
         elif self.name == lxcn_sagecell:
             self.c = SCLXC(lxcn_precell).clone(lxcn_sagecell).c
-            self.inside(install_sagecell)
             self.inside("su -c 'git -C /home/{server}/github/sagecell pull' {server}")
+            self.inside(install_sagecell)
             self.inside(install_config_files)
             self.c.set_config_item("lxc.cgroup.memory.limit_in_bytes", "8G")
             self.c.save_config()
