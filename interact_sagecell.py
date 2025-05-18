@@ -1286,7 +1286,7 @@ def automatic_control(control, var=None):
     from types import GeneratorType
     from sage.all import parent
     from sage.plot.colors import Color
-    from sage.structure.element import is_Vector, is_Matrix
+    from sage.structure.element import Matrix, Vector
 
     label = None
     default_value = None
@@ -1339,7 +1339,7 @@ def automatic_control(control, var=None):
                        include_endpoint=True),
                 default=default_value, label=label)
         return DiscreteSlider(list(control), default=default_value, label=label)
-    if is_Matrix(control):
+    if isinstance(control, Matrix):
         nrows = control.nrows()
         ncols = control.ncols()
         default_value = control.list()
@@ -1347,7 +1347,7 @@ def automatic_control(control, var=None):
                          for i in range(ncols)] for j in range(nrows)]
         return InputGrid(nrows=nrows, ncols=ncols, label=label,
                          default=default_value, adapter=parent(control))
-    if is_Vector(control):
+    if isinstance(control, Vector):
         nrows = 1
         ncols = len(control)
         default_value = [control.list()]

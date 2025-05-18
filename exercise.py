@@ -14,9 +14,9 @@ from interact_sagecell import interact,Button,HtmlBox, UpdateButton
 ##########################################################
 class Exercise:
     def __init__(self, question, answer, check=None, hints=None):
-        import sage.all, sage.matrix.all
+        import sage.all, sage.structure.element
         if not (isinstance(answer, (tuple, list)) and len(answer) == 2):
-            if sage.matrix.all.is_Matrix(answer):
+            if isinstance(answer, sage.structure.element.Matrix):
                 default = sage.all.parent(answer)(0)
             else:
                 default = ''
