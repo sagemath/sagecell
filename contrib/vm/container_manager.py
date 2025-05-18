@@ -540,6 +540,7 @@ backend static{suffix}
     server {node} {ip}:8889 id {id} check
 
 backend compute{suffix}
+    balance leastconn
     stick-table type string len 36 size 1m expire 30m peers local{suffix}
     stick on urlp(CellSessionID)
     stick match req.hdr(Jupyter-Kernel-ID)
