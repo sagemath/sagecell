@@ -7,8 +7,14 @@ ipset add allowed 91.189.88.0/24    # Canonical Group Limited, archive.ubuntu.co
 ipset add allowed 185.125.188.0/22
 ipset add allowed 128.174.0.0/16    # University of Illinois, Macaulay2
 
+ipset add allowed 160.79.104.10     # api.anthropic.com
+ipset add allowed 104.18.26.90      # api.deepseek.com.cdn.cloudflare.net
+ipset add allowed 104.18.27.90
+ipset add allowed 162.159.140.245   # api.openai.com
+ipset add allowed 172.66.0.243
+ipset add allowed 104.18.18.80      # api.x.ai
+ipset add allowed 104.18.19.80
 
-ipset add allowed 52.152.96.252     # api.openai.com
 ipset add allowed 217.160.0.231     # codetables.de
 ipset add allowed 162.255.119.162   # data.astropy.org
 ipset add allowed 94.136.40.82      # designtheory.org
@@ -21,10 +27,14 @@ ipset add allowed 151.101.0.0/16    # Fastly, PyPi.org
 ipset add allowed 140.82.112.0/20   # GitHub
 ipset add allowed 185.199.108.0/22
 
-ipset add allowed 108.177.0.0/17    # Google services
+ipset add allowed 64.233.160.0/19   # Google services
+ipset add allowed 74.125.0.0/16
+ipset add allowed 108.177.0.0/17
 ipset add allowed 142.250.0.0/15
 ipset add allowed 172.217.0.0/16
 ipset add allowed 173.194.0.0/16
+ipset add allowed 192.178.0.0/15
+ipset add allowed 209.85.128.0/17
 ipset add allowed 216.58.192.0/19
 
 ipset add allowed 89.107.186.22     # graphclasses.org
