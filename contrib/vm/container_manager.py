@@ -377,6 +377,7 @@ python_packages = [
 "langserve[all]",
 #"lenstools", complaints there is no numpy
 "lhsmdu",
+"litellm",
 "lxml",
 "manimlib",
 "mapclassify",
@@ -396,6 +397,7 @@ python_packages = [
 "pandas",
 "pandas-profiling",
 "patsy",
+"plotnine",
 "plotly",
 "polars",
 "pretty_html_table",
