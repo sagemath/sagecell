@@ -50,6 +50,7 @@ ipset add allowed 35.155.106.45     # ljcr.dmgordon.org/mathtrek.eu
 ipset add allowed 35.166.140.139
 
 ipset add allowed 82.165.72.196     # mathtrek.eu
+ipset add allowed 129.78.68.121     # magma.maths.usyd.edu.au
 
 ipset add allowed 104.18.22.152     # api.mistral.ai
 ipset add allowed 104.18.23.152
