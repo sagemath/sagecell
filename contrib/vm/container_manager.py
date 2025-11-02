@@ -358,6 +358,7 @@ python_packages = [
 "gif",
 #"giotto-tda", wants sudo
 "google-api-python-client",
+"google-genai",
 "google-generativeai",
 "graphviz",
 "gspread",
@@ -427,6 +428,7 @@ python_packages = [
 "SpeechRecognition",
 "spiceypy",
 "statsmodels",
+"streamlit",
 #"surface_dynamics", does not build
 "sweetviz",
 "tables",
