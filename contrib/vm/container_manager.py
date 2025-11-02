@@ -312,6 +312,7 @@ sage_optional_packages = [
 "pynormaliz",
 "qepcad",
 "saclib",
+"sagemath_giac",
 "tides",
 #"topcom", Does not work as of November 2022 with relying on system packages
 ]
