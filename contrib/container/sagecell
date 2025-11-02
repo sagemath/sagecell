@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set PATH=$SAGE_VENV/bin:$PATH
+
+sudo /usr/sbin/sshd
+sudo /usr/sbin/rsyslogd
+
+ssh-keyscan -H localhost 2>/dev/null >> ~/.ssh/known_hosts
+
+sage web_server.py
+
