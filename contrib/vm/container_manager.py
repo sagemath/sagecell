@@ -38,7 +38,7 @@ lxcn_prefix = "sc-"     # Prefix for main compute nodes
 # Timeout in seconds to wait for a container to shutdown, network to start etc.
 timeout = 120
 # Time after which SageCell should be up and running.
-start_delay = 126
+start_delay = 66
 # How long to wait after starting new containers before destroying old ones.
 deploy_delay = 2*60*60  # Two hours to allow all interacts finish "naturally".
 
@@ -937,7 +937,7 @@ class SCLXC(object):
             self.shutdown()
             # Let first-time tasks to run and complete.
             self.start()
-            timer_delay(start_delay)
+            timer_delay(start_delay + 300)
         else:
             # If the name is not recognized as some intermediate step, we assume
             # that a copy of the fully built SageMathCell is desired
