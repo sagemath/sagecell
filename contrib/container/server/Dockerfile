@@ -23,9 +23,6 @@ RUN mkdir static/jsmol && curl -o static/jsmol/JSmol.min.nojq.js https://chemapp
 
 RUN sage -sh -c make
 
-RUN ssh-keygen -b 4096 -t rsa -f ~/.ssh/id_rsa -q -P ""
-RUN cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-
 COPY ./sagecell /usr/local/bin/
 
 EXPOSE 8888
