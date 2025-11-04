@@ -1,4 +1,16 @@
 #!/bin/bash
 
-set PATH=$(sudo -E -H -u sage env | grep VENV)/bin:$PATH
+# set PATH=$(sudo -E -H -u sage env | grep VENV)/bin:$PATH
+
+printf "Configuring worker ..."
+
+mkdir ~/.ssh/
+cat /pubkey/id_rsa.pub >> ~/.ssh/authorized_keys
+chmod 0700 ~/.ssh
+chmod 0600 ~/.ssh/authorized_keys
+
+printf "done.\n"
+
+printf "Starting SSH server\n"
+sudo mkdir /run/sshd && sudo /usr/sbin/sshd -D 
 

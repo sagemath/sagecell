@@ -1,13 +1,17 @@
-FROM sagemath/sagemath:10.7
+FROM sagemath/sagemath:10.7 AS sagemath-base
 
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt upgrade -y
+
+RUN apt install -y \
   git curl npm build-essential \
-  openssh-server rsyslog \
-  && rm -rf /var/lib/apt/lists/*
+  openssh-server rsyslog 
+
+
+FROM sagemath-base
 
 USER sage
 
@@ -16,7 +20,6 @@ RUN sage -pip install sockjs-tornado sqlalchemy paramiko lockfile
 WORKDIR /home/sage
 
 RUN git clone --recursive https://github.com/sagemath/sagecell.git 
-RUN mkdir .ssh
 
 WORKDIR /home/sage/sagecell
 

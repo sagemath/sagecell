@@ -2,12 +2,34 @@
 
 set PATH=$SAGE_VENV/bin:$PATH
 
-sudo /usr/sbin/rsyslogd -n &
+WORKER=worker
+WORKER_USER=sage-worker
 
-ssh-keyscan -H localhost 2>/dev/null >> ~/.ssh/known_hosts
+printf "Keygen ... "
+ssh-keygen -t rsa -b 4096 -N '' -f $HOME/.ssh/id_rsa -q
+cp -p $HOME/.ssh/*.pub /pubkey/
+printf "done\n"
 
+until ssh -i $HOME/.ssh/id_rsa -o StrictHostKeyChecking=no \
+      -o ConnectTimeout=2 $WORKER_USER@$WORKER 'echo connected'; do
+    echo "Waiting for $WORKER SSH ..." >&2
+    sleep 2
+done
+
+printf "Keyscan ... "
+ssh-keyscan -H $WORKER 2>/dev/null >> ~/.ssh/known_hosts
+printf "done\n"
+
+printf "Web server config ... "
 cp config_default.py config.py
-sed -i '/\"localhost\"/ s/localhost/sage-worker/' config.py
+sed -i "/\"host\"/ s/localhost/$WORKER/" config.py
+#sed -i "/\"username\"/ s/None/$WORKER_USER/" config.py
+printf "done\n"
+
+printf "Rsyslog config ... "
+sudo sed -i '/kernel/ d' /etc/rsyslog.conf || exit 1
+sudo /usr/sbin/rsyslogd -n &
+printf "done\n"
 
 sage web_server.py
 

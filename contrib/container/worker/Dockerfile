@@ -1,14 +1,23 @@
-FROM sagemath/sagemath:10.7
+FROM sagemath/sagemath:10.7 AS sagemath-base
 
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt upgrade -y
+
+RUN apt install -y \
   git curl npm build-essential \
-  openssh-server rsyslog \
-  && rm -rf /var/lib/apt/lists/* \
-  && mkdir /run/sshd
+  openssh-server rsyslog 
+
+
+FROM sagemath-base
+
+USER root
+
+COPY ./worker /usr/local/bin/
+
+RUN ssh-keygen -A && chmod 0600 /etc/ssh/ssh_host_*_key
 
 RUN useradd -m sage-worker -s /bin/bash -c "sage-worker" \
   && gpasswd -a sage-worker sage \
@@ -17,16 +26,11 @@ RUN useradd -m sage-worker -s /bin/bash -c "sage-worker" \
 
 USER sage-worker
 
-COPY ./worker /usr/local/bin/
-
 WORKDIR /home/sage-worker
+
+ENV HOME=/home/sage-worker
 
 EXPOSE 22
 
-RUN /usr/local/bin/worker
+CMD ["worker"]
 
-USER root
-
-RUN ssh-keygen -A && chmod 0600 /etc/ssh/ssh_host_*_key
-
-CMD ["/usr/sbin/sshd", "-D"]
