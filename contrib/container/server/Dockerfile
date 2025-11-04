@@ -7,8 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
   git curl npm build-essential \
   openssh-server rsyslog \
-  && rm -rf /var/lib/apt/lists/* \
-  && mkdir /run/sshd
+  && rm -rf /var/lib/apt/lists/*
 
 USER sage
 
