@@ -2,8 +2,7 @@
 
 set PATH=$SAGE_VENV/bin:$PATH
 
-sudo /usr/sbin/sshd
-sudo /usr/sbin/rsyslogd
+sudo /usr/sbin/rsyslogd -n &
 
 ssh-keyscan -H localhost 2>/dev/null >> ~/.ssh/known_hosts
 
