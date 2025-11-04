@@ -16,6 +16,7 @@ RUN sage -pip install sockjs-tornado sqlalchemy paramiko lockfile
 WORKDIR /home/sage
 
 RUN git clone --recursive https://github.com/sagemath/sagecell.git 
+RUN mkdir .ssh
 
 WORKDIR /home/sage/sagecell
 
