@@ -1,0 +1,4 @@
+#!/bin/bash
+
+set PATH=$(sudo -E -H -u sage env | grep VENV)/bin:$PATH
+
