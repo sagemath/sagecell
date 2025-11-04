@@ -6,5 +6,8 @@ sudo /usr/sbin/rsyslogd -n &
 
 ssh-keyscan -H localhost 2>/dev/null >> ~/.ssh/known_hosts
 
+cp config_default.py config.py
+sed -i '/\"localhost\"/ s/localhost/sage-worker/' config.py
+
 sage web_server.py
 
