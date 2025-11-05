@@ -1,10 +1,8 @@
-FROM sagemath/sagemath:10.7 AS precell
+FROM sagecell:sage-precell
 
 USER root
 
 ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt update && apt upgrade -y
 
 RUN apt install -y \
   git curl npm build-essential \
@@ -31,8 +29,6 @@ USER $WORKER_NAME
 WORKDIR /home/$WORKER_NAME
 RUN mkdir .ssh && chmod 0700 .ssh
 
-
-FROM precell AS sagecell
 
 USER sage
 
