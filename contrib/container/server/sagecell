@@ -3,11 +3,11 @@
 set PATH=$SAGE_VENV/bin:$PATH
 
 WORKER=worker
-WORKER_USER=sage-worker
+WORKER_USER=sc_work
 
 printf "Keygen ... "
-ssh-keygen -t rsa -b 4096 -N '' -f $HOME/.ssh/id_rsa -q
-cp -p $HOME/.ssh/*.pub /pubkey/
+sudo -E -H -u $WORKER_USER ssh-keygen -t ed25519 -N '' -f /home/$WORKER_USER/.ssh/id_ed25519 -q
+cp -p /home/$WORKER_USER/.ssh/*.pub /pubkey/$WORKER.pub
 printf "done\n"
 
 until ssh -i $HOME/.ssh/id_rsa -o StrictHostKeyChecking=no \
@@ -23,7 +23,7 @@ printf "done\n"
 printf "Web server config ... "
 cp config_default.py config.py
 sed -i "/\"host\"/ s/localhost/$WORKER/" config.py
-#sed -i "/\"username\"/ s/None/$WORKER_USER/" config.py
+sed -i "/\"username\"/ s/None/\"$WORKER_USER\"/" config.py
 printf "done\n"
 
 printf "Rsyslog config ... "
