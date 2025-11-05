@@ -25,13 +25,13 @@ RUN chmod go+rx /home/sc_*
 
 USER $SERVER_NAME
 WORKDIR /home/$SERVER_NAME
-RUN mkdir .ssh && chmod 0700 .ssh && ssh-keygen -t ed25519 -N '' -f .ssh/id_ed25519
+RUN mkdir .ssh && chmod 0700 .ssh
 
 USER $WORKER_NAME
 WORKDIR /home/$WORKER_NAME
-RUN mkdir .ssh && chmod 0700 .ssh && ssh-keygen -t ed25519 -N '' -f .ssh/id_ed25519
+RUN mkdir .ssh && chmod 0700 .ssh
 
- 
+
 FROM precell AS sagecell
 
 USER sage
