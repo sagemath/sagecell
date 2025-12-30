@@ -1,8 +1,15 @@
 # Introduction
 
-This page describes the protocols through which the server and the kernel communicate with the client. The **client** can be any frontend for the Sage Cell, such as a web page or an app. The **server** is a Python server that acts as a bridge between the client and the kernel. The **kernel** is an IPython kernel that performs the computations and returns the results to the client. A client must send messages according to this protocol and display the results from the messages returned in a manner appropriate for the user interface.
+This page describes the protocols through which the server and the kernel communicate with the client. SageMath runs on the Jupyter (formerly IPython) protocol. The **client** can be any frontend for the Sage Cell, such as a web page or an app. The **server** is a Python server that acts as a bridge between the client and the kernel. The SageMath **kernel** is a custom IPython kernel that performs the computations and returns the results to the client. A client must send messages according to this protocol and display the results from the messages returned in a manner appropriate for the user interface.
 
-Examples of some of these messages can be found at the description of an [example Sage Cell session](session.md).
+The high-level overview of the communication protocol between the client, server, and kernel is as follows:
+1. Client sends an HTTP request (`POST /kernel`) to the server to request a new kernel process. The server creates a new kernel process and returns the details.
+2. Client opens a WebSocket connection to the server for long-running continuous communication.
+3. Whenever the client sends data to the server, the server sends data to the kernel for computation, then receives the results and returns it to the client.
+
+Further details on the Jupyter/IPython protocol can be found in their [documentation](http://ipython.org/ipython-doc/dev/development/messaging.html).
+
+For an in-depth example of the above, see an [example Sage Cell session](session.md).
 
 # Protocols
 
@@ -10,7 +17,7 @@ There are three basic protocols over which the messages are sent: HTTP, WebSocke
 
 ## HTTP
 
-HTTP is used for simple requests to the server. Because of restrictions on cross-origin `XMLHttpRequest`s in the browser, the server allows several ways of performing HTTP requests:
+HTTP is used for simple requests to the server and starting the connection to the kernel. Because of restrictions on cross-origin `XMLHttpRequest`s in the browser, the server allows several ways of performing HTTP requests:
 
 * A standard request, such as one sent by the JavaScript `XMLHttpRequest` object, will return the result in the normal form, usually a JSON file. The results of all of these requests will have the HTTP header `Access-Control-Allow-Origin` set to `*` to allow for [cross-origin resource sharing](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
