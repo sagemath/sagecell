@@ -2,7 +2,7 @@
 
 This page describes the protocols through which the server and the kernel communicate with the client. The **client** can be any frontend for the Sage Cell, such as a web page or an app. The **server** is a Python server that acts as a bridge between the client and the kernel. The **kernel** is an IPython kernel that performs the computations and returns the results to the client. A client must send messages according to this protocol and display the results from the messages returned in a manner appropriate for the user interface.
 
-Examples of some of these messages can be found at the description of an [[example Sage Cell session|Session]].
+Examples of some of these messages can be found at the description of an [example Sage Cell session](session.md).
 
 # Protocols
 
@@ -45,15 +45,22 @@ WebSockets and SockJS are used to provide a continuous two-way connection with t
 
     POST /kernel
 
-#### Response
+#### Parameters
 
 The `accepted_tos` parameter is only required if the server requires a terms of service agreement.  Make sure the user accepted the terms of service before setting the parameter to `"true"`.
 
 ```json
 {
-    "kernel_id": "[kernel ID]",
-    "ws_url": "ws://sagecell.sagemath.org/",
     "accepted_tos": "true"
+}
+```
+
+#### Response
+
+```json
+{
+    "id": "[kernel ID]",
+    "ws_url": "ws://sagecell.sagemath.org/"
 }
 ```
 
@@ -93,7 +100,12 @@ This URL can be used as a simplified version of the API. Instead of sending and 
 
 #### Parameters
 
-**code**: the code to be executed
+```json
+{
+    "code": "[the code to be executed]",
+    "stdout": "[output string]"
+}
+```
 
 #### Response
 
@@ -154,7 +166,10 @@ POST request `http://sagecell.sagemath.org/kernel`
 That will return a JSON dictionary that looks like this:
 
 ```json
-{"kernel_id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://sagecell.sagemath.org/"}
+{
+    "id": "ce20fada-f757-45e5-92fa-05e952dd9c87",
+    "ws_url": "ws://sagecell.sagemath.org/"
+}
 ```
 
 Then open up WebSocket channels to the two URLs:
