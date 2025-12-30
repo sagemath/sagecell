@@ -26,7 +26,7 @@ These methods of sending requests are encapsulated in the JavaScript function `s
 
 WebSockets and SockJS are used to provide a continuous two-way connection with the kernel running the computation, using the server as a proxy. Messages are sent and received over WebSockets according to the [IPython messaging specification](http://ipython.org/ipython-doc/stable/development/messaging.html).
 
-[SockJS](https://github.com/sockjs/) is used to provide the functionality of WebSockets to browsers that do not support the WebSocket API. Because only one SockJS connection may be open on a single page at any given time, we implement a multiplexing SockJS object that can send a message to any kernel and stream that the page is connected to. Each SockJS message is prepended with `[kernel ID]/[stream name],` to tell the server where to send the message.
+[SockJS](https://github.com/sockjs/) is used to provide the functionality of WebSockets to browsers that do not support the WebSocket API. Because only one SockJS connection may be open on a single page at any given time, we implement a multiplexing SockJS object that can send a message to any kernel and stream that the page is connected to. Each SockJS message is prepended with `[kernel ID]/[stream name],` to tell the server where to send the message. See [here](session.md) for an example.
 
 # API
 
@@ -63,6 +63,22 @@ The `accepted_tos` parameter is only required if the server requires a terms of 
     "ws_url": "ws://sagecell.sagemath.org/"
 }
 ```
+
+### Start WebSocket connection
+
+    GET <ws_url>/kernel/<kernel_id>/iopub
+    GET <ws_url>/kernel/<kernel_id>/shell
+
+#### Query Parameters
+
+| Component | Source | Definition | Example Value |
+| :--- | :--- | :--- | :--- |
+| **`ws_url`** | `POST /kernel` (Response) | The base server address. | `wss://sagecell.sagemath.org` |
+| **`kernel_id`** | `POST /kernel` (Response) | UUID of the Python process running on the server. | `58b66029-af1c-4664-a6ff-c3e32271712c` |
+
+### Start SockJS connection
+
+    GET /sockjs
 
 ### Create a permalink
 
@@ -174,9 +190,9 @@ That will return a JSON dictionary that looks like this:
 
 Then open up WebSocket channels to the two URLs:
 
-Shell channel: <ws_url>/kernel/<kernel_id>/shell
+Shell channel: `<ws_url>/kernel/<kernel_id>/shell`
 
-IOPub channel: <ws_url>/kernel/<kernel_id>/iopub
+IOPub channel: `<ws_url>/kernel/<kernel_id>/iopub`
 
 Then send an execute_request message on the shell channel, following the [IPython format](http://ipython.org/ipython-doc/dev/development/messaging.html).
 

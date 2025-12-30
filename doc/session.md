@@ -17,7 +17,7 @@ The user then presses the “Evaluate” button. The client (the browser) sends 
 }
 ```
 
-The client establishes a WebSocket connection to the URLs `ws://sagecell.sagemath.org/kernel/iopub` and `ws://sagecell.sagemath.org/kernel/shell`. These WebSocket connections will act as the IPython IOPub and Shell sockets in the communication with the kernel. If WebSockets are not available, a SockJS connection will be created to the URL `http://sagecell.sagemath.org/sockjs`, and all messages will be have the prefix `7b3a5b89-7125-4031-b33c-cefd01c8d808/iopub,` or `7b3a5b89-7125-4031-b33c-cefd01c8d808/shell,`.
+The client establishes a WebSocket connection to the URLs `ws://sagecell.sagemath.org/kernel/7b3a5b89-7125-4031-b33c-cefd01c8d808/iopub` and `ws://sagecell.sagemath.org/kernel/7b3a5b89-7125-4031-b33c-cefd01c8d808/shell`. These WebSocket connections will act as the IPython IOPub and Shell sockets in the communication with the kernel. If WebSockets are not available, a SockJS connection will be created to the URL `http://sagecell.sagemath.org/sockjs`, and all messages will be have the prefix `7b3a5b89-7125-4031-b33c-cefd01c8d808/iopub,` or `7b3a5b89-7125-4031-b33c-cefd01c8d808/shell,`.
 
 The client sends the following message to initiate the computation:
 

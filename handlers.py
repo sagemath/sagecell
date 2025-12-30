@@ -127,8 +127,8 @@ class KernelHandler(tornado.web.RequestHandler):
     responsiblity of the client to request the correct URLs
     for these websockets based on the following pattern:
     
-    ``<ws_url>/iopub`` is the expected iopub stream url
-    ``<ws_url>/shell`` is the expected shell stream url
+    ``<ws_url>/kernel/<kernel_id>/iopub`` is the expected iopub stream url
+    ``<ws_url>/kernel/<kernel_id>/shell`` is the expected shell stream url
     """
     
     async def post(self, *args, **kwargs):
