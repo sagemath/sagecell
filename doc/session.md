@@ -12,7 +12,7 @@ The user then presses the “Evaluate” button. The client (the browser) sends 
 
 ```json
 {
-    "kernel_id": "7b3a5b89-7125-4031-b33c-cefd01c8d808",
+    "id": "7b3a5b89-7125-4031-b33c-cefd01c8d808",
     "ws_url": "ws://sagecell.sagemath.org/"
 }
 ```
