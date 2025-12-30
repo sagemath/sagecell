@@ -7,7 +7,7 @@ The high-level overview of the communication protocol between the client, server
 2. Client opens a WebSocket connection to the server for long-running continuous communication.
 3. Whenever the client sends data to the server, the server sends data to the kernel for computation, then receives the results and returns it to the client.
 
-Further details on the Jupyter/IPython protocol can be found in their [documentation](http://ipython.org/ipython-doc/dev/development/messaging.html).
+Further details on the Jupyter/IPython protocol can be found in their [documentation](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
 
 For an in-depth example of the above, see an [example Sage Cell session](session.md).
 
@@ -31,7 +31,7 @@ These methods of sending requests are encapsulated in the JavaScript function `s
 
 ## WebSockets and SockJS
 
-WebSockets and SockJS are used to provide a continuous two-way connection with the kernel running the computation, using the server as a proxy. Messages are sent and received over WebSockets according to the [IPython messaging specification](http://ipython.org/ipython-doc/stable/development/messaging.html).
+WebSockets and SockJS are used to provide a continuous two-way connection with the kernel running the computation, using the server as a proxy. Messages are sent and received over WebSockets according to the [IPython messaging specification](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
 
 [SockJS](https://github.com/sockjs/) is used to provide the functionality of WebSockets to browsers that do not support the WebSocket API. Because only one SockJS connection may be open on a single page at any given time, we implement a multiplexing SockJS object that can send a message to any kernel and stream that the page is connected to. Each SockJS message is prepended with `[kernel ID]/[stream name],` to tell the server where to send the message. See [here](session.md) for an example.
 
@@ -141,7 +141,7 @@ This URL can be used as a simplified version of the API. Instead of sending and 
 
 ## Kernel messages
 
-Most of the messages sent between the client and the kernel over WebSockets or SockJS are the same as described in the [IPython messaging documentation](http://ipython.org/ipython-doc/stable/development/messaging.html). The messages described here are special messages produced by the Sage Cell.
+Most of the messages sent between the client and the kernel over WebSockets or SockJS are the same as described in the [Jupyter/IPython messaging documentation](http://ipython.org/ipython-doc/stable/development/messaging.html). The messages described here are special messages produced by the Sage Cell.
 
 ### Prepare interact
 
@@ -201,7 +201,7 @@ Shell channel: `<ws_url>/kernel/<kernel_id>/shell`
 
 IOPub channel: `<ws_url>/kernel/<kernel_id>/iopub`
 
-Then send an execute_request message on the shell channel, following the [IPython format](http://ipython.org/ipython-doc/dev/development/messaging.html).
+Then send an execute_request message on the shell channel, following the [Jupyter/IPython format](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
 
 Then listen on the IOPub channel for messages until you get a kernel status idle message, and also listen on the shell channel until you get an execute_reply message.
 
