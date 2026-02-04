@@ -396,7 +396,6 @@ python_packages = [
 "oct2py",
 "openai",
 "openpyxl",
-"--no-build-isolation git+https://github.com/mkauers/ore_algebra.git",
 "pandas",
 "pandas-profiling",
 "patsy",
