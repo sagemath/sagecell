@@ -273,14 +273,9 @@ R_packages = [
 "ggformula",
 "glmmTMB",
 "gt",
-"gtExtras",
 "huxtable",
-"kableExtra",
 "mosaic",
-"pixiedust",
 "reactable",
-"reactablefmtr",
-"swirl",
 ]
 
 # Optional Sage packages to be installed
