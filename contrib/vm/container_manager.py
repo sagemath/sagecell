@@ -399,7 +399,6 @@ python_packages = [
 "polars",
 "pretty_html_table",
 "pydot",
-"pyforest",
 "pygnuplot",
 "PyPDF4",
 "pyproj",
@@ -434,13 +433,11 @@ python_packages = [
 "torch",
 "transformers",
 "tweepy",
-"twint",
 "vega_datasets",
 "WeasyPrint",
 "wordcloud",
 "xarray",
 "xlrd",
-"moss", # This one only complains about missing dependencies
 ]
 
 
