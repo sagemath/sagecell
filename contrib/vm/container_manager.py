@@ -275,6 +275,7 @@ R_packages = [
 "gt",
 "huxtable",
 "mosaic",
+"openintro",
 "reactable",
 ]
 
