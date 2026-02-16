@@ -1,8 +1,15 @@
 # Introduction
 
-This page describes the protocols through which the server and the kernel communicate with the client. The **client** can be any frontend for the Sage Cell, such as a web page or an app. The **server** is a Python server that acts as a bridge between the client and the kernel. The **kernel** is an IPython kernel that performs the computations and returns the results to the client. A client must send messages according to this protocol and display the results from the messages returned in a manner appropriate for the user interface.
+This page describes the protocols through which the server and the kernel communicate with the client. SageMath runs on the Jupyter (formerly IPython) protocol. The **client** can be any frontend for the Sage Cell, such as a web page or an app. The **server** is a Python server that acts as a bridge between the client and the kernel. The SageMath **kernel** is a custom IPython kernel that performs the computations and returns the results to the client. A client must send messages according to this protocol and display the results from the messages returned in a manner appropriate for the user interface.
 
-Examples of some of these messages can be found at the description of an [[example Sage Cell session|Session]].
+The high-level overview of the communication protocol between the client, server, and kernel is as follows:
+1. Client sends an HTTP request (`POST /kernel`) to the server to request a new kernel process. The server creates a new kernel process and returns the details.
+2. Client opens a WebSocket connection to the server for long-running continuous communication.
+3. Whenever the client sends data to the server, the server sends data to the kernel for computation, then receives the results and returns it to the client.
+
+Further details on the Jupyter/IPython protocol can be found in their [documentation](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
+
+For an in-depth example of the above, see an [example Sage Cell session](session.md).
 
 # Protocols
 
@@ -10,7 +17,7 @@ There are three basic protocols over which the messages are sent: HTTP, WebSocke
 
 ## HTTP
 
-HTTP is used for simple requests to the server. Because of restrictions on cross-origin `XMLHttpRequest`s in the browser, the server allows several ways of performing HTTP requests:
+HTTP is used for simple requests to the server and starting the connection to the kernel. Because of restrictions on cross-origin `XMLHttpRequest`s in the browser, the server allows several ways of performing HTTP requests:
 
 * A standard request, such as one sent by the JavaScript `XMLHttpRequest` object, will return the result in the normal form, usually a JSON file. The results of all of these requests will have the HTTP header `Access-Control-Allow-Origin` set to `*` to allow for [cross-origin resource sharing](https://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
@@ -24,9 +31,9 @@ These methods of sending requests are encapsulated in the JavaScript function `s
 
 ## WebSockets and SockJS
 
-WebSockets and SockJS are used to provide a continuous two-way connection with the kernel running the computation, using the server as a proxy. Messages are sent and received over WebSockets according to the [IPython messaging specification](http://ipython.org/ipython-doc/stable/development/messaging.html).
+WebSockets and SockJS are used to provide a continuous two-way connection with the kernel running the computation, using the server as a proxy. Messages are sent and received over WebSockets according to the [IPython messaging specification](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
 
-[SockJS](https://github.com/sockjs/) is used to provide the functionality of WebSockets to browsers that do not support the WebSocket API. Because only one SockJS connection may be open on a single page at any given time, we implement a multiplexing SockJS object that can send a message to any kernel and stream that the page is connected to. Each SockJS message is prepended with `[kernel ID]/[stream name],` to tell the server where to send the message.
+[SockJS](https://github.com/sockjs/) is used to provide the functionality of WebSockets to browsers that do not support the WebSocket API. Because only one SockJS connection may be open on a single page at any given time, we implement a multiplexing SockJS object that can send a message to any kernel and stream that the page is connected to. Each SockJS message is prepended with `[kernel ID]/[stream name],` to tell the server where to send the message. See [here](session.md) for an example.
 
 # API
 
@@ -45,17 +52,40 @@ WebSockets and SockJS are used to provide a continuous two-way connection with t
 
     POST /kernel
 
-#### Response
+#### Parameters
 
 The `accepted_tos` parameter is only required if the server requires a terms of service agreement.  Make sure the user accepted the terms of service before setting the parameter to `"true"`.
 
 ```json
 {
-    "kernel_id": "[kernel ID]",
-    "ws_url": "ws://sagecell.sagemath.org/",
     "accepted_tos": "true"
 }
 ```
+
+#### Response
+
+```json
+{
+    "id": "[kernel ID]",
+    "ws_url": "ws://sagecell.sagemath.org/"
+}
+```
+
+### Start WebSocket connection
+
+    GET <ws_url>/kernel/<kernel_id>/iopub
+    GET <ws_url>/kernel/<kernel_id>/shell
+
+#### Query Parameters
+
+| Component | Source | Definition | Example Value |
+| :--- | :--- | :--- | :--- |
+| **`ws_url`** | `POST /kernel` (Response) | The base server address. | `wss://sagecell.sagemath.org` |
+| **`kernel_id`** | `POST /kernel` (Response) | UUID of the Python process running on the server. | `58b66029-af1c-4664-a6ff-c3e32271712c` |
+
+### Start SockJS connection
+
+    GET /sockjs
 
 ### Create a permalink
 
@@ -93,7 +123,12 @@ This URL can be used as a simplified version of the API. Instead of sending and 
 
 #### Parameters
 
-**code**: the code to be executed
+```json
+{
+    "code": "[the code to be executed]",
+    "stdout": "[output string]"
+}
+```
 
 #### Response
 
@@ -106,7 +141,7 @@ This URL can be used as a simplified version of the API. Instead of sending and 
 
 ## Kernel messages
 
-Most of the messages sent between the client and the kernel over WebSockets or SockJS are the same as described in the [IPython messaging documentation](http://ipython.org/ipython-doc/stable/development/messaging.html). The messages described here are special messages produced by the Sage Cell.
+Most of the messages sent between the client and the kernel over WebSockets or SockJS are the same as described in the [Jupyter/IPython messaging documentation](http://ipython.org/ipython-doc/stable/development/messaging.html). The messages described here are special messages produced by the Sage Cell.
 
 ### Prepare interact
 
@@ -154,16 +189,19 @@ POST request `http://sagecell.sagemath.org/kernel`
 That will return a JSON dictionary that looks like this:
 
 ```json
-{"kernel_id": "ce20fada-f757-45e5-92fa-05e952dd9c87", "ws_url": "ws://sagecell.sagemath.org/"}
+{
+    "id": "ce20fada-f757-45e5-92fa-05e952dd9c87",
+    "ws_url": "ws://sagecell.sagemath.org/"
+}
 ```
 
 Then open up WebSocket channels to the two URLs:
 
-Shell channel: <ws_url>/kernel/<kernel_id>/shell
+Shell channel: `<ws_url>/kernel/<kernel_id>/shell`
 
-IOPub channel: <ws_url>/kernel/<kernel_id>/iopub
+IOPub channel: `<ws_url>/kernel/<kernel_id>/iopub`
 
-Then send an execute_request message on the shell channel, following the [IPython format](http://ipython.org/ipython-doc/dev/development/messaging.html).
+Then send an execute_request message on the shell channel, following the [Jupyter/IPython format](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
 
 Then listen on the IOPub channel for messages until you get a kernel status idle message, and also listen on the shell channel until you get an execute_reply message.
 
