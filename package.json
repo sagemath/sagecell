@@ -33,7 +33,7 @@
     "sockjs-client": "^1.5.2",
     "source-map-loader": "^3.0.1",
     "ts-loader": "^9.2.6",
-    "underscore": "^1.13.2",
+    "underscore": "^1.13.8",
     "webpack-jquery-ui": "^2.0.1"
   },
   "devDependencies": {
