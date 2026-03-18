@@ -729,9 +729,9 @@ def install_sage():
     shutil.move("github/sage", ".")
     os.chdir("sage")
     log.info("compiling Sage")
-    check_call("./bootstrap")
-    check_call("./configure")
-    check_call("make")
+    check_call("make configure")
+    check_call("./configure --disable-editable")
+    check_call("make build")
     communicate("./sage", r"""
         # make appropriate octave directory
         octave.eval('1+2')
