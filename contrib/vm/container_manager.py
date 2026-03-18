@@ -246,6 +246,7 @@ system_packages = [
 'python3-requests',
 'rsyslog-relp',
 'ssh',
+'sysstat',
 'texlive',
 'tk-dev',
 'tmpreaper',
