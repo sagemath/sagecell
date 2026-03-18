@@ -861,7 +861,7 @@ class SCLXC(object):
             self.inside(communicate, "/usr/bin/debconf-set-selections",
                 "tmpreaper tmpreaper/readsecurity note")
             log.info("installing packages")
-            self.inside("apt install -y " + " ".join(system_packages))
+            self.inside("apt install -y --no-install-recommends " + " ".join(system_packages))
             # Relies on perl, so has to be after package installation
             self.inside("/usr/sbin/deluser ubuntu --remove-home")
             log.info("installing R packages")
