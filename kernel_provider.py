@@ -270,6 +270,7 @@ def setup_sage():
     pylab.show = partial(mp_show, savefig=pylab.savefig)
     import matplotlib.pyplot
     matplotlib.pyplot.show = partial(mp_show, savefig=matplotlib.pyplot.savefig)
+    matplotlib.set_loglevel("info")
 
     # The first plot takes about 2 seconds to generate (presumably
     # because lots of things, like matplotlib, are imported).  We plot
