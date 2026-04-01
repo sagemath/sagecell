@@ -154,7 +154,7 @@ def kernels_topic():
 def disk_topics():
     if shutil.which("iostat") is None:
         return ["iostat not installed"]
-    output = try_output("iostat -dx 1 1")
+    output = try_output("iostat -dxy 1 1")
     lines = output.splitlines()
     header = None
     devices = []
