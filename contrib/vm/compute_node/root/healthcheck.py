@@ -113,14 +113,14 @@ def oom_topic():
         f"journalctl -k --since '{OOM_LOOKBACK_MINUTES} minutes ago' --no-pager -o cat --grep '{OOM_GREP}'"
     )
     total = 0
-    worker = 0
+    worker_events = 0
     for line in output.splitlines():
         if not any(pattern in line for pattern in OOM_PATTERNS):
             continue
         total += 1
         if any(pattern in line for pattern in worker_patterns):
-            worker += 1
-    return f"OOM:{total}/{worker}"
+            worker_events += 1
+    return f"OOM:{total}/{worker_events}"
 
 
 def format_float(value, width, decimals):
