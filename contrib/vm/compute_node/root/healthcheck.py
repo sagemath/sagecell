@@ -190,7 +190,7 @@ def disk_topics():
         r_await = parse_metric(row, "r_await")
         w_await = parse_metric(row, "w_await")
         topics.append(
-            "{}:{}%% {}q {}r {}w".format(
+            "{}:{}% {}q {}r {}w".format(
                 row["Device"],
                 format_integer(util, 3),
                 format_float(aqu, 3, 1),
