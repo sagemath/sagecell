@@ -25,6 +25,7 @@ var stop = function (event) {
     event.stopPropagation();
 };
 var close = null;
+var kernelLimitAlertShown = false;
 
 var jmolCounter = 0;
 
@@ -113,11 +114,32 @@ export function Session(outputDiv, language, interact_vals, k, linked) {
             }
         };
 
-        this.kernel.start({
-            CellSessionID: utils.cellSessionID(),
-            timeout: linked ? "inf" : 0,
-            accepted_tos: "true",
-        });
+        this.kernel.start(
+            {
+                CellSessionID: utils.cellSessionID(),
+                timeout: linked ? "inf" : 0,
+                accepted_tos: "true",
+            },
+            function () {
+                kernelLimitAlertShown = false;
+            },
+            function (xhr) {
+                var response = {};
+                if (xhr.status !== 429) {
+                    return;
+                }
+                try {
+                    response = JSON.parse(xhr.responseText);
+                } catch (e) {}
+                if (
+                    response.error === "too_many_kernels_for_cell_session" &&
+                    !kernelLimitAlertShown
+                ) {
+                    kernelLimitAlertShown = true;
+                    alert(response.message);
+                }
+            }
+        );
     }
     var pl_button, pl_box, pl_zlink, pl_qlink, pl_qrcode, pl_chkbox;
     this.outputDiv.find(".sagecell_output").prepend(

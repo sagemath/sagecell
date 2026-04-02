@@ -17,6 +17,7 @@ import sockjs.tornado
 from zmq.utils import jsonapi
 
 from log import StatsMessage, logger, stats_logger
+from kernel_dealer import SessionKernelLimitExceeded
 
 
 try:
@@ -150,10 +151,26 @@ class KernelHandler(tornado.web.RequestHandler):
             ws_url = "%s://%s/" % (proto, host)
             timeout = min(float(self.get_argument("timeout", 0)),
                           config.get("max_timeout"))
-            kernel = await self.application.kernel_dealer.get_kernel(
-                rlimits=config.get("provider_settings")["preforked_rlimits"],
-                lifespan=config.get("max_lifespan"),
-                timeout=timeout)
+            cell_session_id = self.get_argument('CellSessionID', None)
+            try:
+                kernel = await self.application.kernel_dealer.get_kernel(
+                    rlimits=config.get("provider_settings")["preforked_rlimits"],
+                    lifespan=config.get("max_lifespan"),
+                    timeout=timeout,
+                    cell_session_id=cell_session_id)
+            except SessionKernelLimitExceeded as e:
+                logger.warning("kernel limit reached for session %s",
+                               e.cell_session_id)
+                self.set_status(429)
+                self.finish(self.permissions({
+                    "error": "too_many_kernels_for_cell_session",
+                    "message": (
+                        "This page requested too many simultaneous kernels. "
+                        "Please wait for existing computations to finish, "
+                        "reload the page, or contact the author of this "
+                        "page for assistance."),
+                }))
+                return
             kernel.referer=self.request.headers.get('Referer', '')
             kernel.remote_ip=self.request.remote_ip
             data = {"ws_url": ws_url, "id": kernel.id}

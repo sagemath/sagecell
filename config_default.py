@@ -38,6 +38,8 @@ first_beat = 1.0
 max_timeout = 60 * 15
 # Even an actively used kernel will be killed after this time
 max_lifespan = 60 * 30
+# Max simultaneous kernels per CellSessionID tracked by the dealer.
+max_kernels_per_cell_session = 2
 
 # Recommended settings for kernel providers
 provider_settings = {
