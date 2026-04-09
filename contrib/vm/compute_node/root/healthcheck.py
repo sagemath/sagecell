@@ -77,14 +77,12 @@ def try_output(command):
 
 
 def human_memory_from_kib(value_kib):
-    value = float(value_kib) * 1024
-    for unit in ("B", "K", "M", "G", "T", "P"):
+    value = float(value_kib) / 1024
+    for unit in ("M", "G", "T", "P"):
         if value < 1024 or unit == "P":
-            if unit in ("B", "K"):
-                return f"{int(round(value)):4d}{unit}"
-            return f"{value:4.1f}{unit}"
+            return f"{value:5.1f}{unit}"
         value /= 1024
-    return f"{value:4.1f}P"
+    return f"{value:5.1f}P"
 
 
 def memory_topic():
@@ -120,19 +118,28 @@ def oom_topic():
         total += 1
         if any(pattern in line for pattern in worker_patterns):
             worker_events += 1
-    return f"OOM:{total}/{worker_events}"
+    return "OOM:{}/{}".format(
+        format_integer(total, 1),
+        format_integer(worker_events, 1),
+    )
 
 
 def format_float(value, width, decimals):
     if value is None:
         return "?" * width
-    return f"{value:{width}.{decimals}f}"
+    shown = f"{value:{width}.{decimals}f}"
+    if float(shown) == 0:
+        return f"{'-':>{width}}"
+    return shown
 
 
 def format_integer(value, width):
     if value is None:
         return "?" * width
-    return f"{int(round(value)):>{width}d}"
+    shown = int(round(value))
+    if shown == 0:
+        return f"{'-':>{width}}"
+    return f"{shown:>{width}d}"
 
 
 def kernels_topic():
@@ -205,7 +212,7 @@ def status_line():
     """Return a compact one-line health snapshot.
 
     Example:
-    2026-04-01 03:39:25.925167  K: 2/ 9  L:1.06 0.74 0.84  M: 1.4G OOM:0/0  sda:  1%% 0.1q  6r 13w  sdb:  3%% 0.3q  2r  2w
+    2026-04-01 03:39:25.925167  K: 2/ 9  L: 1.1  0.7  0.8  M:  1.4G  OOM:-/-  sda:  1% 0.1q  6r 13w  sdb:  3% 0.3q  2r  2w
 
     Topics:
     timestamp  current local time
@@ -220,9 +227,9 @@ def status_line():
         timestamp(),
         kernels_topic(),
         "L:{} {} {}".format(
-            format_float(load[0], 4, 2),
-            format_float(load[1], 4, 2),
-            format_float(load[2], 4, 2),
+            format_float(load[0], 4, 1),
+            format_float(load[1], 4, 1),
+            format_float(load[2], 4, 1),
         ),
         memory_topic(),
         oom_topic(),
