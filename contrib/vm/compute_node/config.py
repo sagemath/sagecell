@@ -8,7 +8,7 @@ db_config = {"uri": "http://130.211.113.153"}
 requires_tos = False
 
 pid_file = '/home/{server}/sagecell.pid'
-max_kernels_per_cell_session = 10
+max_kernels_per_cell_session = 5
 
 config_default.provider_settings.update({
     "max_kernels": 80,
