@@ -91,6 +91,8 @@ iptables -A OUTPUT -p udp --dport 67:68 --sport 67:68 -j ACCEPT
 iptables -A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
 # Outbound Network Time Protocol (NTP) requests
 iptables -A OUTPUT -p udp --dport 123 --sport 123 -j ACCEPT
+# Outbound RELP logging to the host bridge address
+iptables -A OUTPUT -p tcp -d 10.0.3.1 --dport 12514 -j ACCEPT
 
 # Incoming connections to SageCell server for computations
 iptables -A INPUT -p tcp --dport 8888 -j ACCEPT
