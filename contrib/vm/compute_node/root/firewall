@@ -24,6 +24,11 @@ ipset add allowed 193.144.0.0/14    # ESA - Villafranca Satellite Tracking Stati
 ipset add allowed 88.131.0.0/16     # European Centre for Disease Prevention and Control
 ipset add allowed 151.101.0.0/16    # Fastly, PyPi.org
 
+ipset add allowed 13.225.47.64      # Geogebra
+ipset add allowed 13.225.47.107
+ipset add allowed 13.225.47.109
+ipset add allowed 13.225.47.122
+
 ipset add allowed 140.82.112.0/20   # GitHub
 ipset add allowed 185.199.108.0/22
 
