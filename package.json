@@ -21,6 +21,7 @@
   "license": "SEE LICENSE IN LICENSE.txt",
   "dependencies": {
     "codemirror": "^5.65.1",
+    "codemirror-lang-macaulay2": "^0.3.0",
     "domready": "^1.0.8",
     "es6-promise": "^4.2.8",
     "jquery": "^3.6.0",

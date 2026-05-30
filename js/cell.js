@@ -26,6 +26,7 @@ sagecell.modes = {
     sage: "python",
     python: "python",
     html: "htmlmixed",
+    macaulay2: "macaulay2",
     r: "r",
 };
 

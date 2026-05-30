@@ -23,6 +23,7 @@ import "codemirror/mode/javascript/javascript";
 import "codemirror/mode/python/python";
 import "codemirror/mode/r/r";
 import "codemirror/mode/xml/xml";
+import "codemirror-lang-macaulay2/legacy";;
 
 var ce = utils.createElement;
 
