@@ -758,6 +758,9 @@ def install_packages():
     for package in python_packages:
         # Many packages may downgrade numpy, so we force it to be at the Sage version
         check_call(f"./sage -pip install numpy=={numpy_ver} {package}")
+    # rpy2-rinterface 3.6.6 requires R >= 4.5; Ubuntu Noble provides R 4.3.
+    check_call("./sage -pip install --no-deps rpy2-rinterface==3.6.5")
+    check_call("./sage -c 'import rpy2.robjects'")
     os.chdir("..")
 
 
