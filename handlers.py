@@ -36,6 +36,15 @@ import misc
 config = misc.Config()
 
 
+def _complete_message_header(session, msg):
+    """Add required protocol fields omitted by legacy SageCell clients."""
+    header = msg["header"]
+    if "date" not in header or "version" not in header:
+        defaults = session.msg_header(header["msg_type"])
+        header.setdefault("date", defaults["date"])
+        header.setdefault("version", defaults["version"])
+
+
 class RootHandler(tornado.web.RequestHandler):
     """
     Root URL request handler.
@@ -223,6 +232,7 @@ class Completer(object):
         mode = content.get("mode", "sage")
         if mode in ("sage", "python"):
             self.waiting[msg["header"]["msg_id"]] = addr
+            _complete_message_header(self.kernel.session, msg)
             self.kernel.session.send(self.kernel.channels["shell"], msg)
             return
         match = Completer.name_pattern.search(
@@ -507,6 +517,7 @@ class ZMQChannelsHandler(object):
             kernel.executing += 1
             logger.debug("increased execution counter for %s to %s",
                 kernel.id, kernel.executing)
+        _complete_message_header(kernel.session, msg)
         kernel.session.send(kernel.channels["shell"], msg)
 
 
