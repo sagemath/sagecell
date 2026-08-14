@@ -255,9 +255,12 @@ system_packages = [
 'wget',
 # R packages
 'r-cran-desolve',
+'r-cran-flextable',
+'r-cran-formattable',
 'r-cran-ggally',
 'r-cran-ggeffects',
 'r-cran-ggplot2',
+'r-cran-glmmtmb',
 'r-cran-lazyeval',
 'r-cran-pracma',
 'r-cran-reticulate',
@@ -269,10 +272,7 @@ system_packages = [
 
 # R packages that are not available as system ones
 R_packages = [
-"flextable",
-"formattable",
 "ggformula",
-"glmmTMB",
 "gt",
 "huxtable",
 "mosaic",
