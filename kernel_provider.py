@@ -16,11 +16,23 @@ import time
 import uuid
 
 from ipykernel.kernelapp import IPKernelApp
+from traitlets.config.loader import Config
 import zmq
 
 import kernel_init
 import log
 logger = log.provider_logger.getChild(str(os.getpid()))
+
+
+def kernel_config(ip):
+    """Return configuration shared by SageMathCell's disposable kernels."""
+    config = Config()
+    # All kernels run under one worker account. Persistent IPython history
+    # would mix unrelated users' inputs and make every kernel write to the
+    # same SQLite database.
+    config.HistoryManager.enabled = False
+    config.IPKernelApp.ip = ip
+    return config
 
 
 class KernelProcess(Process):
@@ -30,12 +42,13 @@ class KernelProcess(Process):
     Configures a kernel process and does its best at cleaning up.
     """
     
-    def __init__(self, id, rlimits, dir, waiter_port):
+    def __init__(self, id, rlimits, dir, waiter_port, ip):
         super(KernelProcess, self).__init__()
         self.id = id
         self.rlimits = rlimits
         self.dir = dir
         self.waiter_port = waiter_port
+        self.ip = ip
 
     def run(self):
         global logger
@@ -51,9 +64,7 @@ class KernelProcess(Process):
             if e.errno != errno.EEXIST:
                 raise
         os.chdir(dir)
-        #config = traitlets.config.loader.Config({"ip": self.ip})
-        #config.HistoryManager.enabled = False
-        app = IPKernelApp.instance(log=logger)
+        app = IPKernelApp.instance(log=logger, config=kernel_config(self.ip))
         from namespace import InstrumentedNamespace
         app.user_ns = InstrumentedNamespace()
         app.initialize([])  # Redirects stdout/stderr
@@ -95,9 +106,10 @@ class KernelProvider(object):
     Kernel Provider handles compute kernels on the worker side.
     """
     
-    def __init__(self, dealer_address, dir):
+    def __init__(self, dealer_address, dir, ip):
         self.is_active = False
         self.dir = dir
+        self.ip = ip
         try:
             os.mkdir(dir)
             logger.warning("created parent directory for kernels, "
@@ -144,7 +156,8 @@ class KernelProvider(object):
         """
         logger.debug("fork with rlimits %s", rlimits)
         id = str(uuid.uuid4())
-        kernel = KernelProcess(id, rlimits, self.dir, self.waiter_port)
+        kernel = KernelProcess(
+            id, rlimits, self.dir, self.waiter_port, self.ip)
         kernel.start()
         self.kernels[id] = kernel
         return id
@@ -286,6 +299,8 @@ if __name__ == "__main__":
         description="Launch a kernel provider for SageMathCell")
     parser.add_argument("--address",
         help="address of the kernel dealer (defaults to $SSH_CLIENT)")
+    parser.add_argument("--ip", default="127.0.0.1",
+        help="IP address on which kernels listen")
     parser.add_argument("port", type=int,
         help="port of the kernel dealer")
     parser.add_argument("dir",
@@ -297,7 +312,7 @@ if __name__ == "__main__":
     if ":" in address:
         address = "[{}]".format(address)
     address = "tcp://{}:{}".format(address, args.port)
-    provider = KernelProvider(address, args.dir)
+    provider = KernelProvider(address, args.dir, args.ip)
 
     def signal_handler(signum, frame):
         logger.info("received %s, shutting down", signum)

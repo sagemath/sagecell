@@ -40,8 +40,9 @@ def start_providers(port, providers, dir):
         client = paramiko.SSHClient()
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(config["host"], username=config["username"])
-        command = "{} '{}/kernel_provider.py' {} '{}'".format(
-            config["python"], config["location"], port, dir)
+        ip = socket.gethostbyname(config["host"])
+        command = "{} '{}/kernel_provider.py' --ip '{}' {} '{}'".format(
+            config["python"], config["location"], ip, port, dir)
         logger.debug("starting kernel provider: %s", command)
         client.exec_command(command)
         client.close()
