@@ -44,14 +44,6 @@ export function Session(outputDiv, language, interact_vals, k, linked) {
     IPython.notification_widget = { set_message: console.debug };
 
     this.interacts = [];
-    if (window.addEventListener) {
-        // Prevent Esc key from closing WebSockets and XMLHttpRequests in Firefox
-        window.addEventListener("keydown", function (event) {
-            if (event.keyCode === 27) {
-                event.preventDefault();
-            }
-        });
-    }
     /* Always use sockjs, until we can get websockets working reliably.
      * Right now, if we have a very short computation (like 1+1), there is some sort of
      * race condition where the iopub handler does not get established before
