@@ -15,6 +15,7 @@ import "codemirror/addon/fold/xml-fold";
 import "codemirror/addon/fold/comment-fold";
 import "codemirror/addon/fold/indent-fold";
 import "codemirror/addon/hint/show-hint";
+import "codemirror/addon/mode/simple";
 import "codemirror/addon/runmode/runmode";
 import "codemirror/addon/runmode/colorize";
 import "codemirror/mode/css/css";
@@ -23,7 +24,7 @@ import "codemirror/mode/javascript/javascript";
 import "codemirror/mode/python/python";
 import "codemirror/mode/r/r";
 import "codemirror/mode/xml/xml";
-import "codemirror-lang-macaulay2/legacy";;
+import "codemirror-lang-macaulay2/legacy";
 
 var ce = utils.createElement;
 
