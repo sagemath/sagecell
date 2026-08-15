@@ -12,6 +12,15 @@ import misc
 config = misc.Config()
 
 
+class SessionKernelLimitExceeded(Exception):
+    def __init__(self, cell_session_id, limit):
+        self.cell_session_id = cell_session_id
+        self.limit = limit
+        super(SessionKernelLimitExceeded, self).__init__(
+            "CellSessionID %s already holds %s kernels" % (
+                cell_session_id, limit))
+
+
 class KernelConnection(object):
     """
     Kernel from the dealer point of view.
@@ -19,10 +28,12 @@ class KernelConnection(object):
     Handles connections over ZMQ sockets to compute kernels.
     """
     
-    def __init__(self, dealer, id, connection, lifespan, timeout):
+    def __init__(self, dealer, id, connection, lifespan, timeout,
+                 cell_session_id=None):
         self._on_stop = None
         self._dealer = dealer
         self.id = id
+        self.cell_session_id = cell_session_id
         self.executing = 0
         self.status = "starting"
         now = time.time()
@@ -126,6 +137,7 @@ class KernelDealer(object):
         self._get_queue = []
         self._kernel_origins = {}   # id: provider address
         self._kernels = {}  # id: KernelConnection
+        self._session_kernel_counts = {}  # CellSessionID: count
         context = zmq.Context.instance()
         context.IPV6 = 1
         socket = context.socket(zmq.ROUTER)
@@ -171,21 +183,47 @@ class KernelDealer(object):
                     f.set_result(msg)
                     break
             
-    async def get_kernel(self,
-            rlimits={}, lifespan=float("inf"), timeout=float("inf")):
+    def _reserve_session_kernel(self, cell_session_id):
+        if cell_session_id is None:
+            return
+        limit = config.get("max_kernels_per_cell_session")
+        count = self._session_kernel_counts.get(cell_session_id, 0)
+        if count >= limit:
+            raise SessionKernelLimitExceeded(cell_session_id, limit)
+        self._session_kernel_counts[cell_session_id] = count + 1
+
+    def _release_session_kernel(self, cell_session_id):
+        if cell_session_id is None:
+            return
+        count = self._session_kernel_counts.get(cell_session_id, 0) - 1
+        if count > 0:
+            self._session_kernel_counts[cell_session_id] = count
+            logger.debug("kernel count for session %s decreased to %d",
+                cell_session_id, count)
+        else:
+            self._session_kernel_counts.pop(cell_session_id, None)
+
+    async def get_kernel(self, rlimits={}, lifespan=float("inf"),
+            timeout=float("inf"), cell_session_id=None):
+        self._reserve_session_kernel(cell_session_id)
         f = asyncio.get_running_loop().create_future()
-        self._expected_kernels.append((rlimits, f))
-        self._get_queue.append(rlimits)
-        self._try_to_get()
-        d = await f
-        d.pop("rlimits")
-        d["lifespan"] = lifespan
-        d["timeout"] = timeout
-        kernel = KernelConnection(self, **d)
-        self._kernels[kernel.id] = kernel
-        logger.debug("tracking %d kernels", len(self._kernels))
-        logger.info("dealing kernel %s", kernel.id)
-        return kernel
+        try:
+            self._expected_kernels.append((rlimits, f))
+            self._get_queue.append(rlimits)
+            self._try_to_get()
+            d = await f
+            d.pop("rlimits")
+            d["lifespan"] = lifespan
+            d["timeout"] = timeout
+            d["cell_session_id"] = cell_session_id
+            kernel = KernelConnection(self, **d)
+            self._kernels[kernel.id] = kernel
+            logger.debug("tracking %d kernels", len(self._kernels))
+            logger.info("dealing kernel %s", kernel.id)
+            return kernel
+        except BaseException:
+            self._release_session_kernel(cell_session_id)
+            raise
         
     def kernel(self, id):
         return self._kernels[id]
@@ -207,4 +245,5 @@ class KernelDealer(object):
         addr = self._kernel_origins.pop(id)
         self._stream.send(addr, zmq.SNDMORE)
         self._stream.send_json(["stop", id])
-        self._kernels.pop(id)
+        kernel = self._kernels.pop(id)
+        self._release_session_kernel(kernel.cell_session_id)

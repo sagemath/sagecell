@@ -125,6 +125,7 @@ system_packages = [
 'libssl-dev',
 'libsuitesparse-dev',
 'libsymmetrica2-dev',
+'libtirpc-dev',
 'libz-dev',
 'libzmq3-dev',
 'libzn-poly-dev',
@@ -146,6 +147,7 @@ system_packages = [
 'planarity',
 'ppl-dev',
 'python3',
+'python3-setuptools',
 'python3-venv',
 'r-base-dev',
 'r-cran-lattice',
@@ -246,6 +248,7 @@ system_packages = [
 'python3-requests',
 'rsyslog-relp',
 'ssh',
+'sysstat',
 'texlive',
 'tk-dev',
 'tmpreaper',
@@ -254,9 +257,12 @@ system_packages = [
 'wget',
 # R packages
 'r-cran-desolve',
+'r-cran-flextable',
+'r-cran-formattable',
 'r-cran-ggally',
 'r-cran-ggeffects',
 'r-cran-ggplot2',
+'r-cran-glmmtmb',
 'r-cran-lazyeval',
 'r-cran-pracma',
 'r-cran-reticulate',
@@ -268,19 +274,12 @@ system_packages = [
 
 # R packages that are not available as system ones
 R_packages = [
-"flextable",
-"formattable",
 "ggformula",
-"glmmTMB",
 "gt",
-"gtExtras",
 "huxtable",
-"kableExtra",
 "mosaic",
-"pixiedust",
+"openintro",
 "reactable",
-"reactablefmtr",
-"swirl",
 ]
 
 # Optional Sage packages to be installed
@@ -342,6 +341,7 @@ python_packages = [
 "cartopy",
 "chart_studio",
 "colorlog",
+"control",
 "covid-daily",
 "cramjam",
 "cufflinks",
@@ -396,7 +396,6 @@ python_packages = [
 "oct2py",
 "openai",
 "openpyxl",
-"--no-build-isolation git+https://github.com/mkauers/ore_algebra.git",
 "pandas",
 "pandas-profiling",
 "patsy",
@@ -405,7 +404,6 @@ python_packages = [
 "polars",
 "pretty_html_table",
 "pydot",
-"pyforest",
 "pygnuplot",
 "PyPDF4",
 "pyproj",
@@ -425,6 +423,7 @@ python_packages = [
 "selenium",
 "Shapely",
 "SimPy",
+"slycot",
 "snappy",
 "spacy",
 "SpeechRecognition",
@@ -440,13 +439,11 @@ python_packages = [
 "torch",
 "transformers",
 "tweepy",
-"twint",
 "vega_datasets",
 "WeasyPrint",
 "wordcloud",
 "xarray",
 "xlrd",
-"moss", # This one only complains about missing dependencies
 ]
 
 
@@ -735,9 +732,9 @@ def install_sage():
     shutil.move("github/sage", ".")
     os.chdir("sage")
     log.info("compiling Sage")
-    check_call("./bootstrap")
-    check_call("./configure")
-    check_call("make")
+    check_call("make configure")
+    check_call("./configure --disable-editable")
+    check_call("make build")
     communicate("./sage", r"""
         # make appropriate octave directory
         octave.eval('1+2')
@@ -753,8 +750,7 @@ def install_packages():
     become_server()
     os.chdir("sage")
     log.info("installing optional Sage packages")
-    for package in sage_optional_packages:
-        check_call("./sage -i -y {}".format(package))
+    check_call("./sage -i -y {}".format(" ".join(sage_optional_packages)))
     log.info("installing pip packages")
     check_call("./sage -pip install --upgrade pip")
     numpy_ver = check_output("./sage -c 'import numpy; print(numpy.__version__)'").strip()
@@ -762,6 +758,9 @@ def install_packages():
     for package in python_packages:
         # Many packages may downgrade numpy, so we force it to be at the Sage version
         check_call(f"./sage -pip install numpy=={numpy_ver} {package}")
+    # rpy2-rinterface 3.6.6 requires R >= 4.5; Ubuntu Noble provides R 4.3.
+    check_call("./sage -pip install --no-deps rpy2-rinterface==3.6.5")
+    check_call("./sage -c 'import rpy2.robjects'")
     os.chdir("..")
 
 
@@ -868,7 +867,7 @@ class SCLXC(object):
             self.inside(communicate, "/usr/bin/debconf-set-selections",
                 "tmpreaper tmpreaper/readsecurity note")
             log.info("installing packages")
-            self.inside("apt install -y " + " ".join(system_packages))
+            self.inside("apt install -y --no-install-recommends " + " ".join(system_packages))
             # Relies on perl, so has to be after package installation
             self.inside("/usr/sbin/deluser ubuntu --remove-home")
             log.info("installing R packages")

@@ -23,7 +23,7 @@ while retries:
     try:
         r = requests.post(sys.argv[1] + '/service',
                           data={"code": code, "accepted_tos": "true"},
-                          timeout=5)
+                          timeout=15)
         reply = r.json()
         # Every few hours we have a request that comes back as executed, but the
         # stdout is not in the dictionary. It seems that the compute message

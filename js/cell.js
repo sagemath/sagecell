@@ -7,7 +7,11 @@ import domReady from "domready";
 import { initializeURLs, URLs } from "./urls";
 
 // Imports for side-effects only
-import "webpack-jquery-ui";
+import "jquery-ui/ui/widgets/accordion";
+import "jquery-ui/ui/widgets/button";
+import "jquery-ui/ui/widgets/dialog";
+import "jquery-ui/ui/widgets/menu";
+import "jquery-ui/ui/widgets/slider";
 import "jsmol";
 import "colorpicker";
 
@@ -22,6 +26,7 @@ sagecell.modes = {
     sage: "python",
     python: "python",
     html: "htmlmixed",
+    macaulay2: "macaulay2",
     r: "r",
 };
 

@@ -17,6 +17,7 @@ import sockjs.tornado
 from zmq.utils import jsonapi
 
 from log import StatsMessage, logger, stats_logger
+from kernel_dealer import SessionKernelLimitExceeded
 
 
 try:
@@ -33,6 +34,15 @@ except ImportError:
 
 import misc
 config = misc.Config()
+
+
+def _complete_message_header(session, msg):
+    """Add required protocol fields omitted by legacy SageCell clients."""
+    header = msg["header"]
+    if "date" not in header or "version" not in header:
+        defaults = session.msg_header(header["msg_type"])
+        header.setdefault("date", defaults["date"])
+        header.setdefault("version", defaults["version"])
 
 
 class RootHandler(tornado.web.RequestHandler):
@@ -150,10 +160,26 @@ class KernelHandler(tornado.web.RequestHandler):
             ws_url = "%s://%s/" % (proto, host)
             timeout = min(float(self.get_argument("timeout", 0)),
                           config.get("max_timeout"))
-            kernel = await self.application.kernel_dealer.get_kernel(
-                rlimits=config.get("provider_settings")["preforked_rlimits"],
-                lifespan=config.get("max_lifespan"),
-                timeout=timeout)
+            cell_session_id = self.get_argument('CellSessionID', None)
+            try:
+                kernel = await self.application.kernel_dealer.get_kernel(
+                    rlimits=config.get("provider_settings")["preforked_rlimits"],
+                    lifespan=config.get("max_lifespan"),
+                    timeout=timeout,
+                    cell_session_id=cell_session_id)
+            except SessionKernelLimitExceeded as e:
+                logger.warning("kernel limit reached for session %s",
+                               e.cell_session_id)
+                self.set_status(429)
+                self.finish(self.permissions({
+                    "error": "too_many_kernels_for_cell_session",
+                    "message": (
+                        "This page requested too many simultaneous kernels. "
+                        "Please wait for existing computations to finish, "
+                        "reload the page, or contact the author of this "
+                        "page for assistance."),
+                }))
+                return
             kernel.referer=self.request.headers.get('Referer', '')
             kernel.remote_ip=self.request.remote_ip
             data = {"ws_url": ws_url, "id": kernel.id}
@@ -206,6 +232,7 @@ class Completer(object):
         mode = content.get("mode", "sage")
         if mode in ("sage", "python"):
             self.waiting[msg["header"]["msg_id"]] = addr
+            _complete_message_header(self.kernel.session, msg)
             self.kernel.session.send(self.kernel.channels["shell"], msg)
             return
         match = Completer.name_pattern.search(
@@ -490,6 +517,7 @@ class ZMQChannelsHandler(object):
             kernel.executing += 1
             logger.debug("increased execution counter for %s to %s",
                 kernel.id, kernel.executing)
+        _complete_message_header(kernel.session, msg)
         kernel.session.send(kernel.channels["shell"], msg)
 
 

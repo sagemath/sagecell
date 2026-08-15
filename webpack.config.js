@@ -40,6 +40,7 @@ module.exports = {
         new webpack.ProvidePlugin({
             jQuery: "jquery",
             $: "jquery",
+            CodeMirror: "codemirror/lib/codemirror",
             // Normally the following lines are used to make sure that jQuery
             // cannot "leak" into the outside environment. However, since
             // we *want* to initialize the global jQuery object, we omit them.
