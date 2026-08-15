@@ -31,9 +31,9 @@ These methods of sending requests are encapsulated in the JavaScript function `s
 
 ## WebSockets and SockJS
 
-WebSockets and SockJS are used to provide a continuous two-way connection with the kernel running the computation, using the server as a proxy. Messages are sent and received over WebSockets according to the [IPython messaging specification](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
+WebSockets and SockJS are used to provide a continuous two-way connection with the kernel running the computation, using the server as a proxy. Messages are sent and received according to the [Jupyter messaging specification](https://jupyter-client.readthedocs.io/en/latest/messaging.html). The Shell and IOPub channels are multiplexed over one connection; each message identifies its channel in a top-level `channel` field.
 
-[SockJS](https://github.com/sockjs/) is used to provide the functionality of WebSockets to browsers that do not support the WebSocket API. Because only one SockJS connection may be open on a single page at any given time, we implement a multiplexing SockJS object that can send a message to any kernel and stream that the page is connected to. Each SockJS message is prepended with `[kernel ID]/[stream name],` to tell the server where to send the message. See [here](session.md) for an example.
+[SockJS](https://github.com/sockjs/) is used to provide the functionality of WebSockets to browsers that do not support the WebSocket API. Because only one SockJS connection may be open on a single page at any given time, we implement a multiplexing SockJS object that can send a message to any kernel that the page is connected to. Each SockJS message is prepended with `[kernel ID]/channels,` to tell the server where to send the message. See [here](session.md) for an example.
 
 # API
 
@@ -71,21 +71,22 @@ The `accepted_tos` parameter is only required if the server requires a terms of 
 }
 ```
 
-### Start WebSocket connection
+### Connect to a kernel over WebSocket
 
-    GET <ws_url>/kernel/<kernel_id>/iopub
-    GET <ws_url>/kernel/<kernel_id>/shell
+    GET <ws_url>kernel/<id>/channels
 
-#### Query Parameters
+The WebSocket connection carries both the Shell and IOPub channels.
+
+#### URL components
 
 | Component | Source | Definition | Example Value |
 | :--- | :--- | :--- | :--- |
-| **`ws_url`** | `POST /kernel` (Response) | The base server address. | `wss://sagecell.sagemath.org` |
-| **`kernel_id`** | `POST /kernel` (Response) | UUID of the Python process running on the server. | `58b66029-af1c-4664-a6ff-c3e32271712c` |
+| **`ws_url`** | `POST /kernel` response | The base WebSocket URL, including a trailing slash. | `wss://sagecell.sagemath.org/` |
+| **`id`** | `POST /kernel` response | The kernel identifier. | `58b66029-af1c-4664-a6ff-c3e32271712c` |
 
-### Start SockJS connection
+### Connect using SockJS
 
-    GET /sockjs
+A SockJS client connects to the HTTP(S) endpoint `/sockjs`. SageCell multiplexes kernels over this connection by prepending `<id>/channels,` to each message.
 
 ### Create a permalink
 
@@ -125,8 +126,7 @@ This URL can be used as a simplified version of the API. Instead of sending and 
 
 ```json
 {
-    "code": "[the code to be executed]",
-    "stdout": "[output string]"
+    "code": "[the code to be executed]"
 }
 ```
 
@@ -141,7 +141,7 @@ This URL can be used as a simplified version of the API. Instead of sending and 
 
 ## Kernel messages
 
-Most of the messages sent between the client and the kernel over WebSockets or SockJS are the same as described in the [Jupyter/IPython messaging documentation](http://ipython.org/ipython-doc/stable/development/messaging.html). The messages described here are special messages produced by the Sage Cell.
+Most of the messages sent between the client and the kernel over WebSockets or SockJS are the same as described in the [Jupyter messaging documentation](https://jupyter-client.readthedocs.io/en/latest/messaging.html). The messages described here are special messages produced by the Sage Cell.
 
 ### Prepare interact
 
@@ -195,11 +195,11 @@ That will return a JSON dictionary that looks like this:
 }
 ```
 
-Then open up WebSocket channels to the two URLs:
+Then open a WebSocket connection to:
 
-Shell channel: `<ws_url>/kernel/<kernel_id>/shell`
+`<ws_url>kernel/<id>/channels`
 
-IOPub channel: `<ws_url>/kernel/<kernel_id>/iopub`
+The Shell and IOPub channels share this connection. Set the top-level `channel` field of an outgoing message to `"shell"` or `"iopub"`; incoming messages use the same field to identify their channel.
 
 Then send an execute_request message on the shell channel, following the [Jupyter/IPython format](https://jupyter-client.readthedocs.io/en/latest/messaging.html).
 

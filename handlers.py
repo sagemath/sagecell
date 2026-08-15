@@ -130,15 +130,12 @@ class KernelHandler(tornado.web.RequestHandler):
     websocket connections for a websocket-ZMQ bridge back to
     the kernel in a JSON-compatible message.
     
-    The returned websocket url is not entirely complete, in
-    that it is the base url to be used for two different
-    websocket connections (corresponding to the shell and
-    iopub streams) of the IPython kernel. It is the
-    responsiblity of the client to request the correct URLs
-    for these websockets based on the following pattern:
-    
-    ``<ws_url>/kernel/<kernel_id>/iopub`` is the expected iopub stream url
-    ``<ws_url>/kernel/<kernel_id>/shell`` is the expected shell stream url
+    The returned websocket url is the base url for a single
+    multiplexed connection carrying the shell and iopub streams
+    of the IPython kernel. It is the responsibility of the client
+    to connect using the following pattern:
+
+    ``<ws_url>kernel/<kernel_id>/channels``
     """
     
     async def post(self, *args, **kwargs):
