@@ -12,12 +12,12 @@ The user then presses the “Evaluate” button. The client (the browser) sends 
 
 ```json
 {
-    "kernel_id": "7b3a5b89-7125-4031-b33c-cefd01c8d808",
+    "id": "7b3a5b89-7125-4031-b33c-cefd01c8d808",
     "ws_url": "ws://sagecell.sagemath.org/"
 }
 ```
 
-The client establishes a WebSocket connection to the URLs `ws://sagecell.sagemath.org/kernel/iopub` and `ws://sagecell.sagemath.org/kernel/shell`. These WebSocket connections will act as the IPython IOPub and Shell sockets in the communication with the kernel. If WebSockets are not available, a SockJS connection will be created to the URL `http://sagecell.sagemath.org/sockjs`, and all messages will be have the prefix `7b3a5b89-7125-4031-b33c-cefd01c8d808/iopub,` or `7b3a5b89-7125-4031-b33c-cefd01c8d808/shell,`.
+The client establishes a WebSocket connection to `ws://sagecell.sagemath.org/kernel/7b3a5b89-7125-4031-b33c-cefd01c8d808/channels`. This single connection carries both the IPython IOPub and Shell channels, identified by the top-level `channel` field of each message. If SockJS is used instead, the client connects to `http://sagecell.sagemath.org/sockjs`, and each multiplexed message has the prefix `7b3a5b89-7125-4031-b33c-cefd01c8d808/channels,`.
 
 The client sends the following message to initiate the computation:
 
