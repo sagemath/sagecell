@@ -16,6 +16,7 @@ all: $(all-min-js) $(embed-css) $(tos-static)
 
 build:
 	npm install
+	cp -r node_modules/jquery-ui-themes/themes/smoothness/images static/
 	-rm -r build
 	npm run build:deps
 	ln -sfn $(SAGE_VENV)/share/jupyter/nbextensions/jupyter-jsmol/jsmol static/jsmol
