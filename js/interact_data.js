@@ -51,9 +51,17 @@ ButtonBar.prototype.rendered = function (id) {
     var i = -1;
     this.buttons = $();
     var that = this;
-    for (var row = 0; row < this.control.nrows; row++) {
+    for (
+        var row = 0;
+        row < this.control.nrows && i + 1 < this.control.values;
+        row++
+    ) {
         var tr = ce("tr");
-        for (var col = 0; col < this.control.ncols; col++) {
+        for (
+            var col = 0;
+            col < this.control.ncols && i + 1 < this.control.values;
+            col++
+        ) {
             var button = ce("button", {}, [this.control.value_labels[++i]]);
             button.style.width = this.control.width;
             $(button).click(
@@ -436,9 +444,17 @@ Selector.prototype.rendered = function (id) {
         this.changing = $();
         var table = ce("table", { style: "width: auto;" });
         var i = -1;
-        for (var row = 0; row < this.control.nrows; row++) {
+        for (
+            var row = 0;
+            row < this.control.nrows && i + 1 < this.control.values;
+            row++
+        ) {
             var tr = ce("tr");
-            for (var col = 0; col < this.control.ncols; col++) {
+            for (
+                var col = 0;
+                col < this.control.ncols && i + 1 < this.control.values;
+                col++
+            ) {
                 var radio_id = id + "_" + ++i;
                 var option = ce("input", {
                     type: "radio",

@@ -296,13 +296,14 @@ def selector(values, label=None, default=None,
     - ``default`` - an object (default: 0); default value in values
       list
 
-    - ``nrows`` - an integer (default: None); if given determines
+    - ``nrows`` - a positive integer (default: None); if given determines
       the number of rows of buttons; if given buttons option below
       is set to True
 
-    - ``ncols`` - an integer (default: None); if given determines
+    - ``ncols`` - a positive integer (default: None); if given determines
       the number of columns of buttons; if given buttons option
-      below is set to True
+      below is set to True. If both ``nrows`` and ``ncols`` are given,
+      the resulting grid must be large enough for all buttons
 
     - ``width`` - an integer (default: None); if given, all
       buttons are the same width, equal to this in HTML ex
@@ -344,7 +345,9 @@ def selector(values, label=None, default=None,
         ...       print(a)
         <html>...
     """
-    selector_type = 'button' if buttons else 'list'
+    selector_type = (
+        'button' if buttons or nrows is not None or ncols is not None
+        else 'list')
     values = list(values)
     # in the old code, if a selector had a single button, then it was
     # actually a pushbutton (i.e., it would trigger an update every time
@@ -472,5 +475,3 @@ imports = {"slider": slider, "range_slider": range_slider,
            "input_box": input_box, "color_selector": color_selector,
            "selector": selector, "input_grid": input_grid,
            "text_control": text_control, "checkbox": checkbox}
-
-

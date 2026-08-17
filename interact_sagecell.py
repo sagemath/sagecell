@@ -91,6 +91,7 @@ Recursively nested interact::
 
 import inspect
 import json
+import operator
 import sys
 import uuid
 
@@ -713,6 +714,37 @@ class InputGrid(InteractControl):
         return value if isinstance(value, str) else repr(value)
 
 
+def _button_grid_layout(size, nrows=None, ncols=None):
+    """Return a grid large enough for ``size`` buttons."""
+    def positive_integer(name, value):
+        try:
+            value = operator.index(value)
+        except TypeError:
+            raise TypeError("{} must be a positive integer".format(name)) from None
+        if value <= 0:
+            raise ValueError("{} must be a positive integer".format(name))
+        return value
+
+    if nrows is not None:
+        nrows = positive_integer("nrows", nrows)
+    if ncols is not None:
+        ncols = positive_integer("ncols", ncols)
+
+    if size <= 0:
+        return 0, 0
+    if nrows is None and ncols is None:
+        return 1, size
+    if nrows is None:
+        return (size + ncols - 1) // ncols, ncols
+    if ncols is None:
+        return nrows, (size + nrows - 1) // nrows
+    if nrows * ncols < size:
+        raise ValueError(
+            "a {} by {} grid cannot hold {} buttons".format(
+                nrows, ncols, size))
+    return nrows, ncols
+
+
 class Selector(InteractControl):
     """
     A selector interact control
@@ -727,15 +759,11 @@ class Selector(InteractControl):
         (Dropdown list), with "list" being the default. If "list" is used,
         ``ncols`` and ``nrows`` will be ignored. If "radio" is used, ``width``
         will be ignored.
-    :arg int nrows: number of rows of selectable objects. If this is given, it
-        must cleanly divide the number of objects, else this value will be set
-        to 1 and ``ncols`` will be set to the number of objects. If both
-        ``ncols`` and ``nrows`` are given, ``nrows * ncols`` must equal the
-        number of objects, else ``nrows`` will be set to 1 and ``ncols`` will
-        be set to the number of objects.
-    :arg int ncols: number of columns of selectable objects. If this is given,
-        it must cleanly divide the number of objects, else this value will be
-        set to the number of objects and ``nrows`` will be set to 1.
+    :arg int nrows: positive number of rows of selectable objects. The final
+        row may contain fewer objects.
+    :arg int ncols: positive number of columns of selectable objects. The final
+        row may contain fewer objects. If both ``nrows`` and ``ncols`` are
+        given, the resulting grid must be large enough for all objects.
     :arg string width: CSS width of each button. This should be specified in
         px or em.
     :arg str label: the label of the control, ``""`` for no label, and
@@ -760,34 +788,10 @@ class Selector(InteractControl):
             self.value_labels = [str(v) for v in self.values]
         default = 0 if default is None else self.values.index(default)
         super(Selector, self).__init__(default, label, self.values.__getitem__)
-        # If not using a dropdown list,
-        # check/set rows and columns for layout.
+        # If not using a dropdown list, set rows and columns for layout.
         if self.selector_type != "list":
-            if self.nrows is None and self.ncols is None:
-                self.nrows = 1
-                self.ncols = len(self.values)
-            elif self.nrows is None:
-                self.ncols = int(self.ncols)
-                if self.ncols <= 0:
-                    self.ncols = len(values)
-                self.nrows = int(len(self.values) / self.ncols)
-                if self.ncols * self.nrows < len(self.values):
-                    self.nrows = 1
-                    self.ncols = len(self.values)
-            elif self.ncols is None:
-                self.nrows = int(self.nrows)
-                if self.nrows <= 0:
-                    self.nrows = 1
-                self.ncols = int(len(self.values) / self.nrows)
-                if self.ncols * self.nrows < len(self.values):
-                    self.nrows = 1
-                    self.ncols = len(self.values)
-            else:
-                self.ncols = int(self.ncols)
-                self.nrows = int(self.nrows)
-                if self.ncols * self.nrows != len(self.values):
-                    self.nrows = 1
-                    self.ncols = len(self.values)
+            self.nrows, self.ncols = _button_grid_layout(
+                len(self.values), self.nrows, self.ncols)
 
     def message(self):
         """
@@ -1160,15 +1164,11 @@ class ButtonBar(InteractControl):
         the user.
     :arg default: default value that should be used if no button is pushed.
         This **must** be specified.
-    :arg int ncols: number of columns of selectable buttons. If this is given,
-        it must cleanly divide the number of buttons, else this value will be
-        set to the number of buttons and ``nrows`` will be set to 1.
-    :arg int nrows: number of rows of buttons. If this is given, it must cleanly
-        divide the total number of objects, else this value will be set to 1 and
-        ``ncols`` will be set to the number of buttosn. If both ``ncols`` and
-        ``nrows`` are given, ``nrows * ncols`` must equal the number of buttons,
-        else ``nrows`` will be set to 1 and ``ncols`` will be set to the number
-        of objects.
+    :arg int ncols: positive number of columns of selectable buttons. The final
+        row may contain fewer buttons.
+    :arg int nrows: positive number of rows of selectable buttons. The final
+        row may contain fewer buttons. If both ``nrows`` and ``ncols`` are
+        given, the resulting grid must be large enough for all buttons.
     :arg string width: CSS width of each button. This should be specified in
         px or em.
     :arg str label: the label of the control, ``""`` for no label, and
@@ -1190,32 +1190,8 @@ class ButtonBar(InteractControl):
         self.values = [v[0] if isinstance(v,tuple) and
                        len(v)==2 else v for v in values]
 
-        # Check/set rows and columns for layout
-        if self.nrows is None and self.ncols is None:
-            self.nrows = 1
-            self.ncols = len(self.values)
-        elif self.nrows is None:
-            self.ncols = int(self.ncols)
-            if self.ncols <= 0:
-                self.ncols = len(values)
-            self.nrows = int(len(self.values) / self.ncols)
-            if self.ncols * self.nrows < len(self.values):
-                self.nrows = 1
-                self.ncols = len(self.values)
-        elif self.ncols is None:
-            self.nrows = int(self.nrows)
-            if self.nrows <= 0:
-                self.nrows = 1
-            self.ncols = int(len(self.values) / self.nrows)
-            if self.ncols * self.nrows < len(self.values):
-                self.nrows = 1
-                self.ncols = len(self.values)
-        else:
-            self.ncols = int(self.ncols)
-            self.nrows = int(self.nrows)
-            if self.ncols * self.nrows != len(self.values):
-                self.nrows = 1
-                self.ncols = len(self.values)
+        self.nrows, self.ncols = _button_grid_layout(
+            len(self.values), self.nrows, self.ncols)
 
     def message(self):
         """
