@@ -1,3 +1,5 @@
+"""Tests for kernel provider configuration."""
+
 import unittest
 
 from IPython.core.interactiveshell import InteractiveShell
