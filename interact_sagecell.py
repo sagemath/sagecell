@@ -338,11 +338,20 @@ def interact(f, controls=None, update=None, layout=None, locations=None,
                 "interact control must have a string name, "
                 "but %r isn't a string" % name[0])
     params = list(inspect.signature(f).parameters.values())
-    if params and params[0].default is params[0].empty:
+    positional = (inspect.Parameter.POSITIONAL_ONLY,
+                  inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    if (params and params[0].kind in positional
+            and params[0].default is inspect.Parameter.empty):
         pass_proxy = True
         params.pop(0)
     else:
         pass_proxy = False
+    # Variadic parameters receive explicit controls, but are not controls
+    # themselves. In particular, **kwargs is the documented way for a
+    # function to receive controls supplied through the controls argument.
+    params = [p for p in params if p.kind not in
+              (inspect.Parameter.VAR_POSITIONAL,
+               inspect.Parameter.VAR_KEYWORD)]
     controls = [(p.name, p.default if p.default is not p.empty else None)
                 for p in params] + controls
     names = [c[0] for c in controls]
