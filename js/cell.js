@@ -111,10 +111,14 @@ function make(args, cellInfo, k) {
             }
             return;
         }
-        if (input.hasClass("sagecell")) {
+        if (input.data("sagecellInitialized")) {
             // Do not process again the same locations.
             return;
         }
+        // The public "sagecell" class is also used to scope embedded-cell
+        // styles, so it cannot serve as an initialization marker: pages may
+        // legitimately use it on the input element before calling us.
+        input.data("sagecellInitialized", true);
         if (k === undefined) {
             k = sagecell.kernels.push(null) - 1;
         }
@@ -182,6 +186,9 @@ function make(args, cellInfo, k) {
         } else {
             input.html(cell_body);
         }
+        // For textarea inputs, `input` now refers to the generated wrapper;
+        // mark it as well as the original textarea marked above.
+        input.data("sagecellInitialized", true);
         input.addClass("sagecell");
         output.addClass("sagecell");
         input.find(".sagecell_commands").val(cellInfo.code);
