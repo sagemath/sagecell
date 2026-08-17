@@ -528,10 +528,10 @@ Slider.prototype.rendered = function () {
         this.control.subtype === "continuous_range";
     var cell1 = ce("div"),
         cell2 = ce("div");
-    var container = ce("div", { class: "sagecell_sliderContainer" }, [
-        cell1,
-        cell2,
-    ]);
+    var container = ce("div", { class: "sagecell_sliderContainer" }, [cell1]);
+    if (this.control.display_value !== false) {
+        container.appendChild(cell2);
+    }
     this.value_boxes = $();
     this.eventCount = this.range ? 2 : 1;
     this.slider = ce("div", { class: "sagecell_sliderControl" });
