@@ -61,7 +61,6 @@ system_packages = [
 'bzip2',
 'ca-certificates',
 'cliquer',
-'cmake',
 'curl',
 'ecl',
 'eclib-tools',
@@ -231,19 +230,19 @@ system_packages = [
 'libhdf5-dev',
 'libnetcdf-dev',
 'libopenmpi-dev',
-'libopenmpi3',
 'libproj-dev',
 'libsnappy-dev',
 'libsystemd-dev',
 'libxslt1-dev',
 'macaulay2',
 'nginx',
+'nodejs',
 'npm',
 'octave',
 'octave-econometrics',
 'octave-statistics',
 'octave-symbolic',
-'php8.3-fpm',
+'php8.5-fpm',
 'proj-bin',
 'python3-requests',
 'rsyslog-relp',
@@ -857,7 +856,7 @@ class SCLXC(object):
             os.environ["HTTP_PROXY"] = "apt"
             if not self.c.create(
                 "download", 0,
-                {"dist": "ubuntu", "release": "noble", "arch": "amd64"},
+                {"dist": "ubuntu", "release": "resolute", "arch": "amd64"},
                 "btrfs"):
                     raise RuntimeError("failed to create " + self.name)
             os.environ.pop("HTTP_PROXY")
@@ -932,7 +931,7 @@ class SCLXC(object):
             self.inside("su -c 'git -C /home/{server}/github/sagecell pull' {server}")
             self.inside(install_sagecell)
             self.inside(install_config_files)
-            self.c.set_config_item("lxc.cgroup.memory.limit_in_bytes", "8G")
+            self.c.set_config_item("lxc.cgroup2.memory.max", "8G")
             self.c.save_config()
             self.shutdown()
             # Let first-time tasks to run and complete.
