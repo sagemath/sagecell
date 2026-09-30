@@ -30,7 +30,6 @@
     "jsmol": "^1.0.0",
     "moment": "^2.29.4",
     "node-fetch": "^3.2.10",
-    "sockjs": "^0.3.24",
     "sockjs-client": "^1.5.2",
     "source-map-loader": "^3.0.1",
     "ts-loader": "^9.2.6",
