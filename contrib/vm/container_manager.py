@@ -210,7 +210,7 @@ system_packages = [
 'libxml-libxslt-perl',
 'libxml-writer-perl',
 'libxml2-dev',
-'lrslib',
+'lrslib',  # Provides the lrs and lrsnash executables used by Sage.
 'pari-gp2c',
 'pdf2svg',
 # 'polymake', triggers firefox snap that does not work in containers
@@ -298,7 +298,6 @@ sage_optional_packages = [
 "jupyter_jsmol",
 "latte_int",
 "lie",  # needs bison
-"lrslib",
 "mcqd",
 "normaliz",
 "pari_elldata",
