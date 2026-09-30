@@ -293,7 +293,7 @@ sage_optional_packages = [
 "dot2tex",  # needs graphviz
 "fricas",
 "gap_packages",
-"gap3",
+# "gap3",  # Does not build on Ubuntu 26.04.
 "jmol",
 "jupyter_jsmol",
 "latte_int",
