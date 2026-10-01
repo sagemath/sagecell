@@ -306,8 +306,8 @@ sage_optional_packages = [
 "pari_seadata",
 "pybtex",   # needs unzip
 "pynormaliz",
-"qepcad",
-"saclib",
+# "qepcad",  # Depends on SACLIB, which does not build on Ubuntu 26.04.
+# "saclib",
 "sagemath_giac",
 "tides",
 #"topcom", Does not work as of November 2022 with relying on system packages
