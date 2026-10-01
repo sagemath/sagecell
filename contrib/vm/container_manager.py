@@ -394,7 +394,6 @@ python_packages = [
 "openai",
 "openpyxl",
 "pandas",
-"pandas-profiling",
 "patsy",
 "plotnine",
 "plotly",
