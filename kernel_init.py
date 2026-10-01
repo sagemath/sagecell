@@ -1,4 +1,3 @@
-import codecs
 import sys
 import time
 
@@ -34,8 +33,7 @@ def initialize(kernel):
                 if path.startswith("./"):
                     path = path[2:]
                 mtime = os.stat(path).st_mtime
-                if (path == "sagemathcell.py"
-                    or path in sys._sage_.sent_files
+                if (path in sys._sage_.sent_files
                     and sys._sage_.sent_files[path] >= mtime):
                     continue
                 if (path.startswith("Rplot")
@@ -183,17 +181,3 @@ get_display_manager().switch_backend(BackendCell(), shell=get_ipython())
     user_ns.update(exercise.imports)
     user_ns['threejs'] = sys._sage_.threejs
     sys._sage_.update_interact = interact_sagecell.update_interact
-    
-    # In order to show the correct code line when a (deprecation) warning
-    # is triggered, we change the main module name and save user code to
-    # a file with the same name.
-    sys.argv = ['sagemathcell.py']
-    old_execute = kernel.do_execute
-    
-    def new_execute(code, *args, **kwds):
-        with codecs.open('sagemathcell.py', 'w', encoding='utf-8') as f:
-            f.write(code)
-        return old_execute(code, *args, **kwds)
-        
-    kernel.do_execute = new_execute
-
