@@ -367,6 +367,7 @@ python_packages = [
 "husl",
 "itikz",
 "july",
+"JustInline",
 "keras",
 "keyring",
 "koboextractor",
