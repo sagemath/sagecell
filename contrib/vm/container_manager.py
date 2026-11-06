@@ -1022,13 +1022,14 @@ class SCLXC(object):
         """
         if self.is_defined():
             log.info("updating packages in %s", self.name)
+            command = "apt-get -o Acquire::ForceIPv4=true --error-on=any update"
             try:
-                self.inside("apt update")
+                self.inside(command)
             except RuntimeError:
                 # We get here if /var/lib/dpkg/lock is locked:
                 # let's wait a bit and try again once
                 timer_delay(timeout)
-                self.inside("apt update")
+                self.inside(command)
             self.inside("apt full-upgrade -y --auto-remove")
         else:
             self.create()
